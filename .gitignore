@@ -1,0 +1,51 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Docker volumes / local data
+/volumes/
+data/
+docker-data/
+*.volume
+
+# Go
+backend/bin/
+backend/api
+backend/worker
+*.exe
+*.test
+*.out
+
+# Node / web
+node_modules/
+web/dist/
+web/.vite/
+web/.nuxt/
+web/.output/
+
+# Mobile
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+**/*.g.dart
+**/*.freezed.dart
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs / coverage
+*.log
+coverage/
+coverage.out

@@ -1,0 +1,167 @@
+name: ai-music-local
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai-music-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ai_music}
+      POSTGRES_USER: ${DB_USER:-ai_music}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ai_music_local_pw}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ai_music} -d ${DB_NAME:-ai_music}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - local
+
+  redis:
+    image: redis:7
+    container_name: ai-music-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - local
+
+  minio:
+    image: minio/minio:latest
+    container_name: ai-music-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - local
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: ai-music-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin123} &&
+      mc mb -p local/$${MINIO_STAGING_BUCKET:-minio-staging} &&
+      mc mb -p local/$${MINIO_PUBLIC_HLS_BUCKET:-minio-public-hls} &&
+      mc anonymous set download local/$${MINIO_PUBLIC_HLS_BUCKET:-minio-public-hls} &&
+      mc anonymous set none local/$${MINIO_STAGING_BUCKET:-minio-staging} &&
+      echo buckets-ready &&
+      sleep 5;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_STAGING_BUCKET: ${MINIO_STAGING_BUCKET:-minio-staging}
+      MINIO_PUBLIC_HLS_BUCKET: ${MINIO_PUBLIC_HLS_BUCKET:-minio-public-hls}
+    healthcheck:
+      test: ["CMD-SHELL", "mc alias list local >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 1
+      start_period: 15s
+    networks:
+      - local
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-music-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      APP_ADDR: ":8080"
+      DB_DSN: "postgres://${DB_USER:-ai_music}:${DB_PASSWORD:-ai_music_local_pw}@postgres:5432/${DB_NAME:-ai_music}?sslmode=disable"
+      REDIS_ADDR: "redis:6379"
+      S3_ENDPOINT: "http://minio:9000"
+    ports:
+      - "${API_PORT:-8080}:8080"
+    command: ["./api"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    networks:
+      - local
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-music-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DB_DSN: "postgres://${DB_USER:-ai_music}:${DB_PASSWORD:-ai_music_local_pw}@postgres:5432/${DB_NAME:-ai_music}?sslmode=disable"
+      REDIS_ADDR: "redis:6379"
+      S3_ENDPOINT: "http://minio:9000"
+    command: ["./worker"]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f ./worker >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    networks:
+      - local
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+
+networks:
+  local:
+    driver: bridge

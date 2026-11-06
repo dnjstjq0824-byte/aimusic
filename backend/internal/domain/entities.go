@@ -1,0 +1,335 @@
+package domain
+
+import "time"
+
+// Roles (users.role).
+const (
+	RoleAdmin   = "ADMIN"
+	RolePartner = "PARTNER"
+	RoleUser    = "USER"
+)
+
+// AI providers shared by policies, subscriptions, and tracks.
+const (
+	ProviderSuno       = "SUNO"
+	ProviderUdio       = "UDIO"
+	ProviderAiva       = "AIVA"
+	ProviderStable     = "STABLE_AUDIO"
+	ProviderSoundraw   = "SOUNDRAW"
+	ProviderMubert     = "MUBERT"
+	ProviderCustomOpen = "CUSTOM_OPEN_MODEL"
+)
+
+// ValidProvider reports whether p is a known AI provider.
+func ValidProvider(p string) bool {
+	switch p {
+	case ProviderSuno, ProviderUdio, ProviderAiva, ProviderStable,
+		ProviderSoundraw, ProviderMubert, ProviderCustomOpen:
+		return true
+	}
+	return false
+}
+
+// Partner profile statuses.
+const (
+	PartnerPending    = "PENDING"
+	PartnerApproved   = "APPROVED"
+	PartnerSuspended  = "SUSPENDED"
+	PartnerTerminated = "TERMINATED"
+)
+
+// Subscription statuses (partner_ai_subscriptions.status).
+const (
+	SubPending  = "PENDING"
+	SubVerified = "VERIFIED"
+	SubRejected = "REJECTED"
+	SubExpired  = "EXPIRED"
+)
+
+// Legal term codes.
+const (
+	TermTOS             = "TOS"
+	TermPartnerContract = "PARTNER_CONTRACT"
+	TermPrivacy         = "PRIVACY"
+	TermCopyright       = "COPYRIGHT_POLICY"
+)
+
+// Album statuses and release types.
+const (
+	AlbumDraft         = "DRAFT"
+	AlbumPendingReview = "PENDING_REVIEW"
+	AlbumLive          = "LIVE"
+	AlbumTakenDown     = "TAKEN_DOWN"
+)
+
+// Track statuses.
+const (
+	TrackUploaded            = "UPLOADED"
+	TrackLicenseGatePending  = "LICENSE_GATE_PENDING"
+	TrackLicenseGateRejected = "LICENSE_GATE_REJECTED"
+	TrackTranscoding         = "TRANSCODING"
+	TrackReady               = "READY"
+	TrackTakenDown           = "TAKEN_DOWN"
+)
+
+// Transcoding job statuses.
+const (
+	JobQueued    = "QUEUED"
+	JobRunning   = "RUNNING"
+	JobSucceeded = "SUCCEEDED"
+	JobFailed    = "FAILED"
+)
+
+// Dispute reasons and statuses.
+const (
+	DisputeAIPolicy  = "AI_POLICY_VIOLATION"
+	DisputeVoice     = "VOICE_CLONE"
+	DisputeSample    = "UNAUTHORIZED_SAMPLE"
+	DisputeOther     = "OTHER"
+	DisputeOpen      = "OPEN"
+	DisputeReview    = "UNDER_REVIEW"
+	DisputeUpheld    = "UPHELD_TAKEDOWN"
+	DisputeDismissed = "DISMISSED"
+)
+
+// Settlement statuses.
+const (
+	SettlePending   = "PENDING"
+	SettleApproved  = "APPROVED"
+	SettlePaid      = "PAID"
+	SettleForfeited = "FORFEITED"
+)
+
+// ValidDisputeReason reports whether r is a known dispute reason.
+func ValidDisputeReason(r string) bool {
+	switch r {
+	case DisputeAIPolicy, DisputeVoice, DisputeSample, DisputeOther:
+		return true
+	}
+	return false
+}
+
+// User mirrors the users table.
+type User struct {
+	ID           string    `json:"id"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"`
+	Role         string    `json:"role"`
+	DisplayName  string    `json:"displayName"`
+	IsActive     bool      `json:"isActive"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+// PartnerProfile mirrors partner_profiles.
+type PartnerProfile struct {
+	ID                         string     `json:"id"`
+	UserID                     string     `json:"userId"`
+	CompanyName                string     `json:"companyName"`
+	BusinessNumber             *string    `json:"businessNumber,omitempty"`
+	SettlementBank             *string    `json:"settlementBank,omitempty"`
+	SettlementAccountEncrypted *string    `json:"-"`
+	ContactEmail               string     `json:"contactEmail"`
+	Status                     string     `json:"status"`
+	ApprovedAt                 *time.Time `json:"approvedAt,omitempty"`
+	CreatedAt                  time.Time  `json:"createdAt"`
+	UpdatedAt                  time.Time  `json:"updatedAt"`
+}
+
+// AIProviderPolicy mirrors ai_provider_policies.
+type AIProviderPolicy struct {
+	ID                        string    `json:"id"`
+	Provider                  string    `json:"provider"`
+	AllowsStandaloneStreaming bool      `json:"allowsStandaloneStreaming"`
+	MinBitrateKbps            int       `json:"minBitrateKbps"`
+	BlockedMetadataKeywords   []string  `json:"blockedMetadataKeywords"`
+	RejectionMessageKo        string    `json:"rejectionMessageKo"`
+	CommercialTermsURL        *string   `json:"commercialTermsUrl,omitempty"`
+	CreatedAt                 time.Time `json:"createdAt"`
+	UpdatedAt                 time.Time `json:"updatedAt"`
+}
+
+// PartnerAISubscription mirrors partner_ai_subscriptions.
+type PartnerAISubscription struct {
+	ID             string     `json:"id"`
+	PartnerID      string     `json:"partnerId"`
+	Provider       string     `json:"provider"`
+	PlanName       string     `json:"planName"`
+	ProofObjectKey *string    `json:"proofObjectKey,omitempty"`
+	Status         string     `json:"status"`
+	VerifiedBy     *string    `json:"verifiedBy,omitempty"`
+	VerifiedAt     *time.Time `json:"verifiedAt,omitempty"`
+	ExpiresAt      *time.Time `json:"expiresAt,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+// LegalTerm mirrors legal_terms.
+type LegalTerm struct {
+	ID          string    `json:"id"`
+	Code        string    `json:"code"`
+	Version     string    `json:"version"`
+	TitleKo     string    `json:"titleKo"`
+	BodyMd      string    `json:"bodyMd"`
+	IsRequired  bool      `json:"isRequired"`
+	EffectiveAt time.Time `json:"effectiveAt"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+// UserTermConsent mirrors user_term_consents.
+type UserTermConsent struct {
+	ID          string    `json:"id"`
+	UserID      string    `json:"userId"`
+	TermsID     string    `json:"termsId"`
+	ConsentedAt time.Time `json:"consentedAt"`
+	IP          *string   `json:"ip,omitempty"`
+	UserAgent   *string   `json:"userAgent,omitempty"`
+}
+
+// Album mirrors albums.
+type Album struct {
+	ID             string     `json:"id"`
+	PartnerID      string     `json:"partnerId"`
+	Title          string     `json:"title"`
+	CoverObjectKey *string    `json:"coverObjectKey,omitempty"`
+	ReleaseType    string     `json:"releaseType"`
+	Status         string     `json:"status"`
+	ReleasedAt     *time.Time `json:"releasedAt,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+// Track mirrors tracks.
+type Track struct {
+	ID                string    `json:"id"`
+	AlbumID           *string   `json:"albumId,omitempty"`
+	PartnerID         string    `json:"partnerId"`
+	Title             string    `json:"title"`
+	DurationMs        *int      `json:"durationMs,omitempty"`
+	OriginalObjectKey string    `json:"originalObjectKey"`
+	HLSPrefix         *string   `json:"hlsPrefix,omitempty"`
+	AIProvider        string    `json:"aiProvider"`
+	AIGenerated       bool      `json:"aiGenerated"`
+	AIDisclosureText  *string   `json:"aiDisclosureText,omitempty"`
+	BitrateKbps       *int      `json:"bitrateKbps,omitempty"`
+	Status            string    `json:"status"`
+	RejectionReasonKo *string   `json:"rejectionReasonKo,omitempty"`
+	PlayCount         int64     `json:"playCount"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
+}
+
+// TrackRightsDeclaration mirrors track_rights_declarations.
+type TrackRightsDeclaration struct {
+	ID                      string     `json:"id"`
+	TrackID                 string     `json:"trackId"`
+	PartnerID               string     `json:"partnerId"`
+	DeclaresOwnership       bool       `json:"declaresOwnership"`
+	DeclaresNoVoiceClone    bool       `json:"declaresNoVoiceClone"`
+	DeclaresTrainingConsent bool       `json:"declaresTrainingConsent"`
+	SourceModel             *string    `json:"sourceModel,omitempty"`
+	SubscriptionID          *string    `json:"subscriptionId,omitempty"`
+	GeneratedAt             *time.Time `json:"generatedAt,omitempty"`
+	DeclaredAt              time.Time  `json:"declaredAt"`
+}
+
+// TranscodingJob mirrors transcoding_jobs.
+type TranscodingJob struct {
+	ID             string     `json:"id"`
+	TrackID        string     `json:"trackId"`
+	Status         string     `json:"status"`
+	InputObjectKey string     `json:"inputObjectKey"`
+	OutputPrefix   *string    `json:"outputPrefix,omitempty"`
+	BitrateKbps    *int       `json:"bitrateKbps,omitempty"`
+	Error          *string    `json:"error,omitempty"`
+	Attempts       int        `json:"attempts"`
+	StartedAt      *time.Time `json:"startedAt,omitempty"`
+	FinishedAt     *time.Time `json:"finishedAt,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+// CopyrightDispute mirrors copyright_disputes.
+type CopyrightDispute struct {
+	ID             string     `json:"id"`
+	TrackID        string     `json:"trackId"`
+	ReporterUserID *string    `json:"reporterUserId,omitempty"`
+	Reason         string     `json:"reason"`
+	Description    string     `json:"description"`
+	Status         string     `json:"status"`
+	StrikeApplied  bool       `json:"strikeApplied"`
+	ResolvedBy     *string    `json:"resolvedBy,omitempty"`
+	ResolvedAt     *time.Time `json:"resolvedAt,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+// Playlist mirrors playlists.
+type Playlist struct {
+	ID          string    `json:"id"`
+	OwnerUserID string    `json:"ownerUserId"`
+	Title       string    `json:"title"`
+	IsPublic    bool      `json:"isPublic"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+// PlaylistTrack mirrors playlist_tracks.
+type PlaylistTrack struct {
+	ID         string    `json:"id"`
+	PlaylistID string    `json:"playlistId"`
+	TrackID    string    `json:"trackId"`
+	Position   int       `json:"position"`
+	AddedAt    time.Time `json:"addedAt"`
+}
+
+// UserPlaybackState mirrors user_playback_states.
+type UserPlaybackState struct {
+	ID         string    `json:"id"`
+	UserID     string    `json:"userId"`
+	TrackID    string    `json:"trackId"`
+	PositionMs int       `json:"positionMs"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+// StreamingLog mirrors streaming_logs.
+type StreamingLog struct {
+	ID            string    `json:"id"`
+	UserID        *string   `json:"userId,omitempty"`
+	TrackID       *string   `json:"trackId,omitempty"`
+	PartnerID     *string   `json:"partnerId,omitempty"`
+	PlayedAt      time.Time `json:"playedAt"`
+	PlayMs        int       `json:"playMs"`
+	CountedAsPlay bool      `json:"countedAsPlay"`
+	IP            *string   `json:"ip,omitempty"`
+	UserAgent     *string   `json:"userAgent,omitempty"`
+	HLSTokenJTI   *string   `json:"hlsTokenJti,omitempty"`
+}
+
+// PartnerSettlement mirrors partner_settlements.
+type PartnerSettlement struct {
+	ID               string    `json:"id"`
+	PartnerID        string    `json:"partnerId"`
+	PeriodStart      time.Time `json:"periodStart"`
+	PeriodEnd        time.Time `json:"periodEnd"`
+	GrossAmountKRW   int64     `json:"grossAmountKrw"`
+	WithholdingKRW   int64     `json:"withholdingKrw"`
+	NetAmountKRW     int64     `json:"netAmountKrw"`
+	PlayCount        int64     `json:"playCount"`
+	Status           string    `json:"status"`
+	ForfeitureReason *string   `json:"forfeitureReason,omitempty"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+}
+
+// UserBlock mirrors user_blocks.
+type UserBlock struct {
+	ID           string     `json:"id"`
+	UserID       string     `json:"userId"`
+	BlockedBy    *string    `json:"blockedBy,omitempty"`
+	Reason       string     `json:"reason"`
+	StrikeNumber int        `json:"strikeNumber"`
+	ExpiresAt    *time.Time `json:"expiresAt,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+}

@@ -1,0 +1,120 @@
+// Riverpod providers: Dio, API, auth, audio handler, feature state.
+library;
+
+import 'package:audio_service/audio_service.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:just_audio/just_audio.dart';
+
+import '../core/api_client.dart';
+import '../core/models.dart';
+import '../services/api_service.dart';
+import '../services/audio_handler.dart';
+import '../services/auth_repository.dart';
+
+final secureStorageProvider = Provider<FlutterSecureStorage>(
+  (ref) => const FlutterSecureStorage(),
+);
+
+final dioProvider = Provider<Dio>(
+  (ref) => ApiClientFactory.create(storage: ref.watch(secureStorageProvider)),
+);
+
+final apiProvider = Provider<ApiService>(
+  (ref) => ApiService(ref.watch(dioProvider)),
+);
+
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(
+    ref.watch(dioProvider),
+    ref.watch(secureStorageProvider),
+  ),
+);
+
+/// Current principal; null when logged out.
+final authMeProvider = FutureProvider<AuthMe?>((ref) async {
+  final repo = ref.watch(authRepositoryProvider);
+  if (!await repo.isLoggedIn) return null;
+  try {
+    return await repo.me();
+  } catch (_) {
+    return null;
+  }
+});
+
+/// Singleton background audio handler (lazy; created on first playback).
+final audioHandlerProvider = FutureProvider<AiMusicAudioHandler>((ref) async {
+  final api = ref.watch(apiProvider);
+  return AudioService.init(
+    builder: () => AiMusicAudioHandler(
+      player: AudioPlayer(),
+      resolveStream: api.getStream,
+      onHeartbeat: heartbeatHookFor(api),
+      onPosition: positionHookFor(api),
+    ),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'ai.music.channel.audio',
+      androidNotificationChannelName: 'AI Music playback',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+    ),
+  );
+});
+
+/// Home track feed (READY tracks, first page).
+final homeTracksProvider = FutureProvider<List<Track>>((ref) async {
+  final api = ref.watch(apiProvider);
+  return api.listTracks(limit: 30);
+});
+
+/// Search query state; results filter the loaded catalog client-side
+/// (backend exposes listing only, no dedicated search endpoint).
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+final searchResultsProvider = FutureProvider<List<Track>>((ref) async {
+  final api = ref.watch(apiProvider);
+  final query = ref.watch(searchQueryProvider).trim().toLowerCase();
+  final tracks = await api.listTracks(limit: 100);
+  if (query.isEmpty) return tracks;
+  return tracks
+      .where((t) =>
+          t.title.toLowerCase().contains(query) ||
+          t.aiProvider.toLowerCase().contains(query))
+      .toList();
+});
+
+/// Current user's playlists.
+final playlistsProvider = FutureProvider<List<Playlist>>((ref) async {
+  final api = ref.watch(apiProvider);
+  return api.listPlaylists();
+});
+
+/// Entries + resolved tracks for one playlist.
+final playlistDetailProvider =
+    FutureProvider.family<(Playlist, List<Track>), String>((ref, id) async {
+  final api = ref.watch(apiProvider);
+  final playlist = await api.getPlaylist(id);
+  final entries = await api.listPlaylistTracks(id);
+  final tracks = <Track>[];
+  for (final e in entries) {
+    try {
+      tracks.add(await api.getTrack(e.trackId));
+    } catch (_) {
+      // Entry for a removed/taken-down track: skip in the UI list.
+    }
+  }
+  return (playlist, tracks);
+});
+
+/// Legal terms list.
+final legalTermsProvider = FutureProvider<List<LegalTerm>>((ref) async {
+  final api = ref.watch(apiProvider);
+  return api.listTerms();
+});
+
+/// Strike blocks for the report/block menu.
+final myBlocksProvider = FutureProvider<List<UserBlock>>((ref) async {
+  final api = ref.watch(apiProvider);
+  return api.myBlocks();
+});

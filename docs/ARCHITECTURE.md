@@ -1,0 +1,185 @@
+# Architecture (Phase 5)
+
+Stack: Go 1.22 API + worker (`backend/`), PostgreSQL 16, Redis 7,
+S3-compatible storage (MinIO local, Cloudflare R2 staging/prod),
+Vue 3 web (`web/`) + Flutter mobile (`mobile/`).
+Local topology: `docker-compose.local.yml` (`ai-music-local`).
+
+## Runtime diagram (Mermaid)
+
+```mermaid
+flowchart LR
+  subgraph clients["Clients"]
+    WEB["Web<br/>Vue3+Vite+hls.js<br/>web/src"]
+    MOB["Mobile<br/>Flutter+just_audio<br/>mobile/lib"]
+  end
+  subgraph compose["docker-compose.local.yml"]
+    API["api<br/>Gin :8080<br/>cmd/api"]
+    WRK["worker<br/>transcode loop<br/>cmd/worker"]
+    PG[("postgres:16<br/>17 tables")]
+    RD[("redis:7<br/>transcode:queue")]
+    MINIO["minio<br/>:9000 API / :9001 console"]
+    INIT["minio-init<br/>mc buckets once"]
+  end
+  CDN["CDN / R2 public-hls<br/>(prod: CDN_BASE_URL)"]
+  WEB -->|"/api/v1 + /healthz<br/>Bearer JWT"| API
+  MOB -->|"/api/v1<br/>Bearer JWT"| API
+  API --> PG
+  API --> RD
+  API -->|presign PUT/GET/DELETE<br/>SigV4| MINIO
+  WRK --> PG
+  WRK -->|BLPop/RPush<br/>transcode:queue| RD
+  WRK -->|PresignGet staging<br/>PresignPut public-hls| MINIO
+  WRK -->|ffmpeg/ffprobe<br/>loudnorm+HLS+peaks| WRK
+  INIT -->|mb staging-private<br/>mb public-hls| MINIO
+  API -.->|STORAGE_DRIVER=r2| CDN
+  WRK -.->|STORAGE_DRIVER=r2| CDN
+```
+
+Images: `api`/`worker` built from `backend/Dockerfile`
+(`golang:1.22-alpine` → `alpine:3.20 + ffmpeg`), same binary source, different `command`.
+Health: `postgres pg_isready`, `redis redis-cli ping`, `minio /minio/health/live`,
+`api wget /healthz`, `worker pgrep -f ./worker`.
+
+## Backend (`backend/`)
+
+Entry: `cmd/api/main.go` — `config.Load()` → `OpenDB(pgx stdlib, 25/5/5m)` →
+`NewRedisClient` → `storage.NewFromEnv()` → `repository.New(db,rdb)` →
+`service.New(...)` → `handler.SetupRouter` → `http.Server(:8080, 15s/30s/60s)`.
+Entry: `cmd/worker/main.go` — same repos/storage, `signal.NotifyContext`, loop
+`DequeueTranscode(BLPop 10s)` → `process()` (see Transcode below).
+
+Layers:
+
+- `internal/config`: `APP_ENV/APP_ADDR`, `DB_*`/`DB_DSN`, `REDIS_*`, storage
+  (`S3_*`+`MINIO_*` or `R2_*` when `STORAGE_DRIVER=r2`, `CDN_BASE_URL`),
+  `JWT_*`, `AES256_KEY_BASE64` (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS=300`.
+- `internal/handler` (Gin): `SetupRouter` groups `/healthz`, `/api/v1/{auth,legal,
+  partner,tracks,playback,playlists,disputes,admin}`; middleware `Recovery`,
+  `AuditLog` (method/path/status/user/role/ip/latency), `RateLimit`,
+  `JWTAuth` (Bearer HS256 `access`), `RequireRole`; envelope `ok/created/abort`,
+  `AbortError` maps `GateError`/`Err*` (see `docs/API.md`).
+- `internal/service`: `Auth` (bcrypt+JWT issue/parse/refresh), `Precheck`
+  (gate + `PresignPut staging/<partner>/<sha>/<base>, 15m, 900s`), `Finalize`
+  (track+rights+job+`RPush`), `Review` (pending queues, track/partner/subscription),
+  `DisputeService` (report/counter/resolve/takedown + 3-strike), `PlaylistService`
+  (owner checks, `READY`-only add), `PlaybackService` (30s valid stream, 120/h +
+  40/h/track fraud), `SettlementService` (3.3‰ `33/1000`, `FORFEITED_VIOLATION`).
+  Default settlement rate 10 KRW/play (`service.New`).
+- `internal/repository` (`database/sql` pgx + `go-redis`): `Users/Partners/
+  Subscriptions/Policies/Legal/Albums/Tracks/Rights/Jobs/Disputes/Playlists/
+  Playback/Streaming/Settlements/Blocks/Gate/Queue` (`queue.go:Repos` aggregate).
+  `GateStore` implements `licensegate.Store` (SHA LIKE, policy, subscription);
+  `Queue` is `transcode:queue` (`RPush`/`BLPop`/`LLen`).
+- `internal/pkg/licensegate`: `ValidateCommercialEligibility` (duplicate→409,
+  `allows_standalone_streaming`→`ERR_SYNC_ONLY_LICENSE`, verified-window→
+  `ERR_RETROACTIVE_GENERATION_DATE`/`ERR_NON_COMMERCIAL_TIER`).
+- `internal/pkg/audio`: `RunFFprobe` (format+audio stream, tags, bitrate),
+  `CheckBlockedMetadata` (case-insensitive key+value substring),
+  `CheckBitrate` (WAV/FLAC/AIF(F)/CAF or PCM/FLAC/ALAC bypass; lossy needs
+  `>0` and `>=min`), `BuildHLSArgs/Command` (`loudnorm`, `comment/ai_provider/
+  ai_tier` metadata, `128k/256k AAC`, `6s VOD`, `master.m3u8`, `stream_%v.m3u8`),
+  `ExtractWaveform` (mono 8kHz f32 → 100 normalized peaks) + `WaveformJSON`.
+- `internal/pkg/storage`: `S3Compat` SigV4 query presign (`PresignPut/Get`,
+  `Delete`; 15m default, 7d cap) + `NewFromEnv` (MinIO vs R2 buckets
+  `staging-private`/`public-hls`).
+- `internal/pkg/crypto`: AES-256-GCM `Cipher` (settlement accounts),
+  `Sign/VerifyPlaybackToken` (HMAC `trackId|jti|exp`), `BuildSignedPlaybackURL`
+  (`exp/jti/sig`), `SHA256Hex`.
+- `internal/domain`: roles/providers/statuses/reasons/settlement enums,
+  17 entities, `GateError` + `Code*` + `ForfeitViolation`.
+
+## Storage & buckets
+
+- Local MinIO (`minio/minio`, `server /data --console-address :9001`):
+  `MINIO_STAGING_BUCKET=minio-staging` (private, `anonymous none`),
+  `MINIO_PUBLIC_HLS_BUCKET=minio-public-hls` (`anonymous download`).
+  `minio-init` (`minio/mc`) creates both idempotently.
+- Prod template (`.env.example`, `config.loadStorage`): `R2_*` + `CDN_BASE_URL`
+  when `STORAGE_DRIVER=r2` (endpoint `https://<account>.r2.cloudflarestorage.com`,
+  region `auto`, SSL always).
+- Keys: staging `staging/<partnerId>/<sha>/<basename>` (embeds SHA for dedupe);
+  HLS `hls/<trackId>/{master.m3u8,stream_*.m3u8,seg_*.ts,peaks.json}`.
+
+## Core flows
+
+### Upload → license gate → transcode → HLS
+
+1. `POST /partner/pre-check` (JWT PARTNER): gate passes → `{stagingKey,uploadUrl}`.
+2. Client `PUT` bytes to `uploadUrl` (direct to MinIO/R2, no API proxy).
+3. `POST /partner/finalize`: `tracks UPLOADED` + `track_rights_declarations` +
+   `transcoding_jobs QUEUED` + `RPush transcode:queue{jobId,trackId,inputBucket,
+   inputKey,outputPrefix}`.
+4. Worker `BLPop` → `MarkRunning` + `TRANSCODING` → policy lookup →
+   download (`PresignGet`) → `ffprobe` → blocked-keyword gate (Korean
+   `차단된 메타데이터 키워드 감지: <kw>` → `FAILED`+`LICENSE_GATE_REJECTED`) →
+   bitrate gate (`비트레이트 기준 미달` → same) → `ffmpeg loudnorm→HLS`
+   (30m timeout) → `peaks.json` (best-effort) → upload dir (`PresignPut` each)
+   → `MarkSucceeded` + `SetTranscoded(READY,hls_prefix,bitrate,duration)`.
+   Transient failures requeue until `attempts>=3` → `LICENSE_GATE_REJECTED
+   (attempts exhausted)`.
+5. Admin `POST /admin/review approve` (READY stays READY; curation-visible).
+6. `GET /tracks/:id/stream` (JWT, READY only) → signed `master.m3u8` URL
+   (TTL 300s); client plays via `hls.js` (web) / `just_audio` (mobile);
+   `POST /playback/heartbeat` counts 30s+ plays.
+
+### Dispute → takedown → strike → settlement
+
+- `POST /disputes/report` → `OPEN`; `POST /admin/curation/takedown` → immediate
+  `TAKEN_DOWN` (temp blind); taken-down is skipped everywhere (`ERR_NOT_STREAMABLE`
+  on stream/heartbeat/playlist-add, excluded from `ListReady`/`TopByPlays`).
+- `POST /disputes/:id/counter` (owner) → `UNDER_REVIEW` + `[COUNTER]`.
+- `POST /admin/disputes/:id/resolve uphold=false` → `DISMISSED` (no strike);
+  re-approve restores `READY`. `uphold=true` → `UPHELD_TAKEDOWN` + `TAKEN_DOWN` +
+  `strike_applied` + `user_blocks(strike_number 1..3)`; #3 suspends partner.
+- `POST /admin/settlements/calculate` counts `counted_as_play` in period;
+  violated (suspended/terminated or upheld>0) → `FORFEITED/FORFEITED_VIOLATION/
+  net=0`, else `PENDING` with 3.3% withholding; `approve` → `APPROVED` (never from
+  `FORFEITED`).
+
+## Frontend
+
+- Web (`web/`, `ai-music-web 0.1.0`): `vue 3.4 + vite 5 + vue-router 4 + pinia 2 +
+  axios + hls.js + tailwind 3`. `src/api/{client,endpoints,types}` (typed wrappers,
+  `ERR_MESSAGES` Korean, Bearer+refresh), `src/router` (`/`, `/partner/*`
+  PARTNER|ADMIN, `/admin/*` ADMIN, `requiresAuth` guard), `src/layouts`
+  (User/Partner/Admin), `src/views/{user/{Home,Login,PlaylistDetail,
+  DisputeCenter},partner/{Dashboard,Upload,Subscriptions},admin/{Reviews,
+  LicensePolicies,Disputes,Curation}}`, `src/components/{legal/{AiBadge,
+  DisputeReportModal,LicensePrecheckWidget},player/{GlobalPlayerBar,
+  QueueDrawer,WaveformSeekbar}}`, `src/stores/{authStore,partnerUploadStore,
+  playerStore,playlistStore}`. Scripts: `dev/build/preview/typecheck`.
+- Mobile (`mobile/`, `ai_music 0.4.0`): `flutter_riverpod+dio+go_router+
+  just_audio+audio_service+audio_session+flutter_secure_storage`.
+  `lib/{main.dart,core/{api_client,env,error,models,providers,theme},
+  features/{auth/login_screen,home/home_screen,legal/legal_screens,
+  player/{player_controller,player_screen},playlist/playlist_screens,
+  search/search_screen},services/{api_service,audio_handler,auth_repository}}`.
+  `ApiService` covers tracks/stream/playback/playlists/disputes/legal with the
+  same `/api/v1` URIs; `StreamTicket.getStream` surfaces `ERR_NOT_STREAMABLE`.
+
+## Config & local ops
+
+- `.env.example`: `DB_*` (5432), `REDIS_*` (6379), `MINIO_*`/`S3_*` (9000/9001,
+  `minio-staging`/`minio-public-hls`), `API_PORT=8080`, `JWT_*`, `AES256_KEY_BASE64`
+  (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS`, R2/CDN template (commented).
+- `scripts/start-local.sh`: `.env` bootstrap → `compose up --build -d` →
+  waits (pg_isready/redis ping/minio live/minio-init/api healthz/worker pgrep) →
+  idempotent migrate (`to_regclass(users)` gate for `000001_init.up.sql`) + always
+  `seed.sql` (`ON CONFLICT`-safe) → `compose ps`.
+- `scripts/test-e2e.sh`: `curl+psql+redis-cli` PASS/FAIL suite (T01 health …
+  T11 settlement; see header mapping for gate/dispute/strike/forfeiture cases).
+  No `docker`/`network` needed beyond the already-running local stack.
+
+## Security & ops notes
+
+- Secrets never committed (`.env` gitignored, `.env.example` placeholders;
+  `openssl rand` generators in comments). Passwords bcrypt, settlement accounts
+  AES-256-GCM, JWT HS256 split access/refresh secrets, HLS URLs short-lived HMAC.
+- Abuse controls: license gate (policy+subscription+SHA), worker metadata/bitrate
+  gates, playback fraud windows, playlist READY-only, 3-strike + forfeiture,
+  rate limits + audit log per request.
+- Scaling seams: stateless `api` (add replicas behind LB; move `RateLimiter`
+  to Redis for multi-replica), `worker` (add consumers; `BLPop` FIFO),
+  `postgres` (read replicas for `ListReady/TopByPlays`), storage/CDN (R2+CDN),
+  Redis queue depth `LLEN transcode:queue` as autoscale signal.

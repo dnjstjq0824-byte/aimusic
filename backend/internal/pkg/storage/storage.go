@@ -1,0 +1,195 @@
+// Package storage provides S3-compatible presigned URLs for MinIO and R2.
+package storage
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Storage issues presigned URLs and deletes objects.
+type Storage interface {
+	PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	Delete(ctx context.Context, bucket, key string) error
+}
+
+// Buckets holds the staging (private) and HLS (public) bucket names.
+type Buckets struct {
+	Staging   string
+	PublicHLS string
+}
+
+// S3Compat is an S3-compatible implementation (MinIO local, R2 in staging/prod)
+// using AWS Signature Version 4 query-string authentication.
+type S3Compat struct {
+	endpoint  string
+	region    string
+	accessKey string
+	secretKey string
+	useSSL    bool
+	client    *http.Client
+}
+
+// New builds an S3Compat client.
+func New(endpoint, region, accessKey, secretKey string, useSSL bool) *S3Compat {
+	return &S3Compat{
+		endpoint:  strings.TrimRight(strings.TrimSpace(endpoint), "/"),
+		region:    region,
+		accessKey: accessKey,
+		secretKey: secretKey,
+		useSSL:    useSSL,
+		client:    &http.Client{Timeout: 30 * time.Second},
+	}
+}
+
+// NewFromEnv builds a Storage from the environment, switching to R2 when
+// STORAGE_DRIVER=r2.
+func NewFromEnv() (Storage, Buckets, error) {
+	driver := strings.TrimSpace(os.Getenv("STORAGE_DRIVER"))
+	if driver == "r2" {
+		endpoint := strings.TrimSpace(os.Getenv("R2_ENDPOINT"))
+		ak := strings.TrimSpace(os.Getenv("R2_ACCESS_KEY_ID"))
+		sk := os.Getenv("R2_SECRET_ACCESS_KEY")
+		if endpoint == "" || ak == "" || sk == "" {
+			return nil, Buckets{}, fmt.Errorf("r2 storage misconfigured: R2_ENDPOINT/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY required")
+		}
+		buckets := Buckets{
+			Staging:   firstNonEmpty(os.Getenv("R2_STAGING_BUCKET"), "staging-private"),
+			PublicHLS: firstNonEmpty(os.Getenv("R2_PUBLIC_HLS_BUCKET"), "public-hls"),
+		}
+		return New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "auto"), ak, sk, true), buckets, nil
+	}
+	endpoint := firstNonEmpty(os.Getenv("S3_ENDPOINT"), "http://localhost:9000")
+	ak := strings.TrimSpace(os.Getenv("S3_ACCESS_KEY"))
+	sk := os.Getenv("S3_SECRET_KEY")
+	if ak == "" || sk == "" {
+		return nil, Buckets{}, fmt.Errorf("minio storage misconfigured: S3_ACCESS_KEY/S3_SECRET_KEY required")
+	}
+	buckets := Buckets{
+		Staging:   firstNonEmpty(os.Getenv("MINIO_STAGING_BUCKET"), "minio-staging"),
+		PublicHLS: firstNonEmpty(os.Getenv("MINIO_PUBLIC_HLS_BUCKET"), "minio-public-hls"),
+	}
+	return New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "us-east-1"), ak, sk, os.Getenv("S3_USE_SSL") == "true"), buckets, nil
+}
+
+// Endpoint returns the configured S3 endpoint.
+func (s *S3Compat) Endpoint() string { return s.endpoint }
+
+// PresignPut returns a presigned URL for uploading key via HTTP PUT.
+func (s *S3Compat) PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	return s.presign("PUT", bucket, key, ttl)
+}
+
+// PresignGet returns a presigned URL for downloading key via HTTP GET.
+func (s *S3Compat) PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	return s.presign("GET", bucket, key, ttl)
+}
+
+// Delete removes an object; missing keys are treated as success.
+func (s *S3Compat) Delete(ctx context.Context, bucket, key string) error {
+	signed, err := s.presign("DELETE", bucket, key, 5*time.Minute)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, signed, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
+		return nil
+	}
+	return fmt.Errorf("delete %s/%s: unexpected status %d", bucket, key, resp.StatusCode)
+}
+
+func (s *S3Compat) presign(method, bucket, key string, ttl time.Duration) (string, error) {
+	if bucket == "" || key == "" {
+		return "", fmt.Errorf("bucket and key are required")
+	}
+	if ttl <= 0 {
+		ttl = 15 * time.Minute
+	}
+	if ttl > 7*24*time.Hour {
+		ttl = 7 * 24 * time.Hour
+	}
+	u, err := url.Parse(s.endpoint)
+	if err != nil {
+		return "", fmt.Errorf("invalid endpoint: %w", err)
+	}
+	now := time.Now().UTC()
+	amzDate := now.Format("20060102T150405Z")
+	dateStamp := now.Format("20060102")
+	credentialScope := dateStamp + "/" + s.region + "/s3/aws4_request"
+
+	canonicalURI := "/" + bucket + "/" + escapeKey(key)
+	q := url.Values{}
+	q.Set("X-Amz-Algorithm", "AWS4-HMAC-SHA256")
+	q.Set("X-Amz-Credential", s.accessKey+"/"+credentialScope)
+	q.Set("X-Amz-Date", amzDate)
+	q.Set("X-Amz-Expires", strconv.Itoa(int(ttl.Seconds())))
+	q.Set("X-Amz-SignedHeaders", "host")
+	canonicalQuery := q.Encode()
+
+	canonicalHeaders := "host:" + u.Host + "\n"
+	canonicalRequest := method + "\n" + canonicalURI + "\n" + canonicalQuery + "\n" +
+		canonicalHeaders + "\n" + "host" + "\n" + "UNSIGNED-PAYLOAD"
+	hashedCanonical := sha256Hex([]byte(canonicalRequest))
+	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + credentialScope + "\n" + hashedCanonical
+	signingKey := deriveSigningKey(s.secretKey, dateStamp, s.region, "s3")
+	signature := hmacHex(signingKey, stringToSign)
+	return s.endpoint + canonicalURI + "?" + canonicalQuery + "&X-Amz-Signature=" + signature, nil
+}
+
+func deriveSigningKey(secret, dateStamp, region, service string) []byte {
+	kDate := hmacSHA256([]byte("AWS4"+secret), dateStamp)
+	kRegion := hmacSHA256(kDate, region)
+	kService := hmacSHA256(kRegion, service)
+	return hmacSHA256(kService, "aws4_request")
+}
+
+func hmacSHA256(key []byte, data string) []byte {
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(data))
+	return mac.Sum(nil)
+}
+
+func hmacHex(key []byte, data string) string {
+	return hex.EncodeToString(hmacSHA256(key, data))
+}
+
+func sha256Hex(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func escapeKey(key string) string {
+	parts := strings.Split(strings.TrimPrefix(key, "/"), "/")
+	for i, p := range parts {
+		parts[i] = url.PathEscape(p)
+	}
+	return strings.Join(parts, "/")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
+}
