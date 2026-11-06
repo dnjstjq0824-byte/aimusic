@@ -8,11 +8,13 @@
     </div>
     <p v-if="error" class="mb-2 text-sm text-red-400">{{ error }}</p>
     <p v-if="reported" class="mb-2 text-sm text-emerald-400">분쟁 신고가 접수되었습니다. ({{ reported }})</p>
-    <ul class="space-y-2">
+    <ul class="grid gap-2 md:grid-cols-2">
       <li v-for="t in tracks" :key="t.id" class="rounded bg-neutral-900 p-3">
         <div class="flex items-center gap-2">
           <button class="rounded bg-neutral-800 px-2 py-1 text-sm" @click="playOne(t)">▶</button>
-          <span class="min-w-0 flex-1 truncate font-semibold">{{ t.title }}</span>
+          <RouterLink :to="{ name: 'track-detail', params: { id: t.id } }" class="min-w-0 flex-1 truncate font-semibold hover:underline">
+            {{ t.title }}
+          </RouterLink>
           <AiBadge :track="t" />
         </div>
         <div class="mt-1 flex items-center gap-2 text-xs text-neutral-400">

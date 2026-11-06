@@ -21,25 +21,25 @@
           @seek="player.seek($event)"
         />
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
-          class="rounded px-2 py-1 text-sm"
+          class="rounded px-1.5 py-1 text-xs sm:px-2 sm:text-sm"
           :class="player.shuffle ? 'bg-brand-600' : 'bg-neutral-800'"
           title="Shuffle"
           @click="player.toggleShuffle()"
         >
           SF
         </button>
-        <button class="rounded bg-neutral-800 px-3 py-1" title="Previous" @click="player.playPrev()">|◀</button>
+        <button class="rounded bg-neutral-800 px-2 py-1 sm:px-3" title="Previous" @click="player.playPrev()">|◀</button>
         <button
-          class="rounded bg-brand-600 px-4 py-1 font-bold disabled:opacity-50"
+          class="rounded bg-brand-600 px-3 py-1 font-bold disabled:opacity-50 sm:px-4"
           :disabled="player.isLoading || !player.currentTrack"
           @click="player.toggle()"
         >
           {{ player.isLoading ? '…' : player.isPlaying ? '❚❚' : '▶' }}
         </button>
-        <button class="rounded bg-neutral-800 px-3 py-1" title="Next" @click="player.playNext(true)">▶|</button>
-        <button class="rounded px-2 py-1 text-sm" :class="player.repeat !== 'off' ? 'bg-brand-600' : 'bg-neutral-800'" title="Repeat" @click="player.cycleRepeat()">
+        <button class="rounded bg-neutral-800 px-2 py-1 sm:px-3" title="Next" @click="player.playNext(true)">▶|</button>
+        <button class="rounded px-1.5 py-1 text-xs sm:px-2 sm:text-sm" :class="player.repeat !== 'off' ? 'bg-brand-600' : 'bg-neutral-800'" title="Repeat" @click="player.cycleRepeat()">
           {{ repeatLabel }}
         </button>
       </div>

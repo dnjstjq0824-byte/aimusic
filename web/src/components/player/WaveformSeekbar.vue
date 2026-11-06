@@ -19,7 +19,7 @@
         :y="10 - h"
         :width="100 / bars.length - 0.4"
         :height="h"
-        :fill="(i / bars.length) * 100 <= progressPct ? '#6d5cff' : '#525252'"
+        :fill="(i / bars.length) * 100 <= progressPct ? '#FF6B3D' : '#525252'"
       />
     </svg>
   </div>

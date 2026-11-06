@@ -1,15 +1,15 @@
 <template>
   <div class="min-h-screen bg-neutral-950 text-neutral-100">
-    <header class="border-b border-neutral-800 px-4 py-3 flex items-center gap-4">
-      <RouterLink to="/" class="text-neutral-100"><BrandLogo /></RouterLink>
-      <nav class="flex gap-3 text-sm">
+    <header class="border-b border-neutral-800 px-4 py-3 flex items-center gap-3 sm:gap-4">
+      <RouterLink to="/" class="shrink-0 text-neutral-100"><BrandLogo /></RouterLink>
+      <nav class="flex gap-3 overflow-x-auto whitespace-nowrap text-sm">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/disputes">Dispute Center</RouterLink>
         <RouterLink v-if="auth.isPartner" to="/partner">Partner</RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/admin">Admin</RouterLink>
       </nav>
-      <div class="ml-auto flex items-center gap-3 text-sm">
-        <span v-if="auth.userId">{{ auth.role }}</span>
+      <div class="ml-auto flex shrink-0 items-center gap-3 text-sm">
+        <span v-if="auth.userId" class="hidden sm:inline">{{ auth.role }}</span>
         <button v-if="auth.isAuthenticated" class="underline" @click="auth.logout()">Logout</button>
         <RouterLink v-else to="/login">Login</RouterLink>
       </div>

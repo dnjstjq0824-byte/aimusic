@@ -1,6 +1,6 @@
 <template>
   <span class="inline-flex items-center gap-1">
-    <span v-if="track.aiGenerated" class="rounded bg-violet-700 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+    <span v-if="track.aiGenerated" class="rounded bg-brand-600 px-1.5 py-0.5 text-[11px] font-semibold text-white">
       AI
     </span>
     <span class="rounded bg-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-200" :title="track.aiDisclosureText ?? ''">
