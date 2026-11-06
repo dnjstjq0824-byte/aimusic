@@ -49,6 +49,7 @@ Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 4
 | POST | `/auth/login` | – | `{email,password}` → `{tokens:{accessToken,refreshToken,expiresIn},user}` |
 | POST | `/auth/refresh` | – | `{refreshToken}` → `{tokens}` |
 | GET | `/auth/me` | JWT | – → `{userId,role}` |
+| POST | `/auth/withdraw` | JWT | – → `{withdrawn:true}` (in-app immediate withdrawal) |
 
 Example:
 
@@ -157,13 +158,21 @@ always upserted when `>=0`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/playlists` | caller playlists |
+| GET | `/playlists` or `/playlists/me` | caller playlists |
 | POST | `/playlists` | `{title,isPublic}` → `201` |
 | GET/PUT/DELETE | `/playlists/:id` | owner or public-visible for GET; owner-only mutate |
 | GET | `/playlists/:id/tracks` | ordered entries |
 | POST | `/playlists/:id/tracks` | `{trackId}` (`READY` only, idempotent) → `201` |
 | DELETE | `/playlists/:id/tracks/:trackId` | owner-only |
-| PUT | `/playlists/:id/reorder` | `{trackIds:[...]}` must include every current id |
+| PUT | `/playlists/:id/reorder` or `/:id/tracks/reorder` | `{trackIds:[...]}` must include every current id |
+
+## UGC Blocks (`/users/blocks`, JWT)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/users/blocks` | `{partnerId,reason?}` → records UGC artist block |
+| GET | `/users/blocks` | caller's blocked artists |
+| DELETE | `/users/blocks/:partnerId` | unblock artist |
 
 ## Disputes (`/disputes`, JWT)
 
@@ -182,15 +191,16 @@ Dismiss sets `DISMISSED` with no strike.
 
 | Method | Path | Body → Data |
 |--------|------|-------------|
-| GET | `/admin/pending` | `{licenseGateTracks,disputes,partners,subscriptions}` (50 each) |
-| POST | `/admin/review` | `{trackId,approve,reason?}` → `READY` or `LICENSE_GATE_REJECTED` (+Korean reason) |
+| GET | `/admin/pending` or `/admin/tracks/pending` | `{tracks,licenseGateTracks,disputes,partners,subscriptions,rightsByTrack,subsById}` |
+| POST | `/admin/review` or `/admin/tracks/:id/review` | `{trackId,approve,reason?}` → `READY` or `LICENSE_GATE_REJECTED` (+Korean reason) |
 | POST | `/admin/review/partner` | `{partnerId,approve}` → `APPROVED` (+`approved_at`) or `SUSPENDED` |
 | POST | `/admin/review/subscription` | `{subscriptionId,approve,expiresAt? RFC3339}` → `VERIFIED`/`REJECTED` (+`verified_at=NOW()`) |
 | GET | `/admin/policies` | policy matrix |
-| PUT | `/admin/policies/:provider` | `{allowsStandaloneStreaming,minBitrateKbps,blockedMetadataKeywords[],rejectionMessageKo,commercialTermsUrl?}` |
+| PUT | `/admin/policies/:provider` or `/admin/license-policies/:id` | `{allowsStandaloneStreaming,allowedPlanTiers[],blockedPlanTiers[],syncOnlyPlanTiers[],minBitrateKbps,blockedMetadataKeywords[],rejectionMessageKo,commercialTermsUrl?}` |
 | GET | `/admin/disputes?limit=&offset=` | `OPEN`+`UNDER_REVIEW` oldest first |
-| POST | `/admin/disputes/:id/resolve` | `{uphold}` → see Disputes |
+| POST | `/admin/disputes/:id/resolve` or `/admin/disputes/:id/action` | `{uphold,action?}` → see Disputes |
 | GET | `/admin/curation?limit=` | `READY` by `play_count` desc |
+| POST | `/admin/curation/playlists` | `{title,description?,trackIds:[]}` → creates official curation playlist |
 | POST | `/admin/curation/takedown` | `{trackId,reason?}` → immediate `TAKEN_DOWN` |
 | POST | `/admin/settlements/calculate` | `{partnerId,periodStart:YYYY-MM-DD,periodEnd:YYYY-MM-DD,ratePerPlayKrw?}` → upserted settlement |
 | GET | `/admin/settlements/:partnerId` | settlements newest first |
