@@ -176,10 +176,10 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 		if sub == nil {
 			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: "no verified subscription for provider"}
 		}
-		if (policy != nil && tierMatches(sub.PlanName, policy.SyncOnlyPlanTiers)) || isBuiltInSyncOnlyTier(req.Provider, sub.PlanName) {
+		if tierMatches(sub.PlanName, policy.SyncOnlyPlanTiers) || isBuiltInSyncOnlyTier(req.Provider, sub.PlanName) {
 			return nil, &domain.GateError{Code: domain.CodeSyncOnlyLicense, Message: msg}
 		}
-		if (policy != nil && tierMatches(sub.PlanName, policy.BlockedPlanTiers)) || isBuiltInNonCommercialTier(sub.PlanName) {
+		if tierMatches(sub.PlanName, policy.BlockedPlanTiers) || isBuiltInNonCommercialTier(sub.PlanName) {
 			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: msg}
 		}
 		if sub.Status == domain.SubRejected {

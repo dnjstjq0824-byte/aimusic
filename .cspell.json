@@ -25,7 +25,9 @@
     "**/*.xcconfig",
     "**/*.xcodeproj/**",
     "**/*.xcworkspace/**",
-    "**/android/.gradle/**"
+    "**/android/.gradle/**",
+    "cspell.json",
+    ".cspell.json"
   ],
   "words": [
     "aimusic",
@@ -161,6 +163,9 @@
     "waveform",
     "Weeknd",
     "wordmark",
+    "xcconfig",
+    "xcodeproj",
+    "xcworkspace",
     "xxhash"
   ]
 }
