@@ -66,8 +66,8 @@ func tierMatches(tier string, list []string) bool {
 		return false
 	}
 	for _, item := range list {
-		cand := strings.ToLower(strings.TrimSpace(item))
-		if cand != "" && (t == cand || strings.Contains(t, cand)) {
+		candidate := strings.ToLower(strings.TrimSpace(item))
+		if candidate != "" && (t == candidate || strings.Contains(t, candidate)) {
 			return true
 		}
 	}

@@ -6,8 +6,7 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": { "@/*": ["./src/*"] },
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]

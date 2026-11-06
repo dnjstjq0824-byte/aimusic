@@ -339,7 +339,7 @@ func (s *SettlementService) ViolationActive(ctx context.Context, partnerID strin
 	if profile.Status == domain.PartnerSuspended || profile.Status == domain.PartnerTerminated {
 		return true, nil
 	}
-	upheld, err := s.repos.Disputes.CountUphheldByPartner(ctx, partnerID)
+	upheld, err := s.repos.Disputes.CountUpheldByPartner(ctx, partnerID)
 	if err != nil {
 		return false, err
 	}

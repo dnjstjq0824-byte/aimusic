@@ -185,7 +185,7 @@ license rejects → `LICENSE_GATE_REJECTED` immediately, transient errors requeu
 `strike_applied DEFAULT FALSE, resolved_by? FK SET NULL, resolved_at?, created_at, updated_at,`
 indexes `(track_id)`, `(status)`.
 `AppendCounter` appends `\n[COUNTER] note` + `UNDER_REVIEW`; `Resolve` sets
-status/strike/resolver/`resolved_at=NOW()`; `CountUphheldByPartner` drives settlement forfeiture.
+status/strike/resolver/`resolved_at=NOW()`; `CountUpheldByPartner` drives settlement forfeiture.
 
 ### 12. `playlists`
 `id, owner_user_id FK CASCADE, title, is_public DEFAULT FALSE, created_at, updated_at,`

@@ -173,8 +173,8 @@ func (r *DisputeRepo) Resolve(ctx context.Context, id, status, resolverID string
 	return err
 }
 
-// CountUphheldByPartner counts takedown-upheld disputes on a partner's tracks.
-func (r *DisputeRepo) CountUphheldByPartner(ctx context.Context, partnerID string) (int, error) {
+// CountUpheldByPartner counts takedown-upheld disputes on a partner's tracks.
+func (r *DisputeRepo) CountUpheldByPartner(ctx context.Context, partnerID string) (int, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM copyright_disputes d
