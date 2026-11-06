@@ -32,9 +32,19 @@
           </div>
         </div>
         <ul class="space-y-1">
-          <li v-for="(t, i) in detailTracks" :key="t.id" class="flex items-center gap-2 rounded bg-neutral-900 px-2 py-1.5 text-sm">
+          <li
+            v-for="(t, i) in detailTracks"
+            :key="t.id"
+            class="flex items-center gap-2 rounded bg-neutral-900 px-2 py-1.5 text-sm"
+            :class="t.status !== 'READY' ? 'opacity-50' : ''"
+          >
             <span class="w-6 text-neutral-500">{{ i + 1 }}</span>
-            <span class="min-w-0 flex-1 truncate">{{ t.title }}</span>
+            <span class="min-w-0 flex-1 truncate">
+              {{ t.title }}
+              <span v-if="t.status !== 'READY'" class="ml-1 rounded bg-red-900/50 px-1.5 py-0.5 text-[11px] text-red-200">
+                권리침해 신고/테이크다운으로 재생 불가 ({{ t.status }})
+              </span>
+            </span>
             <button class="text-xs text-neutral-400" @click="move(i, -1)">▲</button>
             <button class="text-xs text-neutral-400" @click="move(i, 1)">▼</button>
             <button class="text-xs text-red-400" @click="removeTrack(t.id)">✕</button>
@@ -87,7 +97,8 @@ async function select(id: string): Promise<void> {
 }
 
 function playSelected(): void {
-  if (detailTracks.value.length > 0) player.setQueue(detailTracks.value);
+  const readyOnly = detailTracks.value.filter((t) => t.status === 'READY');
+  if (readyOnly.length > 0) player.setQueue(readyOnly);
 }
 
 async function removeSelected(): Promise<void> {

@@ -6,10 +6,10 @@
       <label class="mb-2 block text-sm">
         사유
         <select v-model="reason" class="mt-1 w-full rounded bg-neutral-800 p-2">
-          <option value="AI_POLICY_VIOLATION">AI_POLICY_VIOLATION — AI 정책 위반</option>
-          <option value="VOICE_CLONE">VOICE_CLONE — 무단 목소리 클론</option>
-          <option value="UNAUTHORIZED_SAMPLE">UNAUTHORIZED_SAMPLE — 무단 샘플 사용</option>
-          <option value="OTHER">OTHER — 기타</option>
+          <option value="AI_POLICY_VIOLATION">NON_COMMERCIAL_VIOLATION — 비상업/무료 요금제 생성물 의심</option>
+          <option value="VOICE_CLONE">VOICE_PUBLICITY — 음성/퍼블리시티권 침해 (무단 딥보이스)</option>
+          <option value="UNAUTHORIZED_SAMPLE">COPYRIGHT — 저작권 침해 / 무단 샘플링</option>
+          <option value="OTHER">OTHER — 상표권 침해 / 불법 유해 콘텐츠 / 기타</option>
         </select>
       </label>
       <label class="mb-3 block text-sm">

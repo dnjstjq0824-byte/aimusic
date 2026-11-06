@@ -19,6 +19,7 @@ import (
 type PrecheckInput struct {
 	PartnerID         string
 	Provider          string
+	PlanTierUsed      string
 	AudioSHA256       string
 	FileName          string
 	GeneratedAt       time.Time
@@ -51,6 +52,7 @@ func (s *PrecheckService) PreCheck(ctx context.Context, in PrecheckInput) (*Prec
 	if _, err := licensegate.ValidateCommercialEligibility(ctx, s.repos.Gate, licensegate.PreCheckRequest{
 		PartnerID:                   in.PartnerID,
 		Provider:                    in.Provider,
+		PlanTierUsed:                in.PlanTierUsed,
 		AudioSHA256:                 sha,
 		GeneratedAt:                 in.GeneratedAt,
 		SubscriptionID:              in.SubscriptionID,
@@ -71,11 +73,18 @@ func (s *PrecheckService) PreCheck(ctx context.Context, in PrecheckInput) (*Prec
 
 // RightsInput carries the rights declaration for finalize.
 type RightsInput struct {
-	DeclaresOwnership       bool
-	DeclaresNoVoiceClone    bool
-	DeclaresTrainingConsent bool
-	SourceModel             *string
-	SubscriptionID          *string
+	DeclaresOwnership               bool
+	DeclaresNoVoiceClone            bool
+	DeclaresTrainingConsent         bool
+	ConfirmedNoUnauthorizedSampling bool
+	ConfirmedIndemnification        bool
+	PlanTierUsed                    *string
+	ProviderTrackURL                *string
+	HumanContributionTypes          []string
+	HumanContributionDesc           *string
+	SignedIP                        *string
+	SourceModel                     *string
+	SubscriptionID                  *string
 }
 
 // FinalizeInput carries the completed staging upload to register.
@@ -83,18 +92,27 @@ type RightsInput struct {
 // AudioSHA256 and GeneratedAt must repeat the values granted at pre-check;
 // Finalize re-validates the license gate so pre-check cannot be skipped.
 type FinalizeInput struct {
-	PartnerID      string
-	StagingKey     string
-	Title          string
-	Provider       string
-	AudioSHA256    string
-	GeneratedAt    time.Time
-	SubscriptionID string
-	AlbumID        *string
-	DurationMs     *int
-	BitrateKbps    *int
-	Disclosure     *string
-	Rights         RightsInput
+	PartnerID        string
+	StagingKey       string
+	Title            string
+	Provider         string
+	PlanTierUsed     string
+	AudioSHA256      string
+	GeneratedAt      time.Time
+	SubscriptionID   string
+	AlbumID          *string
+	Genre            *string
+	MoodTags         []string
+	AIGenerationType string
+	AIModelVersion   *string
+	AIPrompt         *string
+	IsPromptPublic   bool
+	IsInstrumental   bool
+	Lyrics           *string
+	DurationMs       *int
+	BitrateKbps      *int
+	Disclosure       *string
+	Rights           RightsInput
 }
 
 // FinalizeOutput carries created IDs.
@@ -134,6 +152,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 	if _, err := licensegate.ValidateCommercialEligibility(ctx, s.repos.Gate, licensegate.PreCheckRequest{
 		PartnerID:                   in.PartnerID,
 		Provider:                    in.Provider,
+		PlanTierUsed:                in.PlanTierUsed,
 		AudioSHA256:                 sha,
 		GeneratedAt:                 in.GeneratedAt,
 		SubscriptionID:              in.SubscriptionID,
@@ -154,6 +173,14 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		AlbumID:           in.AlbumID,
 		PartnerID:         in.PartnerID,
 		Title:             in.Title,
+		Genre:             in.Genre,
+		MoodTags:          in.MoodTags,
+		AIGenerationType:  in.AIGenerationType,
+		AIModelVersion:    in.AIModelVersion,
+		AIPrompt:          in.AIPrompt,
+		IsPromptPublic:    in.IsPromptPublic,
+		IsInstrumental:    in.IsInstrumental,
+		Lyrics:            in.Lyrics,
 		DurationMs:        in.DurationMs,
 		OriginalObjectKey: in.StagingKey,
 		AIProvider:        in.Provider,
@@ -166,15 +193,29 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		return nil, err
 	}
 	generatedAt := in.GeneratedAt
+	planTierPtr := in.Rights.PlanTierUsed
+	if (planTierPtr == nil || *planTierPtr == "") && in.PlanTierUsed != "" {
+		pt := in.PlanTierUsed
+		planTierPtr = &pt
+	}
 	if _, err := s.repos.Rights.Upsert(ctx, &domain.TrackRightsDeclaration{
-		TrackID:                 track.ID,
-		PartnerID:               in.PartnerID,
-		DeclaresOwnership:       in.Rights.DeclaresOwnership,
-		DeclaresNoVoiceClone:    in.Rights.DeclaresNoVoiceClone,
-		DeclaresTrainingConsent: in.Rights.DeclaresTrainingConsent,
-		SourceModel:             in.Rights.SourceModel,
-		SubscriptionID:          in.Rights.SubscriptionID,
-		GeneratedAt:             &generatedAt,
+		TrackID:                         track.ID,
+		PartnerID:                       in.PartnerID,
+		DeclaresOwnership:               in.Rights.DeclaresOwnership,
+		DeclaresNoVoiceClone:            in.Rights.DeclaresNoVoiceClone,
+		DeclaresTrainingConsent:         in.Rights.DeclaresTrainingConsent,
+		ConfirmedNoUnauthorizedSampling: in.Rights.ConfirmedNoUnauthorizedSampling,
+		ConfirmedIndemnification:        in.Rights.ConfirmedIndemnification,
+		PlanTierUsed:                    planTierPtr,
+		ProviderTrackURL:                in.Rights.ProviderTrackURL,
+		HumanContributionTypes:          in.Rights.HumanContributionTypes,
+		HumanContributionDesc:           in.Rights.HumanContributionDesc,
+		Gate1PolicyPassed:               true,
+		Gate2DatePassed:                 true,
+		SignedIP:                        in.Rights.SignedIP,
+		SourceModel:                     in.Rights.SourceModel,
+		SubscriptionID:                  in.Rights.SubscriptionID,
+		GeneratedAt:                     &generatedAt,
 	}); err != nil {
 		return nil, err
 	}

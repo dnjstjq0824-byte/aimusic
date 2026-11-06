@@ -103,10 +103,27 @@ const (
 // ValidDisputeReason reports whether r is a known dispute reason.
 func ValidDisputeReason(r string) bool {
 	switch r {
-	case DisputeAIPolicy, DisputeVoice, DisputeSample, DisputeOther:
+	case DisputeAIPolicy, DisputeVoice, DisputeSample, DisputeOther,
+		"NON_COMMERCIAL_VIOLATION", "COPYRIGHT", "VOICE_PUBLICITY", "TRADEMARK", "ILLEGAL_CONTENT":
 		return true
 	}
 	return false
+}
+
+// NormalizeDisputeReason maps spec alias codes to canonical DB check values.
+func NormalizeDisputeReason(r string) string {
+	switch r {
+	case "NON_COMMERCIAL_VIOLATION":
+		return DisputeAIPolicy
+	case "VOICE_PUBLICITY":
+		return DisputeVoice
+	case "COPYRIGHT":
+		return DisputeSample
+	case "TRADEMARK", "ILLEGAL_CONTENT":
+		return DisputeOther
+	default:
+		return r
+	}
 }
 
 // User mirrors the users table.
@@ -141,6 +158,9 @@ type AIProviderPolicy struct {
 	ID                        string    `json:"id"`
 	Provider                  string    `json:"provider"`
 	AllowsStandaloneStreaming bool      `json:"allowsStandaloneStreaming"`
+	AllowedPlanTiers          []string  `json:"allowedPlanTiers"`
+	BlockedPlanTiers          []string  `json:"blockedPlanTiers"`
+	SyncOnlyPlanTiers         []string  `json:"syncOnlyPlanTiers"`
 	MinBitrateKbps            int       `json:"minBitrateKbps"`
 	BlockedMetadataKeywords   []string  `json:"blockedMetadataKeywords"`
 	RejectionMessageKo        string    `json:"rejectionMessageKo"`
@@ -201,36 +221,57 @@ type Album struct {
 
 // Track mirrors tracks.
 type Track struct {
-	ID                string    `json:"id"`
-	AlbumID           *string   `json:"albumId,omitempty"`
-	PartnerID         string    `json:"partnerId"`
-	Title             string    `json:"title"`
-	DurationMs        *int      `json:"durationMs,omitempty"`
-	OriginalObjectKey string    `json:"originalObjectKey"`
-	HLSPrefix         *string   `json:"hlsPrefix,omitempty"`
-	AIProvider        string    `json:"aiProvider"`
-	AIGenerated       bool      `json:"aiGenerated"`
-	AIDisclosureText  *string   `json:"aiDisclosureText,omitempty"`
-	BitrateKbps       *int      `json:"bitrateKbps,omitempty"`
-	Status            string    `json:"status"`
-	RejectionReasonKo *string   `json:"rejectionReasonKo,omitempty"`
-	PlayCount         int64     `json:"playCount"`
-	CreatedAt         time.Time `json:"createdAt"`
-	UpdatedAt         time.Time `json:"updatedAt"`
+	ID                   string    `json:"id"`
+	AlbumID              *string   `json:"albumId,omitempty"`
+	PartnerID            string    `json:"partnerId"`
+	Title                string    `json:"title"`
+	Genre                *string   `json:"genre,omitempty"`
+	MoodTags             []string  `json:"moodTags,omitempty"`
+	AIGenerationType     string    `json:"aiGenerationType"`
+	AIModelVersion       *string   `json:"aiModelVersion,omitempty"`
+	AIPrompt             *string   `json:"aiPrompt,omitempty"`
+	IsPromptPublic       bool      `json:"isPromptPublic"`
+	IsInstrumental       bool      `json:"isInstrumental"`
+	Lyrics               *string   `json:"lyrics,omitempty"`
+	DurationMs           *int      `json:"durationMs,omitempty"`
+	OriginalObjectKey    string    `json:"originalObjectKey"`
+	AudioFingerprintHash *string   `json:"audioFingerprintHash,omitempty"`
+	HLSPrefix            *string   `json:"hlsPrefix,omitempty"`
+	WaveformJSON         *string   `json:"waveformJson,omitempty"`
+	AIProvider           string    `json:"aiProvider"`
+	AIGenerated          bool      `json:"aiGenerated"`
+	AIDisclosureText     *string   `json:"aiDisclosureText,omitempty"`
+	BitrateKbps          *int      `json:"bitrateKbps,omitempty"`
+	Status               string    `json:"status"`
+	RejectionReasonKo    *string   `json:"rejectionReasonKo,omitempty"`
+	PlayCount            int64     `json:"playCount"`
+	CreatedAt            time.Time `json:"createdAt"`
+	UpdatedAt            time.Time `json:"updatedAt"`
 }
 
 // TrackRightsDeclaration mirrors track_rights_declarations.
 type TrackRightsDeclaration struct {
-	ID                      string     `json:"id"`
-	TrackID                 string     `json:"trackId"`
-	PartnerID               string     `json:"partnerId"`
-	DeclaresOwnership       bool       `json:"declaresOwnership"`
-	DeclaresNoVoiceClone    bool       `json:"declaresNoVoiceClone"`
-	DeclaresTrainingConsent bool       `json:"declaresTrainingConsent"`
-	SourceModel             *string    `json:"sourceModel,omitempty"`
-	SubscriptionID          *string    `json:"subscriptionId,omitempty"`
-	GeneratedAt             *time.Time `json:"generatedAt,omitempty"`
-	DeclaredAt              time.Time  `json:"declaredAt"`
+	ID                              string     `json:"id"`
+	TrackID                         string     `json:"trackId"`
+	PartnerID                       string     `json:"partnerId"`
+	DeclaresOwnership               bool       `json:"declaresOwnership"`
+	DeclaresNoVoiceClone            bool       `json:"declaresNoVoiceClone"`
+	DeclaresTrainingConsent         bool       `json:"declaresTrainingConsent"`
+	ConfirmedNoUnauthorizedSampling bool       `json:"confirmedNoUnauthorizedSampling"`
+	ConfirmedIndemnification        bool       `json:"confirmedIndemnification"`
+	PlanTierUsed                    *string    `json:"planTierUsed,omitempty"`
+	ProviderTrackURL                *string    `json:"providerTrackUrl,omitempty"`
+	HumanContributionTypes          []string   `json:"humanContributionTypes,omitempty"`
+	HumanContributionDesc           *string    `json:"humanContributionDesc,omitempty"`
+	Gate1PolicyPassed               bool       `json:"gate1PolicyPassed"`
+	Gate2DatePassed                 bool       `json:"gate2DatePassed"`
+	Gate3FFprobePassed              bool       `json:"gate3FfprobePassed"`
+	FFprobeReportJSON               *string    `json:"ffprobeReportJson,omitempty"`
+	SignedIP                        *string    `json:"signedIp,omitempty"`
+	SourceModel                     *string    `json:"sourceModel,omitempty"`
+	SubscriptionID                  *string    `json:"subscriptionId,omitempty"`
+	GeneratedAt                     *time.Time `json:"generatedAt,omitempty"`
+	DeclaredAt                      time.Time  `json:"declaredAt"`
 }
 
 // TranscodingJob mirrors transcoding_jobs.
@@ -266,12 +307,14 @@ type CopyrightDispute struct {
 
 // Playlist mirrors playlists.
 type Playlist struct {
-	ID          string    `json:"id"`
-	OwnerUserID string    `json:"ownerUserId"`
-	Title       string    `json:"title"`
-	IsPublic    bool      `json:"isPublic"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID                 string    `json:"id"`
+	OwnerUserID        string    `json:"ownerUserId"`
+	Title              string    `json:"title"`
+	Description        *string   `json:"description,omitempty"`
+	IsPublic           bool      `json:"isPublic"`
+	IsOfficialCuration bool      `json:"isOfficialCuration"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
 }
 
 // PlaylistTrack mirrors playlist_tracks.
@@ -332,4 +375,13 @@ type UserBlock struct {
 	StrikeNumber int        `json:"strikeNumber"`
 	ExpiresAt    *time.Time `json:"expiresAt,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt"`
+}
+
+// UserArtistBlock mirrors user_artist_blocks (UGC artist block).
+type UserArtistBlock struct {
+	ID               string    `json:"id"`
+	BlockerUserID    string    `json:"blockerUserId"`
+	BlockedPartnerID string    `json:"blockedPartnerId"`
+	Reason           string    `json:"reason"`
+	CreatedAt        time.Time `json:"createdAt"`
 }

@@ -11,26 +11,34 @@ import (
 // PlaylistRepo accesses playlists and playlist_tracks.
 type PlaylistRepo struct{ db *sql.DB }
 
-func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, isPublic bool) (*domain.Playlist, error) {
+const playlistColumns = `id::text, owner_user_id::text, title, description, is_public, is_official_curation, created_at, updated_at`
+
+func scanPlaylist(row interface{ Scan(...any) error }) (*domain.Playlist, error) {
 	p := &domain.Playlist{}
-	err := r.db.QueryRowContext(ctx, `
-		INSERT INTO playlists (owner_user_id, title, is_public)
-		VALUES ($1::uuid, $2, $3)
-		RETURNING id::text, owner_user_id::text, title, is_public, created_at, updated_at`,
-		ownerID, title, isPublic,
-	).Scan(&p.ID, &p.OwnerUserID, &p.Title, &p.IsPublic, &p.CreatedAt, &p.UpdatedAt)
+	var desc sql.NullString
+	err := row.Scan(&p.ID, &p.OwnerUserID, &p.Title, &desc, &p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	p.Description = strPtr(desc)
 	return p, nil
 }
 
+func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, isPublic bool) (*domain.Playlist, error) {
+	return r.CreateFull(ctx, ownerID, title, nil, isPublic, false)
+}
+
+func (r *PlaylistRepo) CreateFull(ctx context.Context, ownerID, title string, description *string, isPublic, isOfficial bool) (*domain.Playlist, error) {
+	return scanPlaylist(r.db.QueryRowContext(ctx, `
+		INSERT INTO playlists (owner_user_id, title, description, is_public, is_official_curation)
+		VALUES ($1::uuid, $2, $3, $4, $5)
+		RETURNING `+playlistColumns,
+		ownerID, title, nullStr(description), isPublic, isOfficial))
+}
+
 func (r *PlaylistRepo) GetByID(ctx context.Context, id string) (*domain.Playlist, error) {
-	p := &domain.Playlist{}
-	err := r.db.QueryRowContext(ctx, `
-		SELECT id::text, owner_user_id::text, title, is_public, created_at, updated_at
-		FROM playlists WHERE id = $1::uuid`, id,
-	).Scan(&p.ID, &p.OwnerUserID, &p.Title, &p.IsPublic, &p.CreatedAt, &p.UpdatedAt)
+	p, err := scanPlaylist(r.db.QueryRowContext(ctx, `
+		SELECT `+playlistColumns+` FROM playlists WHERE id = $1::uuid`, id))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
@@ -40,7 +48,7 @@ func (r *PlaylistRepo) GetByID(ctx context.Context, id string) (*domain.Playlist
 // ListByOwner returns a user's playlists, newest first.
 func (r *PlaylistRepo) ListByOwner(ctx context.Context, ownerID string) ([]*domain.Playlist, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id::text, owner_user_id::text, title, is_public, created_at, updated_at
+		SELECT `+playlistColumns+`
 		FROM playlists WHERE owner_user_id = $1::uuid ORDER BY created_at DESC`, ownerID)
 	if err != nil {
 		return nil, err
@@ -48,8 +56,28 @@ func (r *PlaylistRepo) ListByOwner(ctx context.Context, ownerID string) ([]*doma
 	defer rows.Close()
 	var out []*domain.Playlist
 	for rows.Next() {
-		p := &domain.Playlist{}
-		if err := rows.Scan(&p.ID, &p.OwnerUserID, &p.Title, &p.IsPublic, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ListOfficialCuration returns public official curation playlists.
+func (r *PlaylistRepo) ListOfficialCuration(ctx context.Context) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+playlistColumns+`
+		FROM playlists WHERE is_official_curation = TRUE ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*domain.Playlist
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, p)

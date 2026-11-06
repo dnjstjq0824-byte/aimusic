@@ -35,6 +35,9 @@ export interface AIProviderPolicy {
   id: string;
   provider: string;
   allowsStandaloneStreaming: boolean;
+  allowedPlanTiers?: string[];
+  blockedPlanTiers?: string[];
+  syncOnlyPlanTiers?: string[];
   minBitrateKbps: number;
   blockedMetadataKeywords: string[];
   rejectionMessageKo: string;
@@ -64,18 +67,60 @@ export interface Track {
   albumId?: string | null;
   partnerId: string;
   title: string;
+  genre?: string | null;
+  moodTags?: string[];
   durationMs?: number | null;
   originalObjectKey: string;
   hlsPrefix?: string | null;
   aiProvider: string;
   aiGenerated: boolean;
+  aiGenerationType?: AIDisclosure | string;
+  aiModelVersion?: string | null;
+  aiPrompt?: string | null;
+  isPromptPublic?: boolean;
+  isInstrumental?: boolean;
+  lyrics?: string | null;
   aiDisclosureText?: string | null;
+  audioFingerprintHash?: string | null;
+  waveformJson?: string | null;
   bitrateKbps?: number | null;
   status: string;
   rejectionReasonKo?: string | null;
   playCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TrackRightsDeclaration {
+  id: string;
+  trackId: string;
+  partnerId: string;
+  declaresOwnership: boolean;
+  declaresNoVoiceClone: boolean;
+  declaresTrainingConsent: boolean;
+  confirmedNoUnauthorizedSampling: boolean;
+  confirmedIndemnification: boolean;
+  planTierUsed?: string | null;
+  providerTrackUrl?: string | null;
+  humanContributionTypes?: string[];
+  humanContributionDesc?: string | null;
+  gate1PolicyPassed: boolean;
+  gate2DatePassed: boolean;
+  gate3FfprobePassed?: boolean | null;
+  ffprobeReportJson?: string | null;
+  signedIp?: string | null;
+  sourceModel?: string | null;
+  subscriptionId?: string | null;
+  generatedAt: string;
+  createdAt: string;
+}
+
+export interface UserArtistBlock {
+  id: string;
+  blockerUserId: string;
+  blockedPartnerId: string;
+  reason: string;
+  createdAt: string;
 }
 
 export interface Album {
@@ -200,6 +245,9 @@ export interface PartnerSettlement {
 
 export interface ReviewQueues {
   tracks?: Track[];
+  licenseGateTracks?: Track[];
+  rightsByTrack?: Record<string, TrackRightsDeclaration>;
+  subsById?: Record<string, PartnerAISubscription>;
   partners?: PartnerProfile[];
   subscriptions?: PartnerAISubscription[];
 }

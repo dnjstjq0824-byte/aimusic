@@ -235,3 +235,56 @@ func (r *BlockRepo) CountStrikes(ctx context.Context, userID string) (int, error
 		`SELECT COUNT(*) FROM user_blocks WHERE user_id = $1::uuid`, userID).Scan(&n)
 	return n, err
 }
+
+// BlockArtist records a user blocking a partner/artist (App Store / Google Play UGC rule).
+func (r *BlockRepo) BlockArtist(ctx context.Context, blockerUserID, blockedPartnerID, reason string) (*domain.UserArtistBlock, error) {
+	b := &domain.UserArtistBlock{}
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO user_artist_blocks (blocker_user_id, blocked_partner_id, reason)
+		VALUES ($1::uuid, $2::uuid, $3)
+		ON CONFLICT (blocker_user_id, blocked_partner_id) DO UPDATE SET reason = EXCLUDED.reason
+		RETURNING id::text, blocker_user_id::text, blocked_partner_id::text, reason, created_at`,
+		blockerUserID, blockedPartnerID, reason,
+	).Scan(&b.ID, &b.BlockerUserID, &b.BlockedPartnerID, &b.Reason, &b.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// UnblockArtist removes a user's block against a partner/artist.
+func (r *BlockRepo) UnblockArtist(ctx context.Context, blockerUserID, blockedPartnerID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		DELETE FROM user_artist_blocks WHERE blocker_user_id = $1::uuid AND blocked_partner_id = $2::uuid`,
+		blockerUserID, blockedPartnerID)
+	return err
+}
+
+// ListBlockedArtists returns the partner blocks created by a user.
+func (r *BlockRepo) ListBlockedArtists(ctx context.Context, blockerUserID string) ([]*domain.UserArtistBlock, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id::text, blocker_user_id::text, blocked_partner_id::text, reason, created_at
+		FROM user_artist_blocks WHERE blocker_user_id = $1::uuid ORDER BY created_at DESC`, blockerUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*domain.UserArtistBlock
+	for rows.Next() {
+		b := &domain.UserArtistBlock{}
+		if err := rows.Scan(&b.ID, &b.BlockerUserID, &b.BlockedPartnerID, &b.Reason, &b.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
+// IsArtistBlocked checks if a user has blocked a given partner.
+func (r *BlockRepo) IsArtistBlocked(ctx context.Context, blockerUserID, blockedPartnerID string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS(SELECT 1 FROM user_artist_blocks WHERE blocker_user_id = $1::uuid AND blocked_partner_id = $2::uuid)`,
+		blockerUserID, blockedPartnerID).Scan(&exists)
+	return exists, err
+}

@@ -107,6 +107,15 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	ok(c, gin.H{"userId": CurrentUserID(c), "role": CurrentRole(c)})
 }
 
+// Withdraw deactivates the authenticated user's account immediately.
+func (h *AuthHandler) Withdraw(c *gin.Context) {
+	if err := h.Auth.Withdraw(c.Request.Context(), CurrentUserID(c)); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"withdrawn": true})
+}
+
 func queryInt(c *gin.Context, key string, def int) int {
 	if raw := c.Query(key); raw != "" {
 		if n, err := strconv.Atoi(raw); err == nil {

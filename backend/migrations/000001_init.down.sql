@@ -1,5 +1,6 @@
 -- Phase 1 down migration: drop all tables in reverse dependency order.
 
+DROP TABLE IF EXISTS user_artist_blocks;
 DROP TABLE IF EXISTS user_blocks;
 DROP TABLE IF EXISTS partner_settlements;
 DROP TABLE IF EXISTS streaming_logs;

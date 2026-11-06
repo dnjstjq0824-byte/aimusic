@@ -225,7 +225,7 @@ class BlocksScreen extends ConsumerWidget {
   }
 }
 
-/// Withdrawal guidance (backend exposes no self-delete endpoint).
+/// Immediate self-withdrawal screen (App Store / Google Play store compliance).
 class WithdrawalScreen extends ConsumerWidget {
   const WithdrawalScreen({super.key});
 
@@ -242,18 +242,37 @@ class WithdrawalScreen extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
             const Text(
-              '· 플레이리스트와 재생 기록이 삭제됩니다.\n'
-              '· 진행 중인 신고·분쟁이 있으면 해결 후 탈퇴할 수 있습니다.\n'
-              '· 탈퇴는 고객센터를 통해 본인 확인 후 처리됩니다.',
+              '· 플레이리스트와 재생 기록이 즉시 비활성화 및 삭제 처리됩니다.\n'
+              '· 진행 중인 신고·분쟁이 있으면 관련 법령에 따라 보존 후 파기됩니다.\n'
+              '· 아래 [즉시 회원 탈퇴] 버튼을 누르면 별도 고객센터 문의 없이 앱 내에서 즉시 탈퇴됩니다.',
             ),
             const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () async {
-                await ref.read(authRepositoryProvider).logout();
-                ref.invalidate(authMeProvider);
-                if (context.mounted) context.go('/login');
-              },
-              child: const Text('로그아웃'),
+            Row(
+              children: [
+                OutlinedButton(
+                  onPressed: () async {
+                    await ref.read(authRepositoryProvider).logout();
+                    ref.invalidate(authMeProvider);
+                    if (context.mounted) context.go('/login');
+                  },
+                  child: const Text('로그아웃'),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  onPressed: () async {
+                    try {
+                      await ref.read(apiProvider).withdrawAccount();
+                    } catch (_) {}
+                    await ref.read(authRepositoryProvider).logout();
+                    ref.invalidate(authMeProvider);
+                    if (context.mounted) context.go('/login');
+                  },
+                  child: const Text('즉시 회원 탈퇴'),
+                ),
+              ],
             ),
           ],
         ),

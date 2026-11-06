@@ -19,6 +19,7 @@ import type {
   Tokens,
   Track,
   User,
+  UserArtistBlock,
   UserBlock,
   UserTermConsent,
   AIProviderPolicy,
@@ -38,6 +39,9 @@ export const authApi = {
   },
   me() {
     return unwrap<{ userId: string; role: Role }>(api.get('/auth/me'));
+  },
+  withdraw() {
+    return unwrap<{ withdrawn: boolean }>(api.post('/auth/withdraw'));
   },
 };
 
@@ -71,6 +75,7 @@ export const partnerApi = {
   },
   preCheck(input: {
     provider: string;
+    planTierUsed?: string;
     audioSha256: string;
     fileName: string;
     generatedAt: string;
@@ -83,10 +88,19 @@ export const partnerApi = {
     stagingKey: string;
     title: string;
     provider: string;
+    planTierUsed?: string;
     audioSha256: string;
     generatedAt: string;
     subscriptionId?: string;
     albumId?: string;
+    genre?: string;
+    moodTags?: string[];
+    aiGenerationType?: AIDisclosure | string;
+    aiModelVersion?: string;
+    aiPrompt?: string;
+    isPromptPublic?: boolean;
+    isInstrumental?: boolean;
+    lyrics?: string;
     durationMs?: number;
     bitrateKbps?: number;
     disclosure?: AIDisclosure | string;
@@ -94,6 +108,12 @@ export const partnerApi = {
       declaresOwnership: boolean;
       declaresNoVoiceClone: boolean;
       declaresTrainingConsent: boolean;
+      confirmedNoUnauthorizedSampling?: boolean;
+      confirmedIndemnification?: boolean;
+      planTierUsed?: string;
+      providerTrackUrl?: string;
+      humanContributionTypes?: string[];
+      humanContributionDesc?: string;
       sourceModel?: string;
       subscriptionId?: string;
     };
@@ -112,8 +132,8 @@ export const partnerApi = {
 };
 
 export const trackApi = {
-  list(limit = 20, offset = 0) {
-    return unwrap<Track[]>(api.get('/tracks', { params: { limit, offset } }));
+  list(limit = 20, offset = 0, filters?: { provider?: string; genre?: string; mood?: string }) {
+    return unwrap<Track[]>(api.get('/tracks', { params: { limit, offset, ...filters } }));
   },
   get(id: string) {
     return unwrap<Track>(api.get(`/tracks/${encodeURIComponent(id)}`));
@@ -177,6 +197,18 @@ export const disputeApi = {
   },
 };
 
+export const userBlocksApi = {
+  blockArtist(partnerId: string, reason?: string) {
+    return unwrap<UserArtistBlock>(api.post('/users/blocks', { partnerId, reason }));
+  },
+  listArtistBlocks() {
+    return unwrap<UserArtistBlock[]>(api.get('/users/blocks'));
+  },
+  unblockArtist(partnerId: string) {
+    return unwrap<{ unblocked: boolean }>(api.delete(`/users/blocks/${encodeURIComponent(partnerId)}`));
+  },
+};
+
 export const adminApi = {
   pending() {
     return unwrap<ReviewQueues>(api.get('/admin/pending'));
@@ -199,6 +231,9 @@ export const adminApi = {
     provider: string,
     input: {
       allowsStandaloneStreaming: boolean;
+      allowedPlanTiers?: string[];
+      blockedPlanTiers?: string[];
+      syncOnlyPlanTiers?: string[];
       minBitrateKbps: number;
       blockedMetadataKeywords: string[];
       rejectionMessageKo: string;

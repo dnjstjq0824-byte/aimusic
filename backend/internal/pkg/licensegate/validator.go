@@ -41,6 +41,7 @@ func ParseStagingKey(key string) (partnerID, audioSHA256, fileName string, ok bo
 type PreCheckRequest struct {
 	PartnerID                   string
 	Provider                    string
+	PlanTierUsed                string
 	AudioSHA256                 string
 	GeneratedAt                 time.Time
 	SubscriptionID              string
@@ -51,9 +52,49 @@ type PreCheckRequest struct {
 type Policy struct {
 	Provider                  string
 	AllowsStandaloneStreaming bool
+	AllowedPlanTiers          []string
+	BlockedPlanTiers          []string
+	SyncOnlyPlanTiers         []string
 	MinBitrateKbps            int
 	BlockedMetadataKeywords   []string
 	RejectionMessageKo        string
+}
+
+func tierMatches(tier string, list []string) bool {
+	t := strings.ToLower(strings.TrimSpace(tier))
+	if t == "" {
+		return false
+	}
+	for _, item := range list {
+		cand := strings.ToLower(strings.TrimSpace(item))
+		if cand != "" && (t == cand || strings.Contains(t, cand)) {
+			return true
+		}
+	}
+	return false
+}
+
+func isBuiltInNonCommercialTier(tier string) bool {
+	t := strings.ToLower(strings.TrimSpace(tier))
+	switch {
+	case t == "free", t == "basic", t == "free (basic)", t == "trial",
+		strings.Contains(t, "cc-by-nc"), strings.Contains(t, "non-commercial"):
+		return true
+	}
+	return false
+}
+
+func isBuiltInSyncOnlyTier(provider, tier string) bool {
+	p := strings.ToUpper(strings.TrimSpace(provider))
+	t := strings.ToLower(strings.TrimSpace(tier))
+	if p == domain.ProviderAiva && t == "standard" {
+		return true
+	}
+	if (p == domain.ProviderSoundraw || p == domain.ProviderMubert) &&
+		(t == "creator" || strings.Contains(t, "video bgm")) {
+		return true
+	}
+	return false
 }
 
 // Subscription is the license-gate view of a partner subscription row.
@@ -103,12 +144,24 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 	if err != nil {
 		return nil, err
 	}
-	if policy == nil || !policy.AllowsStandaloneStreaming {
-		msg := "provider license does not allow standalone streaming"
-		if policy != nil && policy.RejectionMessageKo != "" {
-			msg = policy.RejectionMessageKo
+	msg := "provider license does not allow standalone streaming"
+	if policy != nil && policy.RejectionMessageKo != "" {
+		msg = policy.RejectionMessageKo
+	}
+	if req.PlanTierUsed != "" {
+		if (policy != nil && tierMatches(req.PlanTierUsed, policy.SyncOnlyPlanTiers)) || isBuiltInSyncOnlyTier(req.Provider, req.PlanTierUsed) {
+			return nil, &domain.GateError{Code: domain.CodeSyncOnlyLicense, Message: msg}
 		}
+		if (policy != nil && tierMatches(req.PlanTierUsed, policy.BlockedPlanTiers)) || isBuiltInNonCommercialTier(req.PlanTierUsed) {
+			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: msg}
+		}
+	}
+	explicitAllowedTier := policy != nil && req.PlanTierUsed != "" && tierMatches(req.PlanTierUsed, policy.AllowedPlanTiers)
+	if policy == nil || (!policy.AllowsStandaloneStreaming && !explicitAllowedTier) {
 		return nil, &domain.GateError{Code: domain.CodeSyncOnlyLicense, Message: msg}
+	}
+	if req.PlanTierUsed != "" && len(policy.AllowedPlanTiers) > 0 && !tierMatches(req.PlanTierUsed, policy.AllowedPlanTiers) {
+		return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: msg}
 	}
 	result := &EligibilityResult{Policy: policy}
 
@@ -122,6 +175,12 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 		}
 		if sub == nil {
 			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: "no verified subscription for provider"}
+		}
+		if (policy != nil && tierMatches(sub.PlanName, policy.SyncOnlyPlanTiers)) || isBuiltInSyncOnlyTier(req.Provider, sub.PlanName) {
+			return nil, &domain.GateError{Code: domain.CodeSyncOnlyLicense, Message: msg}
+		}
+		if (policy != nil && tierMatches(sub.PlanName, policy.BlockedPlanTiers)) || isBuiltInNonCommercialTier(sub.PlanName) {
+			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: msg}
 		}
 		if sub.Status == domain.SubRejected {
 			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: "subscription was rejected"}

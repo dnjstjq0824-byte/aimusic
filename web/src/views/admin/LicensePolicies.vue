@@ -17,7 +17,16 @@
           <label>최소 비트레이트 (kbps)
             <input v-model.number="draft[p.provider]!.minBitrateKbps" type="number" min="0" class="ml-2 w-28 rounded bg-neutral-800 p-1.5" />
           </label>
-          <label class="sm:col-span-2">차단 키워드 (쉼표 구분)
+          <label class="sm:col-span-2">허용 상업 요금제 (쉼표 구분, 예: Pro, Premier)
+            <input v-model="allowedTiers[p.provider]" class="mt-1 w-full rounded bg-neutral-800 p-1.5" />
+          </label>
+          <label class="sm:col-span-2">차단 비상업 요금제 (쉼표 구분, 예: Free, Basic)
+            <input v-model="blockedTiers[p.provider]" class="mt-1 w-full rounded bg-neutral-800 p-1.5" />
+          </label>
+          <label class="sm:col-span-2">Sync 전용 (단독 스트리밍 차단) 요금제 (쉼표 구분, 예: Standard, Creator)
+            <input v-model="syncOnlyTiers[p.provider]" class="mt-1 w-full rounded bg-neutral-800 p-1.5" />
+          </label>
+          <label class="sm:col-span-2">차단 메타데이터 키워드 (쉼표 구분)
             <input v-model="keywords[p.provider]" class="mt-1 w-full rounded bg-neutral-800 p-1.5" />
           </label>
           <label class="sm:col-span-2">거절 메시지 (KO)
@@ -47,11 +56,21 @@ import type { AIProviderPolicy } from '@/api/types';
 
 const policies = ref<AIProviderPolicy[]>([]);
 const draft = ref<Record<string, { allowsStandaloneStreaming: boolean; minBitrateKbps: number; rejectionMessageKo: string }>>({});
+const allowedTiers = ref<Record<string, string>>({});
+const blockedTiers = ref<Record<string, string>>({});
+const syncOnlyTiers = ref<Record<string, string>>({});
 const keywords = ref<Record<string, string>>({});
 const termsUrl = ref<Record<string, string>>({});
 const error = ref<string | null>(null);
 const saved = ref<string | null>(null);
 const saving = ref<string | null>(null);
+
+function splitCsv(raw?: string): string[] {
+  return (raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 async function load(): Promise<void> {
   try {
@@ -62,6 +81,9 @@ async function load(): Promise<void> {
         minBitrateKbps: p.minBitrateKbps,
         rejectionMessageKo: p.rejectionMessageKo,
       };
+      allowedTiers.value[p.provider] = (p.allowedPlanTiers ?? []).join(', ');
+      blockedTiers.value[p.provider] = (p.blockedPlanTiers ?? []).join(', ');
+      syncOnlyTiers.value[p.provider] = (p.syncOnlyPlanTiers ?? []).join(', ');
       keywords.value[p.provider] = (p.blockedMetadataKeywords ?? []).join(', ');
       termsUrl.value[p.provider] = p.commercialTermsUrl ?? '';
     }
@@ -79,8 +101,11 @@ async function save(provider: string): Promise<void> {
   try {
     await adminApi.updatePolicy(provider, {
       allowsStandaloneStreaming: d.allowsStandaloneStreaming,
+      allowedPlanTiers: splitCsv(allowedTiers.value[provider]),
+      blockedPlanTiers: splitCsv(blockedTiers.value[provider]),
+      syncOnlyPlanTiers: splitCsv(syncOnlyTiers.value[provider]),
       minBitrateKbps: d.minBitrateKbps,
-      blockedMetadataKeywords: (keywords.value[provider] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      blockedMetadataKeywords: splitCsv(keywords.value[provider]),
       rejectionMessageKo: d.rejectionMessageKo,
       commercialTermsUrl: (termsUrl.value[provider] ?? '').trim() || null,
     });

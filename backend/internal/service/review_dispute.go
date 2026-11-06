@@ -15,10 +15,13 @@ type ReviewService struct {
 
 // PendingQueues is the admin review inbox.
 type PendingQueues struct {
-	LicenseGateTracks []*domain.Track                 `json:"licenseGateTracks"`
-	Disputes          []*domain.CopyrightDispute      `json:"disputes"`
-	Partners          []*domain.PartnerProfile        `json:"partners"`
-	Subscriptions     []*domain.PartnerAISubscription `json:"subscriptions"`
+	Tracks            []*domain.Track                           `json:"tracks"`
+	LicenseGateTracks []*domain.Track                           `json:"licenseGateTracks"`
+	RightsByTrack     map[string]*domain.TrackRightsDeclaration `json:"rightsByTrack,omitempty"`
+	SubsByID          map[string]*domain.PartnerAISubscription  `json:"subsById,omitempty"`
+	Disputes          []*domain.CopyrightDispute                `json:"disputes"`
+	Partners          []*domain.PartnerProfile                  `json:"partners"`
+	Subscriptions     []*domain.PartnerAISubscription           `json:"subscriptions"`
 }
 
 // Pending collects items awaiting admin review.
@@ -26,6 +29,20 @@ func (s *ReviewService) Pending(ctx context.Context) (*PendingQueues, error) {
 	tracks, err := s.repos.Tracks.ListByStatus(ctx, domain.TrackLicenseGatePending, 50, 0)
 	if err != nil {
 		return nil, err
+	}
+	rightsByTrack := make(map[string]*domain.TrackRightsDeclaration, len(tracks))
+	subsByID := make(map[string]*domain.PartnerAISubscription)
+	for _, t := range tracks {
+		if r, err := s.repos.Rights.GetByTrack(ctx, t.ID); err == nil && r != nil {
+			rightsByTrack[t.ID] = r
+			if r.SubscriptionID != nil && *r.SubscriptionID != "" {
+				if _, seen := subsByID[*r.SubscriptionID]; !seen {
+					if sub, err := s.repos.Subscriptions.GetByID(ctx, *r.SubscriptionID); err == nil && sub != nil {
+						subsByID[*r.SubscriptionID] = sub
+					}
+				}
+			}
+		}
 	}
 	disputes, err := s.repos.Disputes.ListOpen(ctx, 50, 0)
 	if err != nil {
@@ -40,7 +57,10 @@ func (s *ReviewService) Pending(ctx context.Context) (*PendingQueues, error) {
 		return nil, err
 	}
 	return &PendingQueues{
+		Tracks:            tracks,
 		LicenseGateTracks: tracks,
+		RightsByTrack:     rightsByTrack,
+		SubsByID:          subsByID,
 		Disputes:          disputes,
 		Partners:          partners,
 		Subscriptions:     subs,
@@ -101,10 +121,11 @@ func (s *DisputeService) Report(ctx context.Context, trackID string, reporterID 
 	if !domain.ValidDisputeReason(reason) {
 		return nil, domain.ErrInvalidInput
 	}
+	canonicalReason := domain.NormalizeDisputeReason(reason)
 	if _, err := s.repos.Tracks.GetByID(ctx, trackID); err != nil {
 		return nil, err
 	}
-	return s.repos.Disputes.Create(ctx, trackID, reporterID, reason, desc)
+	return s.repos.Disputes.Create(ctx, trackID, reporterID, canonicalReason, desc)
 }
 
 // Counter records a partner counter-claim; only the track owner may counter.
@@ -193,4 +214,25 @@ func (s *DisputeService) Takedown(ctx context.Context, trackID, reason string) (
 		return nil, err
 	}
 	return s.repos.Tracks.GetByID(ctx, trackID)
+}
+
+// BlockArtist records a user blocking a partner/artist (App Store / Google Play UGC rule).
+func (s *DisputeService) BlockArtist(ctx context.Context, blockerUserID, blockedPartnerID, reason string) (*domain.UserArtistBlock, error) {
+	if blockerUserID == "" || blockedPartnerID == "" {
+		return nil, domain.ErrInvalidInput
+	}
+	if _, err := s.repos.Partners.GetByID(ctx, blockedPartnerID); err != nil {
+		return nil, err
+	}
+	return s.repos.Blocks.BlockArtist(ctx, blockerUserID, blockedPartnerID, reason)
+}
+
+// UnblockArtist removes a user's block against a partner/artist.
+func (s *DisputeService) UnblockArtist(ctx context.Context, blockerUserID, blockedPartnerID string) error {
+	return s.repos.Blocks.UnblockArtist(ctx, blockerUserID, blockedPartnerID)
+}
+
+// ListBlockedArtists returns the partner blocks created by a user.
+func (s *DisputeService) ListBlockedArtists(ctx context.Context, blockerUserID string) ([]*domain.UserArtistBlock, error) {
+	return s.repos.Blocks.ListBlockedArtists(ctx, blockerUserID)
 }

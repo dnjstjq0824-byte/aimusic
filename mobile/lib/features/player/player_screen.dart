@@ -1,6 +1,8 @@
 // Mini + fullscreen player: waveform, lyrics, AI transparency, report/block.
 library;
 
+import 'dart:convert';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -186,6 +188,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                 onTap: () => Navigator.pop(context, r),
               ),
             ListTile(
+              leading: const Icon(Icons.person_off_outlined),
+              title: const Text('이 아티스트(파트너) 차단 및 큐에서 제외'),
+              onTap: () => Navigator.pop(context, '__BLOCK_ARTIST__'),
+            ),
+            ListTile(
               leading: const Icon(Icons.block),
               title: const Text('내 차단 내역 보기'),
               onTap: () {
@@ -198,6 +205,32 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       ),
     );
     if (reason == null || !context.mounted) return;
+    if (reason == '__BLOCK_ARTIST__') {
+      try {
+        final track = await api.getTrack(item.id);
+        await api.blockArtist(
+          partnerId: track.partnerId,
+          reason: '모바일 앱 사용자 직접 아티스트 차단',
+        );
+        await handler.removeTracksByPartner(track.partnerId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('아티스트가 차단되어 재생 목록에서 즉시 제외되었습니다.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                e is ApiException ? friendlyMessage(e) : '아티스트 차단에 실패했습니다.',
+              ),
+            ),
+          );
+        }
+      }
+      return;
+    }
     final descCtrl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
@@ -357,15 +390,19 @@ class _TransportControls extends ConsumerWidget {
   }
 }
 
-/// Deterministic pseudo-waveform (backend exposes no waveform API).
-class _WaveformTab extends StatelessWidget {
+/// Real waveform from track.waveformJson with deterministic fallback.
+class _WaveformTab extends ConsumerWidget {
   const _WaveformTab({required this.trackId});
 
   final String trackId;
 
   @override
-  Widget build(BuildContext context) {
-    final bars = _barsFor(trackId, 64);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detail = ref.watch(_trackDetailProvider(trackId));
+    final bars = detail.maybeWhen(
+      data: (track) => _parseWaveform(track.waveformJson) ?? _barsFor(trackId, 64),
+      orElse: () => _barsFor(trackId, 64),
+    );
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -380,12 +417,12 @@ class _WaveformTab extends StatelessWidget {
                   Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 1),
-                      height: 12 + bars[i] * 108,
+                      height: 12 + bars[i].clamp(0.05, 1.0) * 108,
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
                             .primary
-                            .withValues(alpha: 0.25 + bars[i] * 0.6),
+                            .withValues(alpha: 0.25 + bars[i].clamp(0.05, 1.0) * 0.6),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -394,11 +431,24 @@ class _WaveformTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('파형 미리보기',
+          Text('오디오 파형 (Waveform)',
               style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
+  }
+
+  List<double>? _parseWaveform(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List && decoded.isNotEmpty) {
+        return decoded
+            .map((e) => (e is num) ? e.toDouble() : 0.3)
+            .toList();
+      }
+    } catch (_) {}
+    return null;
   }
 
   List<double> _barsFor(String seed, int n) {
@@ -414,7 +464,7 @@ class _WaveformTab extends StatelessWidget {
   }
 }
 
-/// Lyrics tab (backend exposes no lyrics API; shows track disclosure).
+/// Lyrics & AI Prompt tab.
 class _LyricsTab extends ConsumerWidget {
   const _LyricsTab({required this.trackId});
 
@@ -433,9 +483,20 @@ class _LyricsTab extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              '가사가 등록되지 않았습니다.\n이 곡은 ${track.aiProvider} AI 모델로 생성된 음원입니다.',
+              track.lyrics != null && track.lyrics!.trim().isNotEmpty
+                  ? track.lyrics!
+                  : (track.isInstrumental
+                      ? '연주곡(Instrumental) 음원입니다.'
+                      : '등록된 가사가 없습니다.\n이 곡은 ${track.aiProvider} AI 모델로 생성된 음원입니다.'),
               style: Theme.of(context).textTheme.bodyLarge,
             ),
+            if (track.aiPrompt != null &&
+                track.aiPrompt!.trim().isNotEmpty &&
+                track.isPromptPublic) ...[
+              const SizedBox(height: 16),
+              Text('생성 프롬프트: ${track.aiPrompt!}',
+                  style: Theme.of(context).textTheme.bodySmall),
+            ],
             if (track.aiDisclosureText != null) ...[
               const SizedBox(height: 16),
               Text(track.aiDisclosureText!,

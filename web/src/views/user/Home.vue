@@ -1,10 +1,28 @@
 <template>
   <div>
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Ready Tracks</h1>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-xl font-bold">Ready Tracks (상업 라이선스 검증 음원)</h1>
       <button class="rounded bg-brand-600 px-3 py-1.5 text-sm font-bold disabled:opacity-50" :disabled="tracks.length === 0" @click="playAll">
         전체 재생
       </button>
+    </div>
+    <!-- Provider & Mood Curation Filter Bar -->
+    <div class="mb-4 flex flex-wrap gap-2 text-xs">
+      <select v-model="filterProvider" class="rounded bg-neutral-900 px-2.5 py-1.5" @change="load">
+        <option value="">전체 AI 플랫폼</option>
+        <option value="SUNO">Suno (Pro/Premier)</option>
+        <option value="UDIO">Udio (Standard/Pro)</option>
+        <option value="AIVA">AIVA (Pro)</option>
+        <option value="STABLE_AUDIO">Stable Audio</option>
+        <option value="CUSTOM_OPEN_MODEL">Custom Open Model</option>
+      </select>
+      <select v-model="filterMood" class="rounded bg-neutral-900 px-2.5 py-1.5" @change="load">
+        <option value="">전체 무드/장르</option>
+        <option value="Chill">Chill / Lo-Fi</option>
+        <option value="Cyberpunk">Cyberpunk / Synth</option>
+        <option value="Focus">Focus / Study</option>
+        <option value="Cinematic">Cinematic</option>
+      </select>
     </div>
     <p v-if="error" class="mb-2 text-sm text-red-400">{{ error }}</p>
     <p v-if="reported" class="mb-2 text-sm text-emerald-400">분쟁 신고가 접수되었습니다. ({{ reported }})</p>
@@ -63,6 +81,8 @@ const tracks = ref<Track[]>([]);
 const error = ref<string | null>(null);
 const offset = ref(0);
 const limit = 20;
+const filterProvider = ref('');
+const filterMood = ref('');
 const reportTarget = ref<Track | null>(null);
 const reported = ref<string | null>(null);
 const playlistPick = ref('');
@@ -70,7 +90,10 @@ const playlistPick = ref('');
 async function load(): Promise<void> {
   error.value = null;
   try {
-    tracks.value = await trackApi.list(limit, offset.value);
+    tracks.value = await trackApi.list(limit, offset.value, {
+      provider: filterProvider.value || undefined,
+      mood: filterMood.value || undefined,
+    });
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   }

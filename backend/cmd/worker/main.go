@@ -102,6 +102,13 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 			return err
 		}
 		if licenseReject {
+			if p.InputBucket != "" && p.InputKey != "" {
+				if delErr := w.storage.Delete(ctx, p.InputBucket, p.InputKey); delErr != nil {
+					log.Printf("warn: delete rejected staging file %s/%s: %v", p.InputBucket, p.InputKey, delErr)
+				} else {
+					log.Printf("deleted rejected staging file %s/%s", p.InputBucket, p.InputKey)
+				}
+			}
 			return w.repos.Tracks.UpdateStatus(ctx, track.ID, domain.TrackLicenseGateRejected, &msg)
 		}
 		updated, err := w.repos.Jobs.GetByID(ctx, job.ID)
@@ -119,7 +126,9 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 	if err != nil {
 		return fail(fmt.Sprintf("policy lookup for %s: %v", track.AIProvider, err), true)
 	}
-	if err := w.recheckLicense(ctx, track, policy); err != nil {
+	planTier, err := w.recheckLicense(ctx, track, policy)
+	if err != nil {
+		_ = w.repos.Rights.SetGate3Report(ctx, track.ID, false, audio.FormatFFprobeReportJSON(nil, false, err.Error()))
 		return fail(err.Error(), true)
 	}
 
@@ -145,31 +154,45 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 		return fail(fmt.Sprintf("ffprobe: %v", err), false)
 	}
 	if keyword, blocked := audio.CheckBlockedMetadata(probe.Tags, policy.BlockedMetadataKeywords); blocked {
-		return fail(fmt.Sprintf("차단된 메타데이터 키워드 감지: %s", keyword), true)
+		reason := fmt.Sprintf("차단된 메타데이터 키워드 감지: %s", keyword)
+		_ = w.repos.Rights.SetGate3Report(ctx, track.ID, false, audio.FormatFFprobeReportJSON(probe, false, reason))
+		return fail(reason, true)
 	}
 	if err := audio.CheckBitrate(probe.Ext, probe.CodecName, probe.BitrateKbps, policy.MinBitrateKbps); err != nil {
-		return fail(fmt.Sprintf("비트레이트 기준 미달: %v", err), true)
+		reason := fmt.Sprintf("비트레이트 기준 미달: %v", err)
+		_ = w.repos.Rights.SetGate3Report(ctx, track.ID, false, audio.FormatFFprobeReportJSON(probe, false, reason))
+		return fail(reason, true)
 	}
+	_ = w.repos.Rights.SetGate3Report(ctx, track.ID, true, audio.FormatFFprobeReportJSON(probe, true, ""))
 
 	outDir := filepath.Join(tmpDir, "hls")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fail(fmt.Sprintf("output dir: %v", err), false)
 	}
-	comment := fmt.Sprintf("ai_music|%s|%s", track.ID, track.AIProvider)
+	if planTier == "" {
+		planTier = "commercial"
+	}
 	encodeCtx, cancel := context.WithTimeout(ctx, 30*time.Minute)
-	encodeErr := w.runEncode(encodeCtx, localInput, outDir, comment, track.AIProvider, "commercial")
+	encodeErr := w.runEncode(encodeCtx, localInput, outDir, audio.AIWatermarkComment, track.AIProvider, planTier)
 	cancel()
 	if encodeErr != nil {
 		return fail(fmt.Sprintf("ffmpeg hls: %v", encodeErr), false)
 	}
 
+	var wavePtr, fpPtr *string
 	waveCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	peaks, waveErr := audio.ExtractWaveform(waveCtx, localInput, 100)
 	cancel()
 	if waveErr != nil {
 		log.Printf("waveform skipped for track %s: %v", track.ID, waveErr)
-	} else if waveJSON, err := audio.WaveformJSON(peaks); err == nil {
-		_ = os.WriteFile(filepath.Join(outDir, "peaks.json"), []byte(waveJSON), 0o644)
+	} else {
+		if fp := audio.ComputeAudioFingerprint(peaks); fp != "" {
+			fpPtr = &fp
+		}
+		if waveJSON, err := audio.WaveformJSON(peaks); err == nil {
+			wavePtr = &waveJSON
+			_ = os.WriteFile(filepath.Join(outDir, "peaks.json"), []byte(waveJSON), 0o644)
+		}
 	}
 
 	if err := w.uploadDir(ctx, outDir, p.OutputPrefix); err != nil {
@@ -188,52 +211,52 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 	if err := w.repos.Jobs.MarkSucceeded(ctx, job.ID); err != nil {
 		return err
 	}
-	if err := w.repos.Tracks.SetTranscoded(ctx, track.ID, p.OutputPrefix, bitrate, durationMs); err != nil {
+	if err := w.repos.Tracks.SetTranscoded(ctx, track.ID, p.OutputPrefix, bitrate, durationMs, wavePtr, fpPtr); err != nil {
 		return err
 	}
-	log.Printf("job %s track %s transcoded to %s", job.ID, track.ID, p.OutputPrefix)
+	log.Printf("job %s track %s transcoded to %s (LICENSE_GATE_PENDING awaiting Admin Gate 4)", job.ID, track.ID, p.OutputPrefix)
 	return nil
 }
 
 // recheckLicense re-validates the commercial gate at transcode time so a
 // track that bypassed finalize (or whose policy/subscription changed since)
 // can never reach HLS packaging.
-func (w *worker) recheckLicense(ctx context.Context, track *domain.Track, policy *domain.AIProviderPolicy) error {
+func (w *worker) recheckLicense(ctx context.Context, track *domain.Track, policy *domain.AIProviderPolicy) (string, error) {
 	if !policy.AllowsStandaloneStreaming {
 		msg := policy.RejectionMessageKo
 		if msg == "" {
 			msg = "provider license does not allow standalone streaming"
 		}
-		return fmt.Errorf("상업 라이선스 재검증 실패: %s", msg)
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: %s", msg)
 	}
 	rights, err := w.repos.Rights.GetByTrack(ctx, track.ID)
 	if err != nil {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 권리선언 누락: %v", err)
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 권리선언 누락: %v", err)
 	}
 	if rights.SubscriptionID == nil || *rights.SubscriptionID == "" {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 구독 증빙 누락")
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 구독 증빙 누락")
 	}
 	if rights.GeneratedAt == nil || rights.GeneratedAt.IsZero() {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 음원 생성일 누락")
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 음원 생성일 누락")
 	}
 	sub, err := w.repos.Gate.GetSubscription(ctx, track.PartnerID, track.AIProvider, *rights.SubscriptionID)
 	if err != nil {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 구독 조회 오류: %v", err)
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 구독 조회 오류: %v", err)
 	}
 	if sub == nil || sub.Status != domain.SubVerified {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 검증된 유료 구독이 아님")
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 검증된 유료 구독이 아님")
 	}
 	start := sub.CreatedAt
 	if sub.VerifiedAt != nil && !sub.VerifiedAt.IsZero() {
 		start = *sub.VerifiedAt
 	}
 	if rights.GeneratedAt.Before(start) {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 구독 기간 이전 생성(소급 불가)")
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 구독 기간 이전 생성(소급 불가)")
 	}
 	if sub.ExpiresAt != nil && !sub.ExpiresAt.IsZero() && rights.GeneratedAt.After(*sub.ExpiresAt) {
-		return fmt.Errorf("상업 라이선스 재검증 실패: 구독 기간 외 생성")
+		return "", fmt.Errorf("상업 라이선스 재검증 실패: 구독 기간 외 생성")
 	}
-	return nil
+	return sub.PlanName, nil
 }
 
 func (w *worker) runEncode(ctx context.Context, input, outDir, comment, provider, tier string) error {

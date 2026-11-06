@@ -54,6 +54,9 @@ CREATE TABLE ai_provider_policies (
   provider TEXT NOT NULL
     CHECK (provider IN ('SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'CUSTOM_OPEN_MODEL')),
   allows_standalone_streaming BOOLEAN NOT NULL,
+  allowed_plan_tiers TEXT[] NOT NULL DEFAULT '{}',
+  blocked_plan_tiers TEXT[] NOT NULL DEFAULT '{}',
+  sync_only_plan_tiers TEXT[] NOT NULL DEFAULT '{}',
   min_bitrate_kbps INT NOT NULL DEFAULT 192 CHECK (min_bitrate_kbps > 0),
   blocked_metadata_keywords TEXT[] NOT NULL DEFAULT '{}',
   rejection_message_ko TEXT NOT NULL,
@@ -141,9 +144,20 @@ CREATE TABLE tracks (
   album_id UUID,
   partner_id UUID NOT NULL,
   title TEXT NOT NULL,
+  genre TEXT,
+  mood_tags TEXT[] NOT NULL DEFAULT '{}',
+  ai_generation_type TEXT NOT NULL DEFAULT 'FULL_AI'
+    CHECK (ai_generation_type IN ('FULL_AI', 'AI_ASSISTED_HUMAN')),
+  ai_model_version TEXT,
+  ai_prompt TEXT,
+  is_prompt_public BOOLEAN NOT NULL DEFAULT TRUE,
+  is_instrumental BOOLEAN NOT NULL DEFAULT FALSE,
+  lyrics TEXT,
   duration_ms INT CHECK (duration_ms IS NULL OR duration_ms > 0),
   original_object_key TEXT NOT NULL,
+  audio_fingerprint_hash TEXT,
   hls_prefix TEXT,
+  waveform_json TEXT,
   ai_provider TEXT NOT NULL
     CHECK (ai_provider IN ('SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'CUSTOM_OPEN_MODEL')),
   ai_generated BOOLEAN NOT NULL DEFAULT TRUE,
@@ -171,6 +185,17 @@ CREATE TABLE track_rights_declarations (
   declares_ownership BOOLEAN NOT NULL DEFAULT FALSE,
   declares_no_voice_clone BOOLEAN NOT NULL DEFAULT FALSE,
   declares_training_consent BOOLEAN NOT NULL DEFAULT FALSE,
+  confirmed_no_unauthorized_sampling BOOLEAN NOT NULL DEFAULT FALSE,
+  confirmed_indemnification BOOLEAN NOT NULL DEFAULT FALSE,
+  plan_tier_used TEXT,
+  provider_track_url TEXT,
+  human_contribution_types TEXT[] NOT NULL DEFAULT '{}',
+  human_contribution_desc TEXT,
+  gate1_policy_passed BOOLEAN NOT NULL DEFAULT TRUE,
+  gate2_date_passed BOOLEAN NOT NULL DEFAULT TRUE,
+  gate3_ffprobe_passed BOOLEAN NOT NULL DEFAULT FALSE,
+  ffprobe_report_json TEXT,
+  signed_ip TEXT,
   source_model TEXT,
   subscription_id UUID,
   generated_at TIMESTAMPTZ,
@@ -232,7 +257,9 @@ CREATE TABLE playlists (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_user_id UUID NOT NULL,
   title TEXT NOT NULL,
+  description TEXT,
   is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  is_official_curation BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_playlist_owner FOREIGN KEY (owner_user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -324,3 +351,16 @@ CREATE TABLE user_blocks (
   CONSTRAINT fk_block_by FOREIGN KEY (blocked_by) REFERENCES users (id) ON DELETE SET NULL
 );
 CREATE INDEX idx_blocks_user ON user_blocks (user_id);
+
+-- 18. user_artist_blocks (App Store / Google Play UGC compliance: user blocks partner/artist)
+CREATE TABLE user_artist_blocks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  blocker_user_id UUID NOT NULL,
+  blocked_partner_id UUID NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_artist_blocks_unique UNIQUE (blocker_user_id, blocked_partner_id),
+  CONSTRAINT fk_uab_blocker FOREIGN KEY (blocker_user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_uab_partner FOREIGN KEY (blocked_partner_id) REFERENCES partner_profiles (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_uab_blocker ON user_artist_blocks (blocker_user_id);

@@ -23,14 +23,43 @@ type TrackHandler struct {
 	Buckets storage.Buckets
 }
 
-// ListTracks returns READY tracks.
+// ListTracks returns READY tracks with optional provider/genre/mood filters.
 func (h *TrackHandler) ListTracks(c *gin.Context) {
-	tracks, err := h.Repos.Tracks.ListReady(c.Request.Context(), queryInt(c, "limit", 20), queryInt(c, "offset", 0))
+	tracks, err := h.Repos.Tracks.ListReady(c.Request.Context(), queryInt(c, "limit", 50), queryInt(c, "offset", 0))
 	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	ok(c, tracks)
+	providerFilter := strings.TrimSpace(strings.ToUpper(c.Query("provider")))
+	genreFilter := strings.TrimSpace(strings.ToLower(c.Query("genre")))
+	moodFilter := strings.TrimSpace(strings.ToLower(c.Query("mood")))
+	if providerFilter == "" && genreFilter == "" && moodFilter == "" {
+		ok(c, tracks)
+		return
+	}
+	filtered := make([]*domain.Track, 0, len(tracks))
+	for _, t := range tracks {
+		if providerFilter != "" && strings.ToUpper(t.AIProvider) != providerFilter {
+			continue
+		}
+		if genreFilter != "" && (t.Genre == nil || !strings.EqualFold(*t.Genre, genreFilter)) {
+			continue
+		}
+		if moodFilter != "" {
+			matched := false
+			for _, m := range t.MoodTags {
+				if strings.EqualFold(m, moodFilter) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+		filtered = append(filtered, t)
+	}
+	ok(c, filtered)
 }
 
 // GetTrack returns one track.
@@ -43,16 +72,23 @@ func (h *TrackHandler) GetTrack(c *gin.Context) {
 	ok(c, track)
 }
 
-// Stream issues a short-lived signed HLS URL for READY tracks only.
+// Stream issues a short-lived signed HLS URL for READY tracks (or LICENSE_GATE_PENDING for Admin review preview).
 func (h *TrackHandler) Stream(c *gin.Context) {
 	track, err := h.Repos.Tracks.GetByID(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	if track.Status != domain.TrackReady || track.HLSPrefix == nil {
+	isAdminPreview := CurrentRole(c) == domain.RoleAdmin && track.Status == domain.TrackLicenseGatePending
+	if (track.Status != domain.TrackReady && !isAdminPreview) || track.HLSPrefix == nil {
 		AbortError(c, domain.ErrNotStreamable)
 		return
+	}
+	if h.Repos != nil && h.Repos.Blocks != nil && CurrentUserID(c) != "" {
+		if blocked, err := h.Repos.Blocks.IsArtistBlocked(c.Request.Context(), CurrentUserID(c), track.PartnerID); err == nil && blocked {
+			AbortError(c, domain.ErrNotStreamable)
+			return
+		}
 	}
 	base := strings.TrimRight(h.Config.Storage.CDNBaseURL, "/")
 	if base == "" {

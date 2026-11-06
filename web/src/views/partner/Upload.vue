@@ -10,17 +10,25 @@
 
     <!-- Step 1: Gate1-2 pre-check -->
     <section v-if="store.step === 1" class="space-y-3 rounded bg-neutral-900 p-4">
-      <h2 class="font-bold">Step 1 — 라이선스 사전검사 (Gate1-2)</h2>
+      <h2 class="font-bold">Step 1 — 상업 라이선스 사전 검증 (Gate 1 &amp; Gate 2)</h2>
       <div class="grid gap-2 sm:grid-cols-2">
         <label class="text-sm">AI 제공자
-          <select v-model="store.provider" class="mt-1 w-full rounded bg-neutral-800 p-2">
+          <select v-model="store.provider" class="mt-1 w-full rounded bg-neutral-800 p-2" @change="store.planTierUsed = ''">
             <option value="">선택…</option>
             <option v-for="p in store.policies" :key="p.provider" :value="p.provider">
-              {{ p.provider }} {{ p.allowsStandaloneStreaming ? '' : '(sync-only)' }}
+              {{ p.provider }} {{ p.allowsStandaloneStreaming ? '' : '(Sync-only 단독 스트리밍 불가)' }}
             </option>
           </select>
         </label>
-        <label class="text-sm">구독
+        <label class="text-sm">생성 당시 사용 요금제 (Plan Tier)
+          <select v-model="store.planTierUsed" class="mt-1 w-full rounded bg-neutral-800 p-2">
+            <option value="">구독 요금제 자동 적용 / 직접 선택…</option>
+            <option v-for="tier in store.availablePlanTiers" :key="tier" :value="tier">
+              {{ store.provider }} - {{ tier }}
+            </option>
+          </select>
+        </label>
+        <label class="text-sm">등록된 유료 구독 증빙
           <select v-model="store.subscriptionId" class="mt-1 w-full rounded bg-neutral-800 p-2">
             <option value="">선택…</option>
             <option v-for="s in store.subscriptions" :key="s.id" :value="s.id">
@@ -31,13 +39,39 @@
         <label class="text-sm">음원 생성일시
           <input v-model="store.generatedAt" type="datetime-local" class="mt-1 w-full rounded bg-neutral-800 p-2" />
         </label>
-        <label class="text-sm">음원 파일
-          <input type="file" accept="audio/*" class="mt-1 w-full text-sm" @change="onFile" />
+        <label class="text-sm sm:col-span-2">AI 플랫폼 원본 트랙 공유 URL (선택)
+          <input
+            v-model="store.providerTrackUrl"
+            placeholder="https://suno.com/song/... 또는 https://www.udio.com/songs/..."
+            class="mt-1 w-full rounded bg-neutral-800 p-2"
+          />
+        </label>
+        <label class="text-sm sm:col-span-2">음원 파일 (무손실 WAV/FLAC 또는 192kbps+ 고음질 오디오)
+          <input
+            type="file"
+            accept="audio/*"
+            :disabled="store.instantBlockReason !== null"
+            class="mt-1 w-full text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            @change="onFile"
+          />
         </label>
       </div>
+
+      <!-- Real-time Instant Block Warning Banner -->
+      <div
+        v-if="store.instantBlockReason"
+        class="rounded border border-red-600 bg-red-950/60 p-3 text-sm font-semibold text-red-200"
+      >
+        ⚠️ {{ store.instantBlockReason }}
+      </div>
+
       <LicensePrecheckWidget :status="store.gate12" :code="store.gate12Code" />
       <div class="flex gap-2">
-        <button class="rounded bg-brand-600 px-3 py-1.5 text-sm font-bold disabled:opacity-50" :disabled="store.gate12 === 'checking'" @click="precheck">
+        <button
+          class="rounded bg-brand-600 px-3 py-1.5 text-sm font-bold disabled:opacity-50"
+          :disabled="store.gate12 === 'checking' || store.instantBlockReason !== null"
+          @click="precheck"
+        >
           {{ store.gate12 === 'checking' ? '검사 중…' : 'Gate1-2 검사 실행' }}
         </button>
         <button
@@ -49,8 +83,8 @@
           Step 2로 이동
         </button>
       </div>
-      <p v-if="store.gate12 === 'fail'" class="text-xs text-red-400">
-        검사를 통과하지 못하면 Step 2가 비활성화됩니다. 상업용 구독·생성일·제공자 정책을 확인해 주세요.
+      <p v-if="store.gate12 === 'fail' || store.instantBlockReason" class="text-xs text-red-400">
+        검사를 통과하지 못하면 파일 업로드 및 Step 2가 비활성화됩니다. 상업용 구독·생성일·제공자 정책을 확인해 주세요.
       </p>
     </section>
 
@@ -107,21 +141,44 @@
               <option v-for="a in albums" :key="a.id" :value="a.id">{{ a.title }}</option>
             </select>
           </label>
-          <label class="block text-sm">소스 모델
-            <input v-model="store.sourceModel" placeholder="예: suno-v4" class="mt-1 w-full rounded bg-neutral-800 p-2" />
+          <label class="block text-sm">소스 모델 버전
+            <input v-model="store.sourceModel" placeholder="예: Suno v4 / Udio v1.5" class="mt-1 w-full rounded bg-neutral-800 p-2" />
+          </label>
+          <label class="block text-sm">장르 (Genre)
+            <input v-model="store.genre" placeholder="예: Electronic, Ambient, Synthwave" class="mt-1 w-full rounded bg-neutral-800 p-2" />
+          </label>
+          <label class="block text-sm">무드 태그 (쉼표 구분)
+            <input v-model="store.moodTagsInput" placeholder="예: Chill, Focus, Cyberpunk" class="mt-1 w-full rounded bg-neutral-800 p-2" />
           </label>
         </div>
         <fieldset class="text-sm">
           <legend class="font-semibold">AI 공개 유형</legend>
-          <label class="mr-4"><input v-model="store.disclosure" type="radio" value="FULL_AI" /> FULL_AI (전곡 AI 생성)</label>
-          <label><input v-model="store.disclosure" type="radio" value="AI_ASSISTED_HUMAN" /> AI_ASSISTED_HUMAN (인간 창작 + AI 보조)</label>
+          <label class="mr-4"><input v-model="store.disclosure" type="radio" value="FULL_AI" /> FULL_AI (100% AI 생성)</label>
+          <label><input v-model="store.disclosure" type="radio" value="AI_ASSISTED_HUMAN" /> AI_ASSISTED_HUMAN (인간+AI 공동 창작)</label>
         </fieldset>
+        <div v-if="store.disclosure === 'AI_ASSISTED_HUMAN'" class="text-sm">
+          <label class="block">인간 창작 기여 내역 (한국저작권위원회 AI-인간 공동창작물 등록 대비)
+            <input
+              v-model="store.humanContributionDesc"
+              placeholder="예: 직접 작사 100%, 후처리 믹싱 및 보컬 멜로디 편곡 수행"
+              class="mt-1 w-full rounded bg-neutral-800 p-2"
+            />
+          </label>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <label class="block text-sm">AI 생성 프롬프트 (선택)
+            <textarea v-model="store.aiPrompt" rows="2" placeholder="생성 시 사용한 프롬프트" class="mt-1 w-full rounded bg-neutral-800 p-2" />
+          </label>
+          <label class="block text-sm">가사 (Lyrics / 연주곡은 비워둠)
+            <textarea v-model="store.lyrics" rows="2" placeholder="트랙 가사 입력" class="mt-1 w-full rounded bg-neutral-800 p-2" />
+          </label>
+        </div>
         <fieldset class="space-y-1 text-sm">
-          <legend class="font-semibold">법적 확인 (4개 모두 필수)</legend>
-          <label class="block"><input v-model="store.declaresOwnership" type="checkbox" /> 본 음원에 대한 권리를 보유하고 제3자 권리를 침해하지 않음을 선언합니다.</label>
-          <label class="block"><input v-model="store.declaresNoVoiceClone" type="checkbox" /> 무단 목소리 클로닝을 포함하지 않음을 선언합니다.</label>
-          <label class="block"><input v-model="store.declaresTrainingConsent" type="checkbox" /> 학습 데이터 적법성 및 제공자 약관 준수를 선언합니다.</label>
-          <label class="block"><input v-model="store.agreesCommercialTerms" type="checkbox" /> 상업 이용 약관 및 정산 정책에 동의합니다.</label>
+          <legend class="font-semibold">법적 보증 서약 (4개 모두 필수 체크)</legend>
+          <label class="block"><input v-model="store.declaresOwnership" type="checkbox" /> [필수 1] 본 음원은 유료 상업 구독 기간 중 적법하게 생성되어 상업적 스트리밍 유통 및 수익화 권리를 적법하게 보유하고 있음을 보증합니다.</label>
+          <label class="block"><input v-model="store.declaresNoVoiceClone" type="checkbox" /> [필수 2] 실존 가수·성우·유명인의 음성을 무단 클로닝(딥보이스)하거나 초상권·퍼블리시티권을 침해하지 않았음을 보증합니다.</label>
+          <label class="block"><input v-model="store.declaresTrainingConsent" type="checkbox" /> [필수 3] 타인의 기존 저작물(멜로디·가사·마스터 음원)을 무단 샘플링하거나 표절하지 않았음을 보증합니다.</label>
+          <label class="block"><input v-model="store.agreesCommercialTerms" type="checkbox" /> [필수 4] 제3자 권리 침해 또는 비상업 요금제 허위 업로드 적발 시 정산금 전액 몰수 및 민·형사상 면책(Indemnification) 조항에 동의합니다.</label>
         </fieldset>
         <div class="grid gap-2 sm:grid-cols-2">
           <label class="block text-sm">비트레이트 (kbps)

@@ -251,25 +251,33 @@ type PolicyRepo struct{ db *sql.DB }
 
 func scanPolicy(row interface{ Scan(...any) error }) (*domain.AIProviderPolicy, error) {
 	p := &domain.AIProviderPolicy{}
-	var joined string
+	var allowedJoined, blockedTiersJoined, syncOnlyJoined, joined string
 	var terms sql.NullString
-	err := row.Scan(&p.ID, &p.Provider, &p.AllowsStandaloneStreaming, &p.MinBitrateKbps,
-		&joined, &p.RejectionMessageKo, &terms, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.ID, &p.Provider, &p.AllowsStandaloneStreaming,
+		&allowedJoined, &blockedTiersJoined, &syncOnlyJoined,
+		&p.MinBitrateKbps, &joined, &p.RejectionMessageKo, &terms, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	p.AllowedPlanTiers = splitKeywords(allowedJoined)
+	p.BlockedPlanTiers = splitKeywords(blockedTiersJoined)
+	p.SyncOnlyPlanTiers = splitKeywords(syncOnlyJoined)
 	p.BlockedMetadataKeywords = splitKeywords(joined)
 	p.CommercialTermsURL = strPtr(terms)
 	return p, nil
 }
 
-const policyColumns = `id::text, provider, allows_standalone_streaming, min_bitrate_kbps,
+const policyColumns = `id::text, provider, allows_standalone_streaming,
+	COALESCE(array_to_string(allowed_plan_tiers, chr(31)), ''),
+	COALESCE(array_to_string(blocked_plan_tiers, chr(31)), ''),
+	COALESCE(array_to_string(sync_only_plan_tiers, chr(31)), ''),
+	min_bitrate_kbps,
 	COALESCE(array_to_string(blocked_metadata_keywords, chr(31)), ''), rejection_message_ko,
 	commercial_terms_url, created_at, updated_at`
 
 func (r *PolicyRepo) Get(ctx context.Context, provider string) (*domain.AIProviderPolicy, error) {
 	p, err := scanPolicy(r.db.QueryRowContext(ctx,
-		`SELECT `+policyColumns+` FROM ai_provider_policies WHERE provider = $1`, provider))
+		`SELECT `+policyColumns+` FROM ai_provider_policies WHERE provider = $1 OR id::text = $1`, provider))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
@@ -294,15 +302,33 @@ func (r *PolicyRepo) List(ctx context.Context) ([]*domain.AIProviderPolicy, erro
 	return out, rows.Err()
 }
 
-// Update rewrites a provider policy row.
-func (r *PolicyRepo) Update(ctx context.Context, provider string, allows bool, minKbps int, blocked []string, rejectionKo string, termsURL *string) (*domain.AIProviderPolicy, error) {
+// Update rewrites a provider policy row (matching by provider code or policy ID).
+func (r *PolicyRepo) Update(ctx context.Context, providerOrID string, allows bool, minKbps int, blocked []string, rejectionKo string, termsURL *string, allowedTiers, blockedTiers, syncOnlyTiers []string) (*domain.AIProviderPolicy, error) {
+	cur, err := r.Get(ctx, providerOrID)
+	if err != nil {
+		return nil, err
+	}
+	if allowedTiers == nil {
+		allowedTiers = cur.AllowedPlanTiers
+	}
+	if blockedTiers == nil {
+		blockedTiers = cur.BlockedPlanTiers
+	}
+	if syncOnlyTiers == nil {
+		syncOnlyTiers = cur.SyncOnlyPlanTiers
+	}
 	p, err := scanPolicy(r.db.QueryRowContext(ctx, `
 		UPDATE ai_provider_policies
 		SET allows_standalone_streaming = $2, min_bitrate_kbps = $3,
 			blocked_metadata_keywords = string_to_array($4, chr(31)),
-			rejection_message_ko = $5, commercial_terms_url = $6
+			rejection_message_ko = $5, commercial_terms_url = $6,
+			allowed_plan_tiers = string_to_array($7, chr(31)),
+			blocked_plan_tiers = string_to_array($8, chr(31)),
+			sync_only_plan_tiers = string_to_array($9, chr(31))
 		WHERE provider = $1
-		RETURNING `+policyColumns, provider, allows, minKbps, joinKeywords(blocked), rejectionKo, nullStr(termsURL)))
+		RETURNING `+policyColumns,
+		cur.Provider, allows, minKbps, joinKeywords(blocked), rejectionKo, nullStr(termsURL),
+		joinKeywords(allowedTiers), joinKeywords(blockedTiers), joinKeywords(syncOnlyTiers)))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}

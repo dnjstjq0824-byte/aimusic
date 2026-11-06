@@ -100,14 +100,34 @@ func RunFFprobe(ctx context.Context, path string) (*ProbeResult, error) {
 	return res, nil
 }
 
+// DefaultBlockedMetadataKeywords is the baseline non-commercial watermark/tag filter
+// mandated by Spec 6.2.2.
+var DefaultBlockedMetadataKeywords = []string{
+	"free",
+	"non-commercial",
+	"trial",
+	"demo",
+	"evaluation",
+	"personal use only",
+	"watermarked",
+	"free-trial",
+}
+
+// AIWatermarkComment is the mandatory stream header watermark per KR AI Basic Act Art.31 (Spec 6.2.2).
+const AIWatermarkComment = "AI-Generated Audio (KR AI Basic Act Art.31 Compliant | Commercial License Verified)"
+
 // CheckBlockedMetadata scans all tags (keys and values, lowercased) for blocked
-// keywords. It returns the matched keyword when found.
+// keywords (combining policy keywords and DefaultBlockedMetadataKeywords).
+// It returns the matched keyword when found.
 func CheckBlockedMetadata(tags map[string]string, blocked []string) (string, bool) {
 	lowered := make([]string, 0, len(tags)*2)
 	for k, v := range tags {
 		lowered = append(lowered, strings.ToLower(k), strings.ToLower(v))
 	}
-	for _, b := range blocked {
+	all := make([]string, 0, len(blocked)+len(DefaultBlockedMetadataKeywords))
+	all = append(all, blocked...)
+	all = append(all, DefaultBlockedMetadataKeywords...)
+	for _, b := range all {
 		needle := strings.ToLower(strings.TrimSpace(b))
 		if needle == "" {
 			continue
@@ -253,4 +273,43 @@ func WaveformJSON(peaks []float64) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// ComputeAudioFingerprint produces a deterministic 64-bit FNV-1a hex signature
+// over quantized waveform peaks for duplicate/derivative audio detection.
+func ComputeAudioFingerprint(peaks []float64) string {
+	if len(peaks) == 0 {
+		return ""
+	}
+	var h uint64 = 14695981039346656037
+	for _, p := range peaks {
+		q := uint64(math.Round(math.Max(0, math.Min(1, p)) * 255))
+		h ^= q
+		h *= 1099511628211
+	}
+	return fmt.Sprintf("fp_%016x", h)
+}
+
+// FormatFFprobeReportJSON serializes the Gate 3 forensic report stored in
+// track_rights_declarations.ffprobe_report_json.
+func FormatFFprobeReportJSON(probe *ProbeResult, gate3Passed bool, rejectionReason string) string {
+	report := map[string]any{
+		"gate3Passed":     gate3Passed,
+		"rejectionReason": rejectionReason,
+	}
+	if probe != nil {
+		report["formatName"] = probe.FormatName
+		report["durationSec"] = probe.DurationSec
+		report["bitrateKbps"] = probe.BitrateKbps
+		report["codecName"] = probe.CodecName
+		report["sampleRate"] = probe.SampleRate
+		report["channels"] = probe.Channels
+		report["tags"] = probe.Tags
+		report["ext"] = probe.Ext
+	}
+	b, err := json.Marshal(report)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
 }

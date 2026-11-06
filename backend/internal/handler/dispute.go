@@ -65,3 +65,42 @@ func (h *DisputeHandler) MyBlocks(c *gin.Context) {
 	}
 	ok(c, blocks)
 }
+
+type blockArtistRequest struct {
+	PartnerID string `json:"partnerId" binding:"required"`
+	Reason    string `json:"reason"`
+}
+
+// BlockArtist blocks a partner/artist for the calling user (UGC store compliance).
+func (h *DisputeHandler) BlockArtist(c *gin.Context) {
+	var req blockArtistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	b, err := h.Disputes.BlockArtist(c.Request.Context(), CurrentUserID(c), req.PartnerID, req.Reason)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	created(c, b)
+}
+
+// ListArtistBlocks returns the caller's blocked artists.
+func (h *DisputeHandler) ListArtistBlocks(c *gin.Context) {
+	blocks, err := h.Disputes.ListBlockedArtists(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, blocks)
+}
+
+// UnblockArtist removes an artist block for the calling user.
+func (h *DisputeHandler) UnblockArtist(c *gin.Context) {
+	if err := h.Disputes.UnblockArtist(c.Request.Context(), CurrentUserID(c), c.Param("partnerId")); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"unblocked": true})
+}

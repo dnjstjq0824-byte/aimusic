@@ -300,6 +300,10 @@ SHA_SYNC="$(rand_hex 32)"
 code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"SOUNDRAW\",\"audioSha256\":\"$SHA_SYNC\",\"fileName\":\"sync-only.mp3\",\"generatedAt\":\"$GEN_OK\",\"requiresActiveSub\":false}")"
 assert_status "pre-check SOUNDRAW SYNC-only -> 403" "403" "$code"
 assert_contains "sync-only gate code" "ERR_SYNC_ONLY_LICENSE" "$(cat "$BODY")"
+SHA_AIVA_STD="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"AIVA\",\"planTierUsed\":\"Standard\",\"audioSha256\":\"$SHA_AIVA_STD\",\"fileName\":\"aiva-std.mp3\",\"generatedAt\":\"$GEN_OK\",\"requiresActiveSub\":false}")"
+assert_status "pre-check AIVA Standard SYNC-only -> 403" "403" "$code"
+assert_contains "AIVA Standard sync-only gate code" "ERR_SYNC_ONLY_LICENSE" "$(cat "$BODY")"
 policy_allows="$(psql_q "SELECT allows_standalone_streaming FROM ai_provider_policies WHERE provider='SOUNDRAW';" | tr -d ' \r\n')"
 assert_eq "SOUNDRAW allows_standalone_streaming=false via psql" "f" "$policy_allows"
 
@@ -459,11 +463,11 @@ else
   HAPPY_TRACK_ID="$(jget "data.trackId")"
   HAPPY_JOB_ID="$(jget "data.jobId")"
   if [ -z "$HAPPY_TRACK_ID" ]; then fail "happy trackId empty"; else pass "happy track $HAPPY_TRACK_ID job $HAPPY_JOB_ID"; fi
-  if wait_psql_eq "SELECT status FROM tracks WHERE id='$HAPPY_TRACK_ID'::uuid;" "READY" 240; then
-    pass "happy track READY (worker HLS done)"
+  if wait_psql_eq "SELECT status FROM tracks WHERE id='$HAPPY_TRACK_ID'::uuid;" "LICENSE_GATE_PENDING" 240; then
+    pass "happy track LICENSE_GATE_PENDING (worker HLS done, awaiting Gate 4 admin review)"
   else
     got="$(psql_q "SELECT status FROM tracks WHERE id='$HAPPY_TRACK_ID'::uuid;" | tr -d ' \r\n')"
-    fail "happy READY timeout (status=$got)"
+    fail "happy LICENSE_GATE_PENDING timeout (status=$got)"
   fi
   job_ok="$(psql_q "SELECT status FROM transcoding_jobs WHERE id='$HAPPY_JOB_ID'::uuid;" | tr -d ' \r\n')"
   assert_eq "happy job SUCCEEDED" "SUCCEEDED" "$job_ok"
@@ -471,10 +475,13 @@ else
   if [ -z "$hls_prefix" ]; then fail "happy hls_prefix empty"; else pass "happy hls_prefix $hls_prefix"; fi
   qdepth="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"
   assert_eq "redis transcode:queue drained" "0" "$qdepth"
-  # APPROVED: admin review approve keeps READY (curation-visible).
+  # Gate 4 pre-approval check: user cannot stream before admin approval.
+  code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+  assert_status "stream before Gate 4 approval -> 403" "403" "$code"
+  # APPROVED: admin review approve transitions LICENSE_GATE_PENDING -> READY.
   code="$(api POST "/admin/review" "$ADMIN_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"approve\":true}")"
   assert_status "admin review approve happy" "200" "$code"
-  assert_contains "happy still READY" "READY" "$(cat "$BODY")"
+  assert_contains "happy now READY" "READY" "$(cat "$BODY")"
   code="$(api GET "/tracks?limit=50" "" "")"
   assert_status "public list tracks" "200" "$code"
   assert_contains "happy in public list" "$HAPPY_TRACK_ID" "$(cat "$BODY")"
@@ -548,9 +555,9 @@ if [ "$HAVE_FFMPEG" -eq 1 ]; then
   code="$(finalize_track "$PB_TOKEN" "$PB_KEY" "E2E PartnerB Track" "SUNO" "$PB_SUB_ID" "$PB_SHA" "$GEN_OK")"
   assert_status "partnerB finalize" "201" "$code"
   DISPUTE_TRACK_B="$(jget "data.trackId")"
-  if wait_psql_eq "SELECT status FROM tracks WHERE id='$DISPUTE_TRACK_B'::uuid;" "READY" 240; then
-    pass "partnerB track READY $DISPUTE_TRACK_B"
-  else fail "partnerB READY timeout"; fi
+  if wait_psql_eq "SELECT status FROM tracks WHERE id='$DISPUTE_TRACK_B'::uuid;" "LICENSE_GATE_PENDING" 240; then
+    pass "partnerB track LICENSE_GATE_PENDING $DISPUTE_TRACK_B"
+  else fail "partnerB LICENSE_GATE_PENDING timeout"; fi
   code="$(api POST "/admin/review" "$ADMIN_TOKEN" "{\"trackId\":\"$DISPUTE_TRACK_B\",\"approve\":true}")"
   assert_status "admin approve partnerB track" "200" "$code"
 else

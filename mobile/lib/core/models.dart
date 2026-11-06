@@ -12,9 +12,18 @@ class Track {
     required this.status,
     required this.playCount,
     this.albumId,
+    this.genre,
+    this.moodTags = const [],
     this.durationMs,
     this.hlsPrefix,
+    this.aiGenerationType,
+    this.aiModelVersion,
+    this.aiPrompt,
+    this.isPromptPublic = false,
+    this.isInstrumental = false,
+    this.lyrics,
     this.aiDisclosureText,
+    this.waveformJson,
     this.bitrateKbps,
   });
 
@@ -27,9 +36,21 @@ class Track {
         status: (j['status'] as String?) ?? 'UNKNOWN',
         playCount: (j['playCount'] as num?)?.toInt() ?? 0,
         albumId: j['albumId'] as String?,
+        genre: j['genre'] as String?,
+        moodTags: (j['moodTags'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
         durationMs: (j['durationMs'] as num?)?.toInt(),
         hlsPrefix: j['hlsPrefix'] as String?,
+        aiGenerationType: j['aiGenerationType'] as String?,
+        aiModelVersion: j['aiModelVersion'] as String?,
+        aiPrompt: j['aiPrompt'] as String?,
+        isPromptPublic: (j['isPromptPublic'] as bool?) ?? false,
+        isInstrumental: (j['isInstrumental'] as bool?) ?? false,
+        lyrics: j['lyrics'] as String?,
         aiDisclosureText: j['aiDisclosureText'] as String?,
+        waveformJson: j['waveformJson'] as String?,
         bitrateKbps: (j['bitrateKbps'] as num?)?.toInt(),
       );
 
@@ -41,13 +62,22 @@ class Track {
   final String status;
   final int playCount;
   final String? albumId;
+  final String? genre;
+  final List<String> moodTags;
   final int? durationMs;
   final String? hlsPrefix;
+  final String? aiGenerationType;
+  final String? aiModelVersion;
+  final String? aiPrompt;
+  final bool isPromptPublic;
+  final bool isInstrumental;
+  final String? lyrics;
   final String? aiDisclosureText;
+  final String? waveformJson;
   final int? bitrateKbps;
 
   bool get isReady => status == 'READY';
-  bool get isTakenDown => status == 'TAKEN_DOWN';
+  bool get isTakenDown => status == 'TAKEN_DOWN' || status == 'TAKEDOWN';
 
   /// Lock-screen / notification subtitle with the AI-generated tag.
   String get subtitle =>

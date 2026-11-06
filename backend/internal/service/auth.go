@@ -147,6 +147,14 @@ func (s *AuthService) ParseAccess(token string) (*Claims, error) {
 	return s.parse(token, s.accessKey, TokenAccess)
 }
 
+// Withdraw deactivates the user account immediately (in-app immediate withdrawal compliance).
+func (s *AuthService) Withdraw(ctx context.Context, userID string) error {
+	if userID == "" {
+		return domain.ErrInvalidCredentials
+	}
+	return s.repos.Users.SetActive(ctx, userID, false)
+}
+
 func (s *AuthService) issue(userID, role string) (*Tokens, error) {
 	now := time.Now()
 	access := &Claims{

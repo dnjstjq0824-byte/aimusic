@@ -234,10 +234,9 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                     ),
                   ),
                   itemCount: order.length,
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (oldIndex, newIndex) {
                     setState(() {
                       _order ??= List.of(tracks);
-                      if (newIndex > oldIndex) newIndex--;
                       final t = _order!.removeAt(oldIndex);
                       _order!.insert(newIndex, t);
                     });
@@ -340,12 +339,11 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
             itemCount: catalog.length,
             itemBuilder: (context, i) {
               final t = catalog[i];
-              return RadioListTile<String>(
+              return ListTile(
+                leading: const Icon(Icons.music_note),
                 title: Text(t.title),
                 subtitle: Text(t.subtitle),
-                value: t.id,
-                groupValue: picked?.id,
-                onChanged: (_) {
+                onTap: () {
                   picked = t;
                   Navigator.pop(context, true);
                 },

@@ -47,7 +47,8 @@ func (h *PlaybackHandler) GetState(c *gin.Context) {
 }
 
 type setStateRequest struct {
-	PositionMs int `json:"positionMs" binding:"required"`
+	TrackID    string `json:"trackId"`
+	PositionMs int    `json:"positionMs" binding:"required"`
 }
 
 // SetState stores the resume position for a track.
@@ -57,7 +58,15 @@ func (h *PlaybackHandler) SetState(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	state, err := h.Playback.SetPosition(c.Request.Context(), CurrentUserID(c), c.Param("trackId"), req.PositionMs)
+	trackID := c.Param("trackId")
+	if trackID == "" {
+		trackID = req.TrackID
+	}
+	if trackID == "" {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "trackId required")
+		return
+	}
+	state, err := h.Playback.SetPosition(c.Request.Context(), CurrentUserID(c), trackID, req.PositionMs)
 	if err != nil {
 		AbortError(c, err)
 		return

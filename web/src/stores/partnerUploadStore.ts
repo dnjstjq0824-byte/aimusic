@@ -11,6 +11,8 @@ export type GateStatus = 'idle' | 'checking' | 'pass' | 'fail';
 export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   const step = ref(1);
   const provider = ref('');
+  const planTierUsed = ref('');
+  const providerTrackUrl = ref('');
   const subscriptionId = ref('');
   const generatedAt = ref('');
   const fileName = ref('');
@@ -30,8 +32,15 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
 
   const title = ref('');
   const albumId = ref('');
+  const genre = ref('Electronic');
+  const moodTagsInput = ref('Chill, Cyberpunk');
   const disclosure = ref<AIDisclosure>('FULL_AI');
   const sourceModel = ref('');
+  const aiPrompt = ref('');
+  const isPromptPublic = ref(true);
+  const isInstrumental = ref(false);
+  const lyrics = ref('');
+  const humanContributionDesc = ref('');
   const declaresOwnership = ref(false);
   const declaresNoVoiceClone = ref(false);
   const declaresTrainingConsent = ref(false);
@@ -43,7 +52,54 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   const policies = ref<AIProviderPolicy[]>([]);
   const subscriptions = ref<PartnerAISubscription[]>([]);
 
-  const step2Blocked = computed(() => gate12.value !== 'pass' || !grant.value);
+  const selectedPolicy = computed(() => policies.value.find((p) => p.provider === provider.value) ?? null);
+  const selectedSubscription = computed(() => subscriptions.value.find((s) => s.id === subscriptionId.value) ?? null);
+
+  const availablePlanTiers = computed(() => {
+    const p = selectedPolicy.value;
+    if (!p) return [];
+    return [
+      ...(p.allowedPlanTiers ?? []),
+      ...(p.syncOnlyPlanTiers ?? []),
+      ...(p.blockedPlanTiers ?? []),
+    ];
+  });
+
+  // Real-time client-side Gate 1 & Gate 2 instant block banner reason
+  const instantBlockReason = computed<string | null>(() => {
+    const p = selectedPolicy.value;
+    if (!p) return null;
+    if (!p.allowsStandaloneStreaming) {
+      return `선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (${p.rejectionMessageKo})`;
+    }
+    const tier = (planTierUsed.value || selectedSubscription.value?.planName || '').trim().toLowerCase();
+    if (tier) {
+      const isBlocked = (p.blockedPlanTiers ?? []).some((t) => t.toLowerCase() === tier);
+      if (isBlocked) {
+        return `선택하신 요금제(${planTierUsed.value || selectedSubscription.value?.planName}) 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (비상업/무료 요금제 차단: ERR_NON_COMMERCIAL_TIER)`;
+      }
+      const isSyncOnly = (p.syncOnlyPlanTiers ?? []).some((t) => t.toLowerCase() === tier);
+      if (isSyncOnly) {
+        return `선택하신 요금제(${planTierUsed.value || selectedSubscription.value?.planName}) 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (영상 배경음악 Sync 전용 라이선스 차단: ERR_SYNC_ONLY_LICENSE)`;
+      }
+    }
+    if (generatedAt.value && selectedSubscription.value) {
+      const genTime = new Date(generatedAt.value).getTime();
+      const subStart = new Date(selectedSubscription.value.createdAt).getTime();
+      if (!Number.isNaN(genTime) && !Number.isNaN(subStart) && genTime < subStart) {
+        return '선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (유료 구독 시작일 이전에 생성된 음원 소급 적용 불가: ERR_RETROACTIVE_GENERATION_DATE)';
+      }
+      if (selectedSubscription.value.expiresAt) {
+        const subEnd = new Date(selectedSubscription.value.expiresAt).getTime();
+        if (!Number.isNaN(genTime) && !Number.isNaN(subEnd) && genTime > subEnd) {
+          return '선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (유료 구독 만료 이후 생성된 음원: ERR_NON_COMMERCIAL_TIER)';
+        }
+      }
+    }
+    return null;
+  });
+
+  const step2Blocked = computed(() => instantBlockReason.value !== null || gate12.value !== 'pass' || !grant.value);
   const canFinalize = computed(
     () =>
       stagedKey.value !== null &&
@@ -78,6 +134,12 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
 
   // Step1: Gate1-2 pre-check. On fail, block banner disables Step2.
   async function runPrecheck(): Promise<boolean> {
+    if (instantBlockReason.value) {
+      gate12.value = 'fail';
+      gate12Code.value = 'ERR_NON_COMMERCIAL_TIER';
+      gate12Message.value = instantBlockReason.value;
+      return false;
+    }
     if (!file.value) {
       gate12.value = 'fail';
       gate12Code.value = 'ERR_INVALID_INPUT';
@@ -93,11 +155,12 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
       audioSha256.value = sha;
       const out = await partnerApi.preCheck({
         provider: provider.value,
+        planTierUsed: planTierUsed.value || selectedSubscription.value?.planName || undefined,
         audioSha256: sha,
         fileName: fileName.value,
         generatedAt: new Date(generatedAt.value).toISOString(),
         subscriptionId: subscriptionId.value || undefined,
-        requiresActiveSub: true,
+        requiresActiveSub: provider.value !== 'CUSTOM_OPEN_MODEL',
       });
       grant.value = out;
       gate12.value = 'pass';
@@ -159,14 +222,28 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     finalizing.value = true;
     finalizeError.value = null;
     try {
+      const moodTags = moodTagsInput.value
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean);
+      const effectiveTier = planTierUsed.value || selectedSubscription.value?.planName || undefined;
       const out = await partnerApi.finalize({
         stagingKey: stagedKey.value,
         title: title.value.trim(),
         provider: provider.value,
+        planTierUsed: effectiveTier,
         audioSha256: audioSha256.value,
         generatedAt: new Date(generatedAt.value).toISOString(),
         subscriptionId: subscriptionId.value || undefined,
         albumId: albumId.value || undefined,
+        genre: genre.value.trim() || undefined,
+        moodTags,
+        aiGenerationType: disclosure.value,
+        aiModelVersion: sourceModel.value.trim() || undefined,
+        aiPrompt: aiPrompt.value.trim() || undefined,
+        isPromptPublic: isPromptPublic.value,
+        isInstrumental: isInstrumental.value,
+        lyrics: lyrics.value.trim() || undefined,
         durationMs,
         bitrateKbps,
         disclosure: disclosureText(),
@@ -174,6 +251,11 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
           declaresOwnership: declaresOwnership.value,
           declaresNoVoiceClone: declaresNoVoiceClone.value,
           declaresTrainingConsent: declaresTrainingConsent.value,
+          confirmedNoUnauthorizedSampling: declaresTrainingConsent.value,
+          confirmedIndemnification: agreesCommercialTerms.value,
+          planTierUsed: effectiveTier,
+          providerTrackUrl: providerTrackUrl.value.trim() || undefined,
+          humanContributionDesc: humanContributionDesc.value.trim() || undefined,
           sourceModel: sourceModel.value || undefined,
           subscriptionId: subscriptionId.value || undefined,
         },
@@ -191,6 +273,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   function reset(): void {
     step.value = 1;
     provider.value = '';
+    planTierUsed.value = '';
+    providerTrackUrl.value = '';
     subscriptionId.value = '';
     generatedAt.value = '';
     fileName.value = '';
@@ -207,8 +291,15 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     stagedKey.value = null;
     title.value = '';
     albumId.value = '';
+    genre.value = 'Electronic';
+    moodTagsInput.value = 'Chill, Cyberpunk';
     disclosure.value = 'FULL_AI';
     sourceModel.value = '';
+    aiPrompt.value = '';
+    isPromptPublic.value = true;
+    isInstrumental.value = false;
+    lyrics.value = '';
+    humanContributionDesc.value = '';
     declaresOwnership.value = false;
     declaresNoVoiceClone.value = false;
     declaresTrainingConsent.value = false;
@@ -219,13 +310,14 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   }
 
   return {
-    step, provider, subscriptionId, generatedAt, fileName, audioSha256, file,
+    step, provider, planTierUsed, providerTrackUrl, subscriptionId, generatedAt, fileName, audioSha256, file,
     gate12, gate12Code, gate12Message, grant,
     gate3, gate3Message, uploading, uploadProgress, stagedKey,
-    title, albumId, disclosure, sourceModel,
+    title, albumId, genre, moodTagsInput, disclosure, sourceModel,
+    aiPrompt, isPromptPublic, isInstrumental, lyrics, humanContributionDesc,
     declaresOwnership, declaresNoVoiceClone, declaresTrainingConsent, agreesCommercialTerms,
     finalized, finalizing, finalizeError,
-    policies, subscriptions, step2Blocked, canFinalize,
+    policies, subscriptions, selectedPolicy, availablePlanTiers, instantBlockReason, step2Blocked, canFinalize,
     loadReference, pickFile, runPrecheck, uploadStaged, finalize, reset,
   };
 });

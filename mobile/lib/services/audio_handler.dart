@@ -194,6 +194,15 @@ class AiMusicAudioHandler extends BaseAudioHandler
     queue.add(_tracks.map(mediaItemFor).toList());
   }
 
+  /// Removes all tracks belonging to [partnerId] from the active queue immediately.
+  Future<void> removeTracksByPartner(String partnerId) async {
+    for (var i = _tracks.length - 1; i >= 0; i--) {
+      if (_tracks[i].partnerId == partnerId) {
+        await _skipUnstreamable(i);
+      }
+    }
+  }
+
   AudioSource _placeholderSource() =>
       SilenceAudioSource(duration: const Duration(milliseconds: 200));
 

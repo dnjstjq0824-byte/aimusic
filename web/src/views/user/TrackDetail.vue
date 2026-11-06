@@ -36,8 +36,28 @@
           </div>
         </dl>
         <div v-if="track.aiDisclosureText" class="mt-4 rounded bg-neutral-900 p-3 text-sm">
-          <h2 class="mb-1 text-xs font-bold text-neutral-400">AI 생성 정보</h2>
+          <h2 class="mb-1 text-xs font-bold text-neutral-400">AI 생성 정보 (AI 기본법 제31조 준수)</h2>
           <p class="whitespace-pre-wrap">{{ track.aiDisclosureText }}</p>
+          <p v-if="track.aiModelVersion" class="mt-1 text-xs text-neutral-400">모델 버전: {{ track.aiModelVersion }}</p>
+        </div>
+        <div v-if="waveformPeaks.length > 0" class="mt-4 rounded bg-neutral-900 p-3">
+          <h2 class="mb-2 text-xs font-bold text-neutral-400">오디오 파형 (Waveform)</h2>
+          <div class="flex h-12 items-end gap-[2px]">
+            <div
+              v-for="(peak, idx) in waveformPeaks"
+              :key="idx"
+              class="flex-1 rounded-t bg-brand-500/80"
+              :style="{ height: `${Math.max(12, Math.round(peak * 100))}%` }"
+            />
+          </div>
+        </div>
+        <div v-if="track.aiPrompt && track.isPromptPublic !== false" class="mt-4 rounded bg-neutral-900 p-3 text-sm">
+          <h2 class="mb-1 text-xs font-bold text-neutral-400">생성 프롬프트</h2>
+          <p class="whitespace-pre-wrap font-mono text-xs text-neutral-200">{{ track.aiPrompt }}</p>
+        </div>
+        <div v-if="track.lyrics" class="mt-4 rounded bg-neutral-900 p-3 text-sm">
+          <h2 class="mb-1 text-xs font-bold text-neutral-400">가사 (Lyrics)</h2>
+          <p class="whitespace-pre-wrap text-neutral-200">{{ track.lyrics }}</p>
         </div>
         <div class="mt-4 flex flex-wrap gap-2">
           <button class="rounded bg-brand-600 px-4 py-1.5 text-sm font-bold" @click="play">재생</button>
@@ -46,8 +66,10 @@
       </section>
       <aside class="min-w-0 space-y-4">
         <div class="rounded bg-neutral-900 p-3 text-sm">
-          <h2 class="mb-1 text-xs font-bold text-neutral-400">라이선스</h2>
-          <p v-if="track.status === 'READY'" class="text-emerald-400">상업 라이선스 검증 완료 (Gate1-3 통과 + 심사 승인)</p>
+          <h2 class="mb-1 text-xs font-bold text-neutral-400">상업 라이선스 증명 요약</h2>
+          <p v-if="track.status === 'READY'" class="text-emerald-400">
+            ✓ 상업 라이선스 검증 완료 ({{ track.aiProvider }} 유료 상업 구독 기간 내 생성 · Gate 1-4 통과)
+          </p>
           <p v-else class="text-neutral-400">상태: {{ track.status }}</p>
         </div>
         <div v-if="auth.isAuthenticated" class="rounded bg-neutral-900 p-3 text-sm">
@@ -63,9 +85,19 @@
           </div>
           <p v-if="added" class="mt-1 text-xs text-emerald-400">담았습니다.</p>
         </div>
-        <div class="rounded bg-neutral-900 p-3 text-sm">
-          <h2 class="mb-2 text-xs font-bold text-neutral-400">권리 보호</h2>
-          <button class="rounded bg-neutral-800 px-3 py-1.5" @click="reportTarget = track">권리침해 신고</button>
+        <div class="space-y-2 rounded bg-neutral-900 p-3 text-sm">
+          <h2 class="mb-1 text-xs font-bold text-neutral-400">권리 보호 및 UGC 안전</h2>
+          <div class="flex flex-wrap gap-2">
+            <button class="rounded bg-neutral-800 px-3 py-1.5" @click="reportTarget = track">권리침해 신고</button>
+            <button
+              v-if="auth.isAuthenticated"
+              class="rounded bg-red-900/50 px-3 py-1.5 text-red-200"
+              @click="blockPartner"
+            >
+              이 아티스트(파트너) 차단
+            </button>
+          </div>
+          <p v-if="artistBlocked" class="text-xs text-amber-400">해당 파트너가 차단되어 재생 큐에서 제외되었습니다.</p>
         </div>
       </aside>
     </div>
@@ -81,9 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { trackApi } from '@/api/endpoints';
+import { trackApi, userBlocksApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
@@ -101,7 +133,28 @@ const track = ref<Track | null>(null);
 const error = ref<string | null>(null);
 const playlistPick = ref('');
 const added = ref(false);
+const artistBlocked = ref(false);
 const reportTarget = ref<Track | null>(null);
+
+const waveformPeaks = computed<number[]>(() => {
+  if (!track.value?.waveformJson) return [];
+  try {
+    const parsed = JSON.parse(track.value.waveformJson);
+    return Array.isArray(parsed) ? parsed.map((n) => Number(n) || 0.3) : [];
+  } catch {
+    return [];
+  }
+});
+
+async function blockPartner(): Promise<void> {
+  if (!track.value) return;
+  try {
+    await userBlocksApi.blockArtist(track.value.partnerId, '사용자 직접 아티스트 차단');
+    artistBlocked.value = true;
+  } catch (err: unknown) {
+    error.value = errMessageOf(err);
+  }
+}
 
 async function load(id: string): Promise<void> {
   error.value = null;

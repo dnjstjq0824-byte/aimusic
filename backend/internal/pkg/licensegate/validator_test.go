@@ -67,21 +67,35 @@ func verifiedSub() *Subscription {
 
 func TestValidateCommercialEligibility(t *testing.T) {
 	ctx := context.Background()
-	allowed := &Policy{Provider: "SUNO", AllowsStandaloneStreaming: true}
+	allowed := &Policy{
+		Provider:                  "SUNO",
+		AllowsStandaloneStreaming: true,
+		AllowedPlanTiers:          []string{"Pro", "Premier"},
+		BlockedPlanTiers:          []string{"Free", "Basic"},
+	}
+	aivaPolicy := &Policy{
+		Provider:                  "AIVA",
+		AllowsStandaloneStreaming: true,
+		AllowedPlanTiers:          []string{"Pro"},
+		BlockedPlanTiers:          []string{"Free"},
+		SyncOnlyPlanTiers:         []string{"Standard"},
+		RejectionMessageKo:        "AIVA Standard는 Sync 전용입니다.",
+	}
 	blocked := &Policy{Provider: "MUBERT", AllowsStandaloneStreaming: false, RejectionMessageKo: "차단"}
 	inWindow := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
 	beforeWindow := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	cases := []struct {
-		name    string
-		store   *stubStore
-		req     PreCheckRequest
-		wantErr string
+		name     string
+		store    *stubStore
+		req      PreCheckRequest
+		wantErr  string
+		wantCode string
 	}{
 		{
 			name:  "pass",
 			store: &stubStore{policy: allowed, sub: verifiedSub()},
-			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", PlanTierUsed: "Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
 		},
 		{
 			name:    "duplicate",
@@ -90,16 +104,32 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			wantErr: "sha256 already registered",
 		},
 		{
-			name:    "sync only blocked",
-			store:   &stubStore{policy: blocked, sub: verifiedSub()},
-			req:     PreCheckRequest{PartnerID: "partner-1", Provider: "MUBERT", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: true},
-			wantErr: "차단",
+			name:     "suno free tier blocked",
+			store:    &stubStore{policy: allowed, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", PlanTierUsed: "Free", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "ERR_NON_COMMERCIAL_TIER",
+			wantCode: domain.CodeNonCommercialTier,
 		},
 		{
-			name:    "retroactive generation blocked",
-			store:   &stubStore{policy: allowed, sub: verifiedSub()},
-			req:     PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", AudioSHA256: "aaa", GeneratedAt: beforeWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
-			wantErr: "generated before subscription window",
+			name:     "aiva standard sync only blocked",
+			store:    &stubStore{policy: aivaPolicy, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "AIVA", PlanTierUsed: "Standard", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "AIVA Standard는 Sync 전용입니다.",
+			wantCode: domain.CodeSyncOnlyLicense,
+		},
+		{
+			name:     "sync only blocked",
+			store:    &stubStore{policy: blocked, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "MUBERT", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: true},
+			wantErr:  "차단",
+			wantCode: domain.CodeSyncOnlyLicense,
+		},
+		{
+			name:     "retroactive generation blocked",
+			store:    &stubStore{policy: allowed, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", AudioSHA256: "aaa", GeneratedAt: beforeWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "generated before subscription window",
+			wantCode: domain.CodeRetroactiveGenerationDate,
 		},
 	}
 	for _, tc := range cases {
@@ -120,6 +150,9 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			var gateErr *domain.GateError
 			if !errors.As(err, &gateErr) && tc.name != "duplicate" {
 				t.Fatalf("expected GateError, got %T: %v", err, err)
+			}
+			if tc.wantCode != "" && gateErr != nil && gateErr.Code != tc.wantCode {
+				t.Fatalf("want code %q, got %q", tc.wantCode, gateErr.Code)
 			}
 		})
 	}

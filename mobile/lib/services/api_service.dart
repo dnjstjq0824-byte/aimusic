@@ -238,6 +238,33 @@ class ApiService {
     }
   }
 
+  /// Blocks a partner/artist (POST /users/blocks) for UGC store compliance.
+  Future<void> blockArtist({
+    required String partnerId,
+    String? reason,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/users/blocks',
+        data: {
+          'partnerId': partnerId,
+          if (reason != null && reason.isNotEmpty) 'reason': reason,
+        },
+      );
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
+  /// Immediate self-withdrawal (POST /auth/withdraw).
+  Future<void> withdrawAccount() async {
+    try {
+      await _dio.post<Map<String, dynamic>>('/auth/withdraw');
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
   // ---- Legal: GET /legal/terms, GET /legal/terms/:code, consents ----
 
   Future<List<LegalTerm>> listTerms() async {

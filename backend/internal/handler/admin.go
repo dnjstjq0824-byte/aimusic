@@ -27,8 +27,9 @@ func (h *AdminHandler) Pending(c *gin.Context) {
 }
 
 type reviewTrackRequest struct {
-	TrackID string `json:"trackId" binding:"required"`
+	TrackID string `json:"trackId"`
 	Approve bool   `json:"approve"`
+	Action  string `json:"action"` // optional "APPROVE" | "REJECT"
 	Reason  string `json:"reason"`
 }
 
@@ -39,7 +40,21 @@ func (h *AdminHandler) ReviewTrack(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	track, err := h.Services.Review.ReviewTrack(c.Request.Context(), req.TrackID, req.Approve, req.Reason)
+	trackID := req.TrackID
+	if trackID == "" {
+		trackID = c.Param("id")
+	}
+	if trackID == "" {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "trackId required")
+		return
+	}
+	approve := req.Approve
+	if req.Action == "APPROVE" {
+		approve = true
+	} else if req.Action == "REJECT" {
+		approve = false
+	}
+	track, err := h.Services.Review.ReviewTrack(c.Request.Context(), trackID, approve, req.Reason)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -109,6 +124,9 @@ func (h *AdminHandler) ListPolicies(c *gin.Context) {
 
 type updatePolicyRequest struct {
 	AllowsStandaloneStreaming bool     `json:"allowsStandaloneStreaming"`
+	AllowedPlanTiers          []string `json:"allowedPlanTiers"`
+	BlockedPlanTiers          []string `json:"blockedPlanTiers"`
+	SyncOnlyPlanTiers         []string `json:"syncOnlyPlanTiers"`
 	MinBitrateKbps            int      `json:"minBitrateKbps" binding:"required"`
 	BlockedMetadataKeywords   []string `json:"blockedMetadataKeywords"`
 	RejectionMessageKo        string   `json:"rejectionMessageKo" binding:"required"`
@@ -122,9 +140,14 @@ func (h *AdminHandler) UpdatePolicy(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	p, err := h.Repos.Policies.Update(c.Request.Context(), c.Param("provider"),
+	provider := c.Param("provider")
+	if provider == "" {
+		provider = c.Param("id")
+	}
+	p, err := h.Repos.Policies.Update(c.Request.Context(), provider,
 		req.AllowsStandaloneStreaming, req.MinBitrateKbps,
-		req.BlockedMetadataKeywords, req.RejectionMessageKo, req.CommercialTermsURL)
+		req.BlockedMetadataKeywords, req.RejectionMessageKo, req.CommercialTermsURL,
+		req.AllowedPlanTiers, req.BlockedPlanTiers, req.SyncOnlyPlanTiers)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -143,7 +166,8 @@ func (h *AdminHandler) ListDisputes(c *gin.Context) {
 }
 
 type resolveDisputeRequest struct {
-	Uphold bool `json:"uphold"`
+	Uphold bool   `json:"uphold"`
+	Action string `json:"action"` // optional "TEMP_TAKEDOWN" | "RESTORE" | "PERMANENT_DELETE"
 }
 
 // ResolveDispute upholds (takedown + strike) or dismisses a dispute.
@@ -153,7 +177,13 @@ func (h *AdminHandler) ResolveDispute(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	d, err := h.Services.Disputes.Resolve(c.Request.Context(), c.Param("id"), CurrentUserID(c), req.Uphold)
+	uphold := req.Uphold
+	if req.Action == "TEMP_TAKEDOWN" || req.Action == "PERMANENT_DELETE" {
+		uphold = true
+	} else if req.Action == "RESTORE" {
+		uphold = false
+	}
+	d, err := h.Services.Disputes.Resolve(c.Request.Context(), c.Param("id"), CurrentUserID(c), uphold)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -169,6 +199,30 @@ func (h *AdminHandler) Curation(c *gin.Context) {
 		return
 	}
 	ok(c, tracks)
+}
+
+type createCurationPlaylistRequest struct {
+	Title       string   `json:"title" binding:"required"`
+	Description *string  `json:"description"`
+	TrackIDs    []string `json:"trackIds"`
+}
+
+// CreateCurationPlaylist creates an official curation playlist and optionally populates tracks.
+func (h *AdminHandler) CreateCurationPlaylist(c *gin.Context) {
+	var req createCurationPlaylistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	p, err := h.Repos.Playlists.CreateFull(c.Request.Context(), CurrentUserID(c), req.Title, req.Description, true, true)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	for _, tid := range req.TrackIDs {
+		_ = h.Services.Playlists.AddTrack(c.Request.Context(), CurrentUserID(c), p.ID, tid)
+	}
+	created(c, p)
 }
 
 type takedownRequest struct {

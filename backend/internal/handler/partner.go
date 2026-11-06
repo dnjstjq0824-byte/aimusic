@@ -86,6 +86,7 @@ func (h *PartnerHandler) CreateSubscription(c *gin.Context) {
 
 type preCheckRequest struct {
 	Provider          string `json:"provider" binding:"required"`
+	PlanTierUsed      string `json:"planTierUsed"`
 	AudioSHA256       string `json:"audioSha256" binding:"required"`
 	FileName          string `json:"fileName" binding:"required"`
 	GeneratedAt       string `json:"generatedAt" binding:"required"`
@@ -110,8 +111,8 @@ func (h *PartnerHandler) PreCheck(c *gin.Context) {
 		return
 	}
 	out, err := h.Services.Precheck.PreCheck(c.Request.Context(), service.PrecheckInput{
-		PartnerID: partnerID, Provider: req.Provider, AudioSHA256: req.AudioSHA256,
-		FileName: req.FileName, GeneratedAt: generatedAt,
+		PartnerID: partnerID, Provider: req.Provider, PlanTierUsed: req.PlanTierUsed,
+		AudioSHA256: req.AudioSHA256, FileName: req.FileName, GeneratedAt: generatedAt,
 		SubscriptionID: req.SubscriptionID, RequiresActiveSub: req.RequiresActiveSub,
 	})
 	if err != nil {
@@ -122,22 +123,37 @@ func (h *PartnerHandler) PreCheck(c *gin.Context) {
 }
 
 type finalizeRequest struct {
-	StagingKey     string  `json:"stagingKey" binding:"required"`
-	Title          string  `json:"title" binding:"required"`
-	Provider       string  `json:"provider" binding:"required"`
-	AudioSHA256    string  `json:"audioSha256" binding:"required"`
-	GeneratedAt    string  `json:"generatedAt" binding:"required"`
-	SubscriptionID string  `json:"subscriptionId"`
-	AlbumID        *string `json:"albumId"`
-	DurationMs     *int    `json:"durationMs"`
-	BitrateKbps    *int    `json:"bitrateKbps"`
-	Disclosure     *string `json:"disclosure"`
-	Rights         struct {
-		DeclaresOwnership       bool    `json:"declaresOwnership"`
-		DeclaresNoVoiceClone    bool    `json:"declaresNoVoiceClone"`
-		DeclaresTrainingConsent bool    `json:"declaresTrainingConsent"`
-		SourceModel             *string `json:"sourceModel"`
-		SubscriptionID          *string `json:"subscriptionId"`
+	StagingKey       string   `json:"stagingKey" binding:"required"`
+	Title            string   `json:"title" binding:"required"`
+	Provider         string   `json:"provider" binding:"required"`
+	PlanTierUsed     string   `json:"planTierUsed"`
+	AudioSHA256      string   `json:"audioSha256" binding:"required"`
+	GeneratedAt      string   `json:"generatedAt" binding:"required"`
+	SubscriptionID   string   `json:"subscriptionId"`
+	AlbumID          *string  `json:"albumId"`
+	Genre            *string  `json:"genre"`
+	MoodTags         []string `json:"moodTags"`
+	AIGenerationType string   `json:"aiGenerationType"`
+	AIModelVersion   *string  `json:"aiModelVersion"`
+	AIPrompt         *string  `json:"aiPrompt"`
+	IsPromptPublic   bool     `json:"isPromptPublic"`
+	IsInstrumental   bool     `json:"isInstrumental"`
+	Lyrics           *string  `json:"lyrics"`
+	DurationMs       *int     `json:"durationMs"`
+	BitrateKbps      *int     `json:"bitrateKbps"`
+	Disclosure       *string  `json:"disclosure"`
+	Rights           struct {
+		DeclaresOwnership               bool     `json:"declaresOwnership"`
+		DeclaresNoVoiceClone            bool     `json:"declaresNoVoiceClone"`
+		DeclaresTrainingConsent         bool     `json:"declaresTrainingConsent"`
+		ConfirmedNoUnauthorizedSampling bool     `json:"confirmedNoUnauthorizedSampling"`
+		ConfirmedIndemnification        bool     `json:"confirmedIndemnification"`
+		PlanTierUsed                    *string  `json:"planTierUsed"`
+		ProviderTrackURL                *string  `json:"providerTrackUrl"`
+		HumanContributionTypes          []string `json:"humanContributionTypes"`
+		HumanContributionDesc           *string  `json:"humanContributionDesc"`
+		SourceModel                     *string  `json:"sourceModel"`
+		SubscriptionID                  *string  `json:"subscriptionId"`
 	} `json:"rights"`
 }
 
@@ -157,17 +173,30 @@ func (h *PartnerHandler) Finalize(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "generatedAt must be RFC3339")
 		return
 	}
+	signedIP := c.ClientIP()
 	out, err := h.Services.Finalize.Finalize(c.Request.Context(), service.FinalizeInput{
 		PartnerID: partnerID, StagingKey: req.StagingKey, Title: req.Title,
-		Provider: req.Provider, AudioSHA256: req.AudioSHA256, GeneratedAt: generatedAt,
-		SubscriptionID: req.SubscriptionID, AlbumID: req.AlbumID, DurationMs: req.DurationMs,
-		BitrateKbps: req.BitrateKbps, Disclosure: req.Disclosure,
+		Provider: req.Provider, PlanTierUsed: req.PlanTierUsed,
+		AudioSHA256: req.AudioSHA256, GeneratedAt: generatedAt,
+		SubscriptionID: req.SubscriptionID, AlbumID: req.AlbumID,
+		Genre: req.Genre, MoodTags: req.MoodTags,
+		AIGenerationType: req.AIGenerationType, AIModelVersion: req.AIModelVersion,
+		AIPrompt: req.AIPrompt, IsPromptPublic: req.IsPromptPublic,
+		IsInstrumental: req.IsInstrumental, Lyrics: req.Lyrics,
+		DurationMs: req.DurationMs, BitrateKbps: req.BitrateKbps, Disclosure: req.Disclosure,
 		Rights: service.RightsInput{
-			DeclaresOwnership:       req.Rights.DeclaresOwnership,
-			DeclaresNoVoiceClone:    req.Rights.DeclaresNoVoiceClone,
-			DeclaresTrainingConsent: req.Rights.DeclaresTrainingConsent,
-			SourceModel:             req.Rights.SourceModel,
-			SubscriptionID:          req.Rights.SubscriptionID,
+			DeclaresOwnership:               req.Rights.DeclaresOwnership,
+			DeclaresNoVoiceClone:            req.Rights.DeclaresNoVoiceClone,
+			DeclaresTrainingConsent:         req.Rights.DeclaresTrainingConsent,
+			ConfirmedNoUnauthorizedSampling: req.Rights.ConfirmedNoUnauthorizedSampling,
+			ConfirmedIndemnification:        req.Rights.ConfirmedIndemnification,
+			PlanTierUsed:                    req.Rights.PlanTierUsed,
+			ProviderTrackURL:                req.Rights.ProviderTrackURL,
+			HumanContributionTypes:          req.Rights.HumanContributionTypes,
+			HumanContributionDesc:           req.Rights.HumanContributionDesc,
+			SignedIP:                        &signedIP,
+			SourceModel:                     req.Rights.SourceModel,
+			SubscriptionID:                  req.Rights.SubscriptionID,
 		},
 	})
 	if err != nil {
