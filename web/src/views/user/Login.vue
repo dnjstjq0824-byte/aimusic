@@ -1,25 +1,167 @@
 <template>
-  <div class="mx-auto max-w-md">
-    <h1 class="mb-4 text-xl font-bold">Login</h1>
-    <form class="space-y-3" @submit.prevent="submit">
-      <input v-model="email" type="email" required placeholder="email" class="w-full rounded bg-neutral-800 p-2" />
-      <input v-model="password" type="password" required placeholder="password" class="w-full rounded bg-neutral-800 p-2" />
-      <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-      <button class="w-full rounded bg-brand-600 py-2 font-bold disabled:opacity-50" :disabled="busy">
-        {{ busy ? '로그인 중…' : 'Login' }}
-      </button>
-    </form>
-    <div class="mt-4 border-t border-neutral-800 pt-4">
-      <h2 class="mb-2 font-bold">Listener sign-up</h2>
-      <form class="space-y-3" @submit.prevent="signup">
-        <input v-model="suEmail" type="email" required placeholder="email" class="w-full rounded bg-neutral-800 p-2" />
-        <input v-model="suPassword" type="password" required minlength="8" placeholder="password (8+)" class="w-full rounded bg-neutral-800 p-2" />
-        <input v-model="suName" required placeholder="display name" class="w-full rounded bg-neutral-800 p-2" />
-        <p v-if="suError" class="text-sm text-red-400">{{ suError }}</p>
-        <p v-if="suDone" class="text-sm text-emerald-400">가입 완료. 로그인해 주세요.</p>
-        <button class="w-full rounded bg-neutral-700 py-2 font-bold">Sign up</button>
-      </form>
+  <div class="mx-auto max-w-md py-6 sm:py-12">
+    <!-- Brand badge -->
+    <div class="mb-6 text-center">
+      <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-400 text-white font-black text-xl shadow-glow-brand mb-3">
+        AI
+      </div>
+      <h1 class="text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
+      <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
     </div>
+
+    <UiCard class="shadow-2xl">
+      <!-- Tabs -->
+      <div class="mb-6">
+        <UiTabs v-model="activeTab" :tabs="tabOptions" />
+      </div>
+
+      <!-- Tab 1: Login -->
+      <form v-if="activeTab === 'login'" class="space-y-4" @submit.prevent="submitLogin">
+        <UiInput
+          v-model="email"
+          type="email"
+          label="이메일 주소"
+          placeholder="name@example.com"
+          required
+        />
+        <UiInput
+          v-model="password"
+          type="password"
+          label="비밀번호"
+          placeholder="••••••••"
+          required
+        />
+        <UiButton
+          variant="brand"
+          size="md"
+          full-width
+          type="submit"
+          :loading="busy"
+        >
+          로그인
+        </UiButton>
+
+        <!-- Test credentials quick pills -->
+        <div class="pt-4 border-t border-surface-border text-center">
+          <div class="text-[11px] text-neutral-500 mb-2 font-medium">로컬 테스트 빠른 채우기 (Quick Fill)</div>
+          <div class="flex flex-wrap justify-center gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
+              @click="fillCreds('admin@aimusic.internal', 'admin1234!')"
+            >
+              👑 어드민
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-brand-400 hover:bg-surface-3 border border-surface-border transition-colors"
+              @click="fillCreds('partner@aimusic.internal', 'partner1234!')"
+            >
+              🎵 파트너
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
+              @click="fillCreds('user@aimusic.internal', 'user1234!')"
+            >
+              🎧 일반 유저
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Tab 2: Listener Registration -->
+      <form v-else-if="activeTab === 'register'" class="space-y-4" @submit.prevent="submitRegister">
+        <UiInput
+          v-model="suEmail"
+          type="email"
+          label="이메일 주소"
+          placeholder="name@example.com"
+          required
+        />
+        <UiInput
+          v-model="suName"
+          label="닉네임 / 활동명"
+          placeholder="음악 애호가"
+          required
+        />
+        <UiInput
+          v-model="suPassword"
+          type="password"
+          label="비밀번호 (8자 이상)"
+          placeholder="8자 이상의 안전한 비밀번호"
+          :minlength="8"
+          required
+        />
+
+        <div class="pt-2">
+          <UiCheckbox v-model="suAgreeTerms" required>
+            <RouterLink to="/legal/TOS" target="_blank" class="text-brand-400 underline">서비스 이용약관</RouterLink> 및
+            <RouterLink to="/legal/PRIVACY" target="_blank" class="text-brand-400 underline">개인정보처리방침</RouterLink>에 동의합니다. (필수)
+          </UiCheckbox>
+        </div>
+
+        <UiButton
+          variant="brand"
+          size="md"
+          full-width
+          type="submit"
+          :loading="busy"
+          :disabled="!suAgreeTerms"
+        >
+          리스너로 시작하기
+        </UiButton>
+      </form>
+
+      <!-- Tab 3: Partner Artist Registration -->
+      <form v-else class="space-y-4" @submit.prevent="submitPartnerRegister">
+        <UiInput
+          v-model="ptEmail"
+          type="email"
+          label="파트너 이메일"
+          placeholder="partner@studio.com"
+          required
+        />
+        <UiInput
+          v-model="ptName"
+          label="아티스트 / 프로듀서명"
+          placeholder="AI Music Producer"
+          required
+        />
+        <UiInput
+          v-model="ptCompany"
+          label="회사명 또는 스튜디오명"
+          placeholder="개인 크리에이터 또는 법인명"
+          required
+        />
+        <UiInput
+          v-model="ptPassword"
+          type="password"
+          label="비밀번호 (8자 이상)"
+          placeholder="8자 이상의 안전한 비밀번호"
+          :minlength="8"
+          required
+        />
+
+        <div class="pt-2">
+          <UiCheckbox v-model="ptAgreeContract" required>
+            <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="text-brand-400 underline">파트너 음원유통·면책 계약서</RouterLink> 및
+            <RouterLink to="/legal/AI_COPYRIGHT_POLICY" target="_blank" class="text-brand-400 underline">AI 저작권 준수 확약</RouterLink>에 동의합니다. (필수)
+          </UiCheckbox>
+        </div>
+
+        <UiButton
+          variant="brand"
+          size="md"
+          full-width
+          type="submit"
+          :loading="busy"
+          :disabled="!ptAgreeContract"
+        >
+          파트너 스튜디오 신청하기
+        </UiButton>
+      </form>
+    </UiCard>
   </div>
 </template>
 
@@ -27,45 +169,97 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
+import UiButton from '@/components/ui/UiButton.vue';
+import UiCard from '@/components/ui/UiCard.vue';
+import UiInput from '@/components/ui/UiInput.vue';
+import UiCheckbox from '@/components/ui/UiCheckbox.vue';
+import UiTabs, { type TabOption } from '@/components/ui/UiTabs.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
-const email = ref('');
-const password = ref('');
-const error = ref<string | null>(null);
+const tabOptions: TabOption[] = [
+  { label: '로그인', value: 'login' },
+  { label: '리스너 회원가입', value: 'register' },
+  { label: '파트너 등록', value: 'partner' },
+];
+
+const activeTab = ref<string>((route.query.tab as string) || 'login');
 const busy = ref(false);
 
+// Login state
+const email = ref('');
+const password = ref('');
+
+// Listener sign-up state
 const suEmail = ref('');
 const suPassword = ref('');
 const suName = ref('');
-const suError = ref<string | null>(null);
-const suDone = ref(false);
+const suAgreeTerms = ref(false);
 
-async function submit(): Promise<void> {
+// Partner sign-up state
+const ptEmail = ref('');
+const ptPassword = ref('');
+const ptName = ref('');
+const ptCompany = ref('');
+const ptAgreeContract = ref(false);
+
+function fillCreds(e: string, p: string) {
+  email.value = e;
+  password.value = p;
+  activeTab.value = 'login';
+}
+
+async function submitLogin(): Promise<void> {
   busy.value = true;
-  error.value = null;
   try {
     await auth.login(email.value, password.value);
+    toast.success('성공적으로 로그인되었습니다.');
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
     await router.push(redirect);
   } catch (err: unknown) {
-    error.value = errMessageOf(err);
+    toast.error(errMessageOf(err), '로그인 실패');
   } finally {
     busy.value = false;
   }
 }
 
-async function signup(): Promise<void> {
-  suError.value = null;
-  suDone.value = false;
+async function submitRegister(): Promise<void> {
+  busy.value = true;
   try {
     await auth.register(suEmail.value, suPassword.value, suName.value);
-    suDone.value = true;
+    toast.success('회원가입이 완료되었습니다. 로그인해 주세요.');
+    email.value = suEmail.value;
+    password.value = suPassword.value;
+    activeTab.value = 'login';
   } catch (err: unknown) {
-    suError.value = errMessageOf(err);
+    toast.error(errMessageOf(err), '회원가입 실패');
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function submitPartnerRegister(): Promise<void> {
+  busy.value = true;
+  try {
+    await auth.registerPartner({
+      email: ptEmail.value,
+      password: ptPassword.value,
+      displayName: ptName.value,
+      company: ptCompany.value,
+    });
+    toast.success('파트너 계정이 등록되었습니다. 로그인해 주세요.');
+    email.value = ptEmail.value;
+    password.value = ptPassword.value;
+    activeTab.value = 'login';
+  } catch (err: unknown) {
+    toast.error(errMessageOf(err), '파트너 등록 실패');
+  } finally {
+    busy.value = false;
   }
 }
 </script>

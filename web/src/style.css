@@ -1,3 +1,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-surface-0: #09090b;
+  --color-surface-1: #111116;
+  --color-surface-2: #181820;
+  --color-surface-3: #22222d;
+  --color-surface-border: #262633;
+  --color-brand: #ff5c00;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-surface-0);
+  color: #f4f4f5;
+  font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Minimal Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #272733;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b3b4f;
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(17, 17, 22, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-dropdown {
+  background: rgba(24, 24, 32, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Waveform visualizer bars */
+.waveform-bar {
+  transition: height 0.15s ease, background-color 0.2s ease;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.6);
+}

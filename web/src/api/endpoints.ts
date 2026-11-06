@@ -213,6 +213,9 @@ export const adminApi = {
   pending() {
     return unwrap<ReviewQueues>(api.get('/admin/pending'));
   },
+  pendingReviews() {
+    return unwrap<ReviewQueues>(api.get('/admin/pending'));
+  },
   reviewTrack(trackId: string, approve: boolean, reason?: string) {
     return unwrap<Track>(api.post('/admin/review', { trackId, approve, reason }));
   },
@@ -250,6 +253,9 @@ export const adminApi = {
   },
   curation(limit = 20) {
     return unwrap<Track[]>(api.get('/admin/curation', { params: { limit } }));
+  },
+  createCurationPlaylist(title: string, description?: string, trackIds: string[] = []) {
+    return unwrap<Playlist>(api.post('/admin/curation/playlists', { title, description, trackIds }));
   },
   takedown(trackId: string, reason?: string) {
     return unwrap<Track>(api.post('/admin/curation/takedown', { trackId, reason }));

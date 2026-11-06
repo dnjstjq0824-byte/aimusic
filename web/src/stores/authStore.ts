@@ -45,6 +45,16 @@ export const useAuthStore = defineStore('auth', () => {
     return authApi.register(email, password, displayName);
   }
 
+  async function registerPartner(input: {
+    email: string;
+    password: string;
+    displayName: string;
+    company: string;
+    contactEmail?: string;
+  }) {
+    return authApi.registerPartner(input);
+  }
+
   function logout(): void {
     tokenStore.clear();
     user.value = null;
@@ -52,5 +62,5 @@ export const useAuthStore = defineStore('auth', () => {
     role.value = null;
   }
 
-  return { user, role, userId, initialized, isAuthenticated, isPartner, isAdmin, hydrate, login, register, logout };
+  return { user, role, userId, initialized, isAuthenticated, isPartner, isAdmin, hydrate, login, register, registerPartner, logout };
 });

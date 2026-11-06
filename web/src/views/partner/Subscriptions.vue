@@ -1,37 +1,115 @@
 <template>
-  <div>
-    <h1 class="mb-4 text-xl font-bold">AI Subscriptions</h1>
-    <p class="mb-3 text-sm text-neutral-400">
-      상업용 플랜 증빙을 등록하면 관리자가 검증합니다. Gate1-2 사전검사는 VERIFIED 구독 기준으로 수행됩니다.
-    </p>
-    <form class="mb-6 grid gap-2 rounded bg-neutral-900 p-4 sm:grid-cols-4" @submit.prevent="create">
-      <select v-model="provider" required class="rounded bg-neutral-800 p-2 text-sm">
-        <option value="">provider…</option>
-        <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
-      </select>
-      <input v-model="planName" required placeholder="plan name" class="rounded bg-neutral-800 p-2 text-sm" />
-      <input v-model="proofKey" placeholder="proof object key (optional)" class="rounded bg-neutral-800 p-2 text-sm" />
-      <button class="rounded bg-brand-600 px-3 py-1.5 text-sm font-bold disabled:opacity-50" :disabled="busy">
-        {{ busy ? '등록 중…' : '증빙 등록' }}
-      </button>
-    </form>
-    <p v-if="error" class="mb-2 text-sm text-red-400">{{ error }}</p>
-    <ul class="space-y-2">
-      <li v-for="s in subs" :key="s.id" class="rounded bg-neutral-900 p-3 text-sm">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">{{ s.provider }} — {{ s.planName }}</span>
-          <span
-            class="rounded px-1.5 py-0.5 text-[11px] font-bold"
-            :class="s.status === 'VERIFIED' ? 'bg-emerald-700' : s.status === 'REJECTED' ? 'bg-red-800' : 'bg-neutral-700'"
-          >
-            {{ s.status }}
-          </span>
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black text-white tracking-tight">AI 유료 구독 증빙 관리</h1>
+        <p class="text-xs text-neutral-400 mt-1">
+          Suno Pro, AIVA Pro 등 유료 상업 플랜 결제 영수증을 등록하면 관리자 확인 후 음원 업로드가 가능합니다.
+        </p>
+      </div>
+      <UiButton variant="brand" size="sm" @click="createModalOpen = true">
+        + 새 유료 구독 증빙 등록
+      </UiButton>
+    </div>
+
+    <!-- Error Banner -->
+    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
+      {{ error }}
+    </div>
+
+    <!-- Subscriptions List -->
+    <UiCard padding="none">
+      <template #header>
+        <div class="px-5 pt-3 flex items-center justify-between">
+          <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">등록된 AI 플랫폼 구독 증빙</h2>
+          <span class="text-xs text-neutral-500 font-mono">{{ subs.length }}개</span>
         </div>
-        <div class="mt-1 font-mono text-xs text-neutral-500">{{ s.id }}</div>
-        <div v-if="s.expiresAt" class="text-xs text-neutral-400">만료: {{ s.expiresAt }}</div>
-      </li>
-    </ul>
-    <p v-if="subs.length === 0" class="text-sm text-neutral-500">등록된 구독이 없습니다.</p>
+      </template>
+
+      <div v-if="loading" class="space-y-2 p-4">
+        <UiSkeleton height="h-12" width="w-full" />
+        <UiSkeleton height="h-12" width="w-full" />
+      </div>
+
+      <div v-else-if="subs.length === 0" class="py-12">
+        <UiEmptyState
+          icon="📄"
+          title="등록된 구독 증빙이 없습니다"
+          description="Suno Pro/Premier 또는 AIVA Pro 등 유료 상업용 구독 인보이스를 등록해 주세요."
+        >
+          <template #action>
+            <UiButton variant="brand" size="sm" @click="createModalOpen = true">
+              구독 증빙 등록하기
+            </UiButton>
+          </template>
+        </UiEmptyState>
+      </div>
+
+      <ul v-else class="divide-y divide-surface-border">
+        <li
+          v-for="s in subs"
+          :key="s.id"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-xs"
+        >
+          <div class="min-w-0 flex-1 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white text-sm">{{ s.provider }}</span>
+              <span class="font-semibold text-brand-400">{{ s.planName }}</span>
+              <UiBadge
+                :variant="s.status === 'VERIFIED' ? 'commercial' : s.status === 'REJECTED' ? 'blocked' : 'neutral'"
+                size="xs"
+              >
+                {{ s.status }}
+              </UiBadge>
+            </div>
+            <div class="font-mono text-[11px] text-neutral-500">증빙 ID: {{ s.id }}</div>
+            <div v-if="s.expiresAt" class="text-[11px] text-neutral-400">
+              구독 유효기간: <strong class="text-neutral-200">{{ new Date(s.expiresAt).toLocaleDateString() }}</strong>까지
+            </div>
+          </div>
+
+          <div class="text-[11px] text-neutral-400 shrink-0">
+            <span v-if="s.status === 'VERIFIED'" class="text-accent-emerald font-semibold">✓ Gate 1-2 사용 가능</span>
+            <span v-else-if="s.status === 'PENDING'" class="text-accent-amber font-semibold">관리자 검증 대기중</span>
+            <span v-else class="text-accent-crimson font-semibold">반려됨</span>
+          </div>
+        </li>
+      </ul>
+    </UiCard>
+
+    <!-- Create Subscription Modal -->
+    <UiModal
+      v-model="createModalOpen"
+      title="AI 유료 구독 증빙 등록"
+      description="Suno, AIVA, Udio 등 상업용 요금제 인보이스/영수증 정보를 입력하세요."
+      @close="createModalOpen = false"
+    >
+      <form class="space-y-4" @submit.prevent="create">
+        <UiSelect v-model="provider" label="AI 플랫폼" required>
+          <option value="">플랫폼을 선택하세요…</option>
+          <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
+        </UiSelect>
+
+        <UiInput
+          v-model="planName"
+          label="구독 플랜명"
+          placeholder="예: Pro, Premier, Studio"
+          required
+        />
+
+        <UiInput
+          v-model="proofKey"
+          label="인보이스 파일 키 / 영수증 문서 번호 (선택)"
+          placeholder="예: invoices/suno_pro_202611.pdf"
+        />
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-surface-border">
+          <UiButton variant="ghost" size="sm" @click="createModalOpen = false">취소</UiButton>
+          <UiButton variant="brand" size="sm" type="submit" :loading="busy">등록 완료</UiButton>
+        </div>
+      </form>
+    </UiModal>
   </div>
 </template>
 
@@ -39,39 +117,58 @@
 import { onMounted, ref } from 'vue';
 import { partnerApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { useToast } from '@/composables/useToast';
 import type { PartnerAISubscription } from '@/api/types';
+import UiButton from '@/components/ui/UiButton.vue';
+import UiCard from '@/components/ui/UiCard.vue';
+import UiInput from '@/components/ui/UiInput.vue';
+import UiSelect from '@/components/ui/UiSelect.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
+import UiModal from '@/components/ui/UiModal.vue';
+import UiSkeleton from '@/components/ui/UiSkeleton.vue';
+import UiEmptyState from '@/components/ui/UiEmptyState.vue';
+
+const toast = useToast();
 
 const providers = ['SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'CUSTOM_OPEN_MODEL'];
 const subs = ref<PartnerAISubscription[]>([]);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const busy = ref(false);
+const createModalOpen = ref(false);
+
 const provider = ref('');
 const planName = ref('');
 const proofKey = ref('');
 
 async function load(): Promise<void> {
+  loading.value = true;
+  error.value = null;
   try {
     subs.value = await partnerApi.listSubscriptions();
   } catch (err: unknown) {
     error.value = errMessageOf(err);
+  } finally {
+    loading.value = false;
   }
 }
 
 async function create(): Promise<void> {
   busy.value = true;
-  error.value = null;
   try {
     await partnerApi.createSubscription({
       provider: provider.value,
       planName: planName.value,
       proofObjectKey: proofKey.value || undefined,
     });
+    toast.success('구독 증빙이 등록되었습니다. 관리자가 검증 후 활성화됩니다.');
     provider.value = '';
     planName.value = '';
     proofKey.value = '';
+    createModalOpen.value = false;
     await load();
   } catch (err: unknown) {
-    error.value = errMessageOf(err);
+    toast.error(errMessageOf(err), '등록 실패');
   } finally {
     busy.value = false;
   }
