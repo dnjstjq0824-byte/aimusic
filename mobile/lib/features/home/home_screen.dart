@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/error.dart';
@@ -19,6 +20,10 @@ class HomeScreen extends ConsumerWidget {
     final feed = ref.watch(homeTracksProvider);
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(10),
+          child: SvgPicture.asset('assets/logo.svg'),
+        ),
         title: const Text('AI Music'),
         actions: [
           IconButton(

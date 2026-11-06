@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-neutral-950 text-neutral-100">
     <header class="border-b border-neutral-800 px-4 py-3 flex items-center gap-4">
-      <RouterLink to="/" class="font-bold text-brand-500">AI Music</RouterLink>
+      <RouterLink to="/" class="text-neutral-100"><BrandLogo /></RouterLink>
       <nav class="flex gap-3 text-sm">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/disputes">Dispute Center</RouterLink>
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/authStore';
+import BrandLogo from '@/components/BrandLogo.vue';
 import GlobalPlayerBar from '@/components/player/GlobalPlayerBar.vue';
 import QueueDrawer from '@/components/player/QueueDrawer.vue';
 

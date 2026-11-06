@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AI Music logo mono">
+  <g fill="#FFFFFF">
+    <rect x="84" y="186" width="56" height="140" rx="28"/>
+    <rect x="156" y="146" width="56" height="220" rx="28"/>
+    <rect x="228" y="106" width="56" height="300" rx="28"/>
+    <rect x="300" y="146" width="56" height="220" rx="28"/>
+    <rect x="372" y="186" width="56" height="140" rx="28"/>
+    <path d="M398 58 C403 88 411 96 440 100 C411 104 403 112 398 142 C393 112 385 104 356 100 C385 96 393 88 398 58 Z"/>
+  </g>
+</svg>

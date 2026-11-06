@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-neutral-950 text-neutral-100">
     <header class="border-b border-neutral-800 px-4 py-3 flex items-center gap-4">
-      <RouterLink to="/partner" class="font-bold text-brand-500">Partner Console</RouterLink>
+      <RouterLink to="/partner" class="text-brand-500"><BrandLogo :size="24">Partner Console</BrandLogo></RouterLink>
       <nav class="flex gap-3 text-sm">
         <RouterLink to="/partner">Dashboard</RouterLink>
         <RouterLink to="/partner/upload">Upload</RouterLink>
@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/authStore';
+import BrandLogo from '@/components/BrandLogo.vue';
 
 const auth = useAuthStore();
 </script>
