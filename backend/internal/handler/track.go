@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -23,43 +24,38 @@ type TrackHandler struct {
 	Buckets storage.Buckets
 }
 
-// ListTracks returns READY tracks with optional provider/genre/mood filters.
+// ListTracks returns one page of READY tracks with server-side search
+// (q), filters (provider/genre/mood), sort, and a total count:
+//
+//	GET /tracks?q=&provider=&genre=&mood=&sort=recent|oldest|popular|title&limit=&offset=
 func (h *TrackHandler) ListTracks(c *gin.Context) {
-	tracks, err := h.Repos.Tracks.ListReady(c.Request.Context(), queryInt(c, "limit", 50), queryInt(c, "offset", 0))
+	q := strings.TrimSpace(c.Query("q"))
+	if len([]rune(q)) > 100 {
+		AbortError(c, fmt.Errorf("%w: q too long (max 100 chars)", domain.ErrInvalidInput))
+		return
+	}
+	sort := strings.TrimSpace(c.Query("sort"))
+	if _, valid := repository.TrackSortOrderBy(sort); !valid {
+		AbortError(c, fmt.Errorf("%w: sort must be recent|oldest|popular|title", domain.ErrInvalidInput))
+		return
+	}
+	page, err := h.Repos.Tracks.SearchReady(c.Request.Context(), repository.TrackFilter{
+		Q:        q,
+		Provider: c.Query("provider"),
+		Genre:    c.Query("genre"),
+		Mood:     c.Query("mood"),
+		Sort:     sort,
+		Limit:    queryInt(c, "limit", 50),
+		Offset:   queryInt(c, "offset", 0),
+	})
 	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	providerFilter := strings.TrimSpace(strings.ToUpper(c.Query("provider")))
-	genreFilter := strings.TrimSpace(strings.ToLower(c.Query("genre")))
-	moodFilter := strings.TrimSpace(strings.ToLower(c.Query("mood")))
-	if providerFilter == "" && genreFilter == "" && moodFilter == "" {
-		ok(c, tracks)
-		return
-	}
-	filtered := make([]*domain.Track, 0, len(tracks))
-	for _, t := range tracks {
-		if providerFilter != "" && strings.ToUpper(t.AIProvider) != providerFilter {
-			continue
-		}
-		if genreFilter != "" && (t.Genre == nil || !strings.EqualFold(*t.Genre, genreFilter)) {
-			continue
-		}
-		if moodFilter != "" {
-			matched := false
-			for _, m := range t.MoodTags {
-				if strings.EqualFold(m, moodFilter) {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				continue
-			}
-		}
-		filtered = append(filtered, t)
-	}
-	ok(c, filtered)
+	ok(c, gin.H{
+		"items": page.Items, "total": page.Total,
+		"limit": page.Limit, "offset": page.Offset,
+	})
 }
 
 // GetTrack returns one track.

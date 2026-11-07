@@ -1,5 +1,9 @@
 <template>
-  <div class="pointer-events-none fixed bottom-28 right-4 z-50 flex max-w-sm flex-col gap-2.5 sm:bottom-24 sm:right-6">
+  <div
+    class="pointer-events-none fixed bottom-28 right-4 z-50 flex max-w-sm flex-col gap-2.5 sm:bottom-24 sm:right-6"
+    aria-live="polite"
+    aria-atomic="false"
+  >
     <TransitionGroup
       enter-active-class="transform ease-out duration-300 transition"
       enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-4"
@@ -11,20 +15,24 @@
       <div
         v-for="t in toasts"
         :key="t.id"
+        :role="t.type === 'error' ? 'alert' : 'status'"
         class="pointer-events-auto flex items-start gap-3 rounded-xl border p-3.5 shadow-2xl backdrop-blur-xl"
         :class="bgClass(t.type)"
       >
-        <span class="mt-0.5 text-base shrink-0">{{ iconOf(t.type) }}</span>
+        <span class="mt-0.5 shrink-0" aria-hidden="true" v-html="iconSvg(t.type)" />
         <div class="min-w-0 flex-1">
           <div v-if="t.title" class="text-xs font-bold text-white">{{ t.title }}</div>
           <div class="text-xs text-neutral-200 leading-relaxed">{{ t.message }}</div>
         </div>
         <button
-          class="shrink-0 text-neutral-400 hover:text-white transition-colors"
-          title="닫기"
+          type="button"
+          class="shrink-0 rounded p-0.5 text-neutral-400 hover:text-white transition-colors"
+          aria-label="알림 닫기"
           @click="dismiss(t.id)"
         >
-          ✕
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
         </button>
       </div>
     </TransitionGroup>
@@ -49,16 +57,15 @@ function bgClass(type: string) {
   }
 }
 
-function iconOf(type: string) {
-  switch (type) {
-    case 'success':
-      return '✓';
-    case 'error':
-      return '✕';
-    case 'warning':
-      return '⚠';
-    default:
-      return 'ℹ';
-  }
+const ICON_PATHS: Record<string, string> = {
+  success: '<path d="M20 6 9 17l-5-5"/>',
+  error: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/>',
+  warning: '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5h.01"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>',
+};
+
+function iconSvg(type: string): string {
+  const path = ICON_PATHS[type] ?? ICON_PATHS.info;
+  return `<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 }
 </script>

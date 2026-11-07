@@ -8,7 +8,10 @@
   >
     <div class="space-y-4 py-1 text-xs text-neutral-300">
       <div class="rounded-xl border border-brand-500/30 bg-brand-950/30 p-3.5 flex items-start gap-3">
-        <span class="text-xl">🛡️</span>
+        <svg class="h-6 w-6 shrink-0 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
         <div>
           <div class="font-bold text-white text-sm mb-1">상업적 권리가 보장된 AI 음원만 유통합니다</div>
           <p class="leading-relaxed text-neutral-300">

@@ -1,11 +1,12 @@
 <template>
   <div
-    class="h-10 w-full cursor-pointer rounded bg-neutral-800"
+    class="h-10 w-full cursor-pointer rounded bg-surface-2"
     role="slider"
     :aria-valuenow="Math.round(positionMs)"
     :aria-valuemin="0"
     :aria-valuemax="Math.round(durationMs)"
-    aria-label="Seek"
+    :aria-valuetext="`${fmt(positionMs)} / ${fmt(durationMs)}`"
+    aria-label="재생 위치"
     tabindex="0"
     @click="onClick"
     @keydown.left.prevent="nudge(-5000)"
@@ -19,7 +20,7 @@
         :y="10 - h"
         :width="100 / bars.length - 0.4"
         :height="h"
-        :fill="(i / bars.length) * 100 <= progressPct ? '#FF6B3D' : '#525252'"
+        :fill="(i / bars.length) * 100 <= progressPct ? 'var(--color-brand)' : 'var(--color-surface-3)'"
       />
     </svg>
   </div>
@@ -62,5 +63,10 @@ function onClick(e: MouseEvent): void {
 
 function nudge(delta: number): void {
   emit('seek', Math.max(0, Math.min(props.durationMs, props.positionMs + delta)));
+}
+
+function fmt(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
 }
 </script>

@@ -1,15 +1,13 @@
 <template>
   <div class="mx-auto max-w-4xl py-6">
-    <!-- Header -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-surface-border pb-4">
-      <div>
-        <h1 class="text-2xl font-black text-white tracking-tight">{{ currentTerm?.titleKo || '법적 고지 및 약관' }}</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          최종 개정일: {{ currentTerm?.effectiveAt ? new Date(currentTerm.effectiveAt).toLocaleDateString() : '2026. 11. 01' }}
-          · 버전: {{ currentTerm?.version || '1.0.0' }}
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
+    <UiPageHeader
+      eyebrow="Legal"
+      :title="currentTerm?.titleKo || '법적 고지 및 약관'"
+      :description="currentTerm
+        ? `최종 개정일: ${fmtDate(currentTerm.effectiveAt)} · 버전: ${currentTerm.version}`
+        : 'AIVIBE 서비스 약관 및 정책 문서입니다.'"
+    >
+      <template #actions>
         <UiButton
           v-if="auth.isAuthenticated && !consented"
           variant="brand"
@@ -17,20 +15,23 @@
           :loading="consenting"
           @click="consent"
         >
-          ✓ 본 약관 동의하기
+          본 약관 동의하기
         </UiButton>
-        <span v-else-if="consented" class="rounded-full bg-emerald-950/80 border border-emerald-600/40 px-3 py-1 text-xs font-semibold text-emerald-300">
-          ✓ 동의 완료됨
-        </span>
-      </div>
-    </div>
+        <UiBadge v-else-if="consented" variant="success" size="sm">동의 완료됨</UiBadge>
+        <RouterLink v-else to="/login">
+          <UiButton variant="secondary" size="sm">로그인 후 동의하기</UiButton>
+        </RouterLink>
+      </template>
+    </UiPageHeader>
 
     <!-- Navigation Pills -->
-    <div class="mb-6 flex flex-wrap gap-2">
+    <div class="mt-6 mb-6 flex flex-wrap gap-2" role="tablist" aria-label="약관 문서 선택">
       <button
         v-for="code in termCodes"
         :key="code.id"
         type="button"
+        role="tab"
+        :aria-selected="activeCode === code.id"
         class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150"
         :class="activeCode === code.id ? 'bg-brand-500 text-white shadow-glow-brand' : 'bg-surface-2 text-neutral-300 hover:bg-surface-3 hover:text-white border border-surface-border'"
         @click="selectCode(code.id)"
@@ -47,13 +48,11 @@
       <UiSkeleton height="h-24" width="w-full" />
     </div>
 
-    <div v-else-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner v-else-if="error" :message="error" title="약관 조회 실패" retry-label="다시 시도" @retry="loadTerms" />
 
     <!-- Markdown Content Viewer -->
-    <UiCard v-else class="prose prose-invert max-w-none text-xs leading-relaxed text-neutral-300">
-      <div class="whitespace-pre-wrap font-sans space-y-3" v-html="renderedContent" />
+    <UiCard v-else class="text-xs leading-relaxed text-neutral-300">
+      <div class="whitespace-pre-wrap space-y-3" v-html="renderedContent" />
     </UiCard>
   </div>
 </template>
@@ -62,11 +61,15 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { legalApi } from '@/api/endpoints';
+import { errMessageOf } from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import type { LegalTerm } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
 const route = useRoute();
@@ -77,7 +80,7 @@ const toast = useToast();
 const termCodes = [
   { id: 'TOS', name: '서비스 이용약관' },
   { id: 'PRIVACY', name: '개인정보처리방침' },
-  { id: 'AI_COPYRIGHT_POLICY', name: 'AI 저작권 & OSP 면책' },
+  { id: 'COPYRIGHT_POLICY', name: 'AI 저작권 & OSP 면책' },
   { id: 'PARTNER_CONTRACT', name: '파트너 음원유통 계약서' },
 ];
 
@@ -89,15 +92,31 @@ const error = ref<string | null>(null);
 const consenting = ref(false);
 const consented = ref(false);
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const renderedContent = computed(() => {
   if (!currentTerm.value?.bodyMd) return '<p>내용이 등록되지 않았습니다.</p>';
-  return currentTerm.value.bodyMd
+  // Escape first so stored markup can never execute; then apply the tiny
+  // heading/bold/list transforms on the escaped text.
+  return escapeHtml(currentTerm.value.bodyMd)
     .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-white mt-4 mb-2">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 class="text-base font-extrabold text-white mt-6 mb-3 border-b border-surface-border pb-1">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 class="text-lg font-black text-brand-400 mt-6 mb-4">$1</h1>')
     .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
     .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-neutral-300">$1</li>');
 });
+
+function fmtDate(iso?: string): string {
+  if (!iso) return '2026. 11. 01';
+  return new Date(iso).toLocaleDateString('ko-KR');
+}
 
 async function loadTerms() {
   loading.value = true;
@@ -106,8 +125,8 @@ async function loadTerms() {
     const list = await legalApi.listTerms();
     terms.value = list;
     syncCurrentTerm();
-  } catch {
-    error.value = '약관 정보를 불러오지 못했습니다.';
+  } catch (err: unknown) {
+    error.value = errMessageOf(err);
   } finally {
     loading.value = false;
   }
@@ -118,7 +137,7 @@ function syncCurrentTerm() {
   if (match) {
     currentTerm.value = match;
   } else if (terms.value.length > 0) {
-    currentTerm.value = terms.value[0];
+    currentTerm.value = terms.value[0] ?? null;
   }
 }
 
@@ -136,7 +155,7 @@ async function consent() {
     consented.value = true;
     toast.success('약관에 동의하셨습니다.');
   } catch (err: unknown) {
-    toast.error('약관 동의 처리에 실패했습니다.');
+    toast.error(errMessageOf(err), '약관 동의 실패');
   } finally {
     consenting.value = false;
   }

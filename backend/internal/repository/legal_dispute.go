@@ -173,6 +173,14 @@ func (r *DisputeRepo) Resolve(ctx context.Context, id, status, resolverID string
 	return err
 }
 
+// CountOpen returns the open/under-review dispute count.
+func (r *DisputeRepo) CountOpen(ctx context.Context) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM copyright_disputes WHERE status IN ('OPEN','UNDER_REVIEW')`).Scan(&n)
+	return n, err
+}
+
 // CountUpheldByPartner counts takedown-upheld disputes on a partner's tracks.
 func (r *DisputeRepo) CountUpheldByPartner(ctx context.Context, partnerID string) (int, error) {
 	var n int

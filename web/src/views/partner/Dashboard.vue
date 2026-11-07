@@ -1,19 +1,14 @@
 <template>
   <div class="space-y-6">
-    <!-- Partner Studio Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">
-          <span>파트너 아티스트 스튜디오</span>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">대시보드 &amp; 정산 관리</h1>
-        <p class="text-xs text-neutral-400 mt-1">상업용 라이선스 검증 현황과 스트리밍 정산 내역을 관리합니다.</p>
-      </div>
-
-      <div class="flex items-center gap-2">
+    <UiPageHeader
+      eyebrow="Studio Console"
+      title="대시보드 &amp; 정산 관리"
+      description="상업용 라이선스 검증 현황과 스트리밍 정산 내역을 관리합니다."
+    >
+      <template #actions>
         <RouterLink to="/partner/upload">
           <UiButton variant="brand" size="sm">
-            + 새 음원 업로드 (Gatekeeper)
+            새 음원 업로드 (Gatekeeper)
           </UiButton>
         </RouterLink>
         <RouterLink to="/partner/subscriptions">
@@ -21,13 +16,10 @@
             AI 구독 증빙 관리
           </UiButton>
         </RouterLink>
-      </div>
-    </div>
+      </template>
+    </UiPageHeader>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner :message="error" title="대시보드를 불러오지 못했습니다" />
 
     <!-- Metrics Cards -->
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -50,23 +42,27 @@
       </UiCard>
 
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">수익 배분율 (Rev-Share)</div>
-        <div class="text-2xl font-black text-white">70.0%</div>
-        <div class="text-[11px] text-neutral-400">3.3% 원천징수 공제 적용</div>
+        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">누적 유효 스트리밍</div>
+        <div class="text-2xl font-black text-white">{{ totalPlays.toLocaleString() }}회</div>
+        <div class="text-[11px] text-neutral-400">30초 이상 재생 집계</div>
       </UiCard>
     </div>
 
     <!-- Settlement Projection & Tax Card -->
-    <UiCard class="border-brand-500/20 bg-brand-950/20">
+    <UiCard border-variant="brand">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <span class="text-base text-brand-400">💰</span>
-            <h3 class="text-xs font-bold text-white uppercase tracking-wider">이번 달 예상 정산 (30초 유효 스트리밍)</h3>
+            <svg class="h-4 w-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <rect x="3" y="6" width="18" height="13" rx="2" />
+              <path d="M3 10h18M16 15h2" />
+            </svg>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">예상 정산 (30초 유효 스트리밍)</h3>
           </div>
           <p class="text-xs text-neutral-300">
             총 누적 유효 스트리밍: <strong class="text-white font-mono">{{ totalPlays.toLocaleString() }}회</strong>
-            · 추정 정산금액: <strong class="text-brand-400 font-mono">약 ₩{{ Math.round(totalPlays * 5.6).toLocaleString() }}원</strong> (소득세 3.3% 원천징수 전)
+            · 추정 정산금액: <strong class="text-brand-400 font-mono">약 ₩{{ estimatedNet.toLocaleString() }}원</strong>
+            (재생당 10원 · 소득세 3.3% 원천징수 후 추정치)
           </p>
         </div>
         <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="text-xs text-brand-400 hover:underline shrink-0">
@@ -91,7 +87,6 @@
 
       <div v-else-if="tracks.length === 0" class="py-12">
         <UiEmptyState
-          icon="🎵"
           title="등록된 음원이 없습니다"
           description="Suno Pro, AIVA Pro 등 유료 상업 플랜에서 생성한 음원을 업로드해 보세요."
         >
@@ -130,12 +125,9 @@
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <span
-              class="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-              :class="t.status === 'READY' ? 'bg-emerald-950 border border-emerald-600/40 text-emerald-300' : t.status === 'REJECTED' || t.status === 'BLOCKED_NON_COMMERCIAL' ? 'bg-red-950 border border-red-600/40 text-red-300' : 'bg-surface-2 text-neutral-300'"
-            >
-              {{ t.status }}
-            </span>
+            <UiBadge :variant="statusVariant(t.status)" size="sm">
+              {{ statusKo(t.status) }}
+            </UiBadge>
             <RouterLink :to="{ name: 'track-detail', params: { id: t.id } }">
               <UiButton variant="secondary" size="xs">상세보기</UiButton>
             </RouterLink>
@@ -152,7 +144,10 @@ import { partnerApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import type { PartnerAISubscription, Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
@@ -165,6 +160,31 @@ const error = ref<string | null>(null);
 const readyCount = computed(() => tracks.value.filter((t) => t.status === 'READY').length);
 const verifiedSubs = computed(() => subs.value.filter((s) => s.status === 'VERIFIED').length);
 const totalPlays = computed(() => tracks.value.reduce((acc, t) => acc + (t.playCount || 0), 0));
+// Mirrors backend settlement math: gross = plays × ₩10, withholding 3.3%.
+const estimatedNet = computed(() => {
+  const gross = totalPlays.value * 10;
+  return gross - Math.floor((gross * 33) / 1000);
+});
+
+const STATUS_KO: Record<string, string> = {
+  UPLOADED: '업로드됨',
+  TRANSCODING: '변환 중',
+  LICENSE_GATE_PENDING: '심사 대기',
+  LICENSE_GATE_REJECTED: '게이트 반려',
+  READY: '재생 가능',
+  TAKEN_DOWN: '임시조치 중',
+};
+
+function statusKo(status: string): string {
+  return STATUS_KO[status] ?? '처리 중';
+}
+
+function statusVariant(status: string): 'success' | 'danger' | 'warning' | 'neutral' {
+  if (status === 'READY') return 'success';
+  if (status === 'LICENSE_GATE_REJECTED' || status === 'TAKEN_DOWN') return 'danger';
+  if (status === 'LICENSE_GATE_PENDING' || status === 'TRANSCODING') return 'warning';
+  return 'neutral';
+}
 
 onMounted(async () => {
   loading.value = true;

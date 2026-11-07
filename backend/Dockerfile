@@ -7,8 +7,10 @@ RUN CGO_ENABLED=0 go build -o /out/api ./cmd/api && \
     CGO_ENABLED=0 go build -o /out/worker ./cmd/worker
 
 FROM alpine:3.20
-RUN apk add --no-cache ffmpeg ca-certificates tzdata
+RUN apk add --no-cache ffmpeg ca-certificates tzdata && \
+    addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=build /out/api /out/worker /app/
+USER app
 EXPOSE 8080
 CMD ["./api"]

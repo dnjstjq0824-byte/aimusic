@@ -61,6 +61,26 @@ func (r *UserRepo) SetActive(ctx context.Context, id string, active bool) error 
 	return err
 }
 
+// UpdatePasswordHash replaces an account's password hash.
+func (r *UserRepo) UpdatePasswordHash(ctx context.Context, id, hash string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET password_hash = $2 WHERE id = $1::uuid`, id, hash)
+	return err
+}
+
+// CountAll returns the total user count.
+func (r *UserRepo) CountAll(ctx context.Context) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&n)
+	return n, err
+}
+
+// CountByRole returns the user count for one role.
+func (r *UserRepo) CountByRole(ctx context.Context, role string) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE role = $1`, role).Scan(&n)
+	return n, err
+}
+
 // PartnerRepo accesses partner_profiles.
 type PartnerRepo struct{ db *sql.DB }
 
@@ -107,6 +127,14 @@ func (r *PartnerRepo) GetByUserID(ctx context.Context, userID string) (*domain.P
 		return nil, domain.ErrNotFound
 	}
 	return p, err
+}
+
+// CountByStatus returns the partner count for one status.
+func (r *PartnerRepo) CountByStatus(ctx context.Context, status string) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM partner_profiles WHERE status = $1`, status).Scan(&n)
+	return n, err
 }
 
 // ListByStatus returns partner profiles filtered by status.
@@ -215,6 +243,14 @@ func (r *SubscriptionRepo) ListByPartner(ctx context.Context, partnerID string) 
 		out = append(out, s)
 	}
 	return out, rows.Err()
+}
+
+// CountByStatus returns the subscription count for one status.
+func (r *SubscriptionRepo) CountByStatus(ctx context.Context, status string) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM partner_ai_subscriptions WHERE status = $1`, status).Scan(&n)
+	return n, err
 }
 
 // ListPending returns subscriptions awaiting admin verification.

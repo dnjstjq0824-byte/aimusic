@@ -8,42 +8,47 @@
       <span>← 목록으로 돌아가기</span>
     </RouterLink>
 
-    <!-- Error State -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner
+      :message="error"
+      title="음원을 불러오지 못했습니다"
+      retry-label="다시 시도"
+      @retry="loadTrack"
+    />
 
     <!-- Loading State -->
-    <div v-else-if="loading" class="space-y-4">
+    <div v-if="!error && loading" class="space-y-4">
       <UiSkeleton height="h-32" width="w-full" rounded="xl" />
       <UiSkeleton height="h-64" width="w-full" rounded="xl" />
     </div>
 
     <!-- Track Content -->
-    <div v-else-if="track" class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div v-else-if="!error && track" class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <!-- Main Column -->
       <section class="space-y-6 min-w-0">
         <!-- Studio Player Header -->
         <UiCard class="relative overflow-hidden">
           <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-            <!-- Big Play Button -->
-            <button
-              class="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 text-white text-3xl font-black shadow-glow-brand hover:scale-105 active:scale-95 transition-all cursor-pointer"
-              title="재생하기"
-              @click="play"
-            >
-              ▶
-            </button>
+            <div class="relative shrink-0">
+              <UiCoverArt :seed="track.id" :title="track.title" size="xl" rounded="xl" :verified="track.status === 'READY'" />
+              <button
+                type="button"
+                class="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 text-white opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
+                :aria-label="`「${track.title}」 재생`"
+                :disabled="track.status !== 'READY'"
+                @click="play"
+              >
+                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </button>
+            </div>
 
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <AiBadge :track="track" />
-                <UiBadge variant="commercial" size="xs">
-                  ✓ 상업 라이선스 검증 완료
-                </UiBadge>
-                <span v-if="track.genre" class="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] text-neutral-400 font-medium">
+                <UiBadge v-if="track.genre" variant="neutral" size="xs">
                   {{ track.genre }}
-                </span>
+                </UiBadge>
               </div>
 
               <h1 class="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
@@ -62,8 +67,8 @@
 
           <!-- Quick Action Bar -->
           <div class="mt-6 flex flex-wrap items-center gap-2 pt-4 border-t border-surface-border">
-            <UiButton variant="brand" size="sm" @click="play">
-              ▶ 바로 재생
+            <UiButton variant="brand" size="sm" :disabled="track.status !== 'READY'" @click="play">
+              바로 재생
             </UiButton>
             <UiButton variant="secondary" size="sm" @click="enqueue">
               + 재생 큐에 담기
@@ -148,12 +153,15 @@
         <!-- License Certification Card -->
         <UiCard class="space-y-3">
           <div class="flex items-center gap-2">
-            <span class="text-base text-accent-emerald">🛡️</span>
+            <svg class="h-4 w-4 text-accent-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
             <h3 class="text-xs font-bold text-white uppercase tracking-wider">상업 라이선스 인증서</h3>
           </div>
           <div class="rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-3 text-xs text-emerald-300 space-y-1.5">
             <div class="font-bold flex items-center gap-1.5">
-              <span>✓ Gate 1-4 검증 완료</span>
+              <UiBadge variant="success" size="xs">Gate 1-4 검증 완료</UiBadge>
             </div>
             <p class="text-[11px] leading-relaxed text-emerald-200/80">
               본 음원은 {{ track.aiProvider }} 정식 유료 플랜 유효 구독 기간 내에 생성되었으며, FFprobe 오디오 분석을 통해 비상업 워터마크가 부존재함을 확인받았습니다.
@@ -162,7 +170,7 @@
           <div class="space-y-1.5 text-[11px] text-neutral-400 pt-1">
             <div class="flex justify-between">
               <span>검증 상태</span>
-              <span class="font-semibold text-emerald-400 font-mono">{{ track.status }}</span>
+              <span class="font-semibold text-emerald-400">{{ statusKo }}</span>
             </div>
             <div class="flex justify-between">
               <span>트랙 고유 ID</span>
@@ -185,16 +193,16 @@
               full-width
               @click="reportModalOpen = true"
             >
-              🚩 권리침해 신고 (OSP 제103조)
+              권리침해 신고 (OSP 제103조)
             </UiButton>
             <UiButton
               v-if="auth.isAuthenticated"
               variant="danger"
               size="sm"
               full-width
-              @click="blockPartner"
+              @click="blockConfirmOpen = true"
             >
-              🚫 이 아티스트(파트너) 차단
+              이 아티스트(파트너) 차단
             </UiButton>
           </div>
         </UiCard>
@@ -211,29 +219,26 @@
     />
 
     <!-- Playlist Add Modal -->
-    <UiModal
+    <UiPlaylistPicker
       v-model="playlistModalOpen"
-      title="플레이리스트에 담기"
-      description="선택한 음원을 보관할 플레이리스트를 선택하세요."
-      @close="playlistModalOpen = false"
-    >
-      <div v-if="playlists.playlists.length === 0" class="py-4 text-center">
-        <p class="text-xs text-neutral-400 mb-3">플레이리스트가 없습니다.</p>
-        <UiButton variant="brand" size="sm" @click="createPlaylistPrompt">새 플레이리스트 생성</UiButton>
-      </div>
-      <div v-else class="space-y-2">
-        <button
-          v-for="p in playlists.playlists"
-          :key="p.id"
-          type="button"
-          class="w-full flex items-center justify-between p-3 rounded-xl border border-surface-border bg-surface-2 hover:bg-surface-3 transition-colors text-left text-xs"
-          @click="addToPlaylist(p.id)"
-        >
-          <span class="font-bold text-white">{{ p.title }}</span>
-          <span class="text-neutral-400">담기 →</span>
-        </button>
-      </div>
-    </UiModal>
+      :track-title="track?.title ?? ''"
+      :playlists="playlists.playlists"
+      :create-loading="creatingPlaylist"
+      @select="addToPlaylist"
+      @create="createPlaylist"
+    />
+
+    <!-- Artist Block Confirm -->
+    <UiConfirmDialog
+      v-model="blockConfirmOpen"
+      title="아티스트 차단"
+      description="차단한 아티스트의 모든 음원이 재생 큐에서 제외됩니다."
+      body="차단은 권리보호센터에서 언제든 해제할 수 있습니다. 정말 차단하시겠습니까?"
+      confirm-label="차단하기"
+      danger
+      :loading="blocking"
+      @confirm="confirmBlockPartner"
+    />
   </div>
 </template>
 
@@ -250,7 +255,10 @@ import type { Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
-import UiModal from '@/components/ui/UiModal.vue';
+import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
+import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
+import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
@@ -267,6 +275,23 @@ const error = ref<string | null>(null);
 
 const reportModalOpen = ref(false);
 const playlistModalOpen = ref(false);
+const creatingPlaylist = ref(false);
+const blockConfirmOpen = ref(false);
+const blocking = ref(false);
+
+const STATUS_KO: Record<string, string> = {
+  UPLOADED: '업로드됨',
+  TRANSCODING: '변환 중',
+  LICENSE_GATE_PENDING: '심사 대기',
+  LICENSE_GATE_REJECTED: '게이트 반려',
+  READY: '재생 가능',
+  TAKEN_DOWN: '임시조치 중',
+};
+
+const statusKo = computed(() => {
+  if (!track.value) return '';
+  return STATUS_KO[track.value.status] ?? '처리 중';
+});
 
 const waveformPeaks = computed<number[]>(() => {
   if (!track.value?.waveformJson) {
@@ -323,26 +348,30 @@ async function addToPlaylist(playlistId: string) {
   }
 }
 
-async function createPlaylistPrompt() {
-  const title = prompt('새 플레이리스트 제목을 입력하세요:');
-  if (!title) return;
+async function createPlaylist(title: string) {
+  creatingPlaylist.value = true;
   try {
     const created = await playlistApi.create(title, false);
     playlists.playlists.unshift(created);
     await addToPlaylist(created.id);
   } catch (err) {
     toast.error(errMessageOf(err));
+  } finally {
+    creatingPlaylist.value = false;
   }
 }
 
-async function blockPartner() {
+async function confirmBlockPartner() {
   if (!track.value?.partnerId) return;
-  if (!confirm('이 아티스트(파트너)를 차단하시겠습니까? 해당 아티스트의 모든 음원이 재생 큐에서 제외됩니다.')) return;
+  blocking.value = true;
   try {
     await userBlocksApi.blockArtist(track.value.partnerId, 'User requested block');
     toast.warning('아티스트가 차단되었습니다.');
+    blockConfirmOpen.value = false;
   } catch (err) {
     toast.error(errMessageOf(err), '차단 실패');
+  } finally {
+    blocking.value = false;
   }
 }
 

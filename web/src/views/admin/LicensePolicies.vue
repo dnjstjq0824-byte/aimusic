@@ -1,25 +1,25 @@
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs text-accent-purple font-bold uppercase tracking-wider mb-1">
-          <span>AI Policy Matrix</span>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">AI 플랫폼별 상업 라이선스 정책 매트릭스</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          각 AI 서비스별 단독 스트리밍 허용 여부(`allows_standalone_streaming`), 허용 플랜, 차단 플랜을 실시간으로 관리합니다.
-        </p>
-      </div>
-      <UiButton variant="secondary" size="sm" @click="load">새로고침</UiButton>
-    </div>
+    <UiPageHeader
+      eyebrow="Policy Matrix"
+      title="AI 플랫폼별 상업 라이선스 정책 매트릭스"
+      description="각 AI 서비스별 단독 스트리밍 허용 여부, 허용 플랜, 차단 플랜을 실시간으로 관리합니다."
+    >
+      <template #actions>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">새로고침</UiButton>
+      </template>
+    </UiPageHeader>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
+    <UiErrorBanner :message="error" title="정책 매트릭스를 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+
+    <div v-if="loading" class="space-y-2">
+      <UiSkeleton height="h-12" width="w-full" />
+      <UiSkeleton height="h-12" width="w-full" />
+      <UiSkeleton height="h-12" width="w-full" />
     </div>
 
     <!-- Policies Table -->
-    <UiTable>
+    <UiTable v-if="!loading">
       <template #header>
         <th class="p-3.5">제공자 (Provider)</th>
         <th class="p-3.5">단독 스트리밍 유통</th>
@@ -42,7 +42,7 @@
             :variant="p.allowsStandaloneStreaming ? 'commercial' : 'syncOnly'"
             size="xs"
           >
-            {{ p.allowsStandaloneStreaming ? '✓ 허용 (Standalone)' : '✕ 불허 (Sync-Only)' }}
+            {{ p.allowsStandaloneStreaming ? '허용 (Standalone)' : '불허 (Sync-Only)' }}
           </UiBadge>
         </td>
         <td class="p-3.5 font-mono text-neutral-300">
@@ -116,15 +116,19 @@ import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
 import type { AIProviderPolicy } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
+import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiTable from '@/components/ui/UiTable.vue';
 import UiModal from '@/components/ui/UiModal.vue';
 
 const toast = useToast();
 
 const policies = ref<AIProviderPolicy[]>([]);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const editModalOpen = ref(false);
 const editingPolicy = ref<AIProviderPolicy | null>(null);
@@ -137,11 +141,14 @@ const formRejectionMsg = ref('');
 const saving = ref(false);
 
 async function load() {
+  loading.value = true;
   error.value = null;
   try {
     policies.value = await adminApi.listPolicies();
   } catch (err) {
     error.value = errMessageOf(err);
+  } finally {
+    loading.value = false;
   }
 }
 

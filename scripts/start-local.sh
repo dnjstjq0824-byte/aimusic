@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Start the local stack (PostgreSQL 16 + Redis 7 + MinIO + API + worker).
+# Start the local stack (PostgreSQL 16 + Redis 7 + LocalStack S3 + API + worker).
 #
 # Hardened Phase 5 version:
 #   - `compose up` with health-gated dependencies (see docker-compose.local.yml)
-#   - active health waits (postgres/redis/minio/api/worker) with timeouts
+#   - active health waits (postgres/redis/localstack/api/worker) with timeouts
 #   - idempotent migrate + seed (up.sql once, seed.sql always safe via ON CONFLICT)
 #
 # Usage:
@@ -45,8 +45,7 @@ DB_NAME="${DB_NAME:-ai_music}"
 DB_USER="${DB_USER:-ai_music}"
 DB_PASSWORD="${DB_PASSWORD:-ai_music_local_pw}"
 API_PORT="${API_PORT:-8080}"
-MINIO_API_PORT="${MINIO_API_PORT:-9000}"
-MINIO_CONSOLE_PORT="${MINIO_CONSOLE_PORT:-9001}"
+S3_PORT="${S3_PORT:-4566}"
 REDIS_PORT="${REDIS_PORT:-6379}"
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -106,10 +105,10 @@ echo "[start-local] postgres ready"
 wait_exec "redis ping" 120 \
   compose exec -T redis redis-cli ping
 echo "[start-local] redis ready"
-wait_http "http://localhost:$MINIO_API_PORT/minio/health/live" 180
-echo "[start-local] minio ready"
-# minio-init is a one-shot bucket bootstrap (staging-private + public-hls); wait for exit 0.
-minio_init_start="$(date +%s)"
+wait_http "http://localhost:$S3_PORT/_localstack/health" 240
+echo "[start-local] localstack ready"
+# s3-init is a one-shot bucket bootstrap (staging + public-hls + read policy); wait for exit 0.
+s3_init_start="$(date +%s)"
 while true; do
   init_state="$(compose ps --format json 2>/dev/null | python3 -c "
 import json,sys
@@ -118,7 +117,7 @@ try:
   if isinstance(rows,dict): rows=[rows]
   for r in rows:
     name=r.get('Service') or r.get('Name') or ''
-    if 'minio-init' in name:
+    if 's3-init' in name:
       print(r.get('State','')+'/'+r.get('ExitCode',''))
       raise SystemExit(0)
 except Exception:
@@ -126,12 +125,12 @@ except Exception:
 print('unknown')
 " 2>/dev/null || echo "unknown")"
   if [[ "$init_state" == *"exited/0"* ]] || [[ "$init_state" == *"completed"* ]]; then
-    echo "[start-local] minio-init buckets ready ($init_state)"
+    echo "[start-local] s3-init buckets ready ($init_state)"
     break
   fi
   now="$(date +%s)"
-  if [ $((now - minio_init_start)) -ge 180 ]; then
-    echo "[start-local] WARN: minio-init state=$init_state (continuing; check 'docker compose logs minio-init')" >&2
+  if [ $((now - s3_init_start)) -ge 180 ]; then
+    echo "[start-local] WARN: s3-init state=$init_state (continuing; check 'docker compose logs s3-init')" >&2
     break
   fi
   sleep 5
@@ -154,6 +153,16 @@ if [ "$TABLE_EXISTS" != "t" ]; then
 else
   echo "[start-local] schema already present; skipping 000001_init.up.sql"
 fi
+BATCH2_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.password_reset_tokens') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH2_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000002_batch2.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000002_batch2.up.sql
+  echo "[start-local] batch2 schema applied"
+else
+  echo "[start-local] batch2 schema already present; skipping 000002_batch2.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql
@@ -161,5 +170,5 @@ echo "[start-local] seed applied"
 
 echo "[start-local] stack status:"
 compose ps
-echo "[start-local] Done. API: http://localhost:$API_PORT  MinIO console: http://localhost:$MINIO_CONSOLE_PORT"
+echo "[start-local] Done. API: http://localhost:$API_PORT  S3: http://localhost:$S3_PORT"
 echo "[start-local] Verify: curl http://localhost:$API_PORT/healthz && ./scripts/test-e2e.sh"

@@ -1,34 +1,34 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs text-accent-purple font-bold uppercase tracking-wider mb-1">
-          <span>Gate 4 Admin Workbench</span>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">AI 음원 &amp; 상업 라이선스 최종 심사</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          Gate 1~3을 통과한 대기 음원과 파트너 증빙을 대조 심사하여 승인(READY) 또는 반려 처리합니다.
-        </p>
-      </div>
-      <UiButton variant="secondary" size="sm" @click="loadAll">
-        새로고침
-      </UiButton>
-    </div>
+    <UiPageHeader
+      eyebrow="Gate 4 Workbench"
+      title="AI 음원 &amp; 상업 라이선스 최종 심사"
+      description="Gate 1~3을 통과한 대기 음원과 파트너 증빙을 대조 심사하여 승인(READY) 또는 반려 처리합니다."
+    >
+      <template #actions>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="loadAll">
+          새로고침
+        </UiButton>
+      </template>
+    </UiPageHeader>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner :message="error" title="심사 대기열을 불러오지 못했습니다" retry-label="다시 시도" @retry="loadAll" />
 
     <!-- Tabs -->
     <UiTabs v-model="activeTab" :tabs="tabOptions" />
 
+    <div v-if="loading" class="grid gap-4 lg:grid-cols-2">
+      <UiCard v-for="i in 4" :key="i" class="space-y-3">
+        <UiSkeleton height="h-5" width="w-2/3" />
+        <UiSkeleton height="h-3" width="w-1/2" />
+        <UiSkeleton height="h-10" width="w-full" />
+      </UiCard>
+    </div>
+
     <!-- Tab 1: Pending Tracks Review -->
-    <div v-if="activeTab === 'tracks'" class="space-y-4">
+    <div v-if="!loading && activeTab === 'tracks'" class="space-y-4">
       <div v-if="pendingTracks.length === 0" class="py-12">
         <UiEmptyState
-          icon="✓"
           title="검수 대기 중인 트랙이 없습니다"
           description="현재 심사 대기열에 등록된 음원이 모두 처리되었습니다."
         />
@@ -50,7 +50,7 @@
               size="xs"
               @click="previewTrack(t)"
             >
-              ▶ 미리듣기
+              미리듣기
             </UiButton>
           </div>
 
@@ -115,10 +115,9 @@
     </div>
 
     <!-- Tab 2: Partner Profile Reviews -->
-    <div v-else-if="activeTab === 'partners'" class="space-y-4">
+    <div v-else-if="!loading && activeTab === 'partners'" class="space-y-4">
       <div v-if="(queues.partners?.length ?? 0) === 0" class="py-12">
         <UiEmptyState
-          icon="✓"
           title="대기 중인 파트너 신청이 없습니다"
         />
       </div>
@@ -126,7 +125,7 @@
         <UiCard v-for="p in queues.partners ?? []" :key="p.id" class="space-y-3">
           <div class="flex items-center justify-between">
             <div class="font-bold text-white text-sm">{{ p.companyName }}</div>
-            <UiBadge variant="warning" size="xs">{{ p.status }}</UiBadge>
+            <UiBadge variant="warning" size="xs">{{ partnerStatusKo(p.status) }}</UiBadge>
           </div>
           <div class="font-mono text-[11px] text-neutral-500">파트너 ID: {{ p.id }}</div>
           <div class="flex gap-2 pt-2 border-t border-surface-border">
@@ -138,10 +137,9 @@
     </div>
 
     <!-- Tab 3: Subscriptions Review -->
-    <div v-else class="space-y-4">
+    <div v-else-if="!loading" class="space-y-4">
       <div v-if="(queues.subscriptions?.length ?? 0) === 0" class="py-12">
         <UiEmptyState
-          icon="✓"
           title="대기 중인 구독 증빙이 없습니다"
         />
       </div>
@@ -149,7 +147,7 @@
         <UiCard v-for="s in queues.subscriptions ?? []" :key="s.id" class="space-y-3">
           <div class="flex items-center justify-between">
             <div class="font-bold text-white text-sm">{{ s.provider }} — {{ s.planName }}</div>
-            <UiBadge variant="neutral" size="xs">{{ s.status }}</UiBadge>
+            <UiBadge variant="neutral" size="xs">{{ subStatusKo(s.status) }}</UiBadge>
           </div>
           <div class="font-mono text-[11px] text-neutral-500">증빙 ID: {{ s.id }}</div>
           <div v-if="s.proofObjectKey" class="text-xs text-neutral-300">
@@ -178,8 +176,11 @@ import { useToast } from '@/composables/useToast';
 import type { ReviewQueues, Track, TrackRightsDeclaration, PartnerAISubscription } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
+import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiTabs, { type TabOption } from '@/components/ui/UiTabs.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 
@@ -194,7 +195,30 @@ const tabOptions: TabOption[] = [
 
 const activeTab = ref('tracks');
 const queues = ref<ReviewQueues>({ tracks: [], partners: [], subscriptions: [] });
+const loading = ref(true);
 const error = ref<string | null>(null);
+
+const PARTNER_STATUS_KO: Record<string, string> = {
+  PENDING: '승인 대기',
+  APPROVED: '승인됨',
+  SUSPENDED: '정지됨',
+  TERMINATED: '해지됨',
+};
+
+const SUB_STATUS_KO: Record<string, string> = {
+  PENDING: '검증 대기',
+  VERIFIED: '검증 완료',
+  REJECTED: '반려됨',
+  EXPIRED: '만료됨',
+};
+
+function partnerStatusKo(status: string): string {
+  return PARTNER_STATUS_KO[status] ?? status;
+}
+
+function subStatusKo(status: string): string {
+  return SUB_STATUS_KO[status] ?? status;
+}
 
 const trackReason = ref<Record<string, string>>({});
 const subExpiry = ref<Record<string, string>>({});
@@ -211,12 +235,15 @@ function fmtDate(d?: string): string {
 }
 
 async function loadAll() {
+  loading.value = true;
   error.value = null;
   try {
     const q = await adminApi.pending();
     queues.value = q;
   } catch (err) {
     error.value = errMessageOf(err);
+  } finally {
+    loading.value = false;
   }
 }
 

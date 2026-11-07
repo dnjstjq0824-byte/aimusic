@@ -147,6 +147,12 @@ func (s *AuthService) ParseAccess(token string) (*Claims, error) {
 	return s.parse(token, s.accessKey, TokenAccess)
 }
 
+// Issue mints a token pair for an already-authenticated principal
+// (used by social login after provider verification).
+func (s *AuthService) Issue(userID, role string) (*Tokens, error) {
+	return s.issue(userID, role)
+}
+
 // Withdraw deactivates the user account immediately (in-app immediate withdrawal compliance).
 func (s *AuthService) Withdraw(ctx context.Context, userID string) error {
 	if userID == "" {

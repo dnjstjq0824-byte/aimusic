@@ -255,3 +255,68 @@ export interface ReviewQueues {
 export interface ApiErrorBody {
   error: { code: string; message: string };
 }
+
+// One page of a paged listing (mirrors the backend page envelope).
+export interface Page<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type TrackPage = Page<Track>;
+
+export type TrackSort = 'recent' | 'oldest' | 'popular' | 'title';
+
+export interface OAuthProviderInfo {
+  provider: string;
+  enabled: boolean;
+}
+
+export interface BillingPlan {
+  id: string;
+  code: string;
+  nameKo: string;
+  amountKrw: number;
+  interval: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillingOrder {
+  id: string;
+  userId: string;
+  planId: string;
+  orderId: string;
+  amountKrw: number;
+  status: string;
+  tossPaymentKey?: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillingSubscription {
+  id: string;
+  userId: string;
+  planId: string;
+  orderId?: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  plan?: BillingPlan;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOverview {
+  users: { total: number; admins: number; partners: number; users: number };
+  tracks: { ready: number; pendingGate: number; takenDown: number };
+  reviews: { tracks: number; partners: number; subscriptions: number };
+  disputesOpen: number;
+  plays: { last24h: number; total: number };
+  queueDepth: number | null;
+  jobsFailed24h: number;
+  settlementsPending: { count: number; netKrw: number };
+}

@@ -2,21 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * AIVIBE Design Tokens (single source mirrored in tailwind.config.js).
+ * Brand: "Verified Sound" — obsidian canvas, electric tangerine energy,
+ * gold reserved for verified/premium moments, deep teal for brand surfaces.
+ * No hardcoded color/px values outside this file and tailwind.config.js.
+ */
 :root {
+  /* Surfaces (dark-first single theme) */
   --color-surface-0: #09090b;
   --color-surface-1: #111116;
   --color-surface-2: #181820;
   --color-surface-3: #22222d;
   --color-surface-border: #262633;
+  --color-surface-border-hover: #3b3b4d;
+
+  /* Brand */
   --color-brand: #ff5c00;
+  --color-brand-strong: #ea580c;
+  --color-brand-soft: #431407;
+  --color-gold: #ffc53d;
+  --color-brand-teal: #0b1b18;
+  --color-brand-teal-raised: #132826;
+
+  /* Text */
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+
+  /* Status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
+
+  /* Shape */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Elevation */
+  --shadow-glow-brand: 0 0 25px -5px rgba(255, 92, 0, 0.35);
+  --shadow-glow-brand-lg: 0 0 40px -8px rgba(255, 92, 0, 0.45);
+  --shadow-subtle-elevated:
+    0 10px 30px -10px rgba(0, 0, 0, 0.8),
+    0 0 1px 1px rgba(255, 255, 255, 0.05);
+
+  /* Motion */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
   margin: 0;
   padding: 0;
   background-color: var(--color-surface-0);
-  color: #f4f4f5;
-  font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-text-primary);
+  font-family:
+    'Pretendard Variable', Pretendard, Inter, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -30,11 +79,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #272733;
-  border-radius: 9999px;
+  background: var(--color-surface-3);
+  border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b3b4f;
+  background: var(--color-surface-border-hover);
 }
 
 /* Glass panel */
@@ -54,11 +103,25 @@ body {
 
 /* Waveform visualizer bars */
 .waveform-bar {
-  transition: height 0.15s ease, background-color 0.2s ease;
+  transition:
+    height var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
 }
 
-/* Focus styles */
+/* Focus styles — visible brand ring for keyboard navigation */
 *:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.6);
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

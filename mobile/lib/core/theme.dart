@@ -1,25 +1,37 @@
-// App theme: dark music-player theme.
+// App theme: AIVIBE dark music-player theme.
+// Mirrors web design tokens: obsidian surfaces, electric tangerine brand,
+// gold reserved for verified/premium moments.
 library;
 
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const _seed = Color(0xFF7C4DFF);
+  static const brand = Color(0xFFFF5C00);
+  static const brandStrong = Color(0xFFEA580C);
+  static const gold = Color(0xFFFFC53D);
+  static const surface0 = Color(0xFF09090B);
+  static const surface1 = Color(0xFF111116);
+  static const surface2 = Color(0xFF181820);
+  static const surface3 = Color(0xFF22222D);
+  static const surfaceBorder = Color(0xFF262633);
 
   static ThemeData get dark {
     final scheme = ColorScheme.fromSeed(
-      seedColor: _seed,
+      seedColor: brand,
       brightness: Brightness.dark,
+      surface: surface1,
     );
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: const Color(0xFF0E0E13),
+      scaffoldBackgroundColor: surface0,
       appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
       cardTheme: CardThemeData(
+        color: surface1,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: surfaceBorder),
         ),
       ),
       sliderTheme: SliderThemeData(
@@ -38,5 +50,12 @@ abstract final class AppTheme {
   static BoxDecoration aiTagDecoration(ColorScheme scheme) => BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(999),
+      );
+
+  /// Gold chip style for verified/premium moments.
+  static BoxDecoration verifiedTagDecoration() => BoxDecoration(
+        color: gold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: gold.withValues(alpha: 0.4)),
       );
 }

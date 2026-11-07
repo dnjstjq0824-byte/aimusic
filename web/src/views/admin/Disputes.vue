@@ -1,23 +1,16 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs text-accent-purple font-bold uppercase tracking-wider mb-1">
-          <span>OSP Governance</span>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">저작권법 제103조 분쟁 관리 &amp; 임시조치</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          신고 접수된 음원에 대해 원클릭 스트리밍 차단(임시조치), 소명 심사, 원상 복구 및 영구 삭제를 처리합니다.
-        </p>
-      </div>
-      <UiButton variant="secondary" size="sm" @click="load">새로고침</UiButton>
-    </div>
+    <UiPageHeader
+      eyebrow="OSP Governance"
+      title="저작권법 제103조 분쟁 관리 &amp; 임시조치"
+      description="신고 접수된 음원에 대해 스트리밍 차단(임시조치), 소명 심사, 원상 복구를 처리합니다."
+    >
+      <template #actions>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">새로고침</UiButton>
+      </template>
+    </UiPageHeader>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner :message="error" title="분쟁 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
 
     <!-- Disputes List -->
     <div v-if="loading" class="space-y-3">
@@ -27,7 +20,6 @@
 
     <div v-else-if="disputes.length === 0" class="py-12">
       <UiEmptyState
-        icon="⚖️"
         title="접수된 권리침해 분쟁이 없습니다"
         description="현재 진행 중인 저작권 침해 또는 보이스 클로닝 신고가 없습니다."
       />
@@ -43,10 +35,10 @@
           <div class="flex items-center gap-2">
             <span class="font-bold text-white text-sm">신고 ID: {{ d.id }}</span>
             <UiBadge
-              :variant="d.status === 'UPHELD' ? 'danger' : d.status === 'DISMISSED' ? 'success' : 'warning'"
+              :variant="disputeVariant(d.status)"
               size="xs"
             >
-              {{ d.status }}
+              {{ disputeStatusKo(d.status) }}
             </UiBadge>
           </div>
           <div class="text-[11px] text-neutral-400">
@@ -61,7 +53,7 @@
           </div>
           <div>
             <span class="text-neutral-500 text-[10px] uppercase font-bold block">신고 사유 / 침해 유형</span>
-            <span class="text-neutral-200 font-semibold">{{ d.reason }}</span>
+            <span class="text-neutral-200 font-semibold">{{ disputeReasonKo(d.reason) }}</span>
           </div>
         </div>
 
@@ -74,20 +66,33 @@
           <UiButton
             variant="danger"
             size="xs"
-            @click="resolve(d.id, true)"
+            @click="askResolve(d.id, true)"
           >
             침해 인정 (임시조치 &amp; 스트라이크)
           </UiButton>
           <UiButton
             variant="success"
             size="xs"
-            @click="resolve(d.id, false)"
+            @click="askResolve(d.id, false)"
           >
             신고 기각 / 소명 인용 (정상 유지)
           </UiButton>
         </div>
       </UiCard>
     </div>
+
+    <UiConfirmDialog
+      :model-value="pendingResolve !== null"
+      :title="pendingResolve?.uphold ? '침해 인정 및 임시조치' : '신고 기각'"
+      :description="pendingResolve?.uphold
+        ? '해당 음원을 즉시 임시조치하고 파트너에게 스트라이크를 부과합니다.'
+        : '신고를 기각하고 음원을 정상 상태로 유지/복원합니다.'"
+      :confirm-label="pendingResolve?.uphold ? '인정하고 조치하기' : '기각하기'"
+      :danger="pendingResolve?.uphold ?? false"
+      :loading="resolving"
+      @update:model-value="onResolveDialogToggle"
+      @confirm="doResolve"
+    />
   </div>
 </template>
 
@@ -100,6 +105,9 @@ import type { CopyrightDispute } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
+import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 
@@ -108,6 +116,45 @@ const toast = useToast();
 const disputes = ref<CopyrightDispute[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const pendingResolve = ref<{ id: string; uphold: boolean } | null>(null);
+const resolving = ref(false);
+
+const DISPUTE_STATUS_KO: Record<string, string> = {
+  OPEN: '접수됨',
+  UNDER_REVIEW: '심사 중',
+  UPHELD_TAKEDOWN: '침해 인정·임시조치',
+  DISMISSED: '기각됨',
+};
+
+const DISPUTE_REASON_KO: Record<string, string> = {
+  AI_POLICY_VIOLATION: '비상업·무료 요금제 생성물 의심',
+  VOICE_CLONE: '음성·퍼블리시티권 침해',
+  UNAUTHORIZED_SAMPLE: '저작권 침해·무단 샘플링',
+  OTHER: '기타',
+};
+
+function disputeStatusKo(status: string): string {
+  return DISPUTE_STATUS_KO[status] ?? status;
+}
+
+function disputeReasonKo(reason: string): string {
+  return DISPUTE_REASON_KO[reason] ?? reason;
+}
+
+function disputeVariant(status: string): 'danger' | 'success' | 'warning' | 'neutral' {
+  if (status === 'UPHELD_TAKEDOWN') return 'danger';
+  if (status === 'DISMISSED') return 'success';
+  if (status === 'UNDER_REVIEW' || status === 'OPEN') return 'warning';
+  return 'neutral';
+}
+
+function askResolve(id: string, uphold: boolean): void {
+  pendingResolve.value = { id, uphold };
+}
+
+function onResolveDialogToggle(open: boolean): void {
+  if (!open) pendingResolve.value = null;
+}
 
 async function load() {
   loading.value = true;
@@ -121,13 +168,19 @@ async function load() {
   }
 }
 
-async function resolve(disputeId: string, uphold: boolean) {
+async function doResolve() {
+  if (!pendingResolve.value) return;
+  const { id, uphold } = pendingResolve.value;
+  resolving.value = true;
   try {
-    await adminApi.resolveDispute(disputeId, uphold);
+    await adminApi.resolveDispute(id, uphold);
     toast.success(uphold ? '침해 인정: 즉시 임시조치 및 스트라이크가 부과되었습니다.' : '신고 기각: 정상 상태로 유지/복원되었습니다.');
+    pendingResolve.value = null;
     await load();
   } catch (err) {
     toast.error(errMessageOf(err), '조치 실패');
+  } finally {
+    resolving.value = false;
   }
 }
 

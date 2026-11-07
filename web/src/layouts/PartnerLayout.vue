@@ -4,17 +4,11 @@
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <div class="flex items-center gap-6">
-          <RouterLink to="/partner" class="flex items-center gap-2">
-            <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500 text-white font-black text-sm shadow-glow-brand">
-              P
-            </div>
-            <div class="flex flex-col">
-              <span class="font-bold text-white text-sm">AIVIBE Studio</span>
-              <span class="text-[9px] font-semibold text-brand-400 uppercase">Partner Console</span>
-            </div>
+          <RouterLink to="/partner" class="flex items-center" aria-label="파트너 스튜디오 홈">
+            <BrandLogo :size="32" tagline="Studio Console" />
           </RouterLink>
 
-          <nav class="hidden md:flex items-center gap-1 text-xs font-semibold text-neutral-400">
+          <nav class="hidden md:flex items-center gap-1 text-xs font-semibold text-neutral-400" aria-label="파트너 메뉴">
             <RouterLink
               to="/partner"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
@@ -50,13 +44,73 @@
             파트너 프로필
           </span>
           <button
-            class="text-neutral-400 hover:text-white transition-colors"
+            type="button"
+            class="hidden sm:inline text-neutral-400 hover:text-white transition-colors"
             @click="auth.logout()"
           >
             로그아웃
           </button>
+          <button
+            type="button"
+            class="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+            :aria-expanded="mobileNavOpen"
+            aria-controls="partner-mobile-nav"
+            :aria-label="mobileNavOpen ? '메뉴 닫기' : '메뉴 열기'"
+            @click="mobileNavOpen = !mobileNavOpen"
+          >
+            <svg v-if="!mobileNavOpen" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <svg v-else class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
+
+      <!-- Mobile Drawer -->
+      <nav
+        v-if="mobileNavOpen"
+        id="partner-mobile-nav"
+        aria-label="파트너 모바일 메뉴"
+        class="md:hidden border-t border-surface-border bg-surface-1/95 px-4 py-4 space-y-1 text-sm"
+      >
+        <RouterLink
+          to="/partner"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          대시보드
+        </RouterLink>
+        <RouterLink
+          to="/partner/upload"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          음원 업로드 (Gatekeeper)
+        </RouterLink>
+        <RouterLink
+          to="/partner/subscriptions"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          구독 증빙 관리
+        </RouterLink>
+        <RouterLink
+          to="/"
+          class="block rounded-lg px-3 py-2 text-neutral-500 hover:bg-surface-2 hover:text-neutral-300"
+          @click="mobileNavOpen = false"
+        >
+          리스너 홈으로 이동 ↗
+        </RouterLink>
+        <button
+          type="button"
+          class="block w-full rounded-lg px-3 py-2 text-left text-neutral-400 hover:bg-surface-2 hover:text-white"
+          @click="auth.logout()"
+        >
+          로그아웃
+        </button>
+      </nav>
     </header>
 
     <!-- Content -->
@@ -73,11 +127,14 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';
+import BrandLogo from '@/components/BrandLogo.vue';
 
 const auth = useAuthStore();
 const route = useRoute();
+const mobileNavOpen = ref(false);
 </script>

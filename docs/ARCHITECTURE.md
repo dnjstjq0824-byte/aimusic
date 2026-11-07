@@ -1,7 +1,7 @@
 # Architecture (Phase 5)
 
 Stack: Go 1.22 API + worker (`backend/`), PostgreSQL 16, Redis 7,
-S3-compatible storage (MinIO local, Cloudflare R2 staging/prod),
+S3-compatible storage (LocalStack S3 local, Cloudflare R2 staging/prod),
 Vue 3 web (`web/`) + Flutter mobile (`mobile/`).
 Local topology: `docker-compose.local.yml` (`ai-music-local`).
 
@@ -18,27 +18,27 @@ flowchart LR
     WRK["worker<br/>transcode loop<br/>cmd/worker"]
     PG[("postgres:16<br/>17 tables")]
     RD[("redis:7<br/>transcode:queue")]
-    MINIO["minio<br/>:9000 API / :9001 console"]
-    INIT["minio-init<br/>mc buckets once"]
+    S3["localstack<br/>S3 :4566"]
+    INIT["s3-init<br/>aws-cli buckets once"]
   end
   CDN["CDN / R2 public-hls<br/>(prod: CDN_BASE_URL)"]
   WEB -->|"/api/v1 + /healthz<br/>Bearer JWT"| API
   MOB -->|"/api/v1<br/>Bearer JWT"| API
   API --> PG
   API --> RD
-  API -->|presign PUT/GET/DELETE<br/>SigV4| MINIO
+  API -->|presign PUT/GET/DELETE<br/>SigV4| S3
   WRK --> PG
   WRK -->|BLPop/RPush<br/>transcode:queue| RD
-  WRK -->|PresignGet staging<br/>PresignPut public-hls| MINIO
+  WRK -->|PresignGet staging<br/>PresignPut public-hls| S3
   WRK -->|ffmpeg/ffprobe<br/>loudnorm+HLS+peaks| WRK
-  INIT -->|mb staging-private<br/>mb public-hls| MINIO
+  INIT -->|mb staging<br/>mb public-hls + read policy| S3
   API -.->|STORAGE_DRIVER=r2| CDN
   WRK -.->|STORAGE_DRIVER=r2| CDN
 ```
 
 Images: `api`/`worker` built from `backend/Dockerfile`
 (`golang:1.22-alpine` → `alpine:3.20 + ffmpeg`), same binary source, different `command`.
-Health: `postgres pg_isready`, `redis redis-cli ping`, `minio /minio/health/live`,
+Health: `postgres pg_isready`, `redis redis-cli ping`, `localstack /_localstack/health`,
 `api wget /healthz`, `worker pgrep -f ./worker`.
 
 ## Backend (`backend/`)
@@ -52,7 +52,7 @@ Entry: `cmd/worker/main.go` — same repos/storage, `signal.NotifyContext`, loop
 Layers:
 
 - `internal/config`: `APP_ENV/APP_ADDR`, `DB_*`/`DB_DSN`, `REDIS_*`, storage
-  (`S3_*`+`MINIO_*` or `R2_*` when `STORAGE_DRIVER=r2`, `CDN_BASE_URL`),
+  (`S3_*` or `R2_*` when `STORAGE_DRIVER=r2`, `CDN_BASE_URL`),
   `JWT_*`, `AES256_KEY_BASE64` (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS=300`.
 - `internal/handler` (Gin): `SetupRouter` groups `/healthz`, `/api/v1/{auth,legal,
   partner,tracks,playback,playlists,disputes,admin}`; middleware `Recovery`,
@@ -81,8 +81,8 @@ Layers:
   ai_tier` metadata, `128k/256k AAC`, `6s VOD`, `master.m3u8`, `stream_%v.m3u8`),
   `ExtractWaveform` (mono 8kHz f32 → 100 normalized peaks) + `WaveformJSON`.
 - `internal/pkg/storage`: `S3Compat` SigV4 query presign (`PresignPut/Get`,
-  `Delete`; 15m default, 7d cap) + `NewFromEnv` (MinIO vs R2 buckets
-  `staging-private`/`public-hls`).
+  `Delete`; 15m default, 7d cap) + `NewFromEnv` (local vs R2 buckets
+  `local-staging`/`local-hls`).
 - `internal/pkg/crypto`: AES-256-GCM `Cipher` (settlement accounts),
   `Sign/VerifyPlaybackToken` (HMAC `trackId|jti|exp`), `BuildSignedPlaybackURL`
   (`exp/jti/sig`), `SHA256Hex`.
@@ -91,10 +91,11 @@ Layers:
 
 ## Storage & buckets
 
-- Local MinIO (`minio/minio`, `server /data --console-address :9001`):
-  `MINIO_STAGING_BUCKET=minio-staging` (private, `anonymous none`),
-  `MINIO_PUBLIC_HLS_BUCKET=minio-public-hls` (`anonymous download`).
-  `minio-init` (`minio/mc`) creates both idempotently.
+- Local S3 (LocalStack `localstack/localstack:4.0`, `SERVICES=s3`, :4566):
+  `S3_STAGING_BUCKET=local-staging` (private),
+  `S3_PUBLIC_HLS_BUCKET=local-hls` (public-read bucket policy).
+  `s3-init` (`amazon/aws-cli`) creates both idempotently.
+  (MinIO was dropped: its official Docker Hub repos no longer exist upstream.)
 - Prod template (`.env.example`, `config.loadStorage`): `R2_*` + `CDN_BASE_URL`
   when `STORAGE_DRIVER=r2` (endpoint `https://<account>.r2.cloudflarestorage.com`,
   region `auto`, SSL always).
@@ -106,7 +107,7 @@ Layers:
 ### Upload → license gate → transcode → HLS
 
 1. `POST /partner/pre-check` (JWT PARTNER): gate passes → `{stagingKey,uploadUrl}`.
-2. Client `PUT` bytes to `uploadUrl` (direct to MinIO/R2, no API proxy).
+2. Client `PUT` bytes to `uploadUrl` (direct to S3/R2, no API proxy).
 3. `POST /partner/finalize`: `tracks UPLOADED` + `track_rights_declarations` +
    `transcoding_jobs QUEUED` + `RPush transcode:queue{jobId,trackId,inputBucket,
    inputKey,outputPrefix}`.
@@ -160,11 +161,12 @@ Layers:
 
 ## Config & local ops
 
-- `.env.example`: `DB_*` (5432), `REDIS_*` (6379), `MINIO_*`/`S3_*` (9000/9001,
-  `minio-staging`/`minio-public-hls`), `API_PORT=8080`, `JWT_*`, `AES256_KEY_BASE64`
-  (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS`, R2/CDN template (commented).
+- `.env.example`: `DB_*` (5432), `REDIS_*` (6379), `S3_*` (4566,
+  `local-staging`/`local-hls`), `CDN_BASE_URL` (local HLS base), `API_PORT=8080`,
+  `JWT_*`, `AES256_KEY_BASE64` (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS`,
+  R2/CDN template (commented).
 - `scripts/start-local.sh`: `.env` bootstrap → `compose up --build -d` →
-  waits (pg_isready/redis ping/minio live/minio-init/api healthz/worker pgrep) →
+  waits (pg_isready/redis ping/localstack health/s3-init/api healthz/worker pgrep) →
   idempotent migrate (`to_regclass(users)` gate for `000001_init.up.sql`) + always
   `seed.sql` (`ON CONFLICT`-safe) → `compose ps`.
 - `scripts/test-e2e.sh`: `curl+psql+redis-cli` PASS/FAIL suite (T01 health …

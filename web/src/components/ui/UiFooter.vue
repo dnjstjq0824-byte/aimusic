@@ -4,12 +4,7 @@
       <div class="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
         <!-- Brand & Mission -->
         <div class="space-y-3">
-          <div class="flex items-center gap-2">
-            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-brand-600 to-amber-400 text-white font-black text-xs">
-              AI
-            </div>
-            <span class="font-bold text-white text-sm">AIVIBE</span>
-          </div>
+          <BrandLogo :size="28" />
           <p class="text-xs leading-relaxed text-neutral-400">
             상업적 라이선스가 검증된 정식 유료 플랜 생성 AI 음원만을 유통하는 상용 스트리밍 플랫폼입니다.
           </p>
@@ -69,5 +64,5 @@
 </template>
 
 <script setup lang="ts">
-// Complete Footer component
+import BrandLogo from '@/components/BrandLogo.vue';
 </script>

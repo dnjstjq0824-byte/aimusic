@@ -1,6 +1,6 @@
 # Cloudflare R2 & CDN 프로덕션 전환 및 보안 가이드 (Phase 6)
 
-본 문서는 로컬 개발 환경(MinIO)에서 프로덕션 Cloudflare 인프라(Cloudflare R2 + CDN + WAF + Signed URL)로 무중단 전환하기 위한 가이드입니다.
+본 문서는 로컬 개발 환경(LocalStack S3)에서 프로덕션 Cloudflare 인프라(Cloudflare R2 + CDN + WAF + Signed URL)로 무중단 전환하기 위한 가이드입니다.
 
 ---
 
@@ -57,7 +57,7 @@ flowchart LR
 
 ## 3. 환경 변수 전환 매핑 (`.env`)
 
-로컬 MinIO 환경에서 Cloudflare R2로 전환할 때는 코드 변경 없이 `.env` 파일의 스토리지 드라이버 변수만 교체합니다.
+로컬 LocalStack S3 환경에서 Cloudflare R2로 전환할 때는 코드 변경 없이 `.env` 파일의 스토리지 드라이버 변수만 교체합니다.
 
 ```ini
 # ==============================================================================

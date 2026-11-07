@@ -19,6 +19,29 @@ const routes: RouteRecordRaw[] = [
       },
       { path: 'login', name: 'login', component: () => import('@/views/user/Login.vue') },
       {
+        path: 'reset-password',
+        name: 'reset-password',
+        component: () => import('@/views/user/ResetPassword.vue'),
+      },
+      {
+        path: 'oauth/callback',
+        name: 'oauth-callback',
+        component: () => import('@/views/user/OAuthCallback.vue'),
+      },
+      { path: 'pricing', name: 'pricing', component: () => import('@/views/user/Pricing.vue') },
+      {
+        path: 'checkout',
+        name: 'checkout',
+        component: () => import('@/views/user/Checkout.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'checkout/confirm',
+        name: 'checkout-confirm',
+        component: () => import('@/views/user/CheckoutConfirm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'tracks/:id',
         name: 'track-detail',
         component: () => import('@/views/user/TrackDetail.vue'),
@@ -62,7 +85,8 @@ const routes: RouteRecordRaw[] = [
     component: AdminLayout,
     meta: { requiresAuth: true, roles: ['ADMIN'] },
     children: [
-      { path: '', name: 'admin-reviews', component: () => import('@/views/admin/Reviews.vue') },
+      { path: '', name: 'admin-overview', component: () => import('@/views/admin/Overview.vue') },
+      { path: 'reviews', name: 'admin-reviews', component: () => import('@/views/admin/Reviews.vue') },
       { path: 'policies', name: 'admin-policies', component: () => import('@/views/admin/LicensePolicies.vue') },
       { path: 'disputes', name: 'admin-disputes', component: () => import('@/views/admin/Disputes.vue') },
       { path: 'curation', name: 'admin-curation', component: () => import('@/views/admin/Curation.vue') },

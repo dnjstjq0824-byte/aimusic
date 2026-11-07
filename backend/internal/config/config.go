@@ -11,15 +11,30 @@ import (
 
 // Config is the backend process configuration.
 type Config struct {
-	Env     string
-	AppAddr string
-	DB      DBConfig
-	Redis   RedisConfig
-	Storage StorageConfig
-	JWT     JWTConfig
+	Env      string
+	AppAddr  string
+	DB       DBConfig
+	Redis    RedisConfig
+	Storage  StorageConfig
+	JWT      JWTConfig
+	Security SecurityConfig
 	// AESKey is the decoded 32-byte key from AES256_KEY_BASE64 (nil when unset).
 	AESKey []byte
 	HLS    HLSConfig
+	Reset  PasswordResetConfig
+	OAuth  OAuthConfig
+	Toss   TossConfig
+	Mail   MailConfig
+}
+
+// SecurityConfig configures HTTP hardening (CORS allowlist, trusted proxies).
+type SecurityConfig struct {
+	// CORSAllowedOrigins is the exact-match allowlist for the Origin header.
+	// Empty means same-origin only (no CORS headers emitted).
+	CORSAllowedOrigins []string
+	// TrustedProxies is passed to gin.Engine.SetTrustedProxies so ClientIP
+	// only trusts X-Forwarded-For from these CIDRs/IPs. Empty trusts none.
+	TrustedProxies []string
 }
 
 // DBConfig configures PostgreSQL access.
@@ -39,7 +54,7 @@ type RedisConfig struct {
 	Port int
 }
 
-// StorageConfig configures S3-compatible object storage (MinIO or R2).
+// StorageConfig configures S3-compatible object storage (LocalStack local, R2 in staging/prod).
 type StorageConfig struct {
 	Driver          string
 	Endpoint        string
@@ -64,6 +79,49 @@ type JWTConfig struct {
 type HLSConfig struct {
 	SigningKey string
 	URLTTLSecs int
+}
+
+// PasswordResetConfig configures the reset-link flow.
+type PasswordResetConfig struct {
+	// TokenTTLMinutes bounds single-use reset links (default 30).
+	TokenTTLMinutes int
+	// FrontendBaseURL is the web origin links point at (no trailing slash).
+	FrontendBaseURL string
+}
+
+// OAuthConfig configures Google/Kakao social login. A provider is enabled
+// when its client ID and secret are both set. Endpoint URLs default to the
+// real provider hosts and exist as env knobs for hermetic tests.
+type OAuthConfig struct {
+	FrontendBaseURL    string
+	RedirectBaseURL    string
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleTokenURL     string
+	GoogleUserinfoURL  string
+	KakaoClientID      string
+	KakaoClientSecret  string
+	KakaoTokenURL      string
+	KakaoUserinfoURL   string
+	StateSecret        string
+}
+
+// TossConfig configures Toss Payments billing. Billing endpoints fail closed
+// with 503 while SecretKey is empty.
+type TossConfig struct {
+	SecretKey  string
+	APIBaseURL string
+}
+
+// MailConfig configures outbound mail. When SMTPHost is empty the API logs
+// mail instead of sending (local/dev behavior).
+type MailConfig struct {
+	SMTPHost string
+	SMTPPort int
+	SMTPUser string
+	SMTPPass string
+	From     string
+	FromName string
 }
 
 // Load reads configuration from the environment.
@@ -112,11 +170,60 @@ func Load() (*Config, error) {
 		SigningKey: os.Getenv("HLS_SIGNING_KEY"),
 		URLTTLSecs: getenvInt("HLS_URL_TTL_SECONDS", 300),
 	}
+	cfg.Security = SecurityConfig{
+		CORSAllowedOrigins: getenvList("CORS_ALLOWED_ORIGINS"),
+		TrustedProxies:     getenvList("TRUSTED_PROXIES"),
+	}
+	frontendBase := strings.TrimRight(getenv("FRONTEND_BASE_URL", "http://localhost:5173"), "/")
+	cfg.Reset = PasswordResetConfig{
+		TokenTTLMinutes: getenvInt("PASSWORD_RESET_TTL_MINUTES", 30),
+		FrontendBaseURL: frontendBase,
+	}
+	cfg.OAuth = OAuthConfig{
+		FrontendBaseURL:    frontendBase,
+		RedirectBaseURL:    strings.TrimRight(getenv("OAUTH_REDIRECT_BASE_URL", "http://localhost:8080/api/v1/auth/oauth"), "/"),
+		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		GoogleTokenURL:     getenv("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
+		GoogleUserinfoURL:  getenv("GOOGLE_USERINFO_URL", "https://openidconnect.googleapis.com/v1/userinfo"),
+		KakaoClientID:      os.Getenv("KAKAO_CLIENT_ID"),
+		KakaoClientSecret:  os.Getenv("KAKAO_CLIENT_SECRET"),
+		KakaoTokenURL:      getenv("KAKAO_TOKEN_URL", "https://kauth.kakao.com/oauth/token"),
+		KakaoUserinfoURL:   getenv("KAKAO_USERINFO_URL", "https://kapi.kakao.com/v2/user/me"),
+		StateSecret:        os.Getenv("OAUTH_STATE_SECRET"),
+	}
+	cfg.Toss = TossConfig{
+		SecretKey:  os.Getenv("TOSS_SECRET_KEY"),
+		APIBaseURL: strings.TrimRight(getenv("TOSS_API_BASE_URL", "https://api.tosspayments.com"), "/"),
+	}
+	cfg.Mail = MailConfig{
+		SMTPHost: os.Getenv("SMTP_HOST"),
+		SMTPPort: getenvInt("SMTP_PORT", 587),
+		SMTPUser: os.Getenv("SMTP_USER"),
+		SMTPPass: os.Getenv("SMTP_PASS"),
+		From:     getenv("MAIL_FROM", "no-reply@aivibe.kr"),
+		FromName: getenv("MAIL_FROM_NAME", "AIVIBE"),
+	}
 	return cfg, nil
 }
 
+func getenvList(key string) []string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 func loadStorage() StorageConfig {
-	driver := getenv("STORAGE_DRIVER", "minio")
+	driver := getenv("STORAGE_DRIVER", "s3local")
 	if driver == "r2" {
 		return StorageConfig{
 			Driver:          "r2",
@@ -131,14 +238,14 @@ func loadStorage() StorageConfig {
 		}
 	}
 	return StorageConfig{
-		Driver:          "minio",
-		Endpoint:        getenv("S3_ENDPOINT", "http://localhost:9000"),
+		Driver:          "s3local",
+		Endpoint:        getenv("S3_ENDPOINT", "http://localhost:4566"),
 		Region:          getenv("S3_REGION", "us-east-1"),
 		AccessKey:       os.Getenv("S3_ACCESS_KEY"),
 		SecretKey:       os.Getenv("S3_SECRET_KEY"),
 		UseSSL:          getenvBool("S3_USE_SSL", false),
-		StagingBucket:   getenv("MINIO_STAGING_BUCKET", "minio-staging"),
-		PublicHLSBucket: getenv("MINIO_PUBLIC_HLS_BUCKET", "minio-public-hls"),
+		StagingBucket:   getenv("S3_STAGING_BUCKET", "local-staging"),
+		PublicHLSBucket: getenv("S3_PUBLIC_HLS_BUCKET", "local-hls"),
 		CDNBaseURL:      os.Getenv("CDN_BASE_URL"),
 	}
 }

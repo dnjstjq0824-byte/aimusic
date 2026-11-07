@@ -25,6 +25,15 @@ export default {
           border: '#262633',  // Subtle hairline border
           'border-hover': '#3b3b4d',
         },
+        gold: {
+          DEFAULT: '#ffc53d',
+          soft: '#ffdf8a',
+          deep: '#b57e12',
+        },
+        brandteal: {
+          DEFAULT: '#0b1b18',
+          raised: '#132826',
+        },
         accent: {
           purple: '#a855f7',
           violet: '#8b5cf6',
@@ -36,7 +45,15 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: [
+          'Pretendard Variable',
+          'Pretendard',
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'system-ui',
+          'sans-serif',
+        ],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
       boxShadow: {

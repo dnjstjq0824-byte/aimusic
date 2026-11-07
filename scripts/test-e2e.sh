@@ -26,6 +26,8 @@
 #        + AES-256-GCM account at rest + masked admin preview
 #        (gross=plays*rate, withholding=gross*33/1000, net=gross-withholding;
 #         violated -> FORFEITED + FORFEITED_VIOLATION + net 0; approve from FORFEITED fails)
+#   T12  batch2 APIs: password reset (request/confirm/login-rotation/single-use),
+#        oauth providers/start guards, billing plans/orders guards, admin overview
 #
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
@@ -35,7 +37,7 @@
 #   BASE_URL=http://localhost:8080 ./scripts/test-e2e.sh
 #
 # Env overrides: BASE_URL, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD,
-#   REDIS_HOST, REDIS_PORT, E2E_KEEP_FIXTURES=1
+#   REDIS_HOST, REDIS_PORT, S3_PORT, S3_PUBLIC_ENDPOINT, E2E_KEEP_FIXTURES=1
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -55,6 +57,10 @@ DB_USER="${DB_USER:-ai_music}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 REDIS_HOST="${REDIS_HOST:-localhost}"
 REDIS_PORT="${REDIS_PORT:-6379}"
+# Public S3 base reachable from this host (published LocalStack port). The API
+# signs staging URLs with the in-cluster endpoint, which host curl cannot
+# resolve; upload_presigned retargets those URLs here.
+S3_PUBLIC_ENDPOINT="${S3_PUBLIC_ENDPOINT:-http://localhost:${S3_PORT:-4566}}"
 
 TMP_DIR="$(mktemp -d -t aimusic-e2e.XXXXXX)"
 BODY="$TMP_DIR/body.json"
@@ -317,13 +323,38 @@ command -v ffprobe >/dev/null 2>&1 || HAVE_FFMPEG=0
 make_fixture() {
   local out="$1"; local meta_args="${2:-}"; local secs="${3:-5}"
   if [ "$HAVE_FFMPEG" -eq 0 ]; then return 1; fi
-  # shellcheck disable=SC2086
+  # Re-parse honoring embedded quotes: metadata values contain spaces.
+  # (Callers are hardcoded below; no untrusted input reaches this eval.)
+  local -a extra=()
+  if [ -n "$meta_args" ]; then
+    # shellcheck disable=SC2206
+    eval "extra=($meta_args)"
+  fi
   ffmpeg -hide_banner -loglevel error -y -f lavfi -i "sine=frequency=440:duration=$secs" \
-    -ar 44100 -ac 2 $meta_args "$out"
+    -ar 44100 -ac 2 "${extra[@]}" "$out"
 }
 
 upload_presigned() {
   local url="$1"; local file="$2"
+  # Retarget cluster-local signed hosts to the host-reachable S3 endpoint.
+  # SigV4 signs the host header, so a retargeted URL must drop the query
+  # signature (LocalStack accepts the unsigned PUT; the signature path itself
+  # is covered by backend storage unit tests). URLs whose host is already
+  # reachable keep their signature untouched.
+  url="$(SIGNED_URL="$url" PUBLIC_EP="$S3_PUBLIC_ENDPOINT" python3 -c "
+import os
+from urllib.parse import urlsplit, urlunsplit
+raw = os.environ.get('SIGNED_URL', '')
+try:
+  u = urlsplit(raw)
+  p = urlsplit(os.environ.get('PUBLIC_EP', ''))
+  if u.scheme and p.scheme and u.netloc != p.netloc:
+    print(urlunsplit((p.scheme, p.netloc, u.path, '', '')))
+  else:
+    print(raw)
+except Exception:
+  print(raw)
+" 2>/dev/null || printf '%s' "$url")"
   curl -s -o /dev/null -w "%{http_code}" --max-time 60 -X PUT --data-binary "@$file" "$url" 2>/dev/null || echo "000"
 }
 
@@ -485,6 +516,13 @@ else
   code="$(api GET "/tracks?limit=50" "" "")"
   assert_status "public list tracks" "200" "$code"
   assert_contains "happy in public list" "$HAPPY_TRACK_ID" "$(cat "$BODY")"
+  assert_contains "list envelope carries total" '"total"' "$(cat "$BODY")"
+  # Server-side search + sort: q matches the happy-path title, unknown sort 400s.
+  code="$(api GET "/tracks?q=e2e&sort=recent&limit=10" "" "")"
+  assert_status "track search q+sort" "200" "$code"
+  assert_contains "search finds happy track" "$HAPPY_TRACK_ID" "$(cat "$BODY")"
+  code="$(api GET "/tracks?sort=bogus" "" "")"
+  assert_status "unknown sort rejected" "400" "$code"
   # Playlist: create + add + list.
   code="$(api POST "/playlists" "$USER_TOKEN" '{"title":"E2E Mix","isPublic":false}')"
   assert_status "playlist create" "201" "$code"
@@ -696,6 +734,86 @@ if [ "$stored_acct" == "$E2E_ACCT" ] || [ -z "$stored_acct" ]; then fail "settle
 code="$(api GET "/admin/partners/$PA_PARTNER_ID/settlement" "$ADMIN_TOKEN" "")"
 assert_status "settlement preview -> 200" "200" "$code"
 assert_contains "settlement preview masked" "**********9876" "$(cat "$BODY")"
+
+section "T12 batch2: reset, oauth, billing, overview"
+# Migration proof: batch2 tables exist.
+for t in password_reset_tokens oauth_accounts billing_plans billing_orders billing_subscriptions billing_webhook_events; do
+  present="$(psql_q "SELECT to_regclass('public.$t') IS NOT NULL;" | tr -d ' \r\n')"
+  assert_eq "batch2 table $t present" "t" "$present"
+done
+# Password reset: unknown email still 202s and stores nothing (no enumeration).
+code="$(api POST "/auth/password-reset/request" "" '{"email":"nobody-e2e@example.com"}')"
+assert_status "reset request unknown -> 202" "202" "$code"
+ghost_rows="$(psql_q "SELECT COUNT(*) FROM password_reset_tokens WHERE user_id NOT IN (SELECT id FROM users);" | tr -d ' \r\n')"
+assert_eq "reset request unknown stores nothing" "0" "$ghost_rows"
+# Password reset: known email 202s and stores a hashed token row.
+code="$(api POST "/auth/password-reset/request" "" "{\"email\":\"$USER_EMAIL\"}")"
+assert_status "reset request known -> 202" "202" "$code"
+reset_rows="$(psql_q "SELECT COUNT(*) FROM password_reset_tokens WHERE user_id='$USER_ID'::uuid AND used_at IS NULL;" | tr -d ' \r\n')"
+if [ "$reset_rows" -ge 1 ] 2>/dev/null; then pass "reset token row stored"; else fail "reset token row missing"; fi
+# Password reset: garbage token 401s, short password 400s.
+code="$(api POST "/auth/password-reset/confirm" "" '{"token":"e2e-garbage-token","newPassword":"E2eNewPass1!"}')"
+assert_status "reset confirm garbage -> 401" "401" "$code"
+code="$(api POST "/auth/password-reset/confirm" "" '{"token":"e2e-garbage-token","newPassword":"short"}')"
+assert_status "reset confirm short pw -> 400" "400" "$code"
+# Password reset: full cycle with a known token (simulates the emailed link).
+E2E_RAW="e2e-reset-$STAMP"
+E2E_HASH="$(python3 -c "import hashlib;print(hashlib.sha256('$E2E_RAW'.encode()).hexdigest())")"
+psql_q "DELETE FROM password_reset_tokens WHERE user_id='$USER_ID'::uuid;" >/dev/null
+psql_q "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ('$USER_ID'::uuid, '$E2E_HASH', NOW() + interval '30 minutes');" >/dev/null
+E2E_NEW_PW="E2eRotated1!"
+code="$(api POST "/auth/password-reset/confirm" "" "{\"token\":\"$E2E_RAW\",\"newPassword\":\"$E2E_NEW_PW\"}")"
+assert_status "reset confirm known -> 200" "200" "$code"
+assert_contains "reset flag" '"reset":true' "$(cat "$BODY")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$E2E_NEW_PW\"}")"
+assert_status "login with rotated password" "200" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "old password rejected" "401" "$code"
+code="$(api POST "/auth/password-reset/confirm" "" "{\"token\":\"$E2E_RAW\",\"newPassword\":\"E2eAgain12!\"}")"
+assert_status "reset token single-use replay -> 401" "401" "$code"
+# OAuth: provider catalog + start guards.
+code="$(api GET "/auth/oauth/providers" "" "")"
+assert_status "oauth providers -> 200" "200" "$code"
+assert_contains "providers list google" '"provider":"GOOGLE"' "$(cat "$BODY")"
+assert_contains "providers list kakao" '"provider":"KAKAO"' "$(cat "$BODY")"
+code="$(api GET "/auth/oauth/apple/start" "" "")"
+assert_status "oauth unknown provider -> 400" "400" "$code"
+code="$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$API/auth/oauth/google/start")"
+if [ "$code" = "302" ]; then
+  loc="$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 20 "$API/auth/oauth/google/start")"
+  case "$loc" in
+    https://accounts.google.com/*) pass "oauth google start redirects to Google" ;;
+    *) fail "oauth google redirect target: $loc" ;;
+  esac
+elif [ "$code" = "400" ]; then
+  pass "oauth google start 400 without keys (fail-closed)"
+else
+  fail "oauth google start want 302/400 got $code"
+fi
+# Billing: seeded catalog always lists; orders fail closed without TOSS keys.
+code="$(api GET "/billing/plans" "" "")"
+assert_status "billing plans -> 200" "200" "$code"
+assert_contains "plan catalog seeded" "LISTENER_PLUS_MONTHLY" "$(cat "$BODY")"
+code="$(api POST "/billing/orders" "$USER_TOKEN" '{"planCode":"LISTENER_PLUS_MONTHLY"}')"
+if [ "$code" = "503" ]; then
+  assert_contains "orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
+elif [ "$code" = "201" ]; then
+  assert_contains "order merchant id" "AIVIBE-" "$(cat "$BODY")"
+else
+  fail "billing orders want 503/201 got $code"
+fi
+code="$(api POST "/billing/webhooks/toss" "" "")"
+if [ "$code" = "400" ]; then pass "webhook empty body -> 400"; else fail "webhook empty body want 400 got $code"; fi
+code="$(api GET "/billing/subscriptions/me" "$USER_TOKEN" "")"
+assert_status "my subscription -> 200" "200" "$code"
+# Admin overview: shape for admins, 403 for listeners.
+code="$(api GET "/admin/overview" "$ADMIN_TOKEN" "")"
+assert_status "admin overview -> 200" "200" "$code"
+for field in '"users"' '"tracks"' '"reviews"' '"disputesOpen"' '"plays"' '"queueDepth"' '"jobsFailed24h"' '"settlementsPending"'; do
+  assert_contains "overview has $field" "$field" "$(cat "$BODY")"
+done
+code="$(api GET "/admin/overview" "$USER_TOKEN" "")"
+assert_status "overview listener -> 403" "403" "$code"
 
 section "Summary"
 qdepth_final="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"

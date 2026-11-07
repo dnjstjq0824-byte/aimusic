@@ -4,7 +4,9 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"ai-music-platform/backend/internal/config"
@@ -15,6 +17,7 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("load config: %v", err)

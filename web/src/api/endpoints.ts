@@ -1,11 +1,16 @@
 import { api, unwrap } from './client';
 import type {
+  AdminOverview,
   AIDisclosure,
   Album,
+  BillingOrder,
+  BillingPlan,
+  BillingSubscription,
   CopyrightDispute,
   FinalizeOutput,
   HeartbeatOutput,
   LegalTerm,
+  OAuthProviderInfo,
   PartnerAISubscription,
   PartnerProfile,
   PartnerSettlement,
@@ -18,6 +23,7 @@ import type {
   StreamGrant,
   Tokens,
   Track,
+  TrackPage,
   User,
   UserArtistBlock,
   UserBlock,
@@ -42,6 +48,35 @@ export const authApi = {
   },
   withdraw() {
     return unwrap<{ withdrawn: boolean }>(api.post('/auth/withdraw'));
+  },
+  requestPasswordReset(email: string) {
+    return unwrap<{ requested: boolean }>(api.post('/auth/password-reset/request', { email }));
+  },
+  confirmPasswordReset(token: string, newPassword: string) {
+    return unwrap<{ reset: boolean }>(api.post('/auth/password-reset/confirm', { token, newPassword }));
+  },
+  oauthProviders() {
+    return unwrap<OAuthProviderInfo[]>(api.get('/auth/oauth/providers'));
+  },
+};
+
+export const billingApi = {
+  plans() {
+    return unwrap<BillingPlan[]>(api.get('/billing/plans'));
+  },
+  createOrder(planCode: string) {
+    return unwrap<{ order: BillingOrder; plan: BillingPlan }>(api.post('/billing/orders', { planCode }));
+  },
+  confirmPayment(paymentKey: string, orderId: string, amount: number) {
+    return unwrap<{ subscription: BillingSubscription }>(
+      api.post('/billing/payments/confirm', { paymentKey, orderId, amount }),
+    );
+  },
+  mySubscription() {
+    return unwrap<{ subscription: BillingSubscription | null }>(api.get('/billing/subscriptions/me'));
+  },
+  cancelSubscription() {
+    return unwrap<{ cancelled: boolean }>(api.post('/billing/subscriptions/cancel'));
   },
 };
 
@@ -132,8 +167,12 @@ export const partnerApi = {
 };
 
 export const trackApi = {
-  list(limit = 20, offset = 0, filters?: { provider?: string; genre?: string; mood?: string }) {
-    return unwrap<Track[]>(api.get('/tracks', { params: { limit, offset, ...filters } }));
+  list(
+    limit = 20,
+    offset = 0,
+    filters?: { provider?: string; genre?: string; mood?: string; q?: string; sort?: string },
+  ) {
+    return unwrap<TrackPage>(api.get('/tracks', { params: { limit, offset, ...filters } }));
   },
   get(id: string) {
     return unwrap<Track>(api.get(`/tracks/${encodeURIComponent(id)}`));
@@ -210,6 +249,9 @@ export const userBlocksApi = {
 };
 
 export const adminApi = {
+  overview() {
+    return unwrap<AdminOverview>(api.get('/admin/overview'));
+  },
   pending() {
     return unwrap<ReviewQueues>(api.get('/admin/pending'));
   },

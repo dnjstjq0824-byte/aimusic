@@ -24,13 +24,20 @@ type Deps struct {
 // SetupRouter registers health, public, partner, and admin routes.
 func SetupRouter(d *Deps) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), AuditLog(), RateLimit(100, 200))
+	// Trust X-Forwarded-For only from configured proxies so ClientIP (used by
+	// rate limiting and audit logs) cannot be spoofed. Empty trusts none.
+	proxies := d.Config.Security.TrustedProxies
+	if proxies == nil {
+		proxies = []string{}
+	}
+	_ = r.SetTrustedProxies(proxies)
+	r.Use(gin.Recovery(), RequestID(), SecurityHeaders(d.Config), CORS(d.Config), AuditLog(), RateLimit(100, 200))
 
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	authH := &AuthHandler{Auth: d.Services.Auth}
+	authH := &AuthHandler{Auth: d.Services.Auth, Resets: d.Services.PasswordReset, OAuth: d.Services.OAuth, FrontendBase: d.Config.OAuth.FrontendBaseURL}
 	legalH := &LegalHandler{Repos: d.Repos}
 	partnerH := &PartnerHandler{Repos: d.Repos, Services: d.Services}
 	trackH := &TrackHandler{Repos: d.Repos, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
@@ -38,6 +45,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	playlistH := &PlaylistHandler{Playlists: d.Services.Playlists}
 	disputeH := &DisputeHandler{Repos: d.Repos, Disputes: d.Services.Disputes}
 	adminH := &AdminHandler{Repos: d.Repos, Services: d.Services}
+	billingH := &BillingHandler{Billing: d.Services.Billing}
 
 	v1 := r.Group("/api/v1")
 
@@ -49,6 +57,11 @@ func SetupRouter(d *Deps) *gin.Engine {
 	auth.POST("/refresh", authH.Refresh)
 	auth.GET("/me", JWTAuth(d.Services.Auth), authH.Me)
 	auth.POST("/withdraw", JWTAuth(d.Services.Auth), authH.Withdraw)
+	auth.POST("/password-reset/request", authH.RequestPasswordReset)
+	auth.POST("/password-reset/confirm", authH.ConfirmPasswordReset)
+	auth.GET("/oauth/providers", authH.OAuthProviders)
+	auth.GET("/oauth/:provider/start", authH.OAuthStart)
+	auth.GET("/oauth/:provider/callback", authH.OAuthCallback)
 
 	legal := v1.Group("/legal")
 	legal.GET("/terms", legalH.ListTerms)
@@ -110,8 +123,19 @@ func SetupRouter(d *Deps) *gin.Engine {
 	users.GET("/blocks", disputeH.ListArtistBlocks)
 	users.DELETE("/blocks/:partnerId", disputeH.UnblockArtist)
 
+	billing := v1.Group("/billing")
+	billing.GET("/plans", billingH.ListPlans)
+	billing.POST("/webhooks/toss", billingH.TossWebhook)
+	billingAuthed := billing.Group("")
+	billingAuthed.Use(JWTAuth(d.Services.Auth))
+	billingAuthed.POST("/orders", billingH.CreateOrder)
+	billingAuthed.POST("/payments/confirm", billingH.ConfirmPayment)
+	billingAuthed.GET("/subscriptions/me", billingH.MySubscription)
+	billingAuthed.POST("/subscriptions/cancel", billingH.CancelSubscription)
+
 	admin := v1.Group("/admin")
 	admin.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleAdmin))
+	admin.GET("/overview", adminH.Overview)
 	admin.GET("/pending", adminH.Pending)
 	admin.GET("/tracks/pending", adminH.Pending)
 	admin.POST("/review", adminH.ReviewTrack)

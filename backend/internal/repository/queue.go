@@ -80,6 +80,21 @@ type Repos struct {
 	Blocks        *BlockRepo
 	Gate          *GateStore
 	Queue         *Queue
+	Resets        *PasswordResetRepo
+	OAuth         *OAuthRepo
+	Billing       *BillingRepo
+}
+
+// WithTx returns a repository aggregate whose catalog writes (albums,
+// tracks, rights, jobs) run inside tx. Reads through other repositories
+// keep using the pool. Callers commit or roll back the transaction.
+func (r *Repos) WithTx(tx *sql.Tx) *Repos {
+	clone := *r
+	clone.Albums = &AlbumRepo{db: tx}
+	clone.Tracks = &TrackRepo{db: tx}
+	clone.Rights = &RightsRepo{db: tx}
+	clone.Jobs = &JobRepo{db: tx}
+	return &clone
 }
 
 // New builds the repository aggregate.
@@ -104,5 +119,8 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Blocks:        &BlockRepo{db: db},
 		Gate:          &GateStore{db: db},
 		Queue:         &Queue{rdb: rdb},
+		Resets:        &PasswordResetRepo{db: db},
+		OAuth:         &OAuthRepo{db: db},
+		Billing:       &BillingRepo{db: db},
 	}
 }

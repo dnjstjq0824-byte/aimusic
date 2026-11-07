@@ -41,6 +41,22 @@ export const useAuthStore = defineStore('auth', () => {
     role.value = u.role;
   }
 
+  // Applies tokens issued out-of-band (social login callback), then resolves
+  // the principal from /me instead of trusting redirect parameters.
+  async function loginWithTokens(accessToken: string, refreshToken: string): Promise<void> {
+    tokenStore.set(accessToken, refreshToken);
+    try {
+      const me = await authApi.me();
+      userId.value = me.userId;
+      role.value = me.role;
+    } catch {
+      tokenStore.clear();
+      userId.value = null;
+      role.value = null;
+      throw new Error('소셜 로그인 세션을 확인할 수 없습니다.');
+    }
+  }
+
   async function register(email: string, password: string, displayName: string): Promise<User> {
     return authApi.register(email, password, displayName);
   }
@@ -62,5 +78,5 @@ export const useAuthStore = defineStore('auth', () => {
     role.value = null;
   }
 
-  return { user, role, userId, initialized, isAuthenticated, isPartner, isAdmin, hydrate, login, register, registerPartner, logout };
+  return { user, role, userId, initialized, isAuthenticated, isPartner, isAdmin, hydrate, login, loginWithTokens, register, registerPartner, logout };
 });

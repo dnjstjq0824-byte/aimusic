@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest"
   },
   "dependencies": {
+    "@tosspayments/tosspayments-sdk": "^2.10.0",
     "axios": "^1.7.7",
     "hls.js": "^1.5.13",
     "lucide-vue-next": "^1.0.0",
@@ -21,10 +23,12 @@
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^5.1.4",
     "autoprefixer": "^10.4.20",
+    "happy-dom": "^21.0.4",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.5.4",
     "vite": "^5.4.8",
+    "vitest": "^2.1.9",
     "vue-tsc": "^2.1.4"
   }
 }

@@ -35,6 +35,7 @@ Source of truth: `backend/internal/handler/router.go` (+ `auth.go`, `legal.go`,
 | `ERR_DUPLICATE_AUDIO_FILE` | 409 | `audioSha256` already in `tracks.original_object_key` (LIKE match) |
 | `ERR_EMAIL_TAKEN` | 409 | duplicate registration email |
 | `ERR_RATE_LIMITED` | 429 | token bucket empty |
+| `ERR_PAYMENT_UNAVAILABLE` | 503 | billing called with `TOSS_SECRET_KEY` unset |
 | `ERR_INTERNAL` | 500 | unmapped error |
 
 Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 403
@@ -50,6 +51,14 @@ Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 4
 | POST | `/auth/refresh` | – | `{refreshToken}` → `{tokens}` |
 | GET | `/auth/me` | JWT | – → `{userId,role}` |
 | POST | `/auth/withdraw` | JWT | – → `{withdrawn:true}` (in-app immediate withdrawal) |
+| POST | `/auth/password-reset/request` | – | `{email}` → `202 {requested:true}` (always; no enumeration) |
+| POST | `/auth/password-reset/confirm` | – | `{token,newPassword(min8)}` → `{reset:true}` (single-use, 30 min TTL) |
+| GET | `/auth/oauth/providers` | – | `[{provider,enabled}]` (drives frontend social buttons) |
+| GET | `/auth/oauth/:provider/start` | – | `302` to Google/Kakao authorize (`:provider=google\|kakao`) |
+| GET | `/auth/oauth/:provider/callback?code=&state=` | – | `302` to SPA `/oauth/callback?accessToken=&refreshToken=&role=` (failures → `/login?oauthError=<code>`) |
+
+Social accounts always land on `USER`; partners onboard via email + business
+verification. Kakao login requires account-email consent.
 
 Example:
 
@@ -134,7 +143,7 @@ that bypassed finalize can never reach transcode.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/tracks?limit=&offset=` | – | `READY` only, newest first |
+| GET | `/tracks?q=&provider=&genre=&mood=&sort=&limit=&offset=` | – | `READY` only page `{items,total,limit,offset}`; `sort=recent\|oldest\|popular\|title` (default `recent`), `q` = title substring (max 100 chars) |
 | GET | `/tracks/:id` | – | one track (any status) |
 | GET | `/tracks/:id/stream` | JWT | `READY` + `hls_prefix` only → `{url,expiresAt,jti}` signed (`exp,jti,sig`, TTL `HLS_URL_TTL_SECONDS` default 300) |
 
@@ -191,6 +200,7 @@ Dismiss sets `DISMISSED` with no strike.
 
 | Method | Path | Body → Data |
 |--------|------|-------------|
+| GET | `/admin/overview` | console snapshot `{users,tracks,reviews,disputesOpen,plays,queueDepth,jobsFailed24h,settlementsPending}` (`queueDepth=null` when Redis is down) |
 | GET | `/admin/pending` or `/admin/tracks/pending` | `{tracks,licenseGateTracks,disputes,partners,subscriptions,rightsByTrack,subsById}` |
 | POST | `/admin/review` or `/admin/tracks/:id/review` | `{trackId,approve,reason?}` → `READY` or `LICENSE_GATE_REJECTED` (+Korean reason) |
 | POST | `/admin/review/partner` | `{partnerId,approve}` → `APPROVED` (+`approved_at`) or `SUSPENDED` |
@@ -212,6 +222,26 @@ Settlement math (`SettlementService.Calculate`, default 10 KRW/play):
 If partner `SUSPENDED|TERMINATED` or any `UPHELD_TAKEDOWN` on their tracks:
 `status=FORFEITED`, `forfeitureReason=FORFEITED_VIOLATION`, `net=0`.
 `plays` counts `streaming_logs` with `counted_as_play` in `[periodStart, periodEnd)`.
+
+## Billing (`/billing`, Toss Payments)
+
+Plans are single-term passes (1 month, no auto-renew). With `TOSS_SECRET_KEY`
+unset, order/confirm/webhook endpoints fail closed with `503
+ERR_PAYMENT_UNAVAILABLE`; the plan catalog still works.
+
+| Method | Path | Auth | Body → Data |
+|--------|------|------|-------------|
+| GET | `/billing/plans` | – | active plans cheapest first |
+| POST | `/billing/orders` | JWT | `{planCode}` → `201 {order,plan}` (`PENDING`, merchant id `AIVIBE-YYYYMMDD-XXXXXXXX`) |
+| POST | `/billing/payments/confirm` | JWT | `{paymentKey,orderId,amount}` → `{subscription}` (Toss approve + `ACTIVE` period) |
+| POST | `/billing/webhooks/toss` | – | Toss transmission → `{received:true}` (verified by re-query, idempotent) |
+| GET | `/billing/subscriptions/me` | JWT | `{subscription}` (`null` when no active pass) |
+| POST | `/billing/subscriptions/cancel` | JWT | – → `{cancelled:true}` |
+
+Confirm and webhook both verify `orderId` + `amount` against the stored order
+and against a live Toss re-query (`GET /v1/payments/{paymentKey}`); `DONE`
+activates the period, `CANCELED` cancels it, duplicates are journaled once in
+`billing_webhook_events` and acknowledged without re-applying.
 
 ## Clients
 

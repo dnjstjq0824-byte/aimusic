@@ -68,20 +68,14 @@ final homeTracksProvider = FutureProvider<List<Track>>((ref) async {
   return api.listTracks(limit: 30);
 });
 
-/// Search query state; results filter the loaded catalog client-side
-/// (backend exposes listing only, no dedicated search endpoint).
+/// Search query state; results come from the server-side track search
+/// (GET /tracks?q=...), newest first.
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 final searchResultsProvider = FutureProvider<List<Track>>((ref) async {
   final api = ref.watch(apiProvider);
-  final query = ref.watch(searchQueryProvider).trim().toLowerCase();
-  final tracks = await api.listTracks(limit: 100);
-  if (query.isEmpty) return tracks;
-  return tracks
-      .where((t) =>
-          t.title.toLowerCase().contains(query) ||
-          t.aiProvider.toLowerCase().contains(query))
-      .toList();
+  final query = ref.watch(searchQueryProvider).trim();
+  return api.listTracks(limit: 50, q: query.isEmpty ? null : query);
 });
 
 /// Current user's playlists.

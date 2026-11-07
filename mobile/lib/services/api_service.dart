@@ -15,13 +15,18 @@ class ApiService {
 
   // ---- Tracks: GET /tracks, GET /tracks/:id, GET /tracks/:id/stream ----
 
-  Future<List<Track>> listTracks({int limit = 20, int offset = 0}) async {
+  Future<List<Track>> listTracks(
+      {int limit = 20, int offset = 0, String? q, String? sort}) async {
     try {
+      final params = <String, dynamic>{'limit': limit, 'offset': offset};
+      if (q != null && q.trim().isNotEmpty) params['q'] = q.trim();
+      if (sort != null && sort.trim().isNotEmpty) params['sort'] = sort.trim();
       final res = await _dio.get<Map<String, dynamic>>(
         '/tracks',
-        queryParameters: {'limit': limit, 'offset': offset},
+        queryParameters: params,
       );
-      final list = unwrapData<List<dynamic>>(res);
+      final page = unwrapData<Map<String, dynamic>>(res);
+      final list = page['items'] as List<dynamic>;
       return list.map((e) => Track.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       throw toApiException(e);

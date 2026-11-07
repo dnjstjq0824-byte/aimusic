@@ -19,6 +19,7 @@ export const ERR_MESSAGES: Record<string, string> = {
   ERR_RETROACTIVE_GENERATION_DATE: '구독 시작일 이전에 생성된 음원은 등록할 수 없습니다.',
   ERR_SYNC_ONLY_LICENSE: '이 제공자는 단독 스트리밍이 불가한 Sync-Only 라이선스입니다.',
   ERR_DUPLICATE_AUDIO_FILE: '이미 등록된 음원 파일(SHA-256 중복)입니다.',
+  ERR_PAYMENT_UNAVAILABLE: '결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.',
   ERR_INTERNAL: '서버 오류가 발생했습니다.',
 };
 

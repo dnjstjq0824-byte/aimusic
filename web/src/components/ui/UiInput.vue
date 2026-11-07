@@ -1,9 +1,9 @@
 <template>
   <div class="w-full">
     <div v-if="label || $slots.labelRight" class="mb-1.5 flex items-center justify-between text-xs">
-      <label v-if="label" class="font-medium text-neutral-300">
+      <label v-if="label" :for="inputId" class="font-medium text-neutral-300">
         {{ label }}
-        <span v-if="required" class="text-accent-crimson">*</span>
+        <span v-if="required" class="text-accent-crimson" aria-hidden="true">*</span>
       </label>
       <slot name="labelRight" />
     </div>
@@ -18,7 +18,7 @@
         <slot name="prefix" />
       </div>
       <input
-        :id="id"
+        :id="inputId"
         :value="modelValue"
         :type="computedType"
         :placeholder="placeholder"
@@ -29,6 +29,8 @@
         :step="step"
         :min="min"
         :max="max"
+        :aria-invalid="error ? 'true' : undefined"
+        :aria-describedby="describedBy || undefined"
         class="w-full bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @blur="$emit('blur', $event)"
@@ -39,6 +41,8 @@
         <button
           type="button"
           class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+          :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+          :aria-pressed="showPassword"
           @click="showPassword = !showPassword"
         >
           {{ showPassword ? '숨김' : '표시' }}
@@ -48,13 +52,13 @@
         <slot name="suffix" />
       </div>
     </div>
-    <p v-if="error" class="mt-1 text-xs text-accent-crimson">{{ error }}</p>
-    <p v-else-if="hint" class="mt-1 text-xs text-neutral-500">{{ hint }}</p>
+    <p v-if="error" :id="errorId" class="mt-1 text-xs text-accent-crimson">{{ error }}</p>
+    <p v-else-if="hint" :id="hintId" class="mt-1 text-xs text-neutral-500">{{ hint }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, useId } from 'vue';
 
 interface Props {
   modelValue?: string | number;
@@ -93,6 +97,16 @@ defineEmits<{
 }>();
 
 const showPassword = ref(false);
+const autoId = useId();
+
+const inputId = computed(() => props.id ?? `ui-input-${autoId}`);
+const errorId = computed(() => `${inputId.value}-error`);
+const hintId = computed(() => `${inputId.value}-hint`);
+const describedBy = computed(() => {
+  if (props.error) return errorId.value;
+  if (props.hint) return hintId.value;
+  return '';
+});
 
 const computedType = computed(() => {
   if (props.type === 'password') {

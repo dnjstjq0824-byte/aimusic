@@ -17,7 +17,7 @@
 import { computed } from 'vue';
 
 interface Props {
-  variant?: 'commercial' | 'syncOnly' | 'blocked' | 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'neutral';
+  variant?: 'commercial' | 'syncOnly' | 'blocked' | 'brand' | 'gold' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'neutral';
   size?: 'xs' | 'sm' | 'md';
   rounded?: 'sm' | 'md' | 'full';
   dot?: boolean;
@@ -47,6 +47,7 @@ const variantClasses = {
   syncOnly: 'bg-amber-950/80 text-amber-300 border border-amber-600/40 font-semibold',
   blocked: 'bg-red-950/80 text-red-300 border border-red-600/40 font-semibold',
   brand: 'bg-brand-950/80 text-brand-300 border border-brand-500/40 font-semibold',
+  gold: 'bg-yellow-950/80 text-gold border border-gold/40 font-semibold',
   success: 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50',
   warning: 'bg-amber-950/80 text-amber-400 border border-amber-700/50',
   danger: 'bg-red-950/80 text-red-400 border border-red-700/50',
@@ -68,6 +69,8 @@ const dotColorClass = computed(() => {
       return 'bg-red-500';
     case 'brand':
       return 'bg-brand-500';
+    case 'gold':
+      return 'bg-gold';
     case 'purple':
       return 'bg-purple-400';
     case 'info':

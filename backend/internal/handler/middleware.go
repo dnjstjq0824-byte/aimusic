@@ -3,23 +3,29 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
+	"ai-music-platform/backend/internal/config"
 	"ai-music-platform/backend/internal/domain"
 	"ai-music-platform/backend/internal/service"
 )
 
-// Context keys for the authenticated principal.
+// Context keys for the authenticated principal and request tracing.
 const (
-	ctxUserIDKey = "auth.userID"
-	ctxRoleKey   = "auth.role"
+	ctxUserIDKey    = "auth.userID"
+	ctxRoleKey      = "auth.role"
+	ctxRequestIDKey = "http.requestID"
 )
+
+// RequestIDHeader is echoed on every response for log correlation.
+const RequestIDHeader = "X-Request-ID"
 
 // CurrentUserID returns the authenticated user ID (empty when anonymous).
 func CurrentUserID(c *gin.Context) string {
@@ -121,14 +127,94 @@ func RateLimit(rps float64, burst int) gin.HandlerFunc {
 	}
 }
 
+// RequestID assigns (or propagates) a request ID for log correlation and
+// echoes it on the response.
+func RequestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := strings.TrimSpace(c.GetHeader(RequestIDHeader))
+		if id == "" {
+			id = uuid.NewString()
+		}
+		c.Set(ctxRequestIDKey, id)
+		c.Header(RequestIDHeader, id)
+		c.Next()
+	}
+}
+
+// CurrentRequestID returns the request ID assigned by the RequestID middleware.
+func CurrentRequestID(c *gin.Context) string {
+	if v, ok := c.Get(ctxRequestIDKey); ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// SecurityHeaders applies baseline hardening headers to every response.
+// The API serves JSON only, so the policy is deny-by-default for framing and
+// MIME sniffing; HSTS is emitted outside local/dev environments.
+func SecurityHeaders(cfg *config.Config) gin.HandlerFunc {
+	hsts := cfg != nil && cfg.Env != "" && cfg.Env != "local" && cfg.Env != "dev" && cfg.Env != "test"
+	return func(c *gin.Context) {
+		h := c.Writer.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		if hsts {
+			h.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+		}
+		c.Next()
+	}
+}
+
+// CORS enforces an exact-match origin allowlist. With an empty allowlist the
+// API is same-origin only and no CORS headers are emitted.
+func CORS(cfg *config.Config) gin.HandlerFunc {
+	allowed := map[string]bool{}
+	if cfg != nil {
+		for _, o := range cfg.Security.CORSAllowedOrigins {
+			allowed[o] = true
+		}
+	}
+	return func(c *gin.Context) {
+		origin := strings.TrimSpace(c.GetHeader("Origin"))
+		if origin == "" || !allowed[origin] {
+			c.Next()
+			return
+		}
+		h := c.Writer.Header()
+		h.Set("Access-Control-Allow-Origin", origin)
+		h.Set("Vary", "Origin")
+		h.Set("Access-Control-Allow-Credentials", "true")
+		h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID")
+		h.Set("Access-Control-Max-Age", "86400")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
+}
+
 // AuditLog records method, path, status, principal, and latency per request.
 func AuditLog() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
-		log.Printf("audit method=%s path=%s status=%d user=%s role=%s ip=%s latency=%s",
-			c.Request.Method, c.Request.URL.Path, c.Writer.Status(),
-			CurrentUserID(c), CurrentRole(c), c.ClientIP(), time.Since(start))
+		slog.Info("http_request",
+			"request_id", CurrentRequestID(c),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", c.Writer.Status(),
+			"user", CurrentUserID(c),
+			"role", CurrentRole(c),
+			"ip", c.ClientIP(),
+			"latency_ms", time.Since(start).Milliseconds(),
+		)
 	}
 }
 
@@ -142,6 +228,35 @@ func ok(c *gin.Context, data any) {
 
 func created(c *gin.Context, data any) {
 	c.JSON(http.StatusCreated, gin.H{"data": data})
+}
+
+// errCodeOfDomain maps a domain error to its stable machine code (""
+// when the error has no public code).
+func errCodeOfDomain(err error) string {
+	var gate *domain.GateError
+	if errors.As(err, &gate) {
+		return gate.Code
+	}
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return "ERR_NOT_FOUND"
+	case errors.Is(err, domain.ErrEmailTaken):
+		return "ERR_EMAIL_TAKEN"
+	case errors.Is(err, domain.ErrInvalidCredentials):
+		return "ERR_INVALID_CREDENTIALS"
+	case errors.Is(err, domain.ErrUserInactive):
+		return "ERR_USER_INACTIVE"
+	case errors.Is(err, domain.ErrForbidden):
+		return "ERR_FORBIDDEN"
+	case errors.Is(err, domain.ErrNotStreamable):
+		return "ERR_NOT_STREAMABLE"
+	case errors.Is(err, domain.ErrInvalidInput):
+		return "ERR_INVALID_INPUT"
+	case errors.Is(err, domain.ErrPaymentUnavailable):
+		return "ERR_PAYMENT_UNAVAILABLE"
+	default:
+		return ""
+	}
 }
 
 // AbortError maps domain and gate errors to status-coded JSON errors.
@@ -166,8 +281,15 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusForbidden, "ERR_NOT_STREAMABLE", "track is not streamable")
 	case errors.Is(err, domain.ErrInvalidInput):
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+	case errors.Is(err, domain.ErrPaymentUnavailable):
+		abort(c, http.StatusServiceUnavailable, "ERR_PAYMENT_UNAVAILABLE", "payment provider not configured")
 	default:
-		log.Printf("internal error: %v", err)
+		slog.Error("internal_error",
+			"request_id", CurrentRequestID(c),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"error", err.Error(),
+		)
 		abort(c, http.StatusInternalServerError, "ERR_INTERNAL", "internal error")
 	}
 }

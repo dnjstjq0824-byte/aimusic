@@ -1,4 +1,4 @@
-// Package storage provides S3-compatible presigned URLs for MinIO and R2.
+// Package storage provides S3-compatible presigned URLs for LocalStack (local) and R2.
 package storage
 
 import (
@@ -29,7 +29,7 @@ type Buckets struct {
 	PublicHLS string
 }
 
-// S3Compat is an S3-compatible implementation (MinIO local, R2 in staging/prod)
+// S3Compat is an S3-compatible implementation (LocalStack local, R2 in staging/prod)
 // using AWS Signature Version 4 query-string authentication.
 type S3Compat struct {
 	endpoint  string
@@ -69,15 +69,15 @@ func NewFromEnv() (Storage, Buckets, error) {
 		}
 		return New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "auto"), ak, sk, true), buckets, nil
 	}
-	endpoint := firstNonEmpty(os.Getenv("S3_ENDPOINT"), "http://localhost:9000")
+	endpoint := firstNonEmpty(os.Getenv("S3_ENDPOINT"), "http://localhost:4566")
 	ak := strings.TrimSpace(os.Getenv("S3_ACCESS_KEY"))
 	sk := os.Getenv("S3_SECRET_KEY")
 	if ak == "" || sk == "" {
-		return nil, Buckets{}, fmt.Errorf("minio storage misconfigured: S3_ACCESS_KEY/S3_SECRET_KEY required")
+		return nil, Buckets{}, fmt.Errorf("local s3 storage misconfigured: S3_ACCESS_KEY/S3_SECRET_KEY required")
 	}
 	buckets := Buckets{
-		Staging:   firstNonEmpty(os.Getenv("MINIO_STAGING_BUCKET"), "minio-staging"),
-		PublicHLS: firstNonEmpty(os.Getenv("MINIO_PUBLIC_HLS_BUCKET"), "minio-public-hls"),
+		Staging:   firstNonEmpty(os.Getenv("S3_STAGING_BUCKET"), "local-staging"),
+		PublicHLS: firstNonEmpty(os.Getenv("S3_PUBLIC_HLS_BUCKET"), "local-hls"),
 	}
 	return New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "us-east-1"), ak, sk, os.Getenv("S3_USE_SSL") == "true"), buckets, nil
 }

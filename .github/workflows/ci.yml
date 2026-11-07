@@ -1,0 +1,70 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: backend/go.sum
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" 
+        working-directory: backend
+      - name: vet
+        run: go vet ./...
+        working-directory: backend
+      - name: build
+        run: go build ./...
+        working-directory: backend
+      - name: test
+        run: go test ./...
+        working-directory: backend
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: install
+        run: npm ci
+        working-directory: web
+      - name: typecheck
+        run: npm run typecheck
+        working-directory: web
+      - name: unit test
+        run: npm run test -- --run
+        working-directory: web
+      - name: build
+        run: npm run build
+        working-directory: web
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: analyze
+        run: flutter analyze
+        working-directory: mobile
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck scripts
+        run: |
+          bash -n scripts/test-e2e.sh
+          bash -n scripts/start-local.sh

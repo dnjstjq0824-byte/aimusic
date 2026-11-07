@@ -1,13 +1,15 @@
 <template>
   <div class="mx-auto max-w-md py-6 sm:py-12">
     <!-- Brand badge -->
-    <div class="mb-6 text-center">
-      <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-400 text-white font-black text-xl shadow-glow-brand mb-3">
-        AI
+    <div class="mb-6 flex flex-col items-center gap-3 text-center">
+      <BrandLogo :size="44" />
+      <div>
+        <h1 class="text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
+        <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
       </div>
-      <h1 class="text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
-      <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
     </div>
+
+    <UiErrorBanner :message="oauthError" title="소셜 로그인 실패" class="mb-4" />
 
     <UiCard class="shadow-2xl">
       <!-- Tabs -->
@@ -22,15 +24,23 @@
           type="email"
           label="이메일 주소"
           placeholder="name@example.com"
+          autocomplete="email"
           required
         />
         <UiInput
           v-model="password"
           type="password"
           label="비밀번호"
-          placeholder="••••••••"
+          placeholder="비밀번호 입력"
+          autocomplete="current-password"
           required
-        />
+        >
+          <template #labelRight>
+            <RouterLink to="/reset-password" class="font-medium text-brand-400 hover:underline">
+              비밀번호 찾기
+            </RouterLink>
+          </template>
+        </UiInput>
         <UiButton
           variant="brand"
           size="md"
@@ -41,30 +51,62 @@
           로그인
         </UiButton>
 
-        <!-- Test credentials quick pills -->
-        <div class="pt-4 border-t border-surface-border text-center">
-          <div class="text-[11px] text-neutral-500 mb-2 font-medium">로컬 테스트 빠른 채우기 (Quick Fill)</div>
+        <!-- Social login -->
+        <div v-if="socialLoading" class="space-y-2 pt-2">
+          <UiSkeleton height="h-10" width="w-full" />
+        </div>
+        <div v-else-if="enabledProviders.length > 0" class="space-y-2 pt-2">
+          <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+            <span class="h-px flex-1 bg-surface-border" aria-hidden="true" />
+            <span>간편 로그인</span>
+            <span class="h-px flex-1 bg-surface-border" aria-hidden="true" />
+          </div>
+          <UiButton
+            v-if="isProviderEnabled('GOOGLE')"
+            variant="secondary"
+            size="md"
+            full-width
+            type="button"
+            @click="startSocial('google')"
+          >
+            Google로 계속하기
+          </UiButton>
+          <UiButton
+            v-if="isProviderEnabled('KAKAO')"
+            variant="secondary"
+            size="md"
+            full-width
+            type="button"
+            @click="startSocial('kakao')"
+          >
+            카카오로 계속하기
+          </UiButton>
+        </div>
+
+        <!-- Test credentials quick pills (dev only) -->
+        <div v-if="isDev" class="pt-4 border-t border-surface-border text-center">
+          <div class="text-[11px] text-neutral-500 mb-2 font-medium">로컬 테스트 빠른 채우기 (개발 전용)</div>
           <div class="flex flex-wrap justify-center gap-1.5">
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
               @click="fillCreds('admin@aimusic.internal', 'admin1234!')"
             >
-              👑 어드민
+              어드민
             </button>
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-brand-400 hover:bg-surface-3 border border-surface-border transition-colors"
               @click="fillCreds('partner@aimusic.internal', 'partner1234!')"
             >
-              🎵 파트너
+              파트너
             </button>
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
               @click="fillCreds('user@aimusic.internal', 'user1234!')"
             >
-              🎧 일반 유저
+              일반 유저
             </button>
           </div>
         </div>
@@ -77,12 +119,14 @@
           type="email"
           label="이메일 주소"
           placeholder="name@example.com"
+          autocomplete="email"
           required
         />
         <UiInput
           v-model="suName"
           label="닉네임 / 활동명"
           placeholder="음악 애호가"
+          autocomplete="nickname"
           required
         />
         <UiInput
@@ -91,6 +135,7 @@
           label="비밀번호 (8자 이상)"
           placeholder="8자 이상의 안전한 비밀번호"
           :minlength="8"
+          autocomplete="new-password"
           required
         />
 
@@ -120,6 +165,7 @@
           type="email"
           label="파트너 이메일"
           placeholder="partner@studio.com"
+          autocomplete="email"
           required
         />
         <UiInput
@@ -140,13 +186,14 @@
           label="비밀번호 (8자 이상)"
           placeholder="8자 이상의 안전한 비밀번호"
           :minlength="8"
+          autocomplete="new-password"
           required
         />
 
         <div class="pt-2">
           <UiCheckbox v-model="ptAgreeContract" required>
             <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="text-brand-400 underline">파트너 음원유통·면책 계약서</RouterLink> 및
-            <RouterLink to="/legal/AI_COPYRIGHT_POLICY" target="_blank" class="text-brand-400 underline">AI 저작권 준수 확약</RouterLink>에 동의합니다. (필수)
+            <RouterLink to="/legal/COPYRIGHT_POLICY" target="_blank" class="text-brand-400 underline">AI 저작권 준수 확약</RouterLink>에 동의합니다. (필수)
           </UiCheckbox>
         </div>
 
@@ -166,16 +213,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
-import { errMessageOf } from '@/api/client';
+import { authApi } from '@/api/endpoints';
+import { API_BASE_URL, errMessageOf } from '@/api/client';
+import type { OAuthProviderInfo } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
+import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiTabs, { type TabOption } from '@/components/ui/UiTabs.vue';
+import BrandLogo from '@/components/BrandLogo.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -190,6 +242,7 @@ const tabOptions: TabOption[] = [
 
 const activeTab = ref<string>((route.query.tab as string) || 'login');
 const busy = ref(false);
+const isDev = import.meta.env.DEV;
 
 // Login state
 const email = ref('');
@@ -207,6 +260,25 @@ const ptPassword = ref('');
 const ptName = ref('');
 const ptCompany = ref('');
 const ptAgreeContract = ref(false);
+
+// Social login providers
+const providers = ref<OAuthProviderInfo[]>([]);
+const socialLoading = ref(true);
+const enabledProviders = computed(() => providers.value.filter((p) => p.enabled));
+
+function isProviderEnabled(provider: string): boolean {
+  return providers.value.some((p) => p.provider === provider && p.enabled);
+}
+
+function startSocial(provider: 'google' | 'kakao'): void {
+  window.location.href = `${API_BASE_URL}/auth/oauth/${provider}/start`;
+}
+
+const oauthError = computed(() => {
+  const code = route.query.oauthError;
+  if (typeof code !== 'string' || code === '') return null;
+  return errMessageOf({ response: { data: { error: { code, message: code } } } });
+});
 
 function fillCreds(e: string, p: string) {
   email.value = e;
@@ -262,4 +334,14 @@ async function submitPartnerRegister(): Promise<void> {
     busy.value = false;
   }
 }
+
+onMounted(async () => {
+  try {
+    providers.value = await authApi.oauthProviders();
+  } catch {
+    providers.value = [];
+  } finally {
+    socialLoading.value = false;
+  }
+});
 </script>

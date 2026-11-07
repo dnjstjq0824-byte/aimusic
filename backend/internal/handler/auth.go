@@ -9,10 +9,14 @@ import (
 	"ai-music-platform/backend/internal/service"
 )
 
-// AuthHandler serves registration, login, and refresh.
+// AuthHandler serves registration, login, refresh, password recovery,
+// and social login.
 type AuthHandler struct {
-	Auth  *service.AuthService
-	Users userGetter
+	Auth         *service.AuthService
+	Users        userGetter
+	Resets       *service.PasswordResetService
+	OAuth        *service.OAuthService
+	FrontendBase string
 }
 
 type userGetter interface {
@@ -114,6 +118,80 @@ func (h *AuthHandler) Withdraw(c *gin.Context) {
 		return
 	}
 	ok(c, gin.H{"withdrawn": true})
+}
+
+type passwordResetRequestRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// RequestPasswordReset issues a reset link. It always succeeds so callers
+// cannot enumerate accounts.
+func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
+	var req passwordResetRequestRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	if err := h.Resets.Request(c.Request.Context(), req.Email); err != nil {
+		AbortError(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"data": gin.H{"requested": true}})
+}
+
+type passwordResetConfirmRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=8"`
+}
+
+// ConfirmPasswordReset consumes a reset token and sets a new password.
+func (h *AuthHandler) ConfirmPasswordReset(c *gin.Context) {
+	var req passwordResetConfirmRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	if err := h.Resets.Confirm(c.Request.Context(), req.Token, req.NewPassword); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"reset": true})
+}
+
+// OAuthProviders lists social login availability (drives frontend buttons).
+func (h *AuthHandler) OAuthProviders(c *gin.Context) {
+	ok(c, h.OAuth.Providers())
+}
+
+// OAuthStart redirects to the provider authorization page.
+func (h *AuthHandler) OAuthStart(c *gin.Context) {
+	startURL, err := h.OAuth.StartURL(c.Param("provider"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	c.Redirect(http.StatusFound, startURL)
+}
+
+// OAuthCallback completes social login and redirects to the SPA with tokens.
+// Failures redirect to login with a machine-readable oauthError code.
+func (h *AuthHandler) OAuthCallback(c *gin.Context) {
+	provider := c.Param("provider")
+	tokens, user, err := h.OAuth.Callback(c.Request.Context(), provider, c.Query("code"), c.Query("state"))
+	if err != nil {
+		c.Redirect(http.StatusFound, h.FrontendBase+"/login?oauthError="+errCodeForOAuth(err))
+		return
+	}
+	c.Redirect(http.StatusFound, h.FrontendBase+"/oauth/callback?accessToken="+tokens.AccessToken+
+		"&refreshToken="+tokens.RefreshToken+"&role="+user.Role)
+}
+
+func errCodeForOAuth(err error) string {
+	code := errCodeOfDomain(err)
+	if code == "" {
+		return "ERR_INTERNAL"
+	}
+	return code
 }
 
 func queryInt(c *gin.Context, key string, def int) int {

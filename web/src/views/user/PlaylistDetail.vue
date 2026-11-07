@@ -4,22 +4,23 @@
       <span>← 내 라이브러리로 돌아가기</span>
     </RouterLink>
 
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner
+      :message="error"
+      title="플레이리스트를 불러오지 못했습니다"
+      retry-label="다시 시도"
+      @retry="loadData"
+    />
 
-    <div v-else-if="loading" class="space-y-4">
+    <div v-if="!error && loading" class="space-y-4">
       <UiSkeleton height="h-32" width="w-full" rounded="xl" />
       <UiSkeleton height="h-64" width="w-full" rounded="xl" />
     </div>
 
-    <div v-else-if="playlist" class="space-y-6">
+    <div v-else-if="!error && playlist" class="space-y-6">
       <!-- Playlist Header Hero -->
       <UiCard class="relative overflow-hidden">
         <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-          <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-500 text-white text-4xl shadow-glow-brand">
-            🎵
-          </div>
+          <UiCoverArt :seed="playlist.id" :title="playlist.title" size="xl" rounded="xl" />
           <div class="min-w-0 flex-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">플레이리스트</span>
             <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight truncate mt-0.5">
@@ -43,7 +44,7 @@
             :disabled="tracks.length === 0"
             @click="playAll(false)"
           >
-            ▶ 전체 재생
+            전체 재생
           </UiButton>
           <UiButton
             variant="secondary"
@@ -51,7 +52,7 @@
             :disabled="tracks.length === 0"
             @click="playAll(true)"
           >
-            🔀 셔플 재생
+            셔플 재생
           </UiButton>
           <UiButton
             variant="outline"
@@ -74,7 +75,6 @@
 
         <div v-if="tracks.length === 0" class="py-12">
           <UiEmptyState
-            icon="🎶"
             title="플레이리스트가 비어 있습니다"
             description="음원 탐색 화면에서 좋아하는 AI 음악을 담아보세요."
           >
@@ -124,27 +124,36 @@
             <!-- Position controls & delete -->
             <div class="flex items-center gap-1 text-xs">
               <button
-                class="rounded p-1 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
+                type="button"
+                class="rounded p-1.5 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
                 :disabled="idx === 0"
-                title="위로 이동"
+                :aria-label="`「${t.title}」 위로 이동`"
                 @click="moveTrack(idx, -1)"
               >
-                ▲
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m18 15-6-6-6 6" />
+                </svg>
               </button>
               <button
-                class="rounded p-1 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
+                type="button"
+                class="rounded p-1.5 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
                 :disabled="idx === tracks.length - 1"
-                title="아래로 이동"
+                :aria-label="`「${t.title}」 아래로 이동`"
                 @click="moveTrack(idx, 1)"
               >
-                ▼
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </button>
               <button
-                class="rounded p-1 text-neutral-500 hover:text-accent-crimson hover:bg-surface-3 ml-2"
-                title="플레이리스트에서 삭제"
+                type="button"
+                class="rounded p-1.5 text-neutral-500 hover:text-accent-crimson hover:bg-surface-3 ml-2"
+                :aria-label="`「${t.title}」 플레이리스트에서 제거`"
                 @click="removeTrack(t.id)"
               >
-                ✕
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </li>
@@ -187,6 +196,8 @@ import { useToast } from '@/composables/useToast';
 import type { Playlist, Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
 import UiModal from '@/components/ui/UiModal.vue';

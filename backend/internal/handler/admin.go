@@ -16,6 +16,16 @@ type AdminHandler struct {
 	Services *service.Services
 }
 
+// Overview returns the admin console landing snapshot.
+func (h *AdminHandler) Overview(c *gin.Context) {
+	overview, err := h.Services.Overview.Overview(c.Request.Context())
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, overview)
+}
+
 // Pending returns the review inbox.
 func (h *AdminHandler) Pending(c *gin.Context) {
 	queues, err := h.Services.Review.Pending(c.Request.Context())

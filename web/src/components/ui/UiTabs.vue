@@ -1,9 +1,13 @@
 <template>
-  <div class="flex items-center gap-1 rounded-xl bg-surface-0 p-1 border border-surface-border">
+  <div role="tablist" aria-label="탭" class="flex items-center gap-1 rounded-xl bg-surface-0 p-1 border border-surface-border">
     <button
-      v-for="tab in tabs"
+      v-for="(tab, i) in tabs"
       :key="tab.value"
+      ref="tabRefs"
       type="button"
+      role="tab"
+      :aria-selected="modelValue === tab.value"
+      :tabindex="modelValue === tab.value ? 0 : -1"
       class="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 text-center select-none"
       :class="[
         modelValue === tab.value
@@ -11,6 +15,8 @@
           : 'text-neutral-400 hover:text-neutral-200 hover:bg-surface-1/40',
       ]"
       @click="$emit('update:modelValue', tab.value)"
+      @keydown.left.prevent="moveFocus(i, -1)"
+      @keydown.right.prevent="moveFocus(i, 1)"
     >
       <span class="inline-flex items-center justify-center gap-1.5">
         <span v-if="tab.badge" class="h-1.5 w-1.5 rounded-full bg-brand-500" />
@@ -24,6 +30,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+
 export interface TabOption {
   label: string;
   value: string;
@@ -36,9 +44,20 @@ interface Props {
   tabs: TabOption[];
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:modelValue', val: string): void;
 }>();
+
+const tabRefs = ref<HTMLButtonElement[]>([]);
+
+function moveFocus(index: number, delta: number): void {
+  const next = (index + delta + props.tabs.length) % props.tabs.length;
+  const tab = props.tabs[next];
+  if (tab) {
+    emit('update:modelValue', tab.value);
+    tabRefs.value[next]?.focus();
+  }
+}
 </script>

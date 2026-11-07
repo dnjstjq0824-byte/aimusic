@@ -50,4 +50,6 @@ var (
 	ErrNotStreamable = errors.New("track not streamable")
 	// ErrInvalidInput marks validation failures.
 	ErrInvalidInput = errors.New("invalid input")
+	// ErrPaymentUnavailable marks billing calls when no payment provider is configured.
+	ErrPaymentUnavailable = errors.New("payment unavailable")
 )

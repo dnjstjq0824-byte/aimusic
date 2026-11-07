@@ -217,6 +217,23 @@ func (r *StreamingRepo) CountUserTrackPlaysSince(ctx context.Context, userID, tr
 	return n, err
 }
 
+// CountCountedSince counts counted plays platform-wide since a time.
+func (r *StreamingRepo) CountCountedSince(ctx context.Context, since time.Time) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM streaming_logs WHERE counted_as_play = TRUE AND played_at >= $1`,
+		since).Scan(&n)
+	return n, err
+}
+
+// CountCountedTotal counts all counted plays platform-wide.
+func (r *StreamingRepo) CountCountedTotal(ctx context.Context) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM streaming_logs WHERE counted_as_play = TRUE`).Scan(&n)
+	return n, err
+}
+
 // CountPartnerPlaysInWindow counts counted plays for settlement.
 func (r *StreamingRepo) CountPartnerPlaysInWindow(ctx context.Context, partnerID string, start, end time.Time) (int64, error) {
 	var n int64
@@ -300,4 +317,12 @@ func (r *SettlementRepo) UpdateStatus(ctx context.Context, id, status string, fo
 		`UPDATE partner_settlements SET status = $2, forfeiture_reason = $3 WHERE id = $1::uuid`,
 		id, status, nullStr(forfeitReason))
 	return err
+}
+
+// PendingTotals aggregates PENDING settlements for the admin overview.
+func (r *SettlementRepo) PendingTotals(ctx context.Context) (count, netKRW int64, err error) {
+	err = r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*), COALESCE(SUM(net_amount_krw), 0)
+		FROM partner_settlements WHERE status = 'PENDING'`).Scan(&count, &netKRW)
+	return count, netKRW, err
 }

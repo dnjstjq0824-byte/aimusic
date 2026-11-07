@@ -1,22 +1,18 @@
 <template>
   <div class="space-y-10">
-    <!-- Hero Banner (Linear / Apple aesthetic) -->
-    <div class="relative overflow-hidden rounded-3xl border border-surface-border bg-gradient-to-br from-surface-1 via-surface-0 to-surface-1 p-6 sm:p-10 shadow-2xl">
-      <!-- Glow background circles -->
+    <!-- Hero Banner -->
+    <div class="relative overflow-hidden rounded-3xl border border-surface-border bg-gradient-to-br from-brandteal via-surface-1 to-surface-0 p-6 sm:p-10 shadow-2xl">
       <div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl" />
-      <div class="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-accent-purple/15 blur-3xl" />
+      <div class="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />
 
       <div class="relative z-10 max-w-2xl space-y-4">
-        <div class="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-950/60 px-3 py-1 text-xs text-brand-300">
-          <span class="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
-          <span>차세대 상업용 AI 음원 스트리밍 플랫폼</span>
-        </div>
+        <UiBadge variant="brand" size="sm" dot>
+          상업 라이선스 100% 검증 스트리밍
+        </UiBadge>
 
         <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-          저작권 분쟁 없는 <br class="hidden sm:inline" />
-          <span class="bg-gradient-to-r from-brand-400 via-brand-500 to-amber-300 bg-clip-text text-transparent">
-            검증된 AI 음악
-          </span>을 듣다
+          저작권 걱정 없이 듣는<br />
+          <span class="underline decoration-brand-500 decoration-4 underline-offset-8">검증된 AI 음악</span>
         </h1>
 
         <p class="text-xs sm:text-sm text-neutral-300 leading-relaxed">
@@ -27,10 +23,10 @@
           <UiButton
             variant="brand"
             size="lg"
-            :disabled="tracks.length === 0"
+            :disabled="tracks.length === 0 || loading"
             @click="playAll"
           >
-            ▶ 전체 음원 스트리밍
+            전체 음원 스트리밍
           </UiButton>
           <RouterLink to="/explore">
             <UiButton variant="secondary" size="lg">
@@ -48,24 +44,24 @@
       </div>
 
       <!-- Trust Metrics Bar -->
-      <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 pt-6 border-t border-surface-border/60 text-xs">
+      <dl class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 pt-6 border-t border-surface-border/60 text-xs">
         <div class="space-y-0.5">
-          <div class="text-[10px] uppercase font-bold text-neutral-500">라이선스 기준</div>
-          <div class="font-bold text-emerald-400">100% 상업용 전용</div>
+          <dt class="text-[10px] uppercase font-bold text-neutral-500">라이선스 기준</dt>
+          <dd class="font-bold text-emerald-400">100% 상업용 전용</dd>
         </div>
         <div class="space-y-0.5">
-          <div class="text-[10px] uppercase font-bold text-neutral-500">법적 컴플라이언스</div>
-          <div class="font-bold text-white">인공지능기본법 제31조</div>
+          <dt class="text-[10px] uppercase font-bold text-neutral-500">법적 컴플라이언스</dt>
+          <dd class="font-bold text-white">인공지능기본법 제31조</dd>
         </div>
         <div class="space-y-0.5">
-          <div class="text-[10px] uppercase font-bold text-neutral-500">음향 포렌식</div>
-          <div class="font-bold text-white">FFprobe 192k+ 검증</div>
+          <dt class="text-[10px] uppercase font-bold text-neutral-500">음향 포렌식</dt>
+          <dd class="font-bold text-white">FFprobe 192k+ 검증</dd>
         </div>
         <div class="space-y-0.5">
-          <div class="text-[10px] uppercase font-bold text-neutral-500">백그라운드 스트리밍</div>
-          <div class="font-bold text-brand-400">HLS 무중단 Gapless</div>
+          <dt class="text-[10px] uppercase font-bold text-neutral-500">백그라운드 스트리밍</dt>
+          <dd class="font-bold text-brand-400">HLS 무중단 Gapless</dd>
         </div>
-      </div>
+      </dl>
     </div>
 
     <!-- Quick Curation Chips -->
@@ -135,7 +131,6 @@
     <!-- Empty State -->
     <div v-else-if="tracks.length === 0" class="py-12">
       <UiEmptyState
-        icon="🎵"
         title="등록된 검증 음원이 없습니다"
         description="조건에 맞는 음원이 아직 없거나 모든 필터가 해제되었습니다. 파트너 스튜디오에서 새로운 상업용 음원을 등록해 보세요."
       >
@@ -152,76 +147,28 @@
 
     <!-- Tracks Grid -->
     <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <UiCard
+      <TrackCard
         v-for="t in tracks"
         :key="t.id"
-        hoverable
-        class="group flex flex-col justify-between"
-      >
-        <div>
-          <div class="flex items-start gap-3">
-            <!-- Play trigger button -->
-            <button
-              class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-2 group-hover:bg-brand-500 text-neutral-300 group-hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
-              title="재생"
-              @click="playOne(t)"
-            >
-              <span class="text-base font-black">▶</span>
-            </button>
-            <div class="min-w-0 flex-1">
-              <RouterLink
-                :to="{ name: 'track-detail', params: { id: t.id } }"
-                class="block truncate font-bold text-white hover:text-brand-400 transition-colors text-sm"
-              >
-                {{ t.title }}
-              </RouterLink>
-              <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                <AiBadge :track="t" />
-                <span class="text-[11px] font-medium text-neutral-400">{{ t.aiProvider }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Metadata row -->
-          <div class="mt-3 flex items-center justify-between text-[11px] text-neutral-400 pt-2 border-t border-surface-border">
-            <span>재생 {{ t.playCount.toLocaleString() }}회</span>
-            <span v-if="t.durationMs">{{ fmtDuration(t.durationMs) }}</span>
-            <span v-if="t.bitrateKbps">{{ t.bitrateKbps }}kbps</span>
-          </div>
-        </div>
-
-        <!-- Action Strip -->
-        <div class="mt-3 flex items-center justify-between gap-1 pt-2">
-          <button
-            class="text-[11px] font-medium text-neutral-400 hover:text-white transition-colors"
-            @click="enqueue(t)"
-          >
-            + 큐에 추가
-          </button>
-          <button
-            class="text-[11px] font-medium text-neutral-400 hover:text-brand-400 transition-colors"
-            @click="openAddToPlaylist(t)"
-          >
-            + 플레이리스트
-          </button>
-          <button
-            class="text-[11px] font-medium text-neutral-500 hover:text-accent-crimson transition-colors"
-            @click="openReport(t)"
-          >
-            신고
-          </button>
-        </div>
-      </UiCard>
+        :track="t"
+        @play="playOne"
+        @enqueue="enqueue"
+        @add-to-playlist="openAddToPlaylist"
+        @report="openReport"
+      />
     </div>
 
     <!-- Pagination -->
     <UiPagination
       v-if="tracks.length > 0"
       :page="Math.floor(offset / limit) + 1"
-      :has-more="tracks.length === limit"
+      :has-more="offset + tracks.length < total"
+      :total="total"
+      :limit="limit"
       :disabled="loading"
       @prev="page(-1)"
       @next="page(1)"
+      @page="goPage"
     />
 
     <!-- Dispute Modal -->
@@ -234,29 +181,15 @@
     />
 
     <!-- Playlist Add Modal -->
-    <UiModal
+    <UiPlaylistPicker
       :model-value="Boolean(playlistTargetTrack)"
-      title="내 플레이리스트에 담기"
-      description="선택한 음원을 추가할 플레이리스트를 선택하세요."
-      @close="playlistTargetTrack = null"
-    >
-      <div v-if="playlists.playlists.length === 0" class="py-4 text-center">
-        <p class="text-xs text-neutral-400 mb-3">생성된 플레이리스트가 없습니다.</p>
-        <UiButton variant="brand" size="sm" @click="createNewPlaylist">새 플레이리스트 생성</UiButton>
-      </div>
-      <div v-else class="space-y-2">
-        <button
-          v-for="p in playlists.playlists"
-          :key="p.id"
-          type="button"
-          class="w-full flex items-center justify-between p-3 rounded-xl border border-surface-border bg-surface-2 hover:bg-surface-3 transition-colors text-left text-xs"
-          @click="addTrackToPlaylist(p.id)"
-        >
-          <span class="font-bold text-white">{{ p.title }}</span>
-          <span class="text-neutral-400">담기 →</span>
-        </button>
-      </div>
-    </UiModal>
+      :track-title="playlistTargetTrack?.title ?? ''"
+      :playlists="playlists.playlists"
+      :create-loading="creatingPlaylist"
+      @update:model-value="playlistTargetTrack = $event ? playlistTargetTrack : null"
+      @select="addTrackToPlaylist"
+      @create="createNewPlaylist"
+    />
 
     <!-- Compliance Onboarding Modal -->
     <OnboardingModal v-model="onboardingOpen" />
@@ -272,12 +205,13 @@ import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
 import type { Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
-import UiModal from '@/components/ui/UiModal.vue';
+import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiPagination from '@/components/ui/UiPagination.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
-import AiBadge from '@/components/legal/AiBadge.vue';
+import TrackCard from '@/components/TrackCard.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 import OnboardingModal from '@/components/legal/OnboardingModal.vue';
 
@@ -289,28 +223,24 @@ const tracks = ref<Track[]>([]);
 const loading = ref(false);
 const offset = ref(0);
 const limit = 18;
+const total = ref(0);
 const filterProvider = ref('');
 const filterMood = ref('');
 
 const reportTarget = ref<Track | null>(null);
 const playlistTargetTrack = ref<Track | null>(null);
+const creatingPlaylist = ref(false);
 const onboardingOpen = ref(false);
-
-function fmtDuration(ms?: number | null) {
-  if (!ms) return '0:00';
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-}
 
 async function load(): Promise<void> {
   loading.value = true;
   try {
-    tracks.value = await trackApi.list(limit, offset.value, {
+    const page = await trackApi.list(limit, offset.value, {
       provider: filterProvider.value || undefined,
       mood: filterMood.value || undefined,
     });
+    tracks.value = page.items;
+    total.value = page.total;
   } catch (err: unknown) {
     toast.error(errMessageOf(err), '음원 로드 실패');
   } finally {
@@ -339,6 +269,12 @@ function clearFilters() {
 
 function page(delta: number): void {
   offset.value = Math.max(0, offset.value + delta * limit);
+  void load();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goPage(p: number): void {
+  offset.value = Math.max(0, (p - 1) * limit);
   void load();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -373,9 +309,8 @@ async function addTrackToPlaylist(playlistId: string) {
   }
 }
 
-async function createNewPlaylist() {
-  const title = prompt('새 플레이리스트 제목을 입력하세요:');
-  if (!title) return;
+async function createNewPlaylist(title: string) {
+  creatingPlaylist.value = true;
   try {
     const created = await playlistApi.create(title, false);
     playlists.playlists.unshift(created);
@@ -384,6 +319,8 @@ async function createNewPlaylist() {
     }
   } catch (err) {
     toast.error(errMessageOf(err));
+  } finally {
+    creatingPlaylist.value = false;
   }
 }
 
@@ -399,5 +336,13 @@ function onReported(id: string): void {
 onMounted(() => {
   void load();
   void playlists.fetchMine();
+  try {
+    if (localStorage.getItem('aivibe.onboarded') !== '1') {
+      onboardingOpen.value = true;
+      localStorage.setItem('aivibe.onboarded', '1');
+    }
+  } catch {
+    // Private mode: onboarding stays manual via the hero link.
+  }
 });
 </script>

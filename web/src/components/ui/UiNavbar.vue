@@ -3,14 +3,8 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
       <!-- Left: Logo & Core Nav -->
       <div class="flex items-center gap-6 sm:gap-8">
-        <RouterLink to="/" class="flex items-center gap-2.5 transition-transform active:scale-95">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-amber-400 shadow-glow-brand text-white font-black text-base">
-            AI
-          </div>
-          <div class="flex flex-col">
-            <span class="font-extrabold tracking-tight text-white text-base leading-none">AIVIBE</span>
-            <span class="text-[9px] font-semibold text-brand-400 tracking-wider uppercase mt-0.5">Commercial Gate</span>
-          </div>
+        <RouterLink to="/" class="flex items-center transition-transform active:scale-95" aria-label="AIVIBE 홈">
+          <BrandLogo :size="36" tagline="Commercial Gate" />
         </RouterLink>
 
         <!-- Desktop Navigation -->
@@ -44,6 +38,13 @@
           >
             권리보호센터
           </RouterLink>
+          <RouterLink
+            to="/pricing"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            :class="route.name === 'pricing' ? 'text-white bg-surface-2 font-semibold' : ''"
+          >
+            요금제
+          </RouterLink>
         </nav>
       </div>
 
@@ -70,18 +71,27 @@
         <!-- User profile or Login -->
         <div v-if="auth.isAuthenticated" class="relative">
           <button
+            ref="userMenuButton"
             type="button"
             class="flex items-center gap-2 rounded-full border border-surface-border bg-surface-1 p-1 pr-3 text-xs text-neutral-200 hover:border-surface-border-hover transition-colors"
+            aria-haspopup="menu"
+            :aria-expanded="userMenuOpen"
+            aria-label="사용자 메뉴"
             @click="userMenuOpen = !userMenuOpen"
           >
             <UiAvatar :name="auth.userId ?? undefined" size="sm" />
             <span class="max-w-[100px] truncate font-medium hidden sm:inline">{{ auth.role }}</span>
-            <span class="text-[10px] text-neutral-400">▾</span>
+            <svg class="h-3 w-3 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </button>
 
           <!-- Dropdown menu -->
           <div
             v-if="userMenuOpen"
+            ref="userMenuPanel"
+            role="menu"
+            aria-label="사용자 메뉴"
             class="absolute right-0 mt-2 w-48 rounded-xl border border-surface-border glass-dropdown py-1.5 shadow-2xl z-50 text-xs"
           >
             <div class="px-3 py-2 border-b border-surface-border text-neutral-400">
@@ -138,16 +148,26 @@
         <button
           type="button"
           class="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+          :aria-expanded="mobileNavOpen"
+          aria-controls="mobile-nav"
+          :aria-label="mobileNavOpen ? '모바일 메뉴 닫기' : '모바일 메뉴 열기'"
           @click="mobileNavOpen = !mobileNavOpen"
         >
-          ☰
+          <svg v-if="!mobileNavOpen" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg v-else class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
         </button>
       </div>
     </div>
 
     <!-- Mobile Drawer -->
-    <div
+    <nav
       v-if="mobileNavOpen"
+      id="mobile-nav"
+      aria-label="모바일 메뉴"
       class="md:hidden border-t border-surface-border bg-surface-1/95 backdrop-blur-2xl px-4 py-4 space-y-2 text-sm"
     >
       <RouterLink
@@ -179,6 +199,13 @@
       >
         권리보호센터 (OSP 분쟁)
       </RouterLink>
+      <RouterLink
+        to="/pricing"
+        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        @click="mobileNavOpen = false"
+      >
+        요금제
+      </RouterLink>
       <div v-if="auth.isPartner || auth.isAdmin" class="pt-2 border-t border-surface-border">
         <RouterLink
           to="/partner"
@@ -204,19 +231,55 @@
           관리자 검수 워크벤치
         </RouterLink>
       </div>
-    </div>
+    </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import UiAvatar from './UiAvatar.vue';
+import BrandLogo from '@/components/BrandLogo.vue';
 
 const auth = useAuthStore();
 const route = useRoute();
 
 const userMenuOpen = ref(false);
 const mobileNavOpen = ref(false);
+const userMenuButton = ref<HTMLElement | null>(null);
+const userMenuPanel = ref<HTMLElement | null>(null);
+
+function onPointerDown(e: PointerEvent): void {
+  if (!userMenuOpen.value) return;
+  const target = e.target as Node | null;
+  if (
+    target &&
+    !userMenuButton.value?.contains(target) &&
+    !userMenuPanel.value?.contains(target)
+  ) {
+    userMenuOpen.value = false;
+  }
+}
+
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key !== 'Escape') return;
+  if (userMenuOpen.value) {
+    userMenuOpen.value = false;
+    userMenuButton.value?.focus();
+  }
+  if (mobileNavOpen.value) {
+    mobileNavOpen.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('keydown', onKeydown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onPointerDown);
+  window.removeEventListener('keydown', onKeydown);
+});
 </script>

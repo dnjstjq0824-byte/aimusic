@@ -1,15 +1,10 @@
 <template>
   <div class="mx-auto max-w-3xl space-y-6">
-    <!-- Header -->
-    <div class="border-b border-surface-border pb-4">
-      <div class="flex items-center gap-2 text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">
-        <span>Gatekeeper Pipeline</span>
-      </div>
-      <h1 class="text-2xl font-black text-white tracking-tight">AI 음원 업로드 &amp; 상업 라이선스 검증 위저드</h1>
-      <p class="text-xs text-neutral-400 mt-1">
-        상업용 라이선스가 보증된 AI 음원만 등록 가능합니다. 비상업용 및 소급 불가 음원은 원천 차단됩니다.
-      </p>
-    </div>
+    <UiPageHeader
+      eyebrow="Gatekeeper Pipeline"
+      title="AI 음원 업로드 &amp; 상업 라이선스 검증 위저드"
+      description="상업용 라이선스가 보증된 AI 음원만 등록 가능합니다. 비상업용 및 소급 불가 음원은 원천 차단됩니다."
+    />
 
     <!-- Stepper indicator -->
     <div class="grid grid-cols-3 gap-2">
@@ -22,8 +17,12 @@
         <div
           class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
           :class="store.step === st.num ? 'bg-brand-500 text-white' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-neutral-400'"
+          :aria-label="store.step > st.num ? `${st.title} 완료` : `${st.title}`"
         >
-          {{ store.step > st.num ? '✓' : idx + 1 }}
+          <svg v-if="store.step > st.num" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          <span v-else>{{ idx + 1 }}</span>
         </div>
         <div class="truncate">
           <div class="font-bold">{{ st.title }}</div>
@@ -32,10 +31,7 @@
       </div>
     </div>
 
-    <!-- Error Banner -->
-    <div v-if="loadError" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ loadError }}
-    </div>
+    <UiErrorBanner :message="loadError" title="업로드 준비 실패" />
 
     <!-- Step 1: Pre-check Gate 1 & 2 -->
     <UiCard v-if="store.step === 1" class="space-y-5">
@@ -77,7 +73,7 @@
         >
           <option value="">구독 증빙을 선택하세요…</option>
           <option v-for="s in store.subscriptions" :key="s.id" :value="s.id">
-            {{ s.provider }} / {{ s.planName }} ({{ s.status }})
+            {{ s.provider }} / {{ s.planName }} ({{ subStatusKo(s.status) }})
           </option>
         </UiSelect>
 
@@ -143,7 +139,7 @@
             :disabled="store.step2Blocked"
             @click="store.step = 2"
           >
-            Step 2로 진행 →
+            Step 2로 진행
           </UiButton>
         </div>
       </div>
@@ -169,23 +165,21 @@
         </div>
         <div class="flex justify-between">
           <span class="text-neutral-400">Gate 1-2 사전 승인:</span>
-          <span class="text-accent-emerald font-semibold">✓ 통과 (ELIGIBLE)</span>
+          <UiBadge variant="success" size="xs">통과 (ELIGIBLE)</UiBadge>
         </div>
       </div>
 
-      <div v-if="uploadError" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-        {{ uploadError }}
-      </div>
+      <UiErrorBanner :message="uploadError" title="업로드 실패" />
 
       <div class="flex items-center justify-between pt-2 border-t border-surface-border">
-        <UiButton variant="ghost" size="sm" @click="store.step = 1">← 이전 단계</UiButton>
+        <UiButton variant="ghost" size="sm" @click="store.step = 1">이전 단계</UiButton>
         <UiButton
           variant="brand"
           size="sm"
           :loading="uploading"
           @click="uploadAndVerify"
         >
-          오디오 스테이징 업로드 및 포렌식 통과 →
+          오디오 스테이징 업로드 및 포렌식 통과
         </UiButton>
       </div>
     </UiCard>
@@ -244,8 +238,12 @@
       <!-- 4 Mandatory Legal Warranties -->
       <div class="space-y-3 rounded-2xl border border-brand-500/30 bg-surface-0 p-4">
         <div class="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <span>⚖️ 4대 필수 법적 보증 서약서</span>
-          <span class="text-accent-crimson">*</span>
+          <svg class="h-4 w-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v18M5 7l7-4 7 4M7 21h10" />
+            <path d="M5 7v4a2.5 2.5 0 0 0 5 0V7M19 7v4a2.5 2.5 0 0 1-5 0" />
+          </svg>
+          <span>4대 필수 법적 보증 서약서</span>
+          <span class="text-accent-crimson" aria-hidden="true">*</span>
         </div>
 
         <UiCheckbox v-model="store.declaresOwnership" required>
@@ -266,7 +264,7 @@
       </div>
 
       <div class="flex items-center justify-between pt-2 border-t border-surface-border">
-        <UiButton variant="ghost" size="sm" @click="store.step = 2">← 이전 단계</UiButton>
+        <UiButton variant="ghost" size="sm" @click="store.step = 2">이전 단계</UiButton>
         <UiButton
           variant="brand"
           size="sm"
@@ -274,7 +272,7 @@
           :loading="store.finalizing"
           @click="finalizeUpload"
         >
-          ✓ 최종 제출 및 어드민 검수 요청
+          최종 제출 및 어드민 검수 요청
         </UiButton>
       </div>
     </UiCard>
@@ -288,8 +286,11 @@ import { usePartnerUploadStore } from '@/stores/partnerUploadStore';
 import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
 import LicensePrecheckWidget from '@/components/legal/LicensePrecheckWidget.vue';
@@ -307,6 +308,17 @@ const steps = [
 const loadError = ref<string | null>(null);
 const uploadError = ref<string | null>(null);
 const uploading = ref(false);
+
+const SUB_STATUS_KO: Record<string, string> = {
+  PENDING: '검증 대기',
+  VERIFIED: '검증 완료',
+  REJECTED: '반려됨',
+  EXPIRED: '만료됨',
+};
+
+function subStatusKo(status: string): string {
+  return SUB_STATUS_KO[status] ?? status;
+}
 
 function onFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];

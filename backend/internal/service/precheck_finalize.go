@@ -169,7 +169,15 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 			return nil, domain.ErrForbidden
 		}
 	}
-	track, err := s.repos.Tracks.Create(ctx, &domain.Track{
+	// Track + rights + job are created atomically: a crash between writes
+	// must never leave a track without its rights declaration or job row.
+	tx, err := s.repos.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	txRepos := s.repos.WithTx(tx)
+	track, err := txRepos.Tracks.Create(ctx, &domain.Track{
 		AlbumID:           in.AlbumID,
 		PartnerID:         in.PartnerID,
 		Title:             in.Title,
@@ -198,7 +206,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		pt := in.PlanTierUsed
 		planTierPtr = &pt
 	}
-	if _, err := s.repos.Rights.Upsert(ctx, &domain.TrackRightsDeclaration{
+	if _, err := txRepos.Rights.Upsert(ctx, &domain.TrackRightsDeclaration{
 		TrackID:                         track.ID,
 		PartnerID:                       in.PartnerID,
 		DeclaresOwnership:               in.Rights.DeclaresOwnership,
@@ -220,8 +228,14 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		return nil, err
 	}
 	outputPrefix := "hls/" + track.ID
-	job, err := s.repos.Jobs.Create(ctx, track.ID, in.StagingKey, outputPrefix)
+	job, err := txRepos.Jobs.Create(ctx, track.ID, in.StagingKey, outputPrefix)
 	if err != nil {
+		return nil, err
+	}
+	// Commit before enqueueing: the worker reads the job row, so the row
+	// must be visible first. If enqueue fails, the QUEUED job row still
+	// exists and can be re-queued by ID; the track itself stays consistent.
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	if err := s.repos.Queue.EnqueueTranscode(ctx, repository.TranscodePayload{

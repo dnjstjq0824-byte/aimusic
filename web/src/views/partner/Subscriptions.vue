@@ -1,22 +1,18 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-black text-white tracking-tight">AI 유료 구독 증빙 관리</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          Suno Pro, AIVA Pro 등 유료 상업 플랜 결제 영수증을 등록하면 관리자 확인 후 음원 업로드가 가능합니다.
-        </p>
-      </div>
-      <UiButton variant="brand" size="sm" @click="createModalOpen = true">
-        + 새 유료 구독 증빙 등록
-      </UiButton>
-    </div>
+    <UiPageHeader
+      eyebrow="Studio Console"
+      title="AI 유료 구독 증빙 관리"
+      description="Suno Pro, AIVA Pro 등 유료 상업 플랜 결제 영수증을 등록하면 관리자 확인 후 음원 업로드가 가능합니다."
+    >
+      <template #actions>
+        <UiButton variant="brand" size="sm" @click="createModalOpen = true">
+          새 유료 구독 증빙 등록
+        </UiButton>
+      </template>
+    </UiPageHeader>
 
-    <!-- Error Banner -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner :message="error" title="구독 증빙을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
 
     <!-- Subscriptions List -->
     <UiCard padding="none">
@@ -34,7 +30,6 @@
 
       <div v-else-if="subs.length === 0" class="py-12">
         <UiEmptyState
-          icon="📄"
           title="등록된 구독 증빙이 없습니다"
           description="Suno Pro/Premier 또는 AIVA Pro 등 유료 상업용 구독 인보이스를 등록해 주세요."
         >
@@ -57,10 +52,10 @@
               <span class="font-bold text-white text-sm">{{ s.provider }}</span>
               <span class="font-semibold text-brand-400">{{ s.planName }}</span>
               <UiBadge
-                :variant="s.status === 'VERIFIED' ? 'commercial' : s.status === 'REJECTED' ? 'blocked' : 'neutral'"
+                :variant="s.status === 'VERIFIED' ? 'success' : s.status === 'REJECTED' ? 'danger' : 'warning'"
                 size="xs"
               >
-                {{ s.status }}
+                {{ subStatusKo(s.status) }}
               </UiBadge>
             </div>
             <div class="font-mono text-[11px] text-neutral-500">증빙 ID: {{ s.id }}</div>
@@ -69,8 +64,8 @@
             </div>
           </div>
 
-          <div class="text-[11px] text-neutral-400 shrink-0">
-            <span v-if="s.status === 'VERIFIED'" class="text-accent-emerald font-semibold">✓ Gate 1-2 사용 가능</span>
+          <div class="text-[11px] shrink-0">
+            <span v-if="s.status === 'VERIFIED'" class="text-accent-emerald font-semibold">Gate 1-2 사용 가능</span>
             <span v-else-if="s.status === 'PENDING'" class="text-accent-amber font-semibold">관리자 검증 대기중</span>
             <span v-else class="text-accent-crimson font-semibold">반려됨</span>
           </div>
@@ -121,7 +116,9 @@ import { useToast } from '@/composables/useToast';
 import type { PartnerAISubscription } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiModal from '@/components/ui/UiModal.vue';
@@ -131,6 +128,17 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 const toast = useToast();
 
 const providers = ['SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'CUSTOM_OPEN_MODEL'];
+
+const SUB_STATUS_KO: Record<string, string> = {
+  PENDING: '검증 대기',
+  VERIFIED: '검증 완료',
+  REJECTED: '반려됨',
+  EXPIRED: '만료됨',
+};
+
+function subStatusKo(status: string): string {
+  return SUB_STATUS_KO[status] ?? status;
+}
 const subs = ref<PartnerAISubscription[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);

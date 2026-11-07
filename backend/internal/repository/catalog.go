@@ -3,12 +3,15 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
+	"time"
 
 	"ai-music-platform/backend/internal/domain"
 )
 
 // AlbumRepo accesses albums.
-type AlbumRepo struct{ db *sql.DB }
+type AlbumRepo struct{ db DBTX }
 
 func scanAlbum(row interface{ Scan(...any) error }) (*domain.Album, error) {
 	a := &domain.Album{}
@@ -72,7 +75,7 @@ func (r *AlbumRepo) UpdateStatus(ctx context.Context, id, status string) error {
 }
 
 // TrackRepo accesses tracks.
-type TrackRepo struct{ db *sql.DB }
+type TrackRepo struct{ db DBTX }
 
 func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
@@ -159,9 +162,120 @@ func (r *TrackRepo) listTracks(ctx context.Context, query string, args ...any) (
 
 // ListReady returns READY tracks for public listing.
 func (r *TrackRepo) ListReady(ctx context.Context, limit, offset int) ([]*domain.Track, error) {
-	return r.listTracks(ctx, `SELECT `+trackColumns+`
-		FROM tracks WHERE status = 'READY' ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-		clampLimit(limit, 20, 100), offset)
+	page, err := r.SearchReady(ctx, TrackFilter{Limit: limit, Offset: offset, Sort: TrackSortRecent})
+	if err != nil {
+		return nil, err
+	}
+	return page.Items, nil
+}
+
+// Track sort keys accepted by SearchReady (strict whitelist; unknown sorts
+// are rejected by the handler before reaching SQL).
+const (
+	TrackSortRecent  = "recent"
+	TrackSortOldest  = "oldest"
+	TrackSortPopular = "popular"
+	TrackSortTitle   = "title"
+)
+
+// TrackSortOrderBy maps a validated sort key to its ORDER BY clause.
+func TrackSortOrderBy(sort string) (string, bool) {
+	switch sort {
+	case "", TrackSortRecent:
+		return "created_at DESC", true
+	case TrackSortOldest:
+		return "created_at ASC", true
+	case TrackSortPopular:
+		return "play_count DESC, created_at DESC", true
+	case TrackSortTitle:
+		return "title ASC, created_at DESC", true
+	default:
+		return "", false
+	}
+}
+
+// TrackFilter carries server-side search, filter, sort, and paging for READY
+// tracks. Q matches the title (case-insensitive substring); Provider is an
+// exact AI-provider code; Genre matches case-insensitively; Mood matches one
+// mood tag case-insensitively.
+type TrackFilter struct {
+	Q        string
+	Provider string
+	Genre    string
+	Mood     string
+	Sort     string
+	Limit    int
+	Offset   int
+}
+
+// TrackPage is one page of READY tracks with its total for pagination UI.
+type TrackPage struct {
+	Items  []*domain.Track
+	Total  int
+	Limit  int
+	Offset int
+}
+
+// escapeLike escapes LIKE wildcards so user search text matches literally.
+func escapeLike(s string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(s)
+}
+
+// buildTrackSearch builds the WHERE fragment (shared by the count and page
+// queries) plus ordered args. It is pure so the SQL contract stays unit
+// tested without a database.
+func buildTrackSearch(f TrackFilter) (where string, args []any) {
+	conds := []string{"status = 'READY'"}
+	if q := strings.TrimSpace(f.Q); q != "" {
+		args = append(args, "%"+escapeLike(q)+"%")
+		conds = append(conds, fmt.Sprintf(`title ILIKE $%d ESCAPE '\'`, len(args)))
+	}
+	if p := strings.TrimSpace(f.Provider); p != "" {
+		args = append(args, strings.ToUpper(p))
+		conds = append(conds, fmt.Sprintf(`ai_provider = $%d`, len(args)))
+	}
+	if g := strings.TrimSpace(f.Genre); g != "" {
+		args = append(args, strings.ToLower(g))
+		conds = append(conds, fmt.Sprintf(`LOWER(genre) = $%d`, len(args)))
+	}
+	if m := strings.TrimSpace(f.Mood); m != "" {
+		args = append(args, strings.ToLower(m))
+		conds = append(conds, fmt.Sprintf(
+			`EXISTS (SELECT 1 FROM unnest(mood_tags) AS mt WHERE LOWER(mt) = $%d)`, len(args)))
+	}
+	return " WHERE " + strings.Join(conds, " AND "), args
+}
+
+// SearchReady returns one page of READY tracks with server-side search,
+// filters, sort, and a total count for pagination.
+func (r *TrackRepo) SearchReady(ctx context.Context, f TrackFilter) (*TrackPage, error) {
+	orderBy, ok := TrackSortOrderBy(f.Sort)
+	if !ok {
+		return nil, fmt.Errorf("unknown track sort %q", f.Sort)
+	}
+	limit := clampLimit(f.Limit, 20, 100)
+	offset := f.Offset
+	if offset < 0 {
+		offset = 0
+	}
+	where, args := buildTrackSearch(f)
+	var total int
+	if err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM tracks`+where, args...).Scan(&total); err != nil {
+		return nil, err
+	}
+	pageArgs := append(append([]any{}, args...), limit, offset)
+	items, err := r.listTracks(ctx, `SELECT `+trackColumns+` FROM tracks`+where+
+		` ORDER BY `+orderBy+fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(args)+1, len(args)+2),
+		pageArgs...)
+	if err != nil {
+		return nil, err
+	}
+	if items == nil {
+		items = []*domain.Track{}
+	}
+	return &TrackPage{Items: items, Total: total, Limit: limit, Offset: offset}, nil
 }
 
 // ListByPartner returns a partner's tracks, newest first.
@@ -169,6 +283,14 @@ func (r *TrackRepo) ListByPartner(ctx context.Context, partnerID string, limit, 
 	return r.listTracks(ctx, `SELECT `+trackColumns+`
 		FROM tracks WHERE partner_id = $1::uuid ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
 		partnerID, clampLimit(limit, 20, 100), offset)
+}
+
+// CountByStatus returns the track count for one status.
+func (r *TrackRepo) CountByStatus(ctx context.Context, status string) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM tracks WHERE status = $1`, status).Scan(&n)
+	return n, err
 }
 
 // ListByStatus returns tracks filtered by status.
@@ -223,7 +345,7 @@ func (r *TrackRepo) ExistsByHash(ctx context.Context, sha string) (bool, error) 
 }
 
 // RightsRepo accesses track_rights_declarations.
-type RightsRepo struct{ db *sql.DB }
+type RightsRepo struct{ db DBTX }
 
 const rightsColumns = `id::text, track_id::text, partner_id::text, declares_ownership,
 	declares_no_voice_clone, declares_training_consent,
@@ -317,7 +439,7 @@ func (r *RightsRepo) GetByTrack(ctx context.Context, trackID string) (*domain.Tr
 }
 
 // JobRepo accesses transcoding_jobs.
-type JobRepo struct{ db *sql.DB }
+type JobRepo struct{ db DBTX }
 
 func scanJob(row interface{ Scan(...any) error }) (*domain.TranscodingJob, error) {
 	j := &domain.TranscodingJob{}
@@ -355,6 +477,15 @@ func (r *JobRepo) GetByID(ctx context.Context, id string) (*domain.TranscodingJo
 		return nil, domain.ErrNotFound
 	}
 	return j, err
+}
+
+// CountFailedSince counts FAILED transcode jobs since a time.
+func (r *JobRepo) CountFailedSince(ctx context.Context, since time.Time) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM transcoding_jobs WHERE status = 'FAILED' AND finished_at >= $1`,
+		since).Scan(&n)
+	return n, err
 }
 
 // MarkRunning transitions a job to RUNNING.

@@ -1,22 +1,12 @@
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs text-accent-purple font-bold uppercase tracking-wider mb-1">
-          <span>Editorial &amp; Financial Operations</span>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">공식 큐레이션 &amp; 70:30 정산 운영 콘솔</h1>
-        <p class="text-xs text-neutral-400 mt-1">
-          공식 테마 플레이리스트를 편성하고, 긴급 직권 임시조치 및 파트너 70:30 음원 정산 배치를 실행합니다.
-        </p>
-      </div>
-    </div>
+    <UiPageHeader
+      eyebrow="Editorial &amp; Finance"
+      title="공식 큐레이션 &amp; 정산 운영 콘솔"
+      description="공식 테마 플레이리스트를 편성하고, 긴급 직권 임시조치 및 파트너 음원 정산 배치를 실행합니다."
+    />
 
-    <!-- Error Alert -->
-    <div v-if="error" class="rounded-xl border border-red-800 bg-red-950/40 p-4 text-xs text-red-200">
-      {{ error }}
-    </div>
+    <UiErrorBanner :message="error" title="작업 실패" />
 
     <div class="grid gap-6 md:grid-cols-2">
       <!-- Create Official Playlist -->
@@ -50,17 +40,17 @@
       </UiCard>
 
       <!-- Emergency Takedown Card -->
-      <UiCard class="space-y-4 border-red-500/20 bg-red-950/20">
+      <UiCard class="space-y-4" border-variant="danger">
         <div>
           <h2 class="text-sm font-bold text-accent-crimson flex items-center gap-1.5">
-            <span>🚨 긴급 직권 임시조치 (Emergency Takedown)</span>
+            <span>긴급 직권 임시조치 (Emergency Takedown)</span>
           </h2>
           <p class="text-xs text-neutral-300 mt-0.5">
             사후 라이선스 취소, 실존 가수 보이스 클로닝 적발 시 즉시 스트리밍을 차단합니다.
           </p>
         </div>
 
-        <form class="space-y-3" @submit.prevent="runTakedown">
+        <form class="space-y-3" @submit.prevent="takedownConfirmOpen = true">
           <UiInput
             v-model="tdTrackId"
             label="차단할 대상 트랙 UUID"
@@ -84,7 +74,7 @@
     <UiCard class="space-y-4">
       <div>
         <div class="inline-flex items-center gap-1.5 text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">
-          <span>Settlement Engine (70:30 Rev-Share)</span>
+          <span>Settlement Engine (재생당 ₩10 · 3.3% 원천징수)</span>
         </div>
         <h2 class="text-sm font-bold text-white">파트너 월별 음원 정산 배치 실행</h2>
         <p class="text-xs text-neutral-400 mt-0.5">
@@ -129,7 +119,7 @@
       <div v-if="lastSettlement" class="rounded-xl bg-surface-0 p-4 border border-surface-border text-xs space-y-2">
         <div class="flex items-center justify-between">
           <span class="font-bold text-white text-sm">정산 계산 완료 (ID: {{ lastSettlement.id }})</span>
-          <span class="text-accent-emerald font-bold">상태: {{ lastSettlement.status }}</span>
+          <UiBadge variant="success" size="sm">{{ settlementStatusKo(lastSettlement.status) }}</UiBadge>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-surface-border">
           <div>
@@ -151,6 +141,17 @@
         </div>
       </div>
     </UiCard>
+
+    <UiConfirmDialog
+      v-model="takedownConfirmOpen"
+      title="긴급 직권 임시조치 실행"
+      :description="tdTrackId ? `트랙 ${tdTrackId}의 스트리밍을 즉시 차단합니다.` : '트랙의 스트리밍을 즉시 차단합니다.'"
+      body="차단은 즉시 반영되며, 분쟁 심사 또는 소명 인용 시 복원됩니다. 정말 실행하시겠습니까?"
+      confirm-label="즉시 차단 실행"
+      danger
+      :loading="tdBusy"
+      @confirm="runTakedown"
+    />
   </div>
 </template>
 
@@ -161,8 +162,12 @@ import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
 import type { PartnerSettlement } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 
 const toast = useToast();
 
@@ -176,12 +181,36 @@ const tdReason = ref('');
 const tdBusy = ref(false);
 
 const stPartnerId = ref('');
-const stPeriodStart = ref('2026-10-01');
-const stPeriodEnd = ref('2026-10-31');
+const stPeriodStart = ref(prevMonthStart());
+const stPeriodEnd = ref(prevMonthEnd());
 const stRatePerPlay = ref(10);
 const lastSettlement = ref<PartnerSettlement | null>(null);
 const calculating = ref(false);
 const error = ref<string | null>(null);
+const takedownConfirmOpen = ref(false);
+
+const SETTLE_STATUS_KO: Record<string, string> = {
+  PENDING: '계산됨·승인 대기',
+  APPROVED: '승인됨',
+  PAID: '지급 완료',
+  FORFEITED: '몰수됨',
+};
+
+function settlementStatusKo(status: string): string {
+  return SETTLE_STATUS_KO[status] ?? status;
+}
+
+function prevMonthStart(): string {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function prevMonthEnd(): string {
+  const now = new Date();
+  const last = new Date(now.getFullYear(), now.getMonth(), 0);
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+}
 
 async function createCuration() {
   if (!curTitle.value.trim()) return;
@@ -208,6 +237,7 @@ async function runTakedown() {
     toast.warning('해당 트랙이 즉시 임시조치되어 스트리밍에서 차단되었습니다.');
     tdTrackId.value = '';
     tdReason.value = '';
+    takedownConfirmOpen.value = false;
   } catch (err) {
     toast.error(errMessageOf(err), '차단 실패');
   } finally {
