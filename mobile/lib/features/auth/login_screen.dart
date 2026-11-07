@@ -33,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Music 로그인')),
+      appBar: AppBar(title: const Text('AVIBE 로그인')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

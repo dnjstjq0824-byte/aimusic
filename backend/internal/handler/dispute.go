@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/repository"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/service"
 )
 
 // DisputeHandler serves user-facing report/counter/blocks endpoints.

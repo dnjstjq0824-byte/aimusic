@@ -11,10 +11,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/mail"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/mail"
+	"avibe-platform/backend/internal/repository"
 )
 
 // resetUserStore is the user surface password reset needs.
@@ -96,9 +96,9 @@ func (s *PasswordResetService) Request(ctx context.Context, email string) error 
 		return err
 	}
 	link := BuildResetLink(s.linkBase, token)
-	body := "AIVIBE 비밀번호 재설정 링크입니다 (" + ttlMinutes(s.ttl) + "분 유효, 1회용):\n" + link +
+	body := "AVIBE 비밀번호 재설정 링크입니다 (" + ttlMinutes(s.ttl) + "분 유효, 1회용):\n" + link +
 		"\n\n본인이 요청하지 않았다면 이 메일을 무시하세요."
-	return s.mailer.Send(ctx, u.Email, "[AIVIBE] 비밀번호 재설정", body)
+	return s.mailer.Send(ctx, u.Email, "[AVIBE] 비밀번호 재설정", body)
 }
 
 func ttlMinutes(d time.Duration) string {

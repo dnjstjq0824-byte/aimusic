@@ -1,4 +1,4 @@
--- Phase 1 initial schema: AI music streaming platform.
+-- Phase 1 initial schema: AVIBE streaming platform.
 -- Conventions: UUID PKs via gen_random_uuid(), TIMESTAMPTZ everywhere, CHECK-based enums.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

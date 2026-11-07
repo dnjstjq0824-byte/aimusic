@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/service"
 )
 
 // Deps wires handlers to services and infrastructure.

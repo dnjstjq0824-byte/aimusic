@@ -9,11 +9,11 @@ import (
 	"os"
 	"time"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/handler"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/handler"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/service"
 )
 
 func main() {

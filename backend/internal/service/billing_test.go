@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/toss"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/toss"
 )
 
 type fakeBillingStore struct {
@@ -174,7 +174,7 @@ func TestCreateOrderHappy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	if !strings.HasPrefix(order.OrderID, "AIVIBE-20261107-") || order.AmountKRW != 5900 || order.Status != domain.BillingPending {
+	if !strings.HasPrefix(order.OrderID, "AVIBE-20261107-") || order.AmountKRW != 5900 || order.Status != domain.BillingPending {
 		t.Fatalf("order = %+v", order)
 	}
 	if plan.Code != "LISTENER_PLUS_MONTHLY" {

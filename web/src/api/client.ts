@@ -41,8 +41,8 @@ export function errMessageOf(err: unknown, fallback = '요청 처리에 실패�
   return fallback;
 }
 
-const ACCESS_KEY = 'ai-music.accessToken';
-const REFRESH_KEY = 'ai-music.refreshToken';
+const ACCESS_KEY = 'avibe.accessToken';
+const REFRESH_KEY = 'avibe.refreshToken';
 
 export const tokenStore = {
   getAccess(): string | null {

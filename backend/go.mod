@@ -1,4 +1,4 @@
-module ai-music-platform/backend
+module avibe-platform/backend
 
 go 1.22
 

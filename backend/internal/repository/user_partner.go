@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/domain"
 )
 
 // UserRepo accesses the users table.

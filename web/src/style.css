@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /*
- * AIVIBE Design Tokens (single source mirrored in tailwind.config.js).
+ * AVIBE Design Tokens (single source mirrored in tailwind.config.js).
  * Visual language: dark studio canvas, signal-cyan energy, quiet hairlines.
  * Near-black blue-tinted surfaces, one cyan accent, generous radii.
  * No hardcoded color/px values outside this file and tailwind.config.js.

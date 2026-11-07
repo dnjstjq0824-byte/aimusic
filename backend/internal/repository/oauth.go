@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/domain"
 )
 
 // OAuthRepo accesses oauth_accounts.

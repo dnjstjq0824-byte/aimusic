@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/domain"
 )
 
 // BillingRepo accesses billing plans, orders, subscriptions, and the webhook journal.

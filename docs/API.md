@@ -232,7 +232,7 @@ ERR_PAYMENT_UNAVAILABLE`; the plan catalog still works.
 | Method | Path | Auth | Body → Data |
 |--------|------|------|-------------|
 | GET | `/billing/plans` | – | active plans cheapest first |
-| POST | `/billing/orders` | JWT | `{planCode}` → `201 {order,plan}` (`PENDING`, merchant id `AIVIBE-YYYYMMDD-XXXXXXXX`) |
+| POST | `/billing/orders` | JWT | `{planCode}` → `201 {order,plan}` (`PENDING`, merchant id `AVIBE-YYYYMMDD-XXXXXXXX`) |
 | POST | `/billing/payments/confirm` | JWT | `{paymentKey,orderId,amount}` → `{subscription}` (Toss approve + `ACTIVE` period) |
 | POST | `/billing/webhooks/toss` | – | Toss transmission → `{received:true}` (verified by re-query, idempotent) |
 | GET | `/billing/subscriptions/me` | JWT | `{subscription}` (`null` when no active pass) |

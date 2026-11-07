@@ -51,7 +51,7 @@
       <!-- Bottom Compliance strip -->
       <div class="mt-10 border-t border-surface-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-500">
         <div>
-          © 2026 AIVIBE Technologies Co., Ltd. All rights reserved. 대한민국 법령 준수 플랫폼.
+          © 2026 AVIBE Technologies Co., Ltd. All rights reserved. 대한민국 법령 준수 플랫폼.
         </div>
         <div class="flex items-center gap-4">
           <span>암호화: AES-256-GCM</span>

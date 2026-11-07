@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AI Music logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AVIBE logo">
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#132826"/>
-      <stop offset="1" stop-color="#0B1B18"/>
+      <stop offset="0" stop-color="#10232E"/>
+      <stop offset="1" stop-color="#08080D"/>
     </linearGradient>
     <linearGradient id="bars" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFC53D"/>
-      <stop offset="1" stop-color="#FF5A3C"/>
+      <stop offset="0" stop-color="#67E8F9"/>
+      <stop offset=".55" stop-color="#00D4FF"/>
+      <stop offset="1" stop-color="#009FC1"/>
     </linearGradient>
   </defs>
   <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#tile)"/>
@@ -17,6 +18,6 @@
     <rect x="300" y="146" width="56" height="220" rx="28"/>
     <rect x="372" y="186" width="56" height="140" rx="28"/>
   </g>
-  <path d="M232 198 L232 314 L310 256 Z" fill="#0F201D"/>
-  <path d="M398 58 C403 88 411 96 440 100 C411 104 403 112 398 142 C393 112 385 104 356 100 C385 96 393 88 398 58 Z" fill="#FFF3E2"/>
+  <path d="M232 198 L232 314 L310 256 Z" fill="#04121A"/>
+  <path d="M398 58 C403 88 411 96 440 100 C411 104 403 112 398 142 C393 112 385 104 356 100 C385 96 393 88 398 58 Z" fill="#ECFDFF"/>
 </svg>

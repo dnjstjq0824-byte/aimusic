@@ -3,7 +3,7 @@
 Stack: Go 1.22 API + worker (`backend/`), PostgreSQL 16, Redis 7,
 S3-compatible storage (LocalStack S3 local, Cloudflare R2 staging/prod),
 Vue 3 web (`web/`) + Flutter mobile (`mobile/`).
-Local topology: `docker-compose.local.yml` (`ai-music-local`).
+Local topology: `docker-compose.local.yml` (`avibe-local`).
 
 ## Runtime diagram (Mermaid)
 
@@ -140,7 +140,7 @@ Layers:
 
 ## Frontend
 
-- Web (`web/`, `ai-music-web 0.1.0`): `vue 3.4 + vite 5 + vue-router 4 + pinia 2 +
+- Web (`web/`, `avibe-web 0.1.0`): `vue 3.4 + vite 5 + vue-router 4 + pinia 2 +
   axios + hls.js + tailwind 3`. `src/api/{client,endpoints,types}` (typed wrappers,
   `ERR_MESSAGES` Korean, Bearer+refresh), `src/router` (`/`, `/partner/*`
   PARTNER|ADMIN, `/admin/*` ADMIN, `requiresAuth` guard), `src/layouts`
@@ -150,7 +150,7 @@ Layers:
   DisputeReportModal,LicensePrecheckWidget},player/{GlobalPlayerBar,
   QueueDrawer,WaveformSeekbar}}`, `src/stores/{authStore,partnerUploadStore,
   playerStore,playlistStore}`. Scripts: `dev/build/preview/typecheck`.
-- Mobile (`mobile/`, `ai_music 0.4.0`): `flutter_riverpod+dio+go_router+
+- Mobile (`mobile/`, `avibe 0.4.0`): `flutter_riverpod+dio+go_router+
   just_audio+audio_service+audio_session+flutter_secure_storage`.
   `lib/{main.dart,core/{api_client,env,error,models,providers,theme},
   features/{auth/login_screen,home/home_screen,legal/legal_screens,

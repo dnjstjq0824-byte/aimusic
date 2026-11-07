@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/domain"
 )
 
 func TestStagingKeyRoundTrip(t *testing.T) {

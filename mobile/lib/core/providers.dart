@@ -44,10 +44,10 @@ final authMeProvider = FutureProvider<AuthMe?>((ref) async {
 });
 
 /// Singleton background audio handler (lazy; created on first playback).
-final audioHandlerProvider = FutureProvider<AiMusicAudioHandler>((ref) async {
+final audioHandlerProvider = FutureProvider<AvibeAudioHandler>((ref) async {
   final api = ref.watch(apiProvider);
   return AudioService.init(
-    builder: () => AiMusicAudioHandler(
+    builder: () => AvibeAudioHandler(
       player: AudioPlayer(),
       resolveStream: api.getStream,
       onHeartbeat: heartbeatHookFor(api),
@@ -55,7 +55,7 @@ final audioHandlerProvider = FutureProvider<AiMusicAudioHandler>((ref) async {
     ),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'ai.music.channel.audio',
-      androidNotificationChannelName: 'AI Music playback',
+      androidNotificationChannelName: 'AVIBE playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
     ),

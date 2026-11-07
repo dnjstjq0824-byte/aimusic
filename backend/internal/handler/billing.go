@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/service"
 )
 
 // BillingHandler serves plan catalog, Toss orders, approval, webhooks,

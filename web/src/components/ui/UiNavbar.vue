@@ -3,7 +3,7 @@
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
       <!-- Left: Logo & Core Nav -->
       <div class="flex items-center gap-6 sm:gap-8">
-        <RouterLink to="/" class="flex items-center transition-transform active:scale-95" aria-label="AIVIBE 홈">
+        <RouterLink to="/" class="flex items-center transition-transform active:scale-95" aria-label="AVIBE 홈">
           <BrandLogo :size="36" tagline="Commercial Gate" />
         </RouterLink>
 

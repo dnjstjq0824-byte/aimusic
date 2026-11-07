@@ -1,4 +1,4 @@
-# AI Music Streaming Platform (AI 음원 스트리밍 플랫폼)
+# AVIBE Streaming Platform (AI 음원 스트리밍 플랫폼)
 
 > **상업용 라이선스 원천 차단 & 법적 컴플라이언스 완전판**  
 > AI 생성 음원을 유통·스트리밍하고, 백그라운드 재생 및 플레이리스트 큐레이션을 제공하는 풀스택 모바일(Flutter) 및 웹(Vue 3) 플랫폼입니다.
@@ -37,7 +37,7 @@ flowchart TD
 ## 2. 프로젝트 디렉토리 구조
 
 ```text
-AImusic/
+AImusic/  <!-- physical checkout name; product brand is AVIBE -->
 ├── backend/                       # Go 1.22 REST API & 비동기 미디어 트랜스코딩 워커
 │   ├── cmd/api/                   # API 서버 엔트리포인트 (Gin)
 │   ├── cmd/worker/                # FFprobe 라이선스 포렌식 & FFmpeg HLS 워커

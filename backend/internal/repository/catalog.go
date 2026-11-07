@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/domain"
 )
 
 // AlbumRepo accesses albums.

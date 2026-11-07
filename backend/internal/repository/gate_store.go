@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"ai-music-platform/backend/internal/pkg/licensegate"
+	"avibe-platform/backend/internal/pkg/licensegate"
 )
 
 // GateStore implements licensegate.Store against PostgreSQL.

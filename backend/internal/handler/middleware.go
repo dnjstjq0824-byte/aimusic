@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/service"
 )
 
 // Context keys for the authenticated principal and request tracing.

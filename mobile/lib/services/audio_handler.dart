@@ -72,9 +72,9 @@ MediaItem mediaItemFor(Track track, {String? artUri}) => MediaItem(
 ///   audio_session noisy-event stream (pause on unplug).
 /// - Heartbeat hook: accumulates playMs and fires every
 ///   [Env.heartbeatIntervalMs] while playing.
-class AiMusicAudioHandler extends BaseAudioHandler
+class AvibeAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  AiMusicAudioHandler({
+  AvibeAudioHandler({
     required AudioPlayer player,
     required StreamResolver resolveStream,
     HeartbeatHook? onHeartbeat,

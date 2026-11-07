@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/config"
+	"avibe-platform/backend/internal/config"
 )
 
 func testEngine(cfg *config.Config, mw ...gin.HandlerFunc) *gin.Engine {

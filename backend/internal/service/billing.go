@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/toss"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/toss"
+	"avibe-platform/backend/internal/repository"
 )
 
 // billingStore is the billing persistence surface.
@@ -62,7 +62,7 @@ func merchantOrderID(now time.Time) (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("AIVIBE-%s-%s", now.Format("20060102"), strings.ToUpper(hex.EncodeToString(b))), nil
+	return fmt.Sprintf("AVIBE-%s-%s", now.Format("20060102"), strings.ToUpper(hex.EncodeToString(b))), nil
 }
 
 // CreateOrder opens a PENDING merchant order for a plan.

@@ -48,7 +48,7 @@ flowchart LR
 
 2. **`public-hls` (스트리밍 배포 버킷)**
    - 용도: HLS 마스터 플레이리스트(`master.m3u8`), 서브 스트림(`stream_0.m3u8`, `stream_1.m3u8`), 오디오 세그먼트(`.ts`), 파형 데이터(`peaks.json`)
-   - 도메인 연동: Cloudflare Custom Domain (예: `https://cdn.aimusic.example.com`)
+   - 도메인 연동: Cloudflare Custom Domain (예: `https://cdn.avibe.example.com`)
    - 캐시 헤더:
      - `.m3u8`: `Cache-Control: public, max-age=60, s-maxage=60`
      - `.ts`: `Cache-Control: public, max-age=86400, s-maxage=604800, immutable`
@@ -86,7 +86,7 @@ S3_USE_SSL=true
 # ==============================================================================
 # Cloudflare CDN 스트리밍 도메인
 # ==============================================================================
-CDN_BASE_URL=https://cdn.aimusic.example.com
+CDN_BASE_URL=https://cdn.avibe.example.com
 
 # ==============================================================================
 # HLS 스트리밍 Signed URL 토큰 설정
@@ -113,9 +113,9 @@ HLS_URL_TTL_SECONDS=300
      [
        {
          "AllowedOrigins": [
-           "https://aimusic.example.com",
-           "https://partner.aimusic.example.com",
-           "https://admin.aimusic.example.com"
+           "https://avibe.example.com",
+           "https://partner.avibe.example.com",
+           "https://admin.avibe.example.com"
          ],
          "AllowedMethods": ["GET", "PUT", "HEAD"],
          "AllowedHeaders": ["*"],

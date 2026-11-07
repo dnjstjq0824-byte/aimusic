@@ -1,4 +1,4 @@
-# AI Music 브랜드 로고
+# AVIBE 브랜드 로고
 
 마스터 파일은 이 폴더의 SVG 두 종이다. 앱별 복사본(`web/public/favicon.svg`,
 `web/src/assets/logo.svg`, `mobile/assets/logo.svg`)은 마스터와 바이트 동일을

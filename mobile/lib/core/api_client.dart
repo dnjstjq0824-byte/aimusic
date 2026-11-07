@@ -11,8 +11,8 @@ import 'models.dart';
 
 /// Secure-storage keys for the token pair.
 abstract final class TokenKeys {
-  static const access = 'ai_music.access_token';
-  static const refresh = 'ai_music.refresh_token';
+  static const access = 'avibe.access_token';
+  static const refresh = 'avibe.refresh_token';
 }
 
 /// Builds the shared Dio instance rooted at [Env.apiBaseUrl]/api/v1.

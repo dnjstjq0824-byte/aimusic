@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/repository"
 )
 
 // LegalHandler serves legal terms and consent records.

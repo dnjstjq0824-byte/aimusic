@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/repository"
 )
 
 // ReviewService handles admin moderation queues.

@@ -1,4 +1,4 @@
-// Player controller: bridges UI actions to AiMusicAudioHandler.
+// Player controller: bridges UI actions to AvibeAudioHandler.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

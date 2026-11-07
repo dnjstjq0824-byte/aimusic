@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/service"
 )
 
 // PlaylistHandler serves playlist CRUD, entries, and reorder.

@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/licensegate"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/licensegate"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
 )
 
 // PrecheckInput carries partner upload intent.

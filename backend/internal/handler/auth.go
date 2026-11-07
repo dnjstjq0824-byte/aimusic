@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/service"
 )
 
 // AuthHandler serves registration, login, refresh, password recovery,

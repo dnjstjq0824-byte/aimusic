@@ -15,7 +15,7 @@ import 'features/playlist/playlist_screens.dart';
 import 'features/search/search_screen.dart';
 
 void main() {
-  runApp(const ProviderScope(child: AiMusicApp()));
+  runApp(const ProviderScope(child: AvibeApp()));
 }
 
 final _router = GoRouter(
@@ -78,15 +78,15 @@ final _router = GoRouter(
   },
 );
 
-class AiMusicApp extends ConsumerWidget {
-  const AiMusicApp({super.key});
+class AvibeApp extends ConsumerWidget {
+  const AvibeApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Warm the auth state so 401s refresh eagerly after restart.
     ref.watch(authMeProvider);
     return MaterialApp.router(
-      title: 'AI Music',
+      title: 'AVIBE',
       theme: AppTheme.dark,
       routerConfig: _router,
     );

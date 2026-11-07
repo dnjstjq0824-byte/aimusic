@@ -9,11 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	apcrypto "ai-music-platform/backend/internal/pkg/crypto"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	apcrypto "avibe-platform/backend/internal/pkg/crypto"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
 )
 
 // TrackHandler serves public track listing and signed streaming URLs.

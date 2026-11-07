@@ -134,8 +134,8 @@ func Load() (*Config, error) {
 		DSN:      os.Getenv("DB_DSN"),
 		Host:     getenv("DB_HOST", "localhost"),
 		Port:     getenvInt("DB_PORT", 5432),
-		Name:     getenv("DB_NAME", "ai_music"),
-		User:     getenv("DB_USER", "ai_music"),
+		Name:     getenv("DB_NAME", "avibe"),
+		User:     getenv("DB_USER", "avibe"),
 		Password: os.Getenv("DB_PASSWORD"),
 	}
 	if cfg.DB.DSN == "" {
@@ -201,8 +201,8 @@ func Load() (*Config, error) {
 		SMTPPort: getenvInt("SMTP_PORT", 587),
 		SMTPUser: os.Getenv("SMTP_USER"),
 		SMTPPass: os.Getenv("SMTP_PASS"),
-		From:     getenv("MAIL_FROM", "no-reply@aivibe.kr"),
-		FromName: getenv("MAIL_FROM_NAME", "AIVIBE"),
+		From:     getenv("MAIL_FROM", "no-reply@avibe.kr"),
+		FromName: getenv("MAIL_FROM_NAME", "AVIBE"),
 	}
 	return cfg, nil
 }

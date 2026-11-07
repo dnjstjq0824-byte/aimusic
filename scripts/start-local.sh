@@ -41,9 +41,9 @@ set -a
 . ./.env
 set +a
 
-DB_NAME="${DB_NAME:-ai_music}"
-DB_USER="${DB_USER:-ai_music}"
-DB_PASSWORD="${DB_PASSWORD:-ai_music_local_pw}"
+DB_NAME="${DB_NAME:-avibe}"
+DB_USER="${DB_USER:-avibe}"
+DB_PASSWORD="${DB_PASSWORD:-avibe_local_pw}"
 API_PORT="${API_PORT:-8080}"
 S3_PORT="${S3_PORT:-4566}"
 REDIS_PORT="${REDIS_PORT:-6379}"

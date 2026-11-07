@@ -1,4 +1,4 @@
-// App theme: AIVIBE dark music-player theme.
+// App theme: AVIBE dark music-player theme.
 // Mirrors web design tokens: near-black studio surfaces, signal-cyan brand.
 library;
 

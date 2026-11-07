@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-col items-center gap-3 text-center">
       <BrandLogo :size="44" />
       <div>
-        <h1 class="font-display text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
+        <h1 class="font-display text-2xl font-black text-white tracking-tight">AVIBE에 오신 것을 환영합니다</h1>
         <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
       </div>
     </div>
@@ -90,21 +90,21 @@
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('admin@aimusic.internal', 'admin1234!')"
+              @click="fillCreds('admin@avibe.internal', 'admin1234!')"
             >
               어드민
             </button>
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-brand-400 hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('partner@aimusic.internal', 'partner1234!')"
+              @click="fillCreds('partner@avibe.internal', 'partner1234!')"
             >
               파트너
             </button>
             <button
               type="button"
               class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('user@aimusic.internal', 'user1234!')"
+              @click="fillCreds('user@avibe.internal', 'user1234!')"
             >
               일반 유저
             </button>
@@ -171,7 +171,7 @@
         <UiInput
           v-model="ptName"
           label="아티스트 / 프로듀서명"
-          placeholder="AI Music Producer"
+          placeholder="AVIBE Producer"
           required
         />
         <UiInput

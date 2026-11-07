@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"ai-music-platform/backend/internal/domain"
-	apcrypto "ai-music-platform/backend/internal/pkg/crypto"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/domain"
+	apcrypto "avibe-platform/backend/internal/pkg/crypto"
+	"avibe-platform/backend/internal/repository"
 )
 
 // PlaylistService handles playlist CRUD with ownership checks.

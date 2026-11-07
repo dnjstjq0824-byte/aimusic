@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/pkg/audio"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/audio"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
 )
 
 const maxAttempts = 3

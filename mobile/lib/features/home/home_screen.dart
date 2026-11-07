@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(10),
           child: SvgPicture.asset('assets/logo.svg'),
         ),
-        title: const Text('AI Music'),
+        title: const Text('AVIBE'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

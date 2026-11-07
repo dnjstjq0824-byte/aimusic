@@ -1,4 +1,4 @@
-# AIVIBE web: build SPA, serve via nginx with history fallback + API proxy.
+# AVIBE web: build SPA, serve via nginx with history fallback + API proxy.
 # Run with -e API_UPSTREAM=<api-host>:<port> on the API's docker network.
 FROM node:20-alpine AS build
 WORKDIR /src

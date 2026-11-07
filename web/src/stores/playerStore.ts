@@ -144,7 +144,7 @@ export const usePlayerStore = defineStore('player', () => {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
         artist: track.aiProvider,
-        album: track.aiDisclosureText ?? 'AI Music',
+        album: track.aiDisclosureText ?? 'AVIBE',
       });
       navigator.mediaSession.setActionHandler('play', () => void resume());
       navigator.mediaSession.setActionHandler('pause', () => pause());

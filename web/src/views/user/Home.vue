@@ -548,9 +548,9 @@ onMounted(() => {
   void load();
   void playlists.fetchMine();
   try {
-    if (localStorage.getItem('aivibe.onboarded') !== '1') {
+    if (localStorage.getItem('avibe.onboarded') !== '1') {
       onboardingOpen.value = true;
-      localStorage.setItem('aivibe.onboarded', '1');
+      localStorage.setItem('avibe.onboarded', '1');
     }
   } catch {
     // Private mode: onboarding stays manual.

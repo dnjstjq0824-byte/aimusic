@@ -99,7 +99,7 @@
     <div v-else-if="tracks.length === 0" class="py-12">
       <UiEmptyState
         title="일치하는 음원이 없습니다"
-        description="다른 검색어나 필터를 선택해 보세요. AIVIBE에는 지속적으로 검증된 상업용 음원이 등록됩니다."
+        description="다른 검색어나 필터를 선택해 보세요. AVIBE에는 지속적으로 검증된 상업용 음원이 등록됩니다."
       >
         <template #action>
           <UiButton variant="secondary" size="sm" @click="resetFilters">필터 초기화</UiButton>

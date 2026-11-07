@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/repository"
 )
 
 // oauthUserStore is the user surface social login needs.

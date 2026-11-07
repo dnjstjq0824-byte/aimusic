@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 5 end-to-end verification for the AI music platform.
+# Phase 5 end-to-end verification for the AVIBE platform.
 #
 # Covers (grounded in backend/internal/handler/router.go + domain/errors.go):
 #   T01  GET /healthz
@@ -52,8 +52,8 @@ BASE_URL="${BASE_URL:-http://localhost:${API_PORT:-8080}}"
 API="$BASE_URL/api/v1"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-ai_music}"
-DB_USER="${DB_USER:-ai_music}"
+DB_NAME="${DB_NAME:-avibe}"
+DB_USER="${DB_USER:-avibe}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 REDIS_HOST="${REDIS_HOST:-localhost}"
 REDIS_PORT="${REDIS_PORT:-6379}"
@@ -62,7 +62,7 @@ REDIS_PORT="${REDIS_PORT:-6379}"
 # resolve; upload_presigned retargets those URLs here.
 S3_PUBLIC_ENDPOINT="${S3_PUBLIC_ENDPOINT:-http://localhost:${S3_PORT:-4566}}"
 
-TMP_DIR="$(mktemp -d -t aimusic-e2e.XXXXXX)"
+TMP_DIR="$(mktemp -d -t avibe-e2e.XXXXXX)"
 BODY="$TMP_DIR/body.json"
 touch "$BODY"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -798,7 +798,7 @@ code="$(api POST "/billing/orders" "$USER_TOKEN" '{"planCode":"LISTENER_PLUS_MON
 if [ "$code" = "503" ]; then
   assert_contains "orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
 elif [ "$code" = "201" ]; then
-  assert_contains "order merchant id" "AIVIBE-" "$(cat "$BODY")"
+  assert_contains "order merchant id" "AVIBE-" "$(cat "$BODY")"
 else
   fail "billing orders want 503/201 got $code"
 fi

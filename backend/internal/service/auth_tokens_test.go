@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"ai-music-platform/backend/internal/config"
-	"ai-music-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/config"
+	"avibe-platform/backend/internal/domain"
 )
 
 func testAuthService() *AuthService {

@@ -4,11 +4,11 @@ package service
 import (
 	"strings"
 
-	"ai-music-platform/backend/internal/config"
-	apcrypto "ai-music-platform/backend/internal/pkg/crypto"
-	"ai-music-platform/backend/internal/pkg/mail"
-	"ai-music-platform/backend/internal/pkg/storage"
-	"ai-music-platform/backend/internal/repository"
+	"avibe-platform/backend/internal/config"
+	apcrypto "avibe-platform/backend/internal/pkg/crypto"
+	"avibe-platform/backend/internal/pkg/mail"
+	"avibe-platform/backend/internal/pkg/storage"
+	"avibe-platform/backend/internal/repository"
 )
 
 // Services aggregates all application services.

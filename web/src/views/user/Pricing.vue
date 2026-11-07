@@ -83,7 +83,7 @@
         <div class="text-xs leading-relaxed text-neutral-300">
           <div class="font-bold text-white">안심 결제 안내</div>
           <p class="mt-1">
-            결제는 Toss Payments 결제창에서 직접 처리되며, AIVIBE 서버는 카드 정보를 보관하지 않습니다.
+            결제는 Toss Payments 결제창에서 직접 처리되며, AVIBE 서버는 카드 정보를 보관하지 않습니다.
             이용권은 구매일로부터 1개월간 유효한 단기 패스로 자동 연장되지 않습니다.
             결제 후 7일 이내 미사용 시 전액 환불이 가능합니다.
           </p>

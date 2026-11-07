@@ -1,20 +1,20 @@
-name: ai-music-local
+name: avibe-local
 
 services:
   postgres:
     image: postgres:16
-    container_name: ai-music-postgres
+    container_name: avibe-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-ai_music}
-      POSTGRES_USER: ${DB_USER:-ai_music}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-ai_music_local_pw}
+      POSTGRES_DB: ${DB_NAME:-avibe}
+      POSTGRES_USER: ${DB_USER:-avibe}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-avibe_local_pw}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ai_music} -d ${DB_NAME:-ai_music}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-avibe} -d ${DB_NAME:-avibe}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -24,7 +24,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: ai-music-redis
+    container_name: avibe-redis
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
@@ -45,7 +45,7 @@ services:
   # upstream, and our SigV4 presigned-URL client works unmodified against S3.
   localstack:
     image: localstack/localstack:4.0
-    container_name: ai-music-localstack
+    container_name: avibe-localstack
     restart: unless-stopped
     environment:
       SERVICES: s3
@@ -66,7 +66,7 @@ services:
 
   s3-init:
     image: amazon/aws-cli:2.0.9
-    container_name: ai-music-s3-init
+    container_name: avibe-s3-init
     depends_on:
       localstack:
         condition: service_healthy
@@ -92,8 +92,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: aimusic-api:local
-    container_name: ai-music-api
+    image: avibe-api:local
+    container_name: avibe-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -108,7 +108,7 @@ services:
       - .env
     environment:
       APP_ADDR: ":8080"
-      DB_DSN: "postgres://${DB_USER:-ai_music}:${DB_PASSWORD:-ai_music_local_pw}@postgres:5432/${DB_NAME:-ai_music}?sslmode=disable"
+      DB_DSN: "postgres://${DB_USER:-avibe}:${DB_PASSWORD:-avibe_local_pw}@postgres:5432/${DB_NAME:-avibe}?sslmode=disable"
       REDIS_ADDR: "redis:6379"
       S3_ENDPOINT: "http://localstack:4566"
     ports:
@@ -127,8 +127,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: aimusic-worker:local
-    container_name: ai-music-worker
+    image: avibe-worker:local
+    container_name: avibe-worker
     restart: unless-stopped
     depends_on:
       postgres:
@@ -142,7 +142,7 @@ services:
     env_file:
       - .env
     environment:
-      DB_DSN: "postgres://${DB_USER:-ai_music}:${DB_PASSWORD:-ai_music_local_pw}@postgres:5432/${DB_NAME:-ai_music}?sslmode=disable"
+      DB_DSN: "postgres://${DB_USER:-avibe}:${DB_PASSWORD:-avibe_local_pw}@postgres:5432/${DB_NAME:-avibe}?sslmode=disable"
       REDIS_ADDR: "redis:6379"
       S3_ENDPOINT: "http://localstack:4566"
     command: ["./worker"]

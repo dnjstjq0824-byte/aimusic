@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ai-music-platform/backend/internal/domain"
-	"ai-music-platform/backend/internal/service"
+	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/service"
 )
 
 // PlaybackSvc is the playback use-case surface used by handlers.

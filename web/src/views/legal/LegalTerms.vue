@@ -5,7 +5,7 @@
       :title="currentTerm?.titleKo || '법적 고지 및 약관'"
       :description="currentTerm
         ? `최종 개정일: ${fmtDate(currentTerm.effectiveAt)} · 버전: ${currentTerm.version}`
-        : 'AIVIBE 서비스 약관 및 정책 문서입니다.'"
+        : 'AVIBE 서비스 약관 및 정책 문서입니다.'"
     >
       <template #actions>
         <UiButton
