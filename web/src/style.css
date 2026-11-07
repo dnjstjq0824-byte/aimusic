@@ -4,37 +4,37 @@
 
 /*
  * AIVIBE Design Tokens (single source mirrored in tailwind.config.js).
- * Brand: "Verified Sound" — obsidian canvas, electric tangerine energy,
- * gold reserved for verified/premium moments, deep teal for brand surfaces.
+ * Visual language: dark studio canvas, signal-cyan energy, quiet hairlines.
+ * Near-black blue-tinted surfaces, one cyan accent, generous radii.
  * No hardcoded color/px values outside this file and tailwind.config.js.
  */
 :root {
   /* Surfaces (dark-first single theme) */
-  --color-surface-0: #09090b;
-  --color-surface-1: #111116;
-  --color-surface-2: #181820;
-  --color-surface-3: #22222d;
-  --color-surface-border: #262633;
-  --color-surface-border-hover: #3b3b4d;
+  --color-surface-0: #08080d;
+  --color-surface-1: #0e0e15;
+  --color-surface-2: #16161e;
+  --color-surface-3: #202029;
+  --color-surface-border: #23232e;
+  --color-surface-border-hover: #3a3a46;
 
-  /* Brand */
-  --color-brand: #ff5c00;
-  --color-brand-strong: #ea580c;
-  --color-brand-soft: #431407;
-  --color-gold: #ffc53d;
-  --color-brand-teal: #0b1b18;
-  --color-brand-teal-raised: #132826;
+  /* Brand (signal cyan) */
+  --color-brand: #00d4ff;
+  --color-brand-strong: #00b8db;
+  --color-brand-soft: #083344;
+  --color-brand-ink: #04121a;
+  --color-brand-deep: #0a141b;
+  --color-brand-deep-raised: #10232e;
 
   /* Text */
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
+  --color-text-primary: #f7f7f8;
+  --color-text-secondary: #a1a7b3;
+  --color-text-muted: #6e7482;
 
   /* Status */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-info: #06b6d4;
+  --color-info: #00d4ff;
 
   /* Shape */
   --radius-xs: 0.25rem;
@@ -45,8 +45,8 @@
   --radius-full: 9999px;
 
   /* Elevation */
-  --shadow-glow-brand: 0 0 25px -5px rgba(255, 92, 0, 0.35);
-  --shadow-glow-brand-lg: 0 0 40px -8px rgba(255, 92, 0, 0.45);
+  --shadow-glow-brand: 0 0 25px -5px rgba(0, 212, 255, 0.35);
+  --shadow-glow-brand-lg: 0 0 40px -8px rgba(0, 212, 255, 0.45);
   --shadow-subtle-elevated:
     0 10px 30px -10px rgba(0, 0, 0, 0.8),
     0 0 1px 1px rgba(255, 255, 255, 0.05);
@@ -70,6 +70,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Display headlines: tight studio tracking */
+.font-display {
+  letter-spacing: -0.03em;
+}
+
 /* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -88,17 +93,32 @@ body {
 
 /* Glass panel */
 .glass-panel {
-  background: rgba(17, 17, 22, 0.75);
+  background: rgba(14, 14, 21, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .glass-dropdown {
-  background: rgba(24, 24, 32, 0.92);
+  background: rgba(22, 22, 30, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Prompt-box: the hero input surface */
+.prompt-box {
+  background: rgba(22, 22, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.9),
+    0 0 60px -30px rgba(0, 212, 255, 0.25);
+}
+.prompt-box:focus-within {
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow:
+    0 20px 60px -20px rgba(0, 0, 0, 0.9),
+    0 0 70px -25px rgba(0, 212, 255, 0.4);
 }
 
 /* Waveform visualizer bars */
@@ -111,7 +131,7 @@ body {
 /* Focus styles — visible brand ring for keyboard navigation */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.6);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.6);
 }
 
 /* Respect users who prefer reduced motion */

@@ -71,7 +71,7 @@ const roundedClasses = {
 };
 
 const variantClasses = {
-  brand: 'bg-brand-500 hover:bg-brand-600 text-white font-semibold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-400/30',
+  brand: 'bg-brand-500 hover:bg-brand-400 text-[#04121a] font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
   primary: 'bg-white hover:bg-neutral-100 text-neutral-900 font-semibold shadow',
   secondary: 'bg-surface-2 hover:bg-surface-3 text-neutral-100 border border-surface-border hover:border-surface-border-hover',
   outline: 'bg-transparent hover:bg-surface-2 text-neutral-200 border border-surface-border hover:border-neutral-500',

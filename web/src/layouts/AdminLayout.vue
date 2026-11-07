@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+  <div class="min-h-screen bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
     <!-- Admin Header -->
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -54,7 +54,7 @@
         </div>
 
         <div class="flex items-center gap-3 text-xs">
-          <span class="rounded-full bg-purple-950 border border-purple-500/30 px-2.5 py-1 text-purple-300 font-semibold hidden sm:inline">
+          <span class="rounded-full bg-brand-950 border border-brand-500/30 px-2.5 py-1 text-brand-300 font-semibold hidden sm:inline">
             최고 관리자 (Admin)
           </span>
           <button

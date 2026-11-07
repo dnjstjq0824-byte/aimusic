@@ -43,7 +43,7 @@
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">정산 대기</div>
-          <div class="text-2xl font-black text-gold">{{ overview.settlementsPending.count.toLocaleString() }}건</div>
+          <div class="text-2xl font-black text-brand-300">{{ overview.settlementsPending.count.toLocaleString() }}건</div>
           <div class="text-[11px] text-neutral-400">순액 합계 ₩{{ overview.settlementsPending.netKrw.toLocaleString() }}</div>
         </UiCard>
       </div>

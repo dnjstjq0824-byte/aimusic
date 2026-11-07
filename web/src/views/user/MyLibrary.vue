@@ -17,7 +17,7 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-300">내 이용권</h2>
-          <UiBadge v-if="subscription" variant="gold" size="sm">ACTIVE</UiBadge>
+          <UiBadge v-if="subscription" variant="verified" size="sm">ACTIVE</UiBadge>
           <UiBadge v-else variant="neutral" size="sm">없음</UiBadge>
         </div>
       </template>

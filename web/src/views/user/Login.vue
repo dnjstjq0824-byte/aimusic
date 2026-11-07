@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-col items-center gap-3 text-center">
       <BrandLogo :size="44" />
       <div>
-        <h1 class="text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
+        <h1 class="font-display text-2xl font-black text-white tracking-tight">AIVIBE에 오신 것을 환영합니다</h1>
         <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
       </div>
     </div>

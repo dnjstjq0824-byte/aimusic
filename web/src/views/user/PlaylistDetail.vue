@@ -23,7 +23,7 @@
           <UiCoverArt :seed="playlist.id" :title="playlist.title" size="xl" rounded="xl" />
           <div class="min-w-0 flex-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">플레이리스트</span>
-            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight truncate mt-0.5">
+            <h1 class="font-display text-2xl sm:text-3xl font-black text-white tracking-tight truncate mt-0.5">
               {{ playlist.title }}
             </h1>
             <p class="text-xs text-neutral-400 mt-1">
@@ -95,7 +95,7 @@
           >
             <!-- Track index / play -->
             <button
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-neutral-300 hover:bg-brand-500 hover:text-white transition-colors"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-neutral-300 hover:bg-brand-500 hover:text-[#04121a] transition-colors"
               :disabled="t.status !== 'READY'"
               @click="playTrack(t)"
             >

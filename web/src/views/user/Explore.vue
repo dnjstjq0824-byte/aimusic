@@ -67,7 +67,7 @@
           :key="tag"
           type="button"
           class="rounded-full px-2.5 py-1 transition-colors"
-          :class="filterMood === tag ? 'bg-brand-500 text-white font-bold' : 'bg-surface-2 text-neutral-400 hover:text-white hover:bg-surface-3'"
+          :class="filterMood === tag ? 'bg-brand-500 text-[#04121a] font-bold' : 'bg-surface-2 text-neutral-400 hover:text-white hover:bg-surface-3'"
           @click="selectMood(tag)"
         >
           #{{ tag }}

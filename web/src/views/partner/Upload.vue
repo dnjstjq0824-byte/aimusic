@@ -16,7 +16,7 @@
       >
         <div
           class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-          :class="store.step === st.num ? 'bg-brand-500 text-white' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-neutral-400'"
+          :class="store.step === st.num ? 'bg-brand-500 text-[#04121a]' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-neutral-400'"
           :aria-label="store.step > st.num ? `${st.title} 완료` : `${st.title}`"
         >
           <svg v-if="store.step > st.num" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

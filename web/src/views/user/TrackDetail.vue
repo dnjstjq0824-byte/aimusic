@@ -51,7 +51,7 @@
                 </UiBadge>
               </div>
 
-              <h1 class="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
+              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
                 {{ track.title }}
               </h1>
 

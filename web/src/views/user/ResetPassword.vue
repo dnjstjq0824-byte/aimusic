@@ -3,7 +3,7 @@
     <div class="mb-6 flex flex-col items-center gap-3 text-center">
       <BrandLogo :size="44" />
       <div>
-        <h1 class="text-2xl font-black text-white tracking-tight">비밀번호 찾기</h1>
+        <h1 class="font-display text-2xl font-black text-white tracking-tight">비밀번호 찾기</h1>
         <p class="text-xs text-neutral-400 mt-1">
           {{ token ? '새 비밀번호를 입력하세요.' : '가입한 이메일로 재설정 링크를 보내드립니다.' }}
         </p>

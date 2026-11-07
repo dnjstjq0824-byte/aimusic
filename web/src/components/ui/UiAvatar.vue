@@ -57,7 +57,7 @@ const gradientClass = computed(() => {
   const hash = (props.name || 'User').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const gradients = [
     'bg-gradient-to-tr from-brand-600 to-amber-500',
-    'bg-gradient-to-tr from-accent-indigo to-accent-purple',
+    'bg-gradient-to-tr from-accent-cyan to-blue-700',
     'bg-gradient-to-tr from-accent-emerald to-teal-500',
     'bg-gradient-to-tr from-accent-cyan to-blue-600',
     'bg-gradient-to-tr from-accent-crimson to-pink-600',

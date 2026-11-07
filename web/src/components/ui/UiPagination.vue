@@ -26,7 +26,7 @@
           :disabled="disabled"
           class="min-w-[2rem] rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
           :class="p === page
-            ? 'bg-brand-500 text-white shadow-glow-brand'
+            ? 'bg-brand-500 text-[#04121a] shadow-glow-brand'
             : 'bg-surface-2 text-neutral-300 hover:bg-surface-3 hover:text-white border border-surface-border'"
           @click="goPage(p)"
         >

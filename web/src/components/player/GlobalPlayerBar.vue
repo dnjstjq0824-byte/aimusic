@@ -73,7 +73,7 @@
           <!-- Play / Pause -->
           <button
             type="button"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-white shadow-glow-brand hover:bg-brand-600 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-[#04121a] shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
             :disabled="player.isLoading || !player.currentTrack"
             :aria-label="player.isPlaying ? '일시정지' : '재생'"
             @click="player.toggle()"
@@ -116,7 +116,7 @@
               <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4" />
               <path d="M21 13v1a4 4 0 0 1-4 4H3" />
             </svg>
-            <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-[8px] font-bold text-white">1</span>
+            <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-[8px] font-bold text-[#04121a]">1</span>
           </button>
         </div>
 

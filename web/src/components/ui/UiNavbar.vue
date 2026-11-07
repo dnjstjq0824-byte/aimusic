@@ -63,7 +63,7 @@
         <RouterLink
           v-if="auth.isAdmin"
           to="/admin"
-          class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-accent-purple/30 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-accent-purple hover:bg-purple-950/70 transition-all"
+          class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 transition-all"
         >
           <span>어드민 콘솔</span>
         </RouterLink>
@@ -138,7 +138,7 @@
           </RouterLink>
           <RouterLink
             to="/login?tab=register"
-            class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-glow-brand hover:bg-brand-600 transition-all"
+            class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-[#04121a] shadow-glow-brand hover:bg-brand-400 transition-all"
           >
             회원가입
           </RouterLink>
@@ -225,7 +225,7 @@
       <div v-if="auth.isAdmin" class="pt-2 border-t border-surface-border">
         <RouterLink
           to="/admin"
-          class="block rounded-lg px-3 py-2 font-semibold text-accent-purple hover:bg-surface-2"
+          class="block rounded-lg px-3 py-2 font-semibold text-brand-300 hover:bg-surface-2"
           @click="mobileNavOpen = false"
         >
           관리자 검수 워크벤치

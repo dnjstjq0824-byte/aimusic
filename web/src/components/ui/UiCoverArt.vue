@@ -46,6 +46,18 @@
   </div>
 </template>
 
+<script lang="ts">
+export const GRADIENTS = [
+  'bg-gradient-to-tr from-brand-700 via-brand-600 to-amber-500',
+  'bg-gradient-to-tr from-brandteal-raised via-brandteal to-accent-emerald/70',
+  'bg-gradient-to-tr from-sky-600 via-accent-cyan to-accent-emerald',
+  'bg-gradient-to-tr from-accent-emerald/80 via-teal-600 to-accent-cyan/80',
+  'bg-gradient-to-tr from-accent-crimson/90 via-brand-600 to-brand-200/80',
+  'bg-gradient-to-tr from-surface-3 via-brand-800 to-brand-600',
+];
+
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue';
 
@@ -93,15 +105,6 @@ const iconClass = computed(() => {
     default: return 'h-5 w-5';
   }
 });
-
-const GRADIENTS = [
-  'bg-gradient-to-tr from-brand-700 via-brand-600 to-amber-500',
-  'bg-gradient-to-tr from-brandteal-raised via-brandteal to-accent-emerald/70',
-  'bg-gradient-to-tr from-accent-indigo via-accent-purple to-accent-crimson',
-  'bg-gradient-to-tr from-accent-emerald/80 via-teal-600 to-accent-cyan/80',
-  'bg-gradient-to-tr from-accent-crimson/90 via-brand-600 to-gold/80',
-  'bg-gradient-to-tr from-surface-3 via-brand-800 to-brand-600',
-];
 
 const hash = computed(() => {
   let h = 2166136261;

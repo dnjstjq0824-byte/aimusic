@@ -14,7 +14,7 @@
         :class="disabled ? 'opacity-50 cursor-not-allowed' : ''"
       />
       <svg
-        class="pointer-events-none absolute h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+        class="pointer-events-none absolute h-3 w-3 text-[#04121a] opacity-0 transition-opacity peer-checked:opacity-100"
         viewBox="0 0 14 10"
         fill="none"
         stroke="currentColor"
