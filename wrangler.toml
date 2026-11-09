@@ -14,4 +14,4 @@ not_found_handling = "single-page-application"
 # Override in the Cloudflare dashboard (Worker > Settings > Variables) or at deploy time:
 #   wrangler deploy --var API_ORIGIN:https://api.yourdomain.com
 [vars]
-API_ORIGIN = ""
+API_ORIGIN = "https://maximum-housewives-courage-foo.trycloudflare.com"
