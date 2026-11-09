@@ -80,6 +80,9 @@ services:
       break || sleep 5; done;
       aws --endpoint-url $$EP s3api put-bucket-policy --bucket $${S3_PUBLIC_HLS_BUCKET}
       --policy '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::$${S3_PUBLIC_HLS_BUCKET}/*\"}]}' &&
+      CORS_JSON='{\"CORSRules\":[{\"AllowedOrigins\":[\"http://localhost:15173\",\"http://127.0.0.1:15173\",\"http://localhost:5173\",\"http://127.0.0.1:5173\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\"],\"MaxAgeSeconds\":3000}]}' &&
+      aws --endpoint-url $$EP s3api put-bucket-cors --bucket $${S3_PUBLIC_HLS_BUCKET} --cors-configuration "$$CORS_JSON" &&
+      aws --endpoint-url $$EP s3api put-bucket-cors --bucket $${S3_STAGING_BUCKET} --cors-configuration "$$CORS_JSON" &&
       echo buckets-ready;
       "
     environment:

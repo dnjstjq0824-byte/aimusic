@@ -57,3 +57,7 @@ Thumbs.db
 *.log
 coverage/
 coverage.out
+
+# Local AI-generated audio (large, uncommitted)
+creativeaimusic/
+data/*.wav
