@@ -83,30 +83,30 @@
           </UiButton>
         </div>
 
-        <!-- Test credentials quick pills (dev only) -->
-        <div v-if="isDev" class="pt-4 border-t border-surface-border text-center">
-          <div class="text-[11px] text-neutral-500 mb-2 font-medium">로컬 테스트 빠른 채우기 (개발 전용)</div>
-          <div class="flex flex-wrap justify-center gap-1.5">
+        <!-- Test credentials quick pills -->
+        <div class="pt-4 border-t border-surface-border text-center">
+          <div class="text-[11px] text-neutral-400 mb-2 font-medium">체험용 빠른 로그인 (1-클릭)</div>
+          <div class="flex flex-wrap justify-center gap-2">
             <button
               type="button"
-              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('admin@avibe.internal', 'admin1234!')"
+              class="rounded-lg bg-brand-500/10 px-3 py-1.5 text-xs text-brand-300 hover:bg-brand-500/20 border border-brand-500/40 transition-colors font-semibold"
+              @click="fillCreds('partner@example.com', 'Admin1234!', true)"
             >
-              어드민
+              🎵 파트너 계정 (즉시 로그인)
             </button>
             <button
               type="button"
-              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-brand-400 hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('partner@avibe.internal', 'partner1234!')"
+              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
+              @click="fillCreds('user@example.com', 'Admin1234!', true)"
             >
-              파트너
+              🎧 일반 리스너
             </button>
             <button
               type="button"
-              class="rounded-lg bg-surface-2 px-2.5 py-1 text-[11px] text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors"
-              @click="fillCreds('user@avibe.internal', 'user1234!')"
+              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
+              @click="fillCreds('admin@example.com', 'Admin1234!', true)"
             >
-              일반 유저
+              🛡️ 어드민
             </button>
           </div>
         </div>
@@ -280,10 +280,13 @@ const oauthError = computed(() => {
   return errMessageOf({ response: { data: { error: { code, message: code } } } });
 });
 
-function fillCreds(e: string, p: string) {
+function fillCreds(e: string, p: string, autoSubmit = false) {
   email.value = e;
   password.value = p;
   activeTab.value = 'login';
+  if (autoSubmit) {
+    void submitLogin();
+  }
 }
 
 async function submitLogin(): Promise<void> {

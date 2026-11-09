@@ -70,6 +70,24 @@ func JWTAuth(auth *service.AuthService) gin.HandlerFunc {
 	}
 }
 
+// JWTOptional validates Bearer access tokens when present, but allows anonymous requests.
+func JWTOptional(auth *service.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		token := ""
+		if parts := strings.SplitN(header, " ", 2); len(parts) == 2 && strings.EqualFold(parts[0], "bearer") {
+			token = strings.TrimSpace(parts[1])
+		}
+		if token != "" {
+			if claims, err := auth.ParseAccess(token); err == nil {
+				c.Set(ctxUserIDKey, claims.UserID)
+				c.Set(ctxRoleKey, claims.Role)
+			}
+		}
+		c.Next()
+	}
+}
+
 // RequireRole allows only the listed roles.
 func RequireRole(roles ...string) gin.HandlerFunc {
 	allowed := map[string]bool{}

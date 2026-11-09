@@ -88,7 +88,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	tracks := v1.Group("/tracks")
 	tracks.GET("", trackH.ListTracks)
 	tracks.GET("/:id", trackH.GetTrack)
-	tracks.GET("/:id/stream", JWTAuth(d.Services.Auth), trackH.Stream)
+	tracks.GET("/:id/stream", JWTOptional(d.Services.Auth), trackH.Stream)
 
 	playback := v1.Group("/playback")
 	playback.Use(JWTAuth(d.Services.Auth))

@@ -2,12 +2,6 @@ name = "aimusic"
 compatibility_date = "2024-10-01"
 main = "worker.js"
 
-# Custom domain (zone lives in the dnjstjq0824 Cloudflare account).
-routes = [
-  { pattern = "avibemusic.com", custom_domain = true },
-  { pattern = "www.avibemusic.com", custom_domain = true },
-]
-
 [build]
 command = "npm --prefix web run build"
 
@@ -18,5 +12,5 @@ not_found_handling = "single-page-application"
 
 # Production origins (external container/tunnel hosts).
 [vars]
-API_ORIGIN = "https://intended-sticky-collapse-older.trycloudflare.com"
-S3_ORIGIN = "https://minus-purchase-women-attorney.trycloudflare.com"
+API_ORIGIN = "https://specializing-expires-mills-skins.trycloudflare.com"
+S3_ORIGIN = "https://dish-beside-cholesterol-consultancy.trycloudflare.com"
