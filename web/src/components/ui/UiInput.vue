@@ -37,10 +37,10 @@
         @focus="$emit('focus', $event)"
         @keydown.enter="$emit('enter', $event)"
       />
-      <div v-if="type === 'password'" class="pr-3">
+      <div v-if="type === 'password'" class="shrink-0 pr-3">
         <button
           type="button"
-          class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+          class="whitespace-nowrap text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
           :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
           :aria-pressed="showPassword"
           @click="showPassword = !showPassword"

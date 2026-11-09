@@ -70,6 +70,35 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * Responsive guards.
+ * Grid items default to `min-width: auto`, which lets long track titles push a
+ * single-column mobile grid past the viewport. Let them shrink so `truncate`
+ * and `min-w-0` children behave on every breakpoint.
+ */
+.grid > * {
+  min-width: 0;
+}
+
+@layer utilities {
+  /* Safe-area aware spacing for notched phones (viewport-fit=cover). */
+  .pb-safe {
+    padding-bottom: calc(0.625rem + env(safe-area-inset-bottom));
+  }
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Hide scrollbars on horizontal rails while keeping them scrollable. */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Display headlines: tight studio tracking */
 .font-display {
   letter-spacing: -0.03em;

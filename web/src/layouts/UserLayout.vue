@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
     <!-- Top Navigation -->
     <UiNavbar />
 
     <!-- Main Content Area with padding for bottom player -->
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 pb-36 sm:px-6">
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-36 sm:px-6 sm:py-8 lg:px-8">
       <RouterView />
     </main>
 

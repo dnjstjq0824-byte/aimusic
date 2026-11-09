@@ -51,7 +51,7 @@
                 </UiBadge>
               </div>
 
-              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight truncate">
+              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight line-clamp-2 break-words sm:line-clamp-none sm:truncate">
                 {{ track.title }}
               </h1>
 
@@ -108,8 +108,8 @@
 
         <!-- AI Transparency & Creation Metadata (Art. 31 Compliance) -->
         <UiCard class="space-y-4">
-          <div class="flex items-center justify-between border-b border-surface-border pb-3">
-            <div>
+          <div class="flex items-start justify-between gap-3 border-b border-surface-border pb-3">
+            <div class="min-w-0">
               <h3 class="text-sm font-bold text-white">AI 생성 투명성 공시 명세서</h3>
               <p class="text-[11px] text-neutral-400 mt-0.5">인공지능기본법 제31조 및 문체부 AI 저작권 가이드라인 준수</p>
             </div>

@@ -19,7 +19,7 @@
 
     <!-- Filter Toolbar -->
     <UiCard class="space-y-4">
-      <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+      <div class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Search Keyword -->
         <UiInput
           v-model="searchQuery"

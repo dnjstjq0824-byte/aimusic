@@ -1,24 +1,24 @@
 <template>
   <header class="sticky top-0 z-40 border-b border-surface-border/80 bg-surface-0/80 backdrop-blur-xl transition-all duration-200">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
       <!-- Left: Logo & Core Nav -->
-      <div class="flex items-center gap-6 sm:gap-8">
+      <div class="flex min-w-0 items-center gap-4 lg:gap-8">
         <RouterLink to="/" class="flex items-center transition-transform active:scale-95" aria-label="AVIBE 홈">
           <BrandLogo :size="36" tagline="Commercial Gate" />
         </RouterLink>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center gap-1 text-sm font-medium text-neutral-400">
+        <nav class="hidden md:flex items-center gap-0.5 whitespace-nowrap text-sm font-medium text-neutral-400 lg:gap-1" aria-label="주 메뉴">
           <RouterLink
             to="/"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
             :class="route.name === 'home' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             홈
           </RouterLink>
           <RouterLink
             to="/explore"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
             :class="route.name === 'explore' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             음원 탐색
@@ -26,21 +26,21 @@
           <RouterLink
             v-if="auth.isAuthenticated"
             to="/my-library"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
             :class="route.name === 'my-library' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             내 라이브러리
           </RouterLink>
           <RouterLink
             to="/disputes"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
             :class="route.name === 'dispute-center' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             권리보호센터
           </RouterLink>
           <RouterLink
             to="/pricing"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
             :class="route.name === 'pricing' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             요금제
@@ -49,12 +49,12 @@
       </div>
 
       <!-- Right: Role portals & Auth -->
-      <div class="flex items-center gap-2.5 sm:gap-3">
+      <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <!-- Partner Portal button (for partners or listeners who want to upload) -->
         <RouterLink
           v-if="auth.isPartner || auth.isAdmin"
           to="/partner"
-          class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 hover:border-brand-500/50 transition-all"
+          class="hidden lg:inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 hover:border-brand-500/50 transition-all"
         >
           <span>스튜디오</span>
         </RouterLink>
@@ -63,7 +63,7 @@
         <RouterLink
           v-if="auth.isAdmin"
           to="/admin"
-          class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 transition-all"
+          class="hidden lg:inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 transition-all"
         >
           <span>어드민 콘솔</span>
         </RouterLink>
@@ -104,6 +104,22 @@
               @click="userMenuOpen = false"
             >
               내 플레이리스트 & 라이브러리
+            </RouterLink>
+            <RouterLink
+              v-if="auth.isPartner || auth.isAdmin"
+              to="/partner"
+              class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold lg:hidden"
+              @click="userMenuOpen = false"
+            >
+              파트너 스튜디오
+            </RouterLink>
+            <RouterLink
+              v-if="auth.isAdmin"
+              to="/admin"
+              class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold lg:hidden"
+              @click="userMenuOpen = false"
+            >
+              어드민 콘솔
             </RouterLink>
             <RouterLink
               v-if="auth.isPartner || auth.isAdmin"
@@ -236,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import UiAvatar from './UiAvatar.vue';
@@ -249,6 +265,15 @@ const userMenuOpen = ref(false);
 const mobileNavOpen = ref(false);
 const userMenuButton = ref<HTMLElement | null>(null);
 const userMenuPanel = ref<HTMLElement | null>(null);
+
+// Collapse menus whenever navigation happens (back button, programmatic push).
+watch(
+  () => route.fullPath,
+  () => {
+    mobileNavOpen.value = false;
+    userMenuOpen.value = false;
+  },
+);
 
 function onPointerDown(e: PointerEvent): void {
   if (!userMenuOpen.value) return;

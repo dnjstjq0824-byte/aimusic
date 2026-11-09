@@ -6,7 +6,7 @@
       aria-modal="true"
       aria-label="재생 대기열"
       tabindex="-1"
-      class="flex h-full w-80 max-w-[90vw] flex-col border-l border-surface-border bg-surface-1 p-4"
+      class="flex h-full w-full max-w-[90vw] flex-col border-l border-surface-border bg-surface-1 p-4 pb-safe sm:w-80"
     >
       <div class="mb-2 flex items-center justify-between">
         <h2 class="text-sm font-bold text-white">재생 대기열 ({{ player.queue.length }})</h2>

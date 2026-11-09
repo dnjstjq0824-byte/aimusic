@@ -1,12 +1,12 @@
 <template>
-  <nav class="flex items-center justify-between gap-4 py-2" aria-label="페이지네이션">
+  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2" aria-label="페이지네이션">
     <div class="text-xs text-neutral-400">
       <slot name="info">
         <span v-if="total !== null">전체 {{ total.toLocaleString('ko-KR') }}개 중 {{ rangeText }}</span>
         <span v-else>페이지 {{ page }}</span>
       </slot>
     </div>
-    <div class="flex items-center gap-1.5">
+    <div class="flex flex-wrap items-center gap-1.5">
       <UiButton
         variant="secondary"
         size="sm"

@@ -8,7 +8,7 @@
       role="tab"
       :aria-selected="modelValue === tab.value"
       :tabindex="modelValue === tab.value ? 0 : -1"
-      class="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 text-center select-none"
+      class="flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold sm:px-3 sm:text-xs transition-all duration-150 text-center select-none"
       :class="[
         modelValue === tab.value
           ? 'bg-surface-2 text-white shadow-sm border border-surface-border/60'

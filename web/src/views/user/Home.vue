@@ -3,7 +3,7 @@
     <!-- Studio hero -->
     <section class="relative mx-auto max-w-3xl px-4 pt-4 text-center sm:pt-8">
       <div
-        class="pointer-events-none absolute left-1/2 top-0 h-72 w-[36rem] max-w-none -translate-x-1/2 rounded-full bg-brand-500/10 blur-3xl"
+        class="pointer-events-none absolute left-1/2 top-0 h-72 w-full max-w-[36rem] -translate-x-1/2 rounded-full bg-brand-500/10 blur-3xl"
         aria-hidden="true"
       />
       <div class="relative space-y-5">
@@ -98,7 +98,7 @@
           전체 탐색 →
         </RouterLink>
       </div>
-      <div class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      <div class="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:px-0">
         <button
           v-for="card in starterCards"
           :key="card.key"

@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
     <!-- Partner Header -->
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
-      <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <div class="flex items-center gap-6">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-6">
           <RouterLink to="/partner" class="flex items-center" aria-label="파트너 스튜디오 홈">
             <BrandLogo :size="32" tagline="Studio Console" />
           </RouterLink>
 
-          <nav class="hidden md:flex items-center gap-1 text-xs font-semibold text-neutral-400" aria-label="파트너 메뉴">
+          <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-neutral-400" aria-label="파트너 메뉴">
             <RouterLink
               to="/partner"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
@@ -39,7 +39,7 @@
           </nav>
         </div>
 
-        <div class="flex items-center gap-3 text-xs">
+        <div class="flex shrink-0 items-center gap-3 text-xs">
           <span class="rounded-full bg-brand-950 border border-brand-500/30 px-2.5 py-1 text-brand-300 font-semibold hidden sm:inline">
             파트너 프로필
           </span>
@@ -52,7 +52,7 @@
           </button>
           <button
             type="button"
-            class="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+            class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
             :aria-expanded="mobileNavOpen"
             aria-controls="partner-mobile-nav"
             :aria-label="mobileNavOpen ? '메뉴 닫기' : '메뉴 열기'"
@@ -73,7 +73,7 @@
         v-if="mobileNavOpen"
         id="partner-mobile-nav"
         aria-label="파트너 모바일 메뉴"
-        class="md:hidden border-t border-surface-border bg-surface-1/95 px-4 py-4 space-y-1 text-sm"
+        class="lg:hidden border-t border-surface-border bg-surface-1/95 px-4 py-4 space-y-1 text-sm sm:grid sm:grid-cols-2 sm:gap-1 sm:space-y-0"
       >
         <RouterLink
           to="/partner"
@@ -114,7 +114,7 @@
     </header>
 
     <!-- Content -->
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 pb-20 sm:px-6">
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-20 sm:px-6 sm:py-8 lg:px-8">
       <RouterView />
     </main>
 
@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import UiFooter from '@/components/ui/UiFooter.vue';
@@ -137,4 +137,5 @@ import BrandLogo from '@/components/BrandLogo.vue';
 const auth = useAuthStore();
 const route = useRoute();
 const mobileNavOpen = ref(false);
+watch(() => route.fullPath, () => (mobileNavOpen.value = false));
 </script>

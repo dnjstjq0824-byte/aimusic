@@ -1,12 +1,12 @@
 <template>
-  <UiCard hoverable class="group flex flex-col justify-between">
+  <UiCard hoverable class="group flex min-w-0 flex-col justify-between">
     <div>
       <div class="flex items-start gap-3">
         <div class="relative shrink-0">
           <UiCoverArt :seed="track.id" :title="track.title" size="md" :verified="track.status === 'READY'" />
           <button
             type="button"
-            class="absolute inset-0 flex items-center justify-center rounded-xl bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+            class="absolute inset-0 flex items-center justify-center rounded-xl bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:bg-black/25 [@media(hover:none)]:opacity-100"
             :aria-label="`「${track.title}」 재생`"
             :disabled="track.status !== 'READY'"
             @click="$emit('play', track)"
@@ -39,7 +39,7 @@
     <div class="mt-3 flex items-center justify-between gap-1 pt-1">
       <button
         type="button"
-        class="text-[11px] font-medium text-neutral-400 transition-colors hover:text-white"
+        class="-my-1.5 py-1.5 text-[11px] font-medium text-neutral-400 transition-colors hover:text-white"
         @click="$emit('enqueue', track)"
       >
         + 큐에 추가
