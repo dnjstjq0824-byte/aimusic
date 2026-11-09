@@ -28,6 +28,7 @@ web/dist/
 web/.vite/
 web/.nuxt/
 web/.output/
+.wrangler/
 
 # Mobile
 mobile/.dart_tool/
