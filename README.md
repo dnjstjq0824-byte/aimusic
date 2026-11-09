@@ -57,6 +57,8 @@ AImusic/  <!-- physical checkout name; product brand is AVIBE -->
 └── docs/                          # API 명세, 아키텍처 다이어그램, ERD 및 Cloudflare 가이드
 ```
 
+> **서비스 오픈 전 필독:** [docs/legal/LAUNCH_COMPLIANCE.md](docs/legal/LAUNCH_COMPLIANCE.md) — 법적 쟁점, 출시 차단 항목, 개발 반영 체크리스트.
+
 ---
 
 ## 3. 로컬 실행 및 E2E 테스트

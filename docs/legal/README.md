@@ -11,6 +11,10 @@ Canonical Korean source texts for `legal_terms` + `user_term_consents`
 | `PRIVACY` | `v1.0` | `privacy-policy.md` | 개인정보처리방침 | TRUE | `# 개인정보처리방침 v1.0` + pointer |
 | `COPYRIGHT_POLICY` | `v1.0` | `copyright-policy.md` | 저작권 정책 | TRUE | `# 저작권 정책 v1.0` + pointer |
 
+> **출시 전 필독:** [LAUNCH_COMPLIANCE.md](LAUNCH_COMPLIANCE.md) — 서비스 오픈 법무 컴플라이언스
+> (출시 차단 항목, AI 제공자 약관 매트릭스, OSP 면책 요건, 표시광고·전자상거래·개인정보·세무, 개발 반영 체크리스트).
+> 아래 v1.0 약관 문서들은 이 문서 12장 D1–D4에 따라 v1.1 개정이 필요합니다.
+
 ## What each doc covers
 
 - `terms-of-service.md`: AI 표시 의무(인공지능기본법 제31조), 금지행위(보이스클로닝·침해·메타조작·어뷰징),
