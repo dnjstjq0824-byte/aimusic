@@ -105,10 +105,10 @@
           class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 hover:bg-surface-2/50 transition-colors text-xs"
         >
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
               <RouterLink
                 :to="{ name: 'track-detail', params: { id: t.id } }"
-                class="font-bold text-white hover:text-brand-400 truncate"
+                class="block min-w-0 max-w-full font-bold text-white hover:text-brand-400 truncate"
               >
                 {{ t.title }}
               </RouterLink>

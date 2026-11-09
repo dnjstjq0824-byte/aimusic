@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
-    <RouterLink to="/my-library" class="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors">
-      <span>← 내 라이브러리로 돌아가기</span>
+    <RouterLink to="/playlists" class="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors">
+      <span>← 플레이리스트로 돌아가기</span>
     </RouterLink>
 
     <UiErrorBanner

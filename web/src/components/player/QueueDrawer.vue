@@ -65,8 +65,7 @@ const panelRef = ref<HTMLElement | null>(null);
 const orderedQueue = computed(() => player.order.map((qi) => player.queue[qi]).filter((t) => t !== undefined));
 
 function playAt(orderIndex: number): void {
-  player.orderPos = orderIndex;
-  void player.playCurrent();
+  void player.playAt(orderIndex);
 }
 
 function onKeydown(e: KeyboardEvent): void {

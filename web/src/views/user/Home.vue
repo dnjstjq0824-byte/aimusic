@@ -14,6 +14,11 @@
         <h1 class="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl">
           나만의 <span class="text-brand-400">스튜디오</span>
         </h1>
+        <p
+          class="font-display bg-gradient-to-r from-brand-200 via-brand-400 to-brand-500 bg-clip-text text-xl font-bold tracking-tight text-transparent sm:text-3xl"
+        >
+          {{ SLOGAN }}
+        </p>
         <p class="mx-auto max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
           상상하는 모든 노래를 검증된 음원으로. 저작권 걱정 없이 듣고, 플레이리스트에 담고,
           영상에 쓰세요.
@@ -67,6 +72,12 @@
             class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
           >
             음원 탐색
+          </RouterLink>
+          <RouterLink
+            to="/playlists"
+            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+          >
+            플레이리스트
           </RouterLink>
           <RouterLink
             to="/my-library"
@@ -374,6 +385,7 @@ import TrackCard from '@/components/TrackCard.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 import OnboardingModal from '@/components/legal/OnboardingModal.vue';
 import { GRADIENTS as COVER_GRADIENTS } from '@/components/ui/UiCoverArt.vue';
+import { SLOGAN } from '@/components/BrandLogo.vue';
 
 const player = usePlayerStore();
 const playlists = usePlaylistStore();

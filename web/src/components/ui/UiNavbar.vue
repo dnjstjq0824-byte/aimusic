@@ -4,43 +4,50 @@
       <!-- Left: Logo & Core Nav -->
       <div class="flex min-w-0 items-center gap-4 lg:gap-8">
         <RouterLink to="/" class="flex items-center transition-transform active:scale-95" aria-label="AVIBE 홈">
-          <BrandLogo :size="36" tagline="Commercial Gate" />
+          <BrandLogo :size="36" />
         </RouterLink>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center gap-0.5 whitespace-nowrap text-sm font-medium text-neutral-400 lg:gap-1" aria-label="주 메뉴">
+        <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-sm font-medium text-neutral-400" aria-label="주 메뉴">
           <RouterLink
             to="/"
-            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
             :class="route.name === 'home' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             홈
           </RouterLink>
           <RouterLink
             to="/explore"
-            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
             :class="route.name === 'explore' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             음원 탐색
           </RouterLink>
           <RouterLink
+            to="/playlists"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+            :class="route.name === 'playlists' || route.name === 'playlist-detail' ? 'text-white bg-surface-2 font-semibold' : ''"
+          >
+            플레이리스트
+          </RouterLink>
+          <RouterLink
             v-if="auth.isAuthenticated"
             to="/my-library"
-            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
             :class="route.name === 'my-library' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             내 라이브러리
           </RouterLink>
           <RouterLink
             to="/disputes"
-            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
             :class="route.name === 'dispute-center' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             권리보호센터
           </RouterLink>
           <RouterLink
             to="/pricing"
-            class="rounded-lg px-2.5 py-1.5 transition-colors hover:text-white lg:px-3"
+            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
             :class="route.name === 'pricing' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             요금제
@@ -163,7 +170,7 @@
         <!-- Mobile hamburger -->
         <button
           type="button"
-          class="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+          class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
           :aria-expanded="mobileNavOpen"
           aria-controls="mobile-nav"
           :aria-label="mobileNavOpen ? '모바일 메뉴 닫기' : '모바일 메뉴 열기'"
@@ -184,7 +191,7 @@
       v-if="mobileNavOpen"
       id="mobile-nav"
       aria-label="모바일 메뉴"
-      class="md:hidden border-t border-surface-border bg-surface-1/95 backdrop-blur-2xl px-4 py-4 space-y-2 text-sm"
+      class="lg:hidden border-t border-surface-border bg-surface-1/95 backdrop-blur-2xl px-4 py-4 space-y-1 text-sm sm:grid sm:grid-cols-2 sm:gap-1 sm:space-y-0 sm:px-6"
     >
       <RouterLink
         to="/"
@@ -199,6 +206,13 @@
         @click="mobileNavOpen = false"
       >
         음원 탐색 &amp; 필터
+      </RouterLink>
+      <RouterLink
+        to="/playlists"
+        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        @click="mobileNavOpen = false"
+      >
+        플레이리스트
       </RouterLink>
       <RouterLink
         v-if="auth.isAuthenticated"
@@ -222,7 +236,7 @@
       >
         요금제
       </RouterLink>
-      <div v-if="auth.isPartner || auth.isAdmin" class="pt-2 border-t border-surface-border">
+      <div v-if="auth.isPartner || auth.isAdmin" class="pt-2 border-t border-surface-border sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-1">
         <RouterLink
           to="/partner"
           class="block rounded-lg px-3 py-2 font-semibold text-brand-400 hover:bg-surface-2"
@@ -238,7 +252,7 @@
           음원 업로드 위저드
         </RouterLink>
       </div>
-      <div v-if="auth.isAdmin" class="pt-2 border-t border-surface-border">
+      <div v-if="auth.isAdmin" class="pt-2 border-t border-surface-border sm:col-span-2">
         <RouterLink
           to="/admin"
           class="block rounded-lg px-3 py-2 font-semibold text-brand-300 hover:bg-surface-2"

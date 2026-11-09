@@ -7,6 +7,15 @@ import type { Track } from '@/api/types';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+// Resume positions below this are treated as "from the start".
+const RESUME_MIN_MS = 5000;
+// Resume positions this close to the end are treated as "finished".
+const RESUME_TAIL_MS = 10000;
+// Server rejects positionMs=0 (binding:"required"), so 1ms marks "reset".
+const RESET_POSITION_MS = 1;
+// Transient network failures are retried before giving up on a track.
+const MAX_NETWORK_RETRIES = 3;
+
 // Singleton audio element shared across the whole app (gapless-ish queue).
 let audioEl: HTMLAudioElement | null = null;
 function audio(): HTMLAudioElement {
@@ -24,6 +33,13 @@ function shuffled<T>(items: T[]): T[] {
     [arr[i], arr[j]] = [arr[j] as T, arr[i] as T];
   }
   return arr;
+}
+
+/** Picks a safe resume offset (ms) or 0 when the saved position should be ignored. */
+export function resumeOffsetMs(savedMs: number, durationMs: number | null | undefined): number {
+  if (!Number.isFinite(savedMs) || savedMs < RESUME_MIN_MS) return 0;
+  if (durationMs && durationMs > 0 && savedMs >= durationMs - RESUME_TAIL_MS) return 0;
+  return savedMs;
 }
 
 export const usePlayerStore = defineStore('player', () => {
@@ -44,6 +60,16 @@ export const usePlayerStore = defineStore('player', () => {
   let heartbeatTimer: number | null = null;
   let lastHeartbeatAt = 0;
   let bound = false;
+  /**
+   * Monotonic load token. Every playCurrent() call takes a new value; any async
+   * continuation (stream grant, resume lookup, hls.js callbacks) that finishes
+   * after a newer load started is discarded. Without this, a slow response for
+   * an earlier track could overwrite the audio source of the track the user
+   * picked later, so the UI shows one song while another one plays.
+   */
+  let loadSeq = 0;
+  /** Track id whose media is currently attached to the audio element. */
+  let loadedTrackId: string | null = null;
 
   const currentTrack = computed<Track | null>(() => {
     if (queue.value.length === 0 || order.value.length === 0) return null;
@@ -63,7 +89,16 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  /** Saves where the listener left the *currently loaded* track. */
+  function saveLeavingPosition(): void {
+    const id = loadedTrackId;
+    const pos = Math.floor(positionMs.value);
+    if (!id || pos <= 0) return;
+    void playbackApi.setState(id, pos).catch(() => undefined);
+  }
+
   function setQueue(tracks: Track[], startId?: string): void {
+    saveLeavingPosition();
     queue.value = [...tracks];
     skippedIds.value = [];
     rebuildOrder();
@@ -88,13 +123,17 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function clearQueue(): void {
+    saveLeavingPosition();
+    loadSeq += 1; // cancel any in-flight load
     stopHeartbeat();
     destroyHls();
     audio().pause();
+    loadedTrackId = null;
     queue.value = [];
     order.value = [];
     orderPos.value = 0;
     isPlaying.value = false;
+    isLoading.value = false;
     positionMs.value = 0;
     durationMs.value = 0;
     error.value = null;
@@ -123,17 +162,16 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  function startHeartbeat(): void {
+  function startHeartbeat(trackId: string): void {
     stopHeartbeat();
     lastHeartbeatAt = Date.now();
     heartbeatTimer = window.setInterval(() => {
-      const t = currentTrack.value;
-      if (!t || !isPlaying.value) return;
+      if (loadedTrackId !== trackId || !isPlaying.value) return;
       const now = Date.now();
       const playMs = now - lastHeartbeatAt;
       lastHeartbeatAt = now;
       void playbackApi
-        .heartbeat({ trackId: t.id, positionMs: Math.floor(positionMs.value), playMs, jti: currentJti.value ?? undefined })
+        .heartbeat({ trackId, positionMs: Math.floor(positionMs.value), playMs, jti: currentJti.value ?? undefined })
         .catch(() => undefined);
     }, 10000);
   }
@@ -153,9 +191,21 @@ export const usePlayerStore = defineStore('player', () => {
       navigator.mediaSession.setActionHandler('seekto', (d) => {
         if (typeof d.seekTime === 'number') seek(d.seekTime * 1000);
       });
+      navigator.mediaSession.playbackState = 'playing';
     } catch {
       // Media Session is best-effort.
     }
+  }
+
+  function failPlayback(seq: number, message: string): void {
+    if (seq !== loadSeq) return;
+    stopHeartbeat();
+    destroyHls();
+    audio().pause();
+    loadedTrackId = null; // next play press reloads with a fresh grant
+    isPlaying.value = false;
+    isLoading.value = false;
+    error.value = message;
   }
 
   function bindAudioEvents(): void {
@@ -181,79 +231,115 @@ export const usePlayerStore = defineStore('player', () => {
         void el.play().catch(() => undefined);
         return;
       }
-      void playNext();
+      // Finished: reset resume so the next visit starts from the top
+      // instead of jumping straight to the (already finished) tail.
+      if (loadedTrackId) {
+        void playbackApi.setState(loadedTrackId, RESET_POSITION_MS).catch(() => undefined);
+      }
+      positionMs.value = 0;
+      void advance(false);
     });
     el.addEventListener('error', () => {
-      void playNext(true);
+      // hls.js owns error handling while attached (MSE); only native playback
+      // reports here. Never silently jump to a different song on a transport
+      // error: surface it so the listener knows what happened.
+      if (hls || !el.getAttribute('src')) return;
+      failPlayback(loadSeq, '음원을 재생할 수 없습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.');
     });
   }
 
   async function playCurrent(): Promise<void> {
     bindAudioEvents();
+    const seq = ++loadSeq;
     const track = currentTrack.value;
     const el = audio();
     destroyHls();
     stopHeartbeat();
+    el.pause();
     error.value = null;
+    positionMs.value = 0;
+    durationMs.value = track?.durationMs ?? 0;
+    loadedTrackId = null;
     if (!track) {
-      el.pause();
       isPlaying.value = false;
+      isLoading.value = false;
       return;
     }
-    // Record resume position of previous state is handled by heartbeat; load fresh grant.
     isLoading.value = true;
     try {
-      const grant = await trackApi.stream(track.id);
+      // Grant + resume lookup in parallel; resume is best-effort.
+      const [grant, savedMs] = await Promise.all([
+        trackApi.stream(track.id),
+        playbackApi
+          .getState(track.id)
+          .then((s) => s.positionMs)
+          .catch(() => 0),
+      ]);
+      if (seq !== loadSeq) return; // a newer track was picked meanwhile
+
       currentJti.value = grant.jti;
+      loadedTrackId = track.id;
+      const startMs = resumeOffsetMs(savedMs, track.durationMs);
       const url = grant.url;
+
       if (url.includes('.m3u8') && Hls.isSupported()) {
-        hls = new Hls({ enableWorker: true });
-        hls.on(Hls.Events.ERROR, (_evt, data) => {
-          if (data.fatal) void playNext(true);
+        let networkRetries = 0;
+        let mediaRecovered = false;
+        const instance = new Hls({ enableWorker: true, startPosition: startMs / 1000 });
+        hls = instance;
+        instance.on(Hls.Events.ERROR, (_evt, data) => {
+          if (seq !== loadSeq || hls !== instance || !data.fatal) return;
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRetries < MAX_NETWORK_RETRIES) {
+            networkRetries += 1;
+            instance.startLoad();
+            return;
+          }
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !mediaRecovered) {
+            mediaRecovered = true;
+            instance.recoverMediaError();
+            return;
+          }
+          failPlayback(seq, `스트리밍 연결이 끊겼습니다: ${track.title}`);
         });
-        hls.loadSource(url);
-        hls.attachMedia(el);
-        await el.play().catch(() => undefined);
+        instance.loadSource(url);
+        instance.attachMedia(el);
       } else {
         el.src = url;
-        await el.play().catch(() => undefined);
-      }
-      // Restore resume position (best-effort).
-      try {
-        const state = await playbackApi.getState(track.id);
-        if (state.positionMs > 5000) {
-          el.currentTime = state.positionMs / 1000;
-          positionMs.value = state.positionMs;
+        if (startMs > 0) {
+          el.addEventListener(
+            'loadedmetadata',
+            () => {
+              if (seq === loadSeq) el.currentTime = startMs / 1000;
+            },
+            { once: true },
+          );
         }
-      } catch {
-        // No resume state yet.
       }
+      positionMs.value = startMs;
+      await el.play().catch(() => undefined);
+      if (seq !== loadSeq) return;
+
       updateMediaSession(track);
-      startHeartbeat();
-      if ('mediaSession' in navigator) {
-        try {
-          navigator.mediaSession.playbackState = 'playing';
-        } catch {
-          // ignore
-        }
-      }
+      startHeartbeat(track.id);
     } catch (err: unknown) {
+      if (seq !== loadSeq) return;
       const code = errCodeOf(err);
       if (code === 'ERR_NOT_STREAMABLE' || code === 'ERR_FORBIDDEN') {
-        // Takedown / blocked track: auto-skip to next.
+        // Takedown / blocked track: skip it explicitly and say so.
         skippedIds.value.push(track.id);
         error.value = `차단된 음원을 건너뜁니다: ${track.title}`;
-        await playNext(true);
+        await advance(true);
         return;
       }
       error.value = code;
       isPlaying.value = false;
     } finally {
-      isLoading.value = false;
+      if (seq === loadSeq) isLoading.value = false;
     }
   }
 
-  async function playNext(force = false): Promise<void> {
+  /** Moves to the next entry in play order without persisting (caller decides). */
+  async function advance(force: boolean): Promise<void> {
     if (order.value.length === 0) return;
     const atEnd = orderPos.value >= order.value.length - 1;
     if (atEnd) {
@@ -267,8 +353,13 @@ export const usePlayerStore = defineStore('player', () => {
     } else {
       orderPos.value += 1;
     }
-    persistPosition().catch(() => undefined);
     await playCurrent();
+  }
+
+  async function playNext(force = false): Promise<void> {
+    // Persist BEFORE moving: the position belongs to the track being left.
+    saveLeavingPosition();
+    await advance(force);
   }
 
   async function playPrev(): Promise<void> {
@@ -276,14 +367,23 @@ export const usePlayerStore = defineStore('player', () => {
       seek(0);
       return;
     }
+    saveLeavingPosition();
     if (orderPos.value > 0) orderPos.value -= 1;
+    await playCurrent();
+  }
+
+  async function playAt(orderIndex: number): Promise<void> {
+    if (orderIndex < 0 || orderIndex >= order.value.length) return;
+    saveLeavingPosition();
+    orderPos.value = orderIndex;
     await playCurrent();
   }
 
   async function resume(): Promise<void> {
     bindAudioEvents();
     error.value = null;
-    if (!audioEl?.src && currentTrack.value) {
+    const track = currentTrack.value;
+    if (track && loadedTrackId !== track.id) {
       await playCurrent();
       return;
     }
@@ -299,7 +399,7 @@ export const usePlayerStore = defineStore('player', () => {
         // ignore
       }
     }
-    persistPosition().catch(() => undefined);
+    saveLeavingPosition();
   }
 
   function toggle(): void {
@@ -311,13 +411,6 @@ export const usePlayerStore = defineStore('player', () => {
     const el = audio();
     el.currentTime = Math.max(0, ms / 1000);
     positionMs.value = Math.max(0, ms);
-  }
-
-  async function persistPosition(): Promise<void> {
-    const t = currentTrack.value;
-    if (!t) return;
-    const pos = Math.floor(positionMs.value);
-    if (pos > 0) await playbackApi.setState(t.id, pos);
   }
 
   return {
@@ -341,6 +434,7 @@ export const usePlayerStore = defineStore('player', () => {
     cycleRepeat,
     playNext,
     playPrev,
+    playAt,
     playCurrent,
     resume,
     pause,

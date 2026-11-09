@@ -14,7 +14,8 @@ export const usePlaylistStore = defineStore('playlist', () => {
     loading.value = true;
     error.value = null;
     try {
-      playlists.value = await playlistApi.listMine();
+      // The API serializes an empty list as `null`; normalize so views can iterate.
+      playlists.value = (await playlistApi.listMine()) ?? [];
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'failed';
     } finally {
@@ -36,7 +37,7 @@ export const usePlaylistStore = defineStore('playlist', () => {
   }
 
   async function fetchTracks(playlistId: string): Promise<void> {
-    const list = await playlistApi.listTracks(playlistId);
+    const list = (await playlistApi.listTracks(playlistId)) ?? [];
     entries.value[playlistId] = list;
     const tracks: Track[] = [];
     for (const e of list) {

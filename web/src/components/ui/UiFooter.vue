@@ -4,7 +4,7 @@
       <div class="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
         <!-- Brand & Mission -->
         <div class="col-span-2 space-y-3 md:col-span-1">
-          <BrandLogo :size="28" />
+          <BrandLogo :size="32" />
           <p class="text-xs leading-relaxed text-neutral-400">
             상업적 라이선스가 검증된 정식 유료 플랜 생성 AI 음원만을 유통하는 상용 스트리밍 플랫폼입니다.
           </p>
@@ -51,7 +51,7 @@
       <!-- Bottom Compliance strip -->
       <div class="mt-10 border-t border-surface-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-[11px] text-neutral-500">
         <div>
-          © 2026 AVIBE Technologies Co., Ltd. All rights reserved. 대한민국 법령 준수 플랫폼.
+          © 2026 AVIBE — Beyond Your Music. All rights reserved. 대한민국 법령 준수 플랫폼.
         </div>
         <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <span>암호화: AES-256-GCM</span>

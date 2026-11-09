@@ -17,6 +17,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/user/MyLibrary.vue'),
         meta: { requiresAuth: true },
       },
+      { path: 'playlists', name: 'playlists', component: () => import('@/views/user/Playlists.vue') },
       { path: 'login', name: 'login', component: () => import('@/views/user/Login.vue') },
       {
         path: 'reset-password',
