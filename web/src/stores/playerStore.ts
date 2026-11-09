@@ -9,8 +9,10 @@ export type RepeatMode = 'off' | 'all' | 'one';
 
 // Resume positions below this are treated as "from the start".
 const RESUME_MIN_MS = 5000;
-// Resume positions this close to the end are treated as "finished".
-const RESUME_TAIL_MS = 10000;
+// Resume positions this close to the end are treated as "finished": resuming
+// a few seconds before the end makes the next song start almost immediately,
+// which listeners perceive as "a different song suddenly plays".
+const RESUME_TAIL_MS = 30000;
 // Server rejects positionMs=0 (binding:"required"), so 1ms marks "reset".
 const RESET_POSITION_MS = 1;
 // Transient network failures are retried before giving up on a track.

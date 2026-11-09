@@ -116,6 +116,11 @@ export const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
   if (!auth.initialized) await auth.hydrate();
+  // Already signed in: never show the login form again; continue to the target.
+  if (to.name === 'login' && auth.isAuthenticated) {
+    const redirect = typeof to.query.redirect === 'string' && to.query.redirect.startsWith('/') ? to.query.redirect : '/';
+    return redirect === to.fullPath ? { name: 'home' } : redirect;
+  }
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } };
   }

@@ -44,6 +44,13 @@ export function errMessageOf(err: unknown, fallback = '요청 처리에 실패�
 const ACCESS_KEY = 'avibe.accessToken';
 const REFRESH_KEY = 'avibe.refreshToken';
 
+/** Fired on window whenever stored tokens change, so UI auth state can follow. */
+export const AUTH_TOKENS_EVENT = 'avibe:auth-tokens';
+
+function announceTokens(): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_TOKENS_EVENT));
+}
+
 export const tokenStore = {
   getAccess(): string | null {
     return localStorage.getItem(ACCESS_KEY);
@@ -54,10 +61,12 @@ export const tokenStore = {
   set(access: string, refresh: string): void {
     localStorage.setItem(ACCESS_KEY, access);
     localStorage.setItem(REFRESH_KEY, refresh);
+    announceTokens();
   },
   clear(): void {
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
+    announceTokens();
   },
 };
 

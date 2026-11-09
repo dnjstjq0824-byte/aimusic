@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { authApi } from '@/api/endpoints';
-import { tokenStore } from '@/api/client';
+import { AUTH_TOKENS_EVENT, tokenStore } from '@/api/client';
 import type { Role, User } from '@/api/types';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -9,13 +9,35 @@ export const useAuthStore = defineStore('auth', () => {
   const role = ref<Role | null>(null);
   const userId = ref<string | null>(null);
   const initialized = ref(false);
+  // Reactive mirror of the stored access token. localStorage itself is not
+  // reactive, so without this the header kept showing a signed-in user after a
+  // failed token refresh had already wiped the tokens (and every protected
+  // page then bounced to the login form).
+  const accessToken = ref<string | null>(tokenStore.getAccess());
 
-  const isAuthenticated = computed(() => tokenStore.getAccess() !== null && userId.value !== null);
+  function syncTokens(): void {
+    accessToken.value = tokenStore.getAccess();
+    if (!accessToken.value) {
+      user.value = null;
+      userId.value = null;
+      role.value = null;
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener(AUTH_TOKENS_EVENT, syncTokens);
+    // Keep tabs in sync: signing out in one tab signs out the others.
+    window.addEventListener('storage', (e) => {
+      if (e.key === null || e.key.startsWith('avibe.')) syncTokens();
+    });
+  }
+
+  const isAuthenticated = computed(() => accessToken.value !== null && userId.value !== null);
   const isPartner = computed(() => role.value === 'PARTNER' || role.value === 'ADMIN');
   const isAdmin = computed(() => role.value === 'ADMIN');
 
   async function hydrate(): Promise<void> {
-    if (!tokenStore.getAccess()) {
+    accessToken.value = tokenStore.getAccess();
+    if (!accessToken.value) {
       initialized.value = true;
       return;
     }

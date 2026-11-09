@@ -79,6 +79,19 @@ describe('useAuthStore', () => {
     expect(store.userId).toBeNull();
   });
 
+  it('signs out in the UI when tokens are wiped elsewhere (failed refresh)', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER' } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.isAuthenticated).toBe(true);
+
+    tokenStore.clear(); // what the axios interceptor does when refresh fails
+
+    expect(store.isAuthenticated).toBe(false);
+    expect(store.userId).toBeNull();
+  });
+
   it('logout resets everything', async () => {
     tokenStore.set('a', 'r');
     meMock.mockResolvedValue({ userId: 'u-1', role: 'USER' } as never);

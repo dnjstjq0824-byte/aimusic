@@ -12,5 +12,5 @@ not_found_handling = "single-page-application"
 
 # Production origins (external container/tunnel hosts).
 [vars]
-API_ORIGIN = "https://maximum-housewives-courage-foo.trycloudflare.com"
-S3_ORIGIN = "https://republic-rna-opera-manager.trycloudflare.com"
+API_ORIGIN = "https://intended-sticky-collapse-older.trycloudflare.com"
+S3_ORIGIN = "https://minus-purchase-women-attorney.trycloudflare.com"

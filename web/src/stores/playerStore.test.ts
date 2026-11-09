@@ -142,7 +142,9 @@ describe('usePlayerStore', () => {
     expect(resumeOffsetMs(1, 300_000)).toBe(0);
     expect(resumeOffsetMs(4_000, 300_000)).toBe(0);
     expect(resumeOffsetMs(60_000, 300_000)).toBe(60_000);
-    expect(resumeOffsetMs(295_000, 300_000)).toBe(0); // within the last 10s
+    expect(resumeOffsetMs(295_000, 300_000)).toBe(0); // within the last 30s
+    expect(resumeOffsetMs(289_000, 300_000)).toBe(0); // seen live: resumed at 4:49 of 5:00
+    expect(resumeOffsetMs(260_000, 300_000)).toBe(260_000);
     expect(resumeOffsetMs(299_000, 289_000)).toBe(0); // beyond this track's length
   });
 });
