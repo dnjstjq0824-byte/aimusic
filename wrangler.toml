@@ -10,8 +10,7 @@ directory = "./web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# Production API origin (external container/tunnel host).
-# Override in the Cloudflare dashboard (Worker > Settings > Variables) or at deploy time:
-#   wrangler deploy --var API_ORIGIN:https://api.yourdomain.com
+# Production origins (external container/tunnel hosts).
 [vars]
 API_ORIGIN = "https://maximum-housewives-courage-foo.trycloudflare.com"
+S3_ORIGIN = "https://republic-rna-opera-manager.trycloudflare.com"
