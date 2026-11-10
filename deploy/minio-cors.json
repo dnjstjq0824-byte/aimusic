@@ -1,0 +1,11 @@
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedOrigins": ["https://avibemusic.com"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

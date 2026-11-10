@@ -1,0 +1,184 @@
+# AVIBE production stack (single VPS + Cloudflare tunnel).
+# Usage (on the VPS, in /opt/avibe):
+#   1. cp .env.prod.example .env  (or receive the generated .env), chmod 600 .env
+#   2. docker compose -f docker-compose.prod.yml build api worker
+#   3. docker compose -f docker-compose.prod.yml up -d postgres redis minio
+#   4. docker compose -f docker-compose.prod.yml up minio-init   # buckets+policy+CORS
+#   5. docker compose -f docker-compose.prod.yml run --rm migrate up
+#   6. psql $DB_DSN -f deploy/seed-prod.sql && adminctl create-admin ...
+#   7. docker compose -f docker-compose.prod.yml up -d api worker cloudflared
+#
+# No ports are published: api/hls are served only via the Cloudflare named
+# tunnel (api.avibemusic.com -> api:8080, hls.avibemusic.com -> minio:9000).
+# The web SPA is served by the Cloudflare Worker (wrangler deploy).
+name: avibe-prod
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: avibe-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-avibe}
+      POSTGRES_USER: ${DB_USER:-avibe}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-avibe} -d ${DB_NAME:-avibe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    mem_limit: 256m
+    networks:
+      - avibe
+
+  redis:
+    image: redis:7-alpine
+    container_name: avibe-prod-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    mem_limit: 96m
+    networks:
+      - avibe
+
+  minio:
+    image: minio/minio:latest
+    container_name: avibe-prod-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    mem_limit: 256m
+    networks:
+      - avibe
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: avibe-prod-minio-init
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD required}
+      CORS_ORIGIN: "https://avibemusic.com"
+    volumes:
+      - ./deploy/minio-init.sh:/init/minio-init.sh:ro
+      - ./deploy/minio-cors.json:/init/cors.json:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - avibe
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: avibe-prod-api:latest
+    container_name: avibe-prod-api
+    restart: unless-stopped
+    command: ["./api"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    mem_limit: 256m
+    networks:
+      - avibe
+
+  worker:
+    image: avibe-prod-api:latest
+    container_name: avibe-prod-worker
+    restart: unless-stopped
+    command: ["./worker"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    mem_limit: 384m
+    networks:
+      - avibe
+
+  migrate:
+    image: avibe-prod-api:latest
+    container_name: avibe-prod-migrate
+    command: ["./migrate", "up"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - avibe
+
+  adminctl:
+    image: avibe-prod-api:latest
+    container_name: avibe-prod-adminctl
+    entrypoint: ["./adminctl"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - avibe
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: avibe-prod-cloudflared
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--config", "/etc/cloudflared/config.yml"]
+    volumes:
+      - ./cloudflared/:/etc/cloudflared/:ro
+    depends_on:
+      api:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    mem_limit: 128m
+    networks:
+      - avibe
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+
+networks:
+  avibe:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
