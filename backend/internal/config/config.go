@@ -25,6 +25,10 @@ type Config struct {
 	OAuth  OAuthConfig
 	Toss   TossConfig
 	Mail   MailConfig
+	// Generation is the external music-generation backend (WI-03 setup-only).
+	// Empty BackendURL means no GPU server is connected; generation jobs then
+	// fail with a clear message instead of fake audio.
+	Generation GenerationConfig
 }
 
 // SecurityConfig configures HTTP hardening (CORS allowlist, trusted proxies).
@@ -35,6 +39,9 @@ type SecurityConfig struct {
 	// TrustedProxies is passed to gin.Engine.SetTrustedProxies so ClientIP
 	// only trusts X-Forwarded-For from these CIDRs/IPs. Empty trusts none.
 	TrustedProxies []string
+	// RegistrationInviteCode gates sign-up while set (C8): register calls
+	// must present this code. Empty means open registration.
+	RegistrationInviteCode string
 }
 
 // DBConfig configures PostgreSQL access.
@@ -124,6 +131,17 @@ type MailConfig struct {
 	FromName string
 }
 
+// GenerationConfig points the worker at an external GPU generation server
+// (reference: generator/server.py). Timeouts in seconds.
+type GenerationConfig struct {
+	BackendURL     string
+	TimeoutSeconds int
+	// DailyCapPerPartner is the server-enforced submit quota (default 5).
+	DailyCapPerPartner int
+	// BannedKeywordsExtra appends operator block phrases (comma-separated).
+	BannedKeywordsExtra []string
+}
+
 // Load reads configuration from the environment.
 func Load() (*Config, error) {
 	cfg := &Config{
@@ -171,8 +189,9 @@ func Load() (*Config, error) {
 		URLTTLSecs: getenvInt("HLS_URL_TTL_SECONDS", 300),
 	}
 	cfg.Security = SecurityConfig{
-		CORSAllowedOrigins: getenvList("CORS_ALLOWED_ORIGINS"),
-		TrustedProxies:     getenvList("TRUSTED_PROXIES"),
+		CORSAllowedOrigins:     getenvList("CORS_ALLOWED_ORIGINS"),
+		TrustedProxies:         getenvList("TRUSTED_PROXIES"),
+		RegistrationInviteCode: strings.TrimSpace(os.Getenv("REGISTRATION_INVITE_CODE")),
 	}
 	frontendBase := strings.TrimRight(getenv("FRONTEND_BASE_URL", "http://localhost:5173"), "/")
 	cfg.Reset = PasswordResetConfig{
@@ -201,10 +220,45 @@ func Load() (*Config, error) {
 		SMTPPort: getenvInt("SMTP_PORT", 587),
 		SMTPUser: os.Getenv("SMTP_USER"),
 		SMTPPass: os.Getenv("SMTP_PASS"),
-		From:     getenv("MAIL_FROM", "no-reply@avibe.kr"),
+		From:     getenv("MAIL_FROM", "no-reply@avibemusic.com"),
 		FromName: getenv("MAIL_FROM_NAME", "AVIBE"),
 	}
+	cfg.Generation = GenerationConfig{
+		BackendURL:         strings.TrimRight(strings.TrimSpace(os.Getenv("GENERATION_BACKEND_URL")), "/"),
+		TimeoutSeconds:     getenvInt("GENERATION_TIMEOUT_SECONDS", 600),
+		DailyCapPerPartner: getenvInt("GENERATION_DAILY_CAP", 5),
+		BannedKeywordsExtra: getenvList("GENERATION_BANNED_KEYWORDS"),
+	}
 	return cfg, nil
+}
+
+// nonProdEnvs skips fail-closed guards (log-only mail, test keys allowed).
+func nonProdEnv(env string) bool {
+	switch strings.ToLower(strings.TrimSpace(env)) {
+	case "", "local", "dev", "test":
+		return true
+	default:
+		return false
+	}
+}
+
+// Validate fails closed on missing production secrets. Without this the API
+// would boot in prod with log-only mail (password resets silently never sent),
+// unsigned-strength JWT keys, or unsigned HLS grants.
+func (c *Config) Validate() error {
+	if nonProdEnv(c.Env) {
+		return nil
+	}
+	if strings.TrimSpace(c.Mail.SMTPHost) == "" {
+		return fmt.Errorf("SMTP_HOST is required in env %q (refusing log-only mail)", c.Env)
+	}
+	if len(c.JWT.AccessSecret) < 32 || len(c.JWT.RefreshSecret) < 32 {
+		return fmt.Errorf("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be >= 32 chars in env %q", c.Env)
+	}
+	if strings.TrimSpace(c.HLS.SigningKey) == "" {
+		return fmt.Errorf("HLS_SIGNING_KEY is required in env %q", c.Env)
+	}
+	return nil
 }
 
 func getenvList(key string) []string {

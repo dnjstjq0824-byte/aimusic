@@ -25,6 +25,9 @@ type Services struct {
 	OAuth         *OAuthService
 	Billing       *BillingService
 	Overview      *OverviewService
+	Generation    *GenerationService
+	Distribution  *DistributionService
+	Store         *StoreService
 }
 
 // New builds the service aggregate.
@@ -50,7 +53,7 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		Precheck:      &PrecheckService{repos: repos, storage: st, stagingBucket: buckets.Staging},
 		Finalize:      &FinalizeService{repos: repos, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
 		Review:        &ReviewService{repos: repos},
-		Disputes:      &DisputeService{repos: repos},
+		Disputes:      &DisputeService{repos: repos, storage: st, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
 		Playlists:     &PlaylistService{repos: repos},
 		Playback:      &PlaybackService{repos: repos},
 		Settlement:    &SettlementService{repos: repos, defaultRatePerPlayKRW: 10, cipher: settlementCipher},
@@ -58,5 +61,8 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		OAuth:         NewOAuthService(repos, auth, cfg, nil),
 		Billing:       NewBillingService(repos, cfg),
 		Overview:      NewOverviewService(repos),
+		Generation:    NewGenerationService(repos, cfg.Generation.DailyCapPerPartner, cfg.Generation.BannedKeywordsExtra),
+		Distribution:  NewDistributionService(repos, st, buckets.Staging),
+		Store:         NewStoreService(repos),
 	}
 }

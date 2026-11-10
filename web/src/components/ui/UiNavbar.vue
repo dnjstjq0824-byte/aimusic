@@ -143,6 +143,13 @@
             >
               이용약관 및 법적 정책
             </RouterLink>
+            <RouterLink
+              to="/account/security"
+              class="block px-3 py-2 text-neutral-300 hover:bg-surface-3 hover:text-white"
+              @click="userMenuOpen = false"
+            >
+              계정 보안 (2단계 인증)
+            </RouterLink>
             <button
               class="w-full text-left px-3 py-2 text-accent-crimson hover:bg-surface-3 font-medium border-t border-surface-border"
               @click="auth.logout(); userMenuOpen = false"
@@ -235,6 +242,14 @@
         @click="mobileNavOpen = false"
       >
         요금제
+      </RouterLink>
+      <RouterLink
+        v-if="auth.isAuthenticated"
+        to="/account/security"
+        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        @click="mobileNavOpen = false"
+      >
+        계정 보안 (2단계 인증)
       </RouterLink>
       <div v-if="auth.isPartner || auth.isAdmin" class="pt-2 border-t border-surface-border sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-1">
         <RouterLink

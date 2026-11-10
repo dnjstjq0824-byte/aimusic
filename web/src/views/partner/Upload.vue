@@ -2,8 +2,8 @@
   <div class="mx-auto max-w-3xl space-y-6">
     <UiPageHeader
       eyebrow="Gatekeeper Pipeline"
-      title="AI 음원 업로드 &amp; 상업 라이선스 검증 위저드"
-      description="상업용 라이선스가 보증된 AI 음원만 등록 가능합니다. 비상업용 및 소급 불가 음원은 원천 차단됩니다."
+      title="AI 음원 업로드 &amp; 상업 이용 조건 확인 위저드"
+      description="상업 이용 조건 확인 절차를 통과한 AI 음원만 등록할 수 있습니다. 비상업용 및 소급 불가 음원은 접수되지 않습니다."
     />
 
     <!-- Stepper indicator -->
@@ -233,6 +233,28 @@
             placeholder="직접 작사, 마스터링 EQ 조정, 보컬 멜로디 가이드 등"
           />
         </div>
+
+        <UiSelect
+          v-model="store.collectiveTrust"
+          label="KOMCA 등 신탁단체 신탁 여부 (필수 신고)"
+          required
+        >
+          <option value="NONE">미신탁 (신탁단체에 맡기지 않음)</option>
+          <option value="TRUSTED">신탁됨 (KOMCA 등 신탁단체 등록곡)</option>
+        </UiSelect>
+        <UiInput
+          v-model="store.collectiveName"
+          label="신탁단체명 (신탁곡인 경우)"
+          placeholder="예: KOMCA"
+        />
+      </div>
+
+      <div
+        v-if="store.collectiveTrust === 'TRUSTED'"
+        class="rounded-xl border border-red-600 bg-red-950/70 p-4 text-xs font-semibold text-red-200"
+      >
+        신탁단체(KOMCA 등) 신탁곡은 사용료 정산 체계가 마련될 때까지 접수할 수 없습니다.
+        미신탁 확인 후 다시 제출해 주세요.
       </div>
 
       <!-- 4 Mandatory Legal Warranties -->

@@ -16,10 +16,10 @@ type DynamicRating string
 
 const (
 	RatingAudiophileDynamic DynamicRating = "AUDIOPHILE_DYNAMIC" // DR >= 14, CF >= 14 dB
-	RatingHealthyMaster     DynamicRating = "HEALTHY_MASTER"      // DR 10-13, CF 10-14 dB
-	RatingModerateComp      DynamicRating = "MODERATE_COMP"       // DR 7-9, CF 7-10 dB
-	RatingLoudnessWar       DynamicRating = "LOUDNESS_WAR_HEAVY"  // DR 4-6, CF 4-7 dB
-	RatingExtremeSquashed   DynamicRating = "EXTREME_SQUASHED"    // DR 0-3, CF < 4 dB
+	RatingHealthyMaster     DynamicRating = "HEALTHY_MASTER"     // DR 10-13, CF 10-14 dB
+	RatingModerateComp      DynamicRating = "MODERATE_COMP"      // DR 7-9, CF 7-10 dB
+	RatingLoudnessWar       DynamicRating = "LOUDNESS_WAR_HEAVY" // DR 4-6, CF 4-7 dB
+	RatingExtremeSquashed   DynamicRating = "EXTREME_SQUASHED"   // DR 0-3, CF < 4 dB
 )
 
 // ChannelDynamics holds metric measurements for an individual audio channel.
@@ -36,10 +36,10 @@ type ChannelDynamics struct {
 
 // CrestFactorResult encapsulates full dynamic range and Loudness War telemetry for UI metadata presentation.
 type CrestFactorResult struct {
-	SampleRate         int     `json:"sample_rate"`
-	Channels           int     `json:"channels"`
-	DurationSec        float64 `json:"duration_sec"`
-	TotalSamples       int     `json:"total_samples"`
+	SampleRate   int     `json:"sample_rate"`
+	Channels     int     `json:"channels"`
+	DurationSec  float64 `json:"duration_sec"`
+	TotalSamples int     `json:"total_samples"`
 
 	// Global Integrated Master Dynamics
 	GlobalRMSDbFS      float64 `json:"global_rms_dbfs"`
@@ -63,7 +63,7 @@ type CrestFactorResult struct {
 	DynamicSpreadDb     float64 `json:"dynamic_spread_db"` // Max - Min
 
 	// Per-channel breakdown
-	ChannelBreakdown []ChannelDynamics `json:"channels"`
+	ChannelBreakdown []ChannelDynamics `json:"channel_breakdown"`
 
 	// Formatted UI Badge string
 	UIBadge string `json:"ui_badge"`

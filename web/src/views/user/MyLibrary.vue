@@ -32,7 +32,10 @@
             유효기간: {{ fmtDate(subscription.currentPeriodStart) }} ~ {{ fmtDate(subscription.currentPeriodEnd) }}
           </div>
         </div>
-        <UiButton variant="outline" size="sm" @click="cancelSubOpen = true">이용권 해지</UiButton>
+        <div class="flex flex-col gap-2 sm:items-end">
+          <UiButton variant="outline" size="sm" @click="cancelSubOpen = true">이용권 해지</UiButton>
+          <UiButton variant="outline" size="sm" @click="refundOpen = true">결제 환불 요청</UiButton>
+        </div>
       </div>
       <div v-else class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-xs leading-relaxed text-neutral-400">
@@ -110,7 +113,10 @@
 
     <!-- User Account Summary & Legal Consents Card -->
     <UiCard class="space-y-4">
-      <h3 class="text-sm font-bold text-white">계정 및 보안 정보</h3>
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">계정 및 보안 정보</h3>
+        <UiButton variant="danger" size="sm" @click="withdrawOpen = true">회원 탈퇴</UiButton>
+      </div>
       <div class="grid gap-3 sm:grid-cols-3 text-xs text-neutral-300">
         <div class="p-3 rounded-xl bg-surface-2 border border-surface-border">
           <div class="text-neutral-500 text-[10px] uppercase font-bold">계정 식별자</div>
@@ -125,6 +131,9 @@
           <div class="mt-1"><UiBadge variant="success" size="sm">인증 완료</UiBadge></div>
         </div>
       </div>
+      <p class="text-[11px] leading-relaxed text-neutral-500">
+        회원 탈퇴는 즉시 처리되며, 세무·법정 보존 의무 항목을 제외한 개인식별 정보는 파기됩니다.
+      </p>
     </UiCard>
 
     <!-- Create Playlist Modal -->
@@ -175,16 +184,40 @@
       :loading="cancellingSub"
       @confirm="confirmCancelSubscription"
     />
+
+    <!-- Refund Active Pass Confirm -->
+    <UiConfirmDialog
+      v-model="refundOpen"
+      title="결제 환불 요청"
+      description="현재 이용권의 결제를 PG에서 전액 취소하고 이용권을 즉시 종료합니다. 환불은 결제 수단으로 3~5영업일 내 반환됩니다."
+      confirm-label="환불 요청하기"
+      danger
+      :loading="refunding"
+      @confirm="confirmRefund"
+    />
+
+    <!-- Withdraw Account Confirm -->
+    <UiConfirmDialog
+      v-model="withdrawOpen"
+      title="회원 탈퇴"
+      description="탈퇴 시 계정이 즉시 비활성화되고 다시 로그인할 수 없습니다."
+      body="플레이리스트와 이용권 혜택도 함께 종료됩니다. 정말 탈퇴하시겠습니까?"
+      confirm-label="탈퇴하기"
+      danger
+      :loading="withdrawing"
+      @confirm="confirmWithdraw"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
-import { billingApi } from '@/api/endpoints';
+import { authApi, billingApi } from '@/api/endpoints';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -201,6 +234,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 const playlists = usePlaylistStore();
 const auth = useAuthStore();
 const toast = useToast();
+const router = useRouter();
 
 const createModalOpen = ref(false);
 const newTitle = ref('');
@@ -213,6 +247,10 @@ const subscription = ref<BillingSubscription | null>(null);
 const subLoading = ref(true);
 const cancelSubOpen = ref(false);
 const cancellingSub = ref(false);
+const refundOpen = ref(false);
+const refunding = ref(false);
+const withdrawOpen = ref(false);
+const withdrawing = ref(false);
 
 function onDeleteDialogToggle(open: boolean): void {
   if (!open) deleteTarget.value = null;
@@ -275,6 +313,35 @@ async function confirmCancelSubscription(): Promise<void> {
     toast.error(errMessageOf(err), '해지 실패');
   } finally {
     cancellingSub.value = false;
+  }
+}
+
+async function confirmRefund(): Promise<void> {
+  refunding.value = true;
+  try {
+    await billingApi.refundActivePass('이용자 환불 요청');
+    subscription.value = null;
+    refundOpen.value = false;
+    toast.success('환불이 접수되었습니다. 이용권이 종료됩니다.');
+  } catch (err) {
+    toast.error(errMessageOf(err), '환불 실패');
+  } finally {
+    refunding.value = false;
+  }
+}
+
+async function confirmWithdraw(): Promise<void> {
+  withdrawing.value = true;
+  try {
+    await authApi.withdraw();
+    auth.logout();
+    withdrawOpen.value = false;
+    toast.success('회원 탈퇴가 완료되었습니다.');
+    await router.push('/');
+  } catch (err) {
+    toast.error(errMessageOf(err), '탈퇴 실패');
+  } finally {
+    withdrawing.value = false;
   }
 }
 

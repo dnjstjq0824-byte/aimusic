@@ -8,11 +8,17 @@ vi.mock('@/api/endpoints', () => ({
   authApi: {
     me: vi.fn(),
     login: vi.fn(),
+    confirmAge: vi.fn(),
+  },
+  legalApi: {
+    pendingConsents: vi.fn(),
+    consent: vi.fn(),
   },
 }));
 
 const meMock = vi.mocked(authApi.me);
 const loginMock = vi.mocked(authApi.login);
+const confirmAgeMock = vi.mocked(authApi.confirmAge);
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -90,6 +96,43 @@ describe('useAuthStore', () => {
 
     expect(store.isAuthenticated).toBe(false);
     expect(store.userId).toBeNull();
+  });
+
+  it('flags social accounts missing the 14+ declaration', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER', ageConfirmedAt: null } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.needsAgeConfirm).toBe(true);
+
+    confirmAgeMock.mockResolvedValue({ confirmed: true } as never);
+    await store.confirmAge(1995);
+    expect(confirmAgeMock).toHaveBeenCalledWith(true, 1995);
+    expect(store.needsAgeConfirm).toBe(false);
+  });
+
+  it('skips the age gate when already confirmed', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER', ageConfirmedAt: '2026-01-01T00:00:00Z' } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.needsAgeConfirm).toBe(false);
+  });
+
+  it('loads pending terms consents on hydrate and clears them on consent', async () => {
+    const { legalApi } = await import('@/api/endpoints');
+    const pendingMock = vi.mocked(legalApi.pendingConsents);
+    const consentMock = vi.mocked(legalApi.consent);
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER', ageConfirmedAt: '2026-01-01' } as never);
+    pendingMock.mockResolvedValue([{ id: 't-1', code: 'TOS', version: 'v2' }] as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.needsTermsConsent).toBe(true);
+    consentMock.mockResolvedValue({ consented: true } as never);
+    await store.consentTerms('t-1');
+    expect(consentMock).toHaveBeenCalledWith('t-1');
+    expect(store.needsTermsConsent).toBe(false);
   });
 
   it('logout resets everything', async () => {

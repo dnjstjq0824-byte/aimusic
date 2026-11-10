@@ -14,6 +14,12 @@ abstract final class ApiCodes {
   static const emailTaken = 'ERR_EMAIL_TAKEN';
   static const invalidCredentials = 'ERR_INVALID_CREDENTIALS';
   static const userInactive = 'ERR_USER_INACTIVE';
+  static const totpRequired = 'ERR_TOTP_REQUIRED';
+  static const ageConfirmRequired = 'ERR_AGE_CONFIRM_REQUIRED';
+  static const consentRequired = 'ERR_CONSENT_REQUIRED';
+  static const totpInvalid = 'ERR_TOTP_INVALID';
+  static const loginLocked = 'LOGIN_LOCKED';
+  static const providerNotAllowed = 'ERR_PROVIDER_NOT_ALLOWED';
   static const internal = 'ERR_INTERNAL';
 }
 
@@ -57,6 +63,18 @@ String friendlyMessage(ApiException e) {
       return '요청이 너무 많습니다. 잠시 후 다시 시도하세요.';
     case ApiCodes.emailTaken:
       return '이미 등록된 이메일입니다.';
+    case ApiCodes.totpRequired:
+      return '2단계 인증 코드가 필요합니다.';
+    case ApiCodes.ageConfirmRequired:
+      return '만 14세 이상 확인이 필요합니다. 프로필에서 연령을 확인하세요.';
+    case ApiCodes.consentRequired:
+      return '필수 약관 동의가 필요합니다. 약관 화면에서 동의하세요.';
+    case ApiCodes.totpInvalid:
+      return '인증 코드가 올바르지 않습니다. 다시 입력하세요.';
+    case ApiCodes.loginLocked:
+      return '로그인 시도가 너무 많습니다. 15분 후 다시 시도하세요.';
+    case ApiCodes.providerNotAllowed:
+      return '허용 목록에 없는 제공자입니다. 허용 제휴 제공자를 선택하세요.';
     case ApiCodes.invalidInput:
       return '입력값이 올바르지 않습니다: ${e.message}';
     default:

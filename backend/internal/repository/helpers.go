@@ -44,6 +44,21 @@ func nullInt(v *int) any {
 	return *v
 }
 
+func floatPtr(nf sql.NullFloat64) *float64 {
+	if !nf.Valid {
+		return nil
+	}
+	v := nf.Float64
+	return &v
+}
+
+func nullFloat(v *float64) any {
+	if v == nil {
+		return nil
+	}
+	return *v
+}
+
 func nullTime(t *time.Time) any {
 	if t == nil {
 		return nil

@@ -55,12 +55,24 @@
                 {{ track.title }}
               </h1>
 
-              <div class="mt-1 flex items-center gap-3 text-xs text-neutral-400">
+              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
                 <span>플랫폼: <strong class="text-neutral-200">{{ track.aiProvider }}</strong></span>
                 <span>·</span>
                 <span>재생 <strong class="text-neutral-200">{{ track.playCount.toLocaleString() }}회</strong></span>
                 <span>·</span>
                 <span>시간 <strong class="text-neutral-200">{{ fmtDuration(track.durationMs) }}</strong></span>
+                <template v-if="track.bpm">
+                  <span>·</span>
+                  <span>BPM <strong class="text-neutral-200">{{ track.bpm }}</strong></span>
+                </template>
+                <template v-if="track.musicalKey">
+                  <span>·</span>
+                  <span>키 <strong class="text-neutral-200">{{ track.musicalKey }}</strong></span>
+                </template>
+                <template v-if="track.isrc">
+                  <span>·</span>
+                  <span>ISRC <strong class="font-mono text-neutral-200">{{ track.isrc }}</strong></span>
+                </template>
               </div>
             </div>
           </div>
@@ -111,7 +123,7 @@
           <div class="flex items-start justify-between gap-3 border-b border-surface-border pb-3">
             <div class="min-w-0">
               <h3 class="text-sm font-bold text-white">AI 생성 투명성 공시 명세서</h3>
-              <p class="text-[11px] text-neutral-400 mt-0.5">인공지능기본법 제31조 및 문체부 AI 저작권 가이드라인 준수</p>
+              <p class="text-[11px] text-neutral-400 mt-0.5">인공지능기본법 제31조 취지에 따른 AI 생성 표시</p>
             </div>
             <UiBadge variant="brand" size="xs">법적 공시 필</UiBadge>
           </div>
@@ -157,14 +169,16 @@
               <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
-            <h3 class="text-xs font-bold text-white uppercase tracking-wider">상업 라이선스 인증서</h3>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">상업적 이용권 보유 인증</h3>
           </div>
           <div class="rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-3 text-xs text-emerald-300 space-y-1.5">
             <div class="font-bold flex items-center gap-1.5">
-              <UiBadge variant="success" size="xs">Gate 1-4 검증 완료</UiBadge>
+              <UiBadge variant="success" size="xs">Gate 1-4 확인 절차 통과</UiBadge>
             </div>
             <p class="text-[11px] leading-relaxed text-emerald-200/80">
-              본 음원은 {{ track.aiProvider }} 정식 유료 플랜 유효 구독 기간 내에 생성되었으며, FFprobe 오디오 분석을 통해 비상업 워터마크가 부존재함을 확인받았습니다.
+              본 음원은 {{ track.aiProvider }} 유료 플랜 구독 증빙 대조와 FFprobe 자동 검사를 거쳤으며,
+              자동 검사에서 비상업 표지가 발견되지 않았습니다.
+              본 표시는 파트너 신고와 자동 검사에 근거하며 권리 관계를 보증하지 않습니다.
             </p>
           </div>
           <div class="space-y-1.5 text-[11px] text-neutral-400 pt-1">

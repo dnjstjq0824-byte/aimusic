@@ -3,7 +3,7 @@
     <UiPageHeader
       eyebrow="Catalog"
       title="AI 음원 탐색"
-      description="상업적 라이선스가 100% 검증된 AI 아티스트 음원을 다양한 필터로 탐색하세요."
+      description="상업 이용 조건 확인 절차를 거친 AI 아티스트 음원을 다양한 필터로 탐색하세요."
     >
       <template #actions>
         <UiButton
@@ -99,7 +99,7 @@
     <div v-else-if="tracks.length === 0" class="py-12">
       <UiEmptyState
         title="일치하는 음원이 없습니다"
-        description="다른 검색어나 필터를 선택해 보세요. AVIBE에는 지속적으로 검증된 상업용 음원이 등록됩니다."
+        description="다른 검색어나 필터를 선택해 보세요. AVIBE에는 확인 절차를 거친 음원이 지속적으로 등록됩니다."
       >
         <template #action>
           <UiButton variant="secondary" size="sm" @click="resetFilters">필터 초기화</UiButton>

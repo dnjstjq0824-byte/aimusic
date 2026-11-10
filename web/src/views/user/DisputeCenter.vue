@@ -3,7 +3,7 @@
     <UiPageHeader
       eyebrow="Rights Protection"
       title="권리보호센터"
-      description="저작권법 제103조(온라인서비스제공자의 책임제한) 및 부정경쟁방지법(보이스 클로닝 방지) 전용 창구입니다."
+      description="저작권법 제103조(복제·전송의 중단) 및 부정경쟁방지법(보이스 클로닝 방지) 전용 창구입니다."
     />
 
     <!-- Notice & Takedown Blueprint Banner -->
@@ -16,7 +16,9 @@
         <div class="text-xs text-neutral-300 space-y-1">
           <div class="font-bold text-white text-sm">OSP 책임제한(Notice &amp; Takedown) 즉시 조치 원칙</div>
           <p class="leading-relaxed">
-            신고가 접수되면 저작권법 제103조에 따라 해당 AI 음원은 <strong>즉시 임시조치</strong>되어 스트리밍 및 검색에서 차단됩니다. 파트너에게 30일 이내 소명 기회가 주어지며, 허위 신고 또는 허위 등록 시 법적 손해배상 책임이 부과될 수 있습니다.
+            신고가 접수되면 저작권법 제103조에 따라 해당 AI 음원은 <strong>즉시 복제·전송이 중단</strong>되어 스트리밍 및 검색에서 차단됩니다.
+            파트너는 재개 요구(소명)를 제출할 수 있으며 접수 후 7영업일 내 검토를 원칙으로 합니다.
+            허위 신고 또는 허위 등록 시 법적 손해배상 책임이 부과될 수 있습니다.
           </p>
         </div>
       </div>

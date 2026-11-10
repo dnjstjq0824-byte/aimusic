@@ -278,7 +278,7 @@ func (s *OAuthService) Callback(ctx context.Context, provider, code, state strin
 		if !u.IsActive {
 			return nil, nil, domain.ErrUserInactive
 		}
-		tokens, err := s.auth.Issue(u.ID, u.Role)
+		tokens, err := s.auth.Issue(ctx, u.ID, u.Role)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -305,7 +305,7 @@ func (s *OAuthService) Callback(ctx context.Context, provider, code, state strin
 	if _, err := s.links.Upsert(ctx, u.ID, provider, ident.UID, &email); err != nil {
 		return nil, nil, err
 	}
-	tokens, err := s.auth.Issue(u.ID, u.Role)
+	tokens, err := s.auth.Issue(ctx, u.ID, u.Role)
 	if err != nil {
 		return nil, nil, err
 	}

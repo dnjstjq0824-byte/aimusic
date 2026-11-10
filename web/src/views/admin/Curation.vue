@@ -26,7 +26,7 @@
           <UiInput
             v-model="curDesc"
             label="플레이리스트 설명"
-            placeholder="Suno/Udio 상업 검증 일렉트로닉 앤솔로지"
+            placeholder="Suno/Udio 확인 절차 통과 일렉트로닉 앤솔로지"
           />
           <UiInput
             v-model="curTracks"
@@ -107,6 +107,13 @@
           type="number"
           placeholder="10"
         />
+        <UiSelect
+          v-model="stIncomeType"
+          label="소득유형 (원천징수율)"
+        >
+          <option value="BUSINESS_33">사업소득 3.3% (계속·반복)</option>
+          <option value="OTHER_88">기타소득 8.8% (일시·우발)</option>
+        </UiSelect>
 
         <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
           <UiButton variant="brand" size="sm" type="submit" :loading="calculating">
@@ -131,13 +138,24 @@
             <span class="font-bold text-white">{{ lastSettlement.grossAmountKrw.toLocaleString() }}원</span>
           </div>
           <div>
-            <span class="text-neutral-400 text-[10px] block">원천징수세 (3.3%)</span>
+            <span class="text-neutral-400 text-[10px] block">원천징수세 ({{ lastSettlement.incomeType === 'OTHER_88' ? '8.8%' : '3.3%' }})</span>
             <span class="font-bold text-accent-crimson">-{{ lastSettlement.withholdingKrw.toLocaleString() }}원</span>
           </div>
           <div>
             <span class="text-neutral-400 text-[10px] block">실지급 예정액 (Net)</span>
             <span class="font-black text-brand-400 text-sm">{{ lastSettlement.netAmountKrw.toLocaleString() }}원</span>
           </div>
+        </div>
+        <div class="flex justify-end pt-2 border-t border-surface-border">
+          <UiButton
+            variant="brand"
+            size="sm"
+            :disabled="lastSettlement.status !== 'PENDING'"
+            :loading="approving"
+            @click="approveLastSettlement"
+          >
+            정산 승인
+          </UiButton>
         </div>
       </div>
     </UiCard>
@@ -167,6 +185,7 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
+import UiSelect from '@/components/ui/UiSelect.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 
 const toast = useToast();
@@ -184,8 +203,10 @@ const stPartnerId = ref('');
 const stPeriodStart = ref(prevMonthStart());
 const stPeriodEnd = ref(prevMonthEnd());
 const stRatePerPlay = ref(10);
+const stIncomeType = ref('BUSINESS_33');
 const lastSettlement = ref<PartnerSettlement | null>(null);
 const calculating = ref(false);
+const approving = ref(false);
 const error = ref<string | null>(null);
 const takedownConfirmOpen = ref(false);
 
@@ -257,12 +278,30 @@ async function runSettlement() {
       stPeriodStart.value,
       stPeriodEnd.value,
       stRatePerPlay.value || 10,
+      stIncomeType.value,
     );
     toast.success('월별 정산 계산 배치가 성공적으로 완료되었습니다.');
   } catch (err) {
     toast.error(errMessageOf(err), '정산 계산 실패');
   } finally {
     calculating.value = false;
+  }
+}
+
+async function approveLastSettlement() {
+  if (!lastSettlement.value || lastSettlement.value.status !== 'PENDING') return;
+  approving.value = true;
+  try {
+    lastSettlement.value = await adminApi.approveSettlement(
+      stPartnerId.value.trim(),
+      stPeriodStart.value,
+      stPeriodEnd.value,
+    );
+    toast.success('정산을 승인했습니다.');
+  } catch (err) {
+    toast.error(errMessageOf(err), '정산 승인 실패');
+  } finally {
+    approving.value = false;
   }
 }
 </script>

@@ -10,7 +10,10 @@ directory = "./web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# Production origins (external container/tunnel hosts).
+# Production origins. Set these to the stable prod hosts before deploy
+# (ephemeral trycloudflare tunnel URLs expire and must never ship):
+# Both are served by the Cloudflare named tunnel `avibe` (stable hostnames).
+# Secret (never in this file):  wrangler secret put HLS_SIGNING_KEY
 [vars]
-API_ORIGIN = "https://specializing-expires-mills-skins.trycloudflare.com"
-S3_ORIGIN = "https://dish-beside-cholesterol-consultancy.trycloudflare.com"
+API_ORIGIN = "https://api.avibemusic.com"
+S3_ORIGIN = "https://hls.avibemusic.com"

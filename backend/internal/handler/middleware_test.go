@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -122,5 +123,39 @@ func TestRateLimitBurstsThen429(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/ping", nil))
 	if w.Code != http.StatusTooManyRequests {
 		t.Fatalf("burst-exceeded status = %d, want 429", w.Code)
+	}
+}
+
+func TestRateLimitEvictsIdleBuckets(t *testing.T) {
+	lim := &RateLimiter{buckets: map[string]*bucket{}, rps: 1, burst: 2}
+	base := time.Now()
+	if !lim.allow("10.0.0.1", base) {
+		t.Fatalf("first request denied")
+	}
+	if len(lim.buckets) != 1 {
+		t.Fatalf("buckets = %d, want 1", len(lim.buckets))
+	}
+	// Fresh IP within the sweep interval: no sweep yet, both buckets survive.
+	later := base.Add(30 * time.Second)
+	if !lim.allow("10.0.0.2", later) {
+		t.Fatalf("second IP denied")
+	}
+	if len(lim.buckets) != 2 {
+		t.Fatalf("buckets = %d, want 2", len(lim.buckets))
+	}
+	// Past sweep interval + idle TTL: the stale bucket is evicted while the
+	// active one survives.
+	muchLater := base.Add(rateBucketIdleTTL + rateBucketSweepMin)
+	if !lim.allow("10.0.0.2", muchLater.Add(-time.Second)) {
+		t.Fatalf("active IP denied")
+	}
+	if !lim.allow("10.0.0.3", muchLater) {
+		t.Fatalf("new IP denied")
+	}
+	if _, ok := lim.buckets["10.0.0.1"]; ok {
+		t.Fatalf("idle bucket for 10.0.0.1 survived eviction")
+	}
+	if _, ok := lim.buckets["10.0.0.2"]; !ok {
+		t.Fatalf("active bucket for 10.0.0.2 evicted")
 	}
 }

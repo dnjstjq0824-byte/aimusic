@@ -47,24 +47,28 @@ Entry: `cmd/api/main.go` — `config.Load()` → `OpenDB(pgx stdlib, 25/5/5m)` �
 `NewRedisClient` → `storage.NewFromEnv()` → `repository.New(db,rdb)` →
 `service.New(...)` → `handler.SetupRouter` → `http.Server(:8080, 15s/30s/60s)`.
 Entry: `cmd/worker/main.go` — same repos/storage, `signal.NotifyContext`, loop
-`DequeueTranscode(BLPop 10s)` → `process()` (see Transcode below).
+`DequeueTranscode(BLPop 10s)` → `process()` (see Transcode below), plus two
+idempotent sweeper goroutines: dispute-SLA alerts (`sla.go`, 72h default) and
+stuck-job requeue (`reap.go`, 30m default, ≤3 attempts).
 
 Layers:
 
 - `internal/config`: `APP_ENV/APP_ADDR`, `DB_*`/`DB_DSN`, `REDIS_*`, storage
   (`S3_*` or `R2_*` when `STORAGE_DRIVER=r2`, `CDN_BASE_URL`),
   `JWT_*`, `AES256_KEY_BASE64` (32B), `HLS_SIGNING_KEY`/`HLS_URL_TTL_SECONDS=300`.
-- `internal/handler` (Gin): `SetupRouter` groups `/healthz`, `/api/v1/{auth,legal,
+- `internal/handler` (Gin): `SetupRouter` groups `/healthz`+`/readyz` (503 when degraded), `/api/v1/{auth,legal,
   partner,tracks,playback,playlists,disputes,admin}`; middleware `Recovery`,
   `AuditLog` (method/path/status/user/role/ip/latency), `RateLimit`,
-  `JWTAuth` (Bearer HS256 `access`), `RequireRole`; envelope `ok/created/abort`,
+  `JWTAuth` (Bearer HS256 `access`), `RequireRole`, `RequireAgeConfirmed` (14+), `RequireConsents` (required terms); envelope `ok/created/abort`,
   `AbortError` maps `GateError`/`Err*` (see `docs/API.md`).
 - `internal/service`: `Auth` (bcrypt+JWT issue/parse/refresh), `Precheck`
   (gate + `PresignPut staging/<partner>/<sha>/<base>, 15m, 900s`), `Finalize`
   (track+rights+job+`RPush`), `Review` (pending queues, track/partner/subscription),
-  `DisputeService` (report/counter/resolve/takedown + 3-strike), `PlaylistService`
-  (owner checks, `READY`-only add), `PlaybackService` (30s valid stream, 120/h +
-  40/h/track fraud), `SettlementService` (3.3‰ `33/1000`, `FORFEITED_VIOLATION`).
+  `DisputeService` (report/counter/resolve/takedown + 3-strike + §103 timeline),
+  `PlaylistService` (owner checks, `READY`-only add), `PlaybackService`
+  (cumulative 30s valid stream across ~10s heartbeat deltas, 120/h +
+  40/h/track counted-play fraud), `SettlementService` (3.3‰ `33/1000` business
+  or 8.8‰ `88/1000` other income, `FORFEITED_VIOLATION`).
   Default settlement rate 10 KRW/play (`service.New`).
 - `internal/repository` (`database/sql` pgx + `go-redis`): `Users/Partners/
   Subscriptions/Policies/Legal/Albums/Tracks/Rights/Jobs/Disputes/Playlists/
@@ -72,7 +76,8 @@ Layers:
   `GateStore` implements `licensegate.Store` (SHA LIKE, policy, subscription);
   `Queue` is `transcode:queue` (`RPush`/`BLPop`/`LLen`).
 - `internal/pkg/licensegate`: `ValidateCommercialEligibility` (duplicate→409,
-  `allows_standalone_streaming`→`ERR_SYNC_ONLY_LICENSE`, verified-window→
+  `allows_standalone_streaming`→`ERR_SYNC_ONLY_LICENSE`, generation cutoff
+  `max_generated_at`→`ERR_NON_COMMERCIAL_TIER`, verified-window→
   `ERR_RETROACTIVE_GENERATION_DATE`/`ERR_NON_COMMERCIAL_TIER`).
 - `internal/pkg/audio`: `RunFFprobe` (format+audio stream, tags, bitrate),
   `CheckBlockedMetadata` (case-insensitive key+value substring),
@@ -120,9 +125,34 @@ Layers:
    Transient failures requeue until `attempts>=3` → `LICENSE_GATE_REJECTED
    (attempts exhausted)`.
 5. Admin `POST /admin/review approve` (READY stays READY; curation-visible).
-6. `GET /tracks/:id/stream` (JWT, READY only) → signed `master.m3u8` URL
+6. `GET /tracks/:id/stream` (JWT, READY only, login required) → signed playlist URL: `master.m3u8` for pass holders/admins (HQ 256k), `stream_0.m3u8` for free tier (SQ 128k)
    (TTL 300s); client plays via `hls.js` (web) / `just_audio` (mobile);
    `POST /playback/heartbeat` counts 30s+ plays.
+
+### Generation → stage → register (WI-03, setup-only)
+
+1. `POST /partner/generations` (JWT PARTNER): validates prompt/model →
+   `generation_jobs QUEUED` + `RPush generation:queue{jobId}`.
+2. Worker generation loop `BLPop` → `MarkRunning` → `POST
+   {GENERATION_BACKEND_URL}/generate` (reference: `generator/server.py`) →
+   WAV bytes staged to `staging/` under a canonical key (SHA-256 bound) →
+   `MarkSucceeded(outputObjectKey,durationMs)`. No backend URL →
+   `DisabledBackend` fails the job with a message (retried ≤3, then FAILED).
+3. Partner runs normal PreCheck/Finalize with the staged file's SHA-256 to
+   register the track. No GPU runs in this repo.
+
+### Store → device → certified plays (WI-05 #19/#20/#21)
+
+1. Partner `POST /partner/stores` (biz-no checksum) → `PENDING`; admin
+   `POST /admin/stores/:id/verify` → `APPROVED`.
+2. Partner creates device → 8-char pairing code (15min, ≤ license cap);
+   player `/store/player` claims → long-lived device token (sha256 stored).
+3. Player polls `GET /store/device/queue` (schedule-aware: hours/closed-day/
+   playlist or official-curation fallback; READY+HLS only) → `GET
+   /store/device/stream/:id` HQ grants → hls.js → `POST
+   /store/device/heartbeat` (30s+ counted).
+4. `store_play_logs` counted plays settle at the same 10KRW rate via
+   `StoreRepo.CountPartnerPlaysInWindow` in `SettlementService.Calculate`.
 
 ### Dispute → takedown → strike → settlement
 

@@ -186,8 +186,56 @@ func (r *PlaybackRepo) GetState(ctx context.Context, userID, trackID string) (*d
 	return s, err
 }
 
+// ListStatesByUser returns every resume position for a user (data export).
+func (r *PlaybackRepo) ListStatesByUser(ctx context.Context, userID string) ([]*domain.UserPlaybackState, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id::text, user_id::text, track_id::text, position_ms, created_at, updated_at
+		FROM user_playback_states WHERE user_id = $1::uuid ORDER BY updated_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.UserPlaybackState{}
+	for rows.Next() {
+		s := &domain.UserPlaybackState{}
+		if err := rows.Scan(&s.ID, &s.UserID, &s.TrackID, &s.PositionMs, &s.CreatedAt, &s.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
 // StreamingRepo accesses streaming_logs.
 type StreamingRepo struct{ db *sql.DB }
+
+// ListByUser returns a user's streaming log rows, newest first (data export).
+func (r *StreamingRepo) ListByUser(ctx context.Context, userID string, limit int) ([]*domain.StreamingLog, error) {
+	if limit <= 0 || limit > 5000 {
+		limit = 1000
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id::text, user_id::text, track_id::text, partner_id::text, played_at,
+			play_ms, counted_as_play, ip, user_agent, hls_token_jti
+		FROM streaming_logs WHERE user_id = $1::uuid ORDER BY played_at DESC LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.StreamingLog{}
+	for rows.Next() {
+		l := &domain.StreamingLog{}
+		var uid, tid, pid, ip, ua, jti sql.NullString
+		if err := rows.Scan(&l.ID, &uid, &tid, &pid, &l.PlayedAt,
+			&l.PlayMs, &l.CountedAsPlay, &ip, &ua, &jti); err != nil {
+			return nil, err
+		}
+		l.UserID, l.TrackID, l.PartnerID = strPtr(uid), strPtr(tid), strPtr(pid)
+		l.IP, l.UserAgent, l.HLSTokenJTI = strPtr(ip), strPtr(ua), strPtr(jti)
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}
 
 // Insert appends a streaming log row.
 func (r *StreamingRepo) Insert(ctx context.Context, l *domain.StreamingLog) error {
@@ -199,21 +247,39 @@ func (r *StreamingRepo) Insert(ctx context.Context, l *domain.StreamingLog) erro
 	return err
 }
 
-// CountUserPlaysSince counts a user's logs since a time (fraud window).
+// CountUserPlaysSince counts a user's COUNTED plays since a time (fraud window).
+// Raw heartbeat rows are excluded: clients report every ~10s, so counting rows
+// would flag every normal listener as fraud after a few minutes.
 func (r *StreamingRepo) CountUserPlaysSince(ctx context.Context, userID string, since time.Time) (int, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM streaming_logs WHERE user_id = $1::uuid AND played_at >= $2`,
+		`SELECT COUNT(*) FROM streaming_logs WHERE user_id = $1::uuid AND counted_as_play = TRUE AND played_at >= $2`,
 		userID, since).Scan(&n)
 	return n, err
 }
 
-// CountUserTrackPlaysSince counts a user's logs for one track since a time.
+// CountUserTrackPlaysSince counts a user's COUNTED plays for one track since a time.
 func (r *StreamingRepo) CountUserTrackPlaysSince(ctx context.Context, userID, trackID string, since time.Time) (int, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM streaming_logs WHERE user_id = $1::uuid AND track_id = $2::uuid AND played_at >= $3`,
+		`SELECT COUNT(*) FROM streaming_logs WHERE user_id = $1::uuid AND track_id = $2::uuid AND counted_as_play = TRUE AND played_at >= $3`,
 		userID, trackID, since).Scan(&n)
+	return n, err
+}
+
+// SumPlayMsSinceLastCounted returns the uncounted play_ms accumulated for a
+// user+track since their last counted play (0 when none). Heartbeat clients
+// send small deltas (~10s), so counting requires accumulation: a single delta
+// almost never reaches the 30s valid-stream threshold on its own.
+func (r *StreamingRepo) SumPlayMsSinceLastCounted(ctx context.Context, userID, trackID string) (int, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(play_ms), 0) FROM streaming_logs
+		WHERE user_id = $1::uuid AND track_id = $2::uuid AND played_at > COALESCE(
+			(SELECT MAX(played_at) FROM streaming_logs
+				WHERE user_id = $1::uuid AND track_id = $2::uuid AND counted_as_play = TRUE),
+			'1970-01-01'::timestamptz)`,
+		userID, trackID).Scan(&n)
 	return n, err
 }
 
@@ -249,35 +315,41 @@ type SettlementRepo struct{ db *sql.DB }
 
 func scanSettlement(row interface{ Scan(...any) error }) (*domain.PartnerSettlement, error) {
 	s := &domain.PartnerSettlement{}
-	var reason sql.NullString
+	var reason, payoutRef sql.NullString
+	var paidAt sql.NullTime
 	err := row.Scan(&s.ID, &s.PartnerID, &s.PeriodStart, &s.PeriodEnd, &s.GrossAmountKRW,
-		&s.WithholdingKRW, &s.NetAmountKRW, &s.PlayCount, &s.Status, &reason, &s.CreatedAt, &s.UpdatedAt)
+		&s.WithholdingKRW, &s.NetAmountKRW, &s.PlayCount, &s.Status, &reason, &s.IncomeType,
+		&paidAt, &payoutRef, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	s.ForfeitureReason = strPtr(reason)
+	s.PaidAt = timePtr(paidAt)
+	s.PayoutReference = strPtr(payoutRef)
 	return s, nil
 }
 
 const settlementColumns = `id::text, partner_id::text, period_start, period_end, gross_amount_krw,
-	withholding_krw, net_amount_krw, play_count, status, forfeiture_reason, created_at, updated_at`
+	withholding_krw, net_amount_krw, play_count, status, forfeiture_reason, income_type,
+	paid_at, payout_reference, created_at, updated_at`
 
 // Upsert writes a settlement row per partner+period.
 func (r *SettlementRepo) Upsert(ctx context.Context, s *domain.PartnerSettlement) (*domain.PartnerSettlement, error) {
 	return scanSettlement(r.db.QueryRowContext(ctx, `
 		INSERT INTO partner_settlements (partner_id, period_start, period_end, gross_amount_krw,
-			withholding_krw, net_amount_krw, play_count, status, forfeiture_reason)
-		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9)
+			withholding_krw, net_amount_krw, play_count, status, forfeiture_reason, income_type)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (partner_id, period_start, period_end) DO UPDATE SET
 			gross_amount_krw = EXCLUDED.gross_amount_krw,
 			withholding_krw = EXCLUDED.withholding_krw,
 			net_amount_krw = EXCLUDED.net_amount_krw,
 			play_count = EXCLUDED.play_count,
 			status = EXCLUDED.status,
-			forfeiture_reason = EXCLUDED.forfeiture_reason
+			forfeiture_reason = EXCLUDED.forfeiture_reason,
+			income_type = EXCLUDED.income_type
 		RETURNING `+settlementColumns,
 		s.PartnerID, s.PeriodStart, s.PeriodEnd, s.GrossAmountKRW,
-		s.WithholdingKRW, s.NetAmountKRW, s.PlayCount, s.Status, nullStr(s.ForfeitureReason)))
+		s.WithholdingKRW, s.NetAmountKRW, s.PlayCount, s.Status, nullStr(s.ForfeitureReason), s.IncomeType))
 }
 
 // GetByPartnerPeriod returns one settlement row.
@@ -317,6 +389,21 @@ func (r *SettlementRepo) UpdateStatus(ctx context.Context, id, status string, fo
 		`UPDATE partner_settlements SET status = $2, forfeiture_reason = $3 WHERE id = $1::uuid`,
 		id, status, nullStr(forfeitReason))
 	return err
+}
+
+// MarkPaid transitions APPROVED -> PAID exactly once and records the payout
+// reference (bank transfer slip). The status predicate makes double-pays safe.
+func (r *SettlementRepo) MarkPaid(ctx context.Context, partnerID string, start, end time.Time, reference string) (*domain.PartnerSettlement, error) {
+	s, err := scanSettlement(r.db.QueryRowContext(ctx, `
+		UPDATE partner_settlements
+		SET status = 'PAID', paid_at = NOW(), payout_reference = NULLIF($4, '')
+		WHERE partner_id = $1::uuid AND period_start = $2 AND period_end = $3
+		  AND status = 'APPROVED'
+		RETURNING `+settlementColumns, partnerID, start, end, reference))
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	return s, err
 }
 
 // PendingTotals aggregates PENDING settlements for the admin overview.

@@ -31,6 +31,20 @@
               구독 증빙 관리
             </RouterLink>
             <RouterLink
+              to="/partner/stores"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'partner-stores' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              매장 관리
+            </RouterLink>
+            <RouterLink
+              to="/partner/generations"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'partner-generations' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              AI 생성 콘솔
+            </RouterLink>
+            <RouterLink
               to="/"
               class="rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-300 ml-2"
             >
@@ -95,6 +109,20 @@
           @click="mobileNavOpen = false"
         >
           구독 증빙 관리
+        </RouterLink>
+        <RouterLink
+          to="/partner/stores"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          매장 관리
+        </RouterLink>
+        <RouterLink
+          to="/partner/generations"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          AI 생성 콘솔
         </RouterLink>
         <RouterLink
           to="/"

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -157,7 +158,15 @@ type PlaybackService struct {
 }
 
 // Heartbeat logs playback, counts 30s+ plays, and flags fraud windows.
+//
+// Counting is cumulative: clients send small playMs deltas (~10s cadence), so
+// the delta is added to the uncounted play_ms accumulated since the last
+// counted play for this user+track, and the heartbeat that crosses the 30s
+// threshold counts exactly once.
 func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*HeartbeatOutput, error) {
+	if in.PlayMs < 0 {
+		return nil, fmt.Errorf("%w: playMs", domain.ErrInvalidInput)
+	}
 	track, err := s.repos.Tracks.GetByID(ctx, in.TrackID)
 	if err != nil {
 		return nil, err
@@ -175,7 +184,11 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 		return nil, err
 	}
 	fraud := total >= maxPlaysPerHour || perTrack >= maxTrackPlaysPerHour
-	counted := in.PlayMs >= ValidStreamMs && !fraud
+	prior, err := s.repos.Streaming.SumPlayMsSinceLastCounted(ctx, in.UserID, in.TrackID)
+	if err != nil {
+		return nil, err
+	}
+	counted := !fraud && prior+in.PlayMs >= ValidStreamMs
 	var jti *string
 	if in.JTI != "" {
 		jti = &in.JTI
@@ -219,10 +232,12 @@ func (s *PlaybackService) SetPosition(ctx context.Context, userID, trackID strin
 	return s.repos.Playback.UpsertState(ctx, userID, trackID, positionMs)
 }
 
-// Withholding per mille: 3.3% = 33/1000.
+// Withholding per mille: business income 3.3% = 33/1000 (default),
+// occasional other income 8.8% = 88/1000 (B9).
 const (
-	withholdingNum = 33
-	withholdingDen = 1000
+	withholdingNumBusiness = 33
+	withholdingNumOther    = 88
+	withholdingDen         = 1000
 )
 
 // SettlementService calculates partner settlements.
@@ -290,11 +305,20 @@ func (s *SettlementService) SettlementAccountPreview(ctx context.Context, partne
 	return bank, strings.Repeat("*", len(digits)-4) + digits[len(digits)-4:], nil
 }
 
-// Calculate counts valid plays in [start, end), applies 3.3% withholding, and
+// Calculate counts valid plays in [start, end), applies withholding, and
 // forfeits (FORFEITED_VIOLATION, net zero) when a violation is active.
-func (s *SettlementService) Calculate(ctx context.Context, partnerID string, start, end time.Time, ratePerPlayKRW int64) (*domain.PartnerSettlement, error) {
+// incomeType selects the withholding rate: BUSINESS_33 (3.3%, default) or
+// OTHER_88 (8.8% occasional income). Business partners settle via tax invoice
+// outside this flow (B9).
+func (s *SettlementService) Calculate(ctx context.Context, partnerID string, start, end time.Time, ratePerPlayKRW int64, incomeType string) (*domain.PartnerSettlement, error) {
 	if partnerID == "" || !start.Before(end) {
 		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
+	}
+	if incomeType == "" {
+		incomeType = domain.IncomeBusiness33
+	}
+	if !domain.ValidIncomeType(incomeType) {
+		return nil, fmt.Errorf("%w: incomeType must be BUSINESS_33|OTHER_88", domain.ErrInvalidInput)
 	}
 	if ratePerPlayKRW <= 0 {
 		ratePerPlayKRW = s.defaultRatePerPlayKRW
@@ -303,8 +327,18 @@ func (s *SettlementService) Calculate(ctx context.Context, partnerID string, sta
 	if err != nil {
 		return nil, err
 	}
+	// Certified store-player plays settle at the same fixed rate (WI-05 #21).
+	storePlays, err := s.repos.Store.CountPartnerPlaysInWindow(ctx, partnerID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	plays += storePlays
+	num := int64(withholdingNumBusiness)
+	if incomeType == domain.IncomeOther88 {
+		num = withholdingNumOther
+	}
 	gross := plays * ratePerPlayKRW
-	withholding := gross * withholdingNum / withholdingDen
+	withholding := gross * num / withholdingDen
 	net := gross - withholding
 	settlement := &domain.PartnerSettlement{
 		PartnerID:      partnerID,
@@ -315,6 +349,7 @@ func (s *SettlementService) Calculate(ctx context.Context, partnerID string, sta
 		NetAmountKRW:   net,
 		PlayCount:      plays,
 		Status:         domain.SettlePending,
+		IncomeType:     incomeType,
 	}
 	violated, err := s.ViolationActive(ctx, partnerID)
 	if err != nil {
@@ -359,4 +394,20 @@ func (s *SettlementService) Approve(ctx context.Context, partnerID string, start
 		return nil, err
 	}
 	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
+}
+
+// MarkPaid records an executed bank transfer (APPROVED -> PAID exactly once).
+// The transfer itself is manual; reference carries the bank slip number.
+func (s *SettlementService) MarkPaid(ctx context.Context, partnerID string, start, end time.Time, reference string) (*domain.PartnerSettlement, error) {
+	if partnerID == "" || !start.Before(end) {
+		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
+	}
+	settlement, err := s.repos.Settlements.MarkPaid(ctx, partnerID, start, end, strings.TrimSpace(reference))
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, fmt.Errorf("%w: only APPROVED settlements can be marked paid", domain.ErrInvalidInput)
+		}
+		return nil, err
+	}
+	return settlement, nil
 }

@@ -36,7 +36,13 @@
             <div class="flex items-center gap-1.5 text-[10px] text-neutral-400 mt-0.5 truncate">
               <span class="font-medium text-brand-300">{{ player.currentTrack.aiProvider }}</span>
               <span aria-hidden="true">·</span>
-              <span class="text-accent-emerald font-semibold">상업 검증됨</span>
+              <span class="text-accent-emerald font-semibold">이용조건 확인됨</span>
+              <span aria-hidden="true">·</span>
+              <span
+                class="rounded px-1 py-px font-bold"
+                :class="player.currentQuality === 'HQ' ? 'bg-brand-500/20 text-brand-300' : 'bg-surface-3 text-neutral-400'"
+                :title="player.currentQuality === 'HQ' ? '고음질 256k (이용권)' : '표준 음질 128k (무료)'"
+              >{{ player.currentQuality }}</span>
             </div>
           </div>
           <div v-else>

@@ -2,7 +2,7 @@
   <UiModal
     :model-value="modelValue"
     title="AVIBE 상업 라이선스 검증 플랫폼 안내"
-    description="인공지능기본법 제31조 및 저작권법 준수 가이드"
+    description="AI 생성 표시 및 권리보호 안내"
     max-width="lg"
     @close="$emit('update:modelValue', false)"
   >
@@ -13,7 +13,7 @@
           <path d="m9 12 2 2 4-4" />
         </svg>
         <div>
-          <div class="font-bold text-white text-sm mb-1">상업적 권리가 보장된 AI 음원만 유통합니다</div>
+          <div class="font-bold text-white text-sm mb-1">상업 이용 조건 확인 절차를 거친 AI 음원을 유통합니다</div>
           <p class="leading-relaxed text-neutral-300">
             AVIBE는 Suno Pro/Premier, AIVA Pro 등 <strong>유료 상업용 요금제에서 생성된 음원만</strong> 4단계 게이트키퍼(Gate 1~4)를 거쳐 정식 서비스합니다. 무료 플랜이나 BGM 전용(Sync-only) 음원은 원천 차단됩니다.
           </p>

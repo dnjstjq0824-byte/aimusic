@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/repository"
 )
 
@@ -61,4 +62,18 @@ func (h *LegalHandler) ListMyConsents(c *gin.Context) {
 		return
 	}
 	ok(c, consents)
+}
+
+// ListPendingConsents returns required terms (latest per code) the caller
+// has not consented to yet.
+func (h *LegalHandler) ListPendingConsents(c *gin.Context) {
+	terms, err := h.Repos.Legal.ListPendingConsents(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	if terms == nil {
+		terms = []*domain.LegalTerm{}
+	}
+	ok(c, terms)
 }

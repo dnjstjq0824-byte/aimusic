@@ -54,6 +54,33 @@ func (r *LegalRepo) CreateConsent(ctx context.Context, userID, termsID string, i
 	return err
 }
 
+// ListPendingConsents returns the latest-effective required terms per code
+// the user has not consented to (new required versions re-appear here).
+func (r *LegalRepo) ListPendingConsents(ctx context.Context, userID string) ([]*domain.LegalTerm, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id::text, code, version, title_ko, body_md, is_required, effective_at, created_at
+		FROM legal_terms t
+		WHERE t.is_required
+		  AND t.effective_at = (SELECT MAX(effective_at) FROM legal_terms WHERE code = t.code)
+		  AND NOT EXISTS (
+			SELECT 1 FROM user_term_consents c
+			WHERE c.user_id = $1::uuid AND c.terms_id = t.id)
+		ORDER BY t.code ASC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*domain.LegalTerm
+	for rows.Next() {
+		t := &domain.LegalTerm{}
+		if err := rows.Scan(&t.ID, &t.Code, &t.Version, &t.TitleKo, &t.BodyMd, &t.IsRequired, &t.EffectiveAt, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
 // ListConsentsByUser returns a user's consent records.
 func (r *LegalRepo) ListConsentsByUser(ctx context.Context, userID string) ([]*domain.UserTermConsent, error) {
 	rows, err := r.db.QueryContext(ctx, `
@@ -83,25 +110,35 @@ type DisputeRepo struct{ db *sql.DB }
 func scanDispute(row interface{ Scan(...any) error }) (*domain.CopyrightDispute, error) {
 	d := &domain.CopyrightDispute{}
 	var reporter, resolver sql.NullString
-	var resolvedAt sql.NullTime
+	var resolvedAt, takedownReq, partnerNotif, resumeReq, resumeSched, resumed, slaNotif sql.NullTime
 	err := row.Scan(&d.ID, &d.TrackID, &reporter, &d.Reason, &d.Description, &d.Status,
-		&d.StrikeApplied, &resolver, &resolvedAt, &d.CreatedAt, &d.UpdatedAt)
+		&d.StrikeApplied, &resolver, &resolvedAt,
+		&takedownReq, &partnerNotif, &resumeReq, &resumeSched, &resumed, &slaNotif,
+		&d.CreatedAt, &d.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	d.ReporterUserID = strPtr(reporter)
 	d.ResolvedBy = strPtr(resolver)
 	d.ResolvedAt = timePtr(resolvedAt)
+	d.TakedownRequestedAt = timePtr(takedownReq)
+	d.PartnerNotifiedAt = timePtr(partnerNotif)
+	d.ResumeRequestedAt = timePtr(resumeReq)
+	d.ResumeScheduledAt = timePtr(resumeSched)
+	d.ResumedAt = timePtr(resumed)
+	d.SLANotifiedAt = timePtr(slaNotif)
 	return d, nil
 }
 
 const disputeColumns = `id::text, track_id::text, reporter_user_id::text, reason, description,
-	status, strike_applied, resolved_by::text, resolved_at, created_at, updated_at`
+	status, strike_applied, resolved_by::text, resolved_at,
+	takedown_requested_at, partner_notified_at, resume_requested_at, resume_scheduled_at, resumed_at, sla_notified_at,
+	created_at, updated_at`
 
 func (r *DisputeRepo) Create(ctx context.Context, trackID string, reporterID *string, reason, desc string) (*domain.CopyrightDispute, error) {
 	d, err := scanDispute(r.db.QueryRowContext(ctx, `
-		INSERT INTO copyright_disputes (track_id, reporter_user_id, reason, description)
-		VALUES ($1::uuid, $2::uuid, $3, $4)
+		INSERT INTO copyright_disputes (track_id, reporter_user_id, reason, description, takedown_requested_at)
+		VALUES ($1::uuid, $2::uuid, $3, $4, NOW())
 		RETURNING `+disputeColumns, trackID, nullStr(reporterID), reason, desc))
 	return d, err
 }
@@ -156,21 +193,105 @@ func (r *DisputeRepo) ListOpen(ctx context.Context, limit, offset int) ([]*domai
 }
 
 // AppendCounter records a partner counter-claim and reopens review.
+// It stamps the §103 resume request and schedules review 7 days out.
 func (r *DisputeRepo) AppendCounter(ctx context.Context, id, note string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE copyright_disputes
-		SET description = description || $2, status = 'UNDER_REVIEW'
+		SET description = description || $2, status = 'UNDER_REVIEW',
+			resume_requested_at = NOW(), resume_scheduled_at = NOW() + INTERVAL '7 days'
 		WHERE id = $1::uuid`, id, "\n[COUNTER] "+note)
 	return err
 }
 
 // Resolve records an admin resolution decision.
+// Dismissals stamp resumed_at (the §103 resume); upholds stamp the partner
+// decision notice when it has not been recorded yet.
 func (r *DisputeRepo) Resolve(ctx context.Context, id, status, resolverID string, strikeApplied bool) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE copyright_disputes
-		SET status = $2, strike_applied = $3, resolved_by = $4::uuid, resolved_at = NOW()
+		SET status = $2, strike_applied = $3, resolved_by = $4::uuid, resolved_at = NOW(),
+			resumed_at = CASE WHEN $2 = 'DISMISSED' THEN NOW() ELSE resumed_at END,
+			partner_notified_at = CASE WHEN $2 = 'UPHELD_TAKEDOWN' AND partner_notified_at IS NULL THEN NOW() ELSE partner_notified_at END
 		WHERE id = $1::uuid`, id, status, strikeApplied, resolverID)
 	return err
+}
+
+// StampPartnerNotified records the §103 takedown notice on every open dispute
+// for a track (called when an admin takes the track down).
+func (r *DisputeRepo) StampPartnerNotified(ctx context.Context, trackID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE copyright_disputes
+		SET partner_notified_at = NOW()
+		WHERE track_id = $1::uuid AND status IN ('OPEN','UNDER_REVIEW') AND partner_notified_at IS NULL`,
+		trackID)
+	return err
+}
+
+// ListSLABreached returns OPEN/UNDER_REVIEW disputes older than slaHours
+// that have not been SLA-notified yet (oldest first, capped for one sweep).
+func (r *DisputeRepo) ListSLABreached(ctx context.Context, slaHours int, limit int) ([]*domain.CopyrightDispute, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+disputeColumns+`
+		FROM copyright_disputes
+		WHERE status IN ('OPEN','UNDER_REVIEW')
+		  AND sla_notified_at IS NULL
+		  AND created_at < NOW() - make_interval(hours => $1)
+		ORDER BY created_at ASC LIMIT $2`, slaHours, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.CopyrightDispute{}
+	for rows.Next() {
+		d, err := scanDispute(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+// StampSLANotified marks a dispute as SLA-notified (exactly once: only rows
+// still un-notified are stamped, so concurrent sweepers cannot double-alert).
+func (r *DisputeRepo) StampSLANotified(ctx context.Context, id string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE copyright_disputes SET sla_notified_at = NOW()
+		WHERE id = $1::uuid AND sla_notified_at IS NULL`, id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
+}
+
+// ListByReporter returns disputes filed by a user (data export).
+func (r *DisputeRepo) ListByReporter(ctx context.Context, reporterID string, limit int) ([]*domain.CopyrightDispute, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+disputeColumns+` FROM copyright_disputes
+		WHERE reporter_user_id = $1::uuid ORDER BY created_at DESC LIMIT $2`, reporterID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.CopyrightDispute{}
+	for rows.Next() {
+		d, err := scanDispute(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
 }
 
 // CountOpen returns the open/under-review dispute count.

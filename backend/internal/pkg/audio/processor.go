@@ -113,8 +113,10 @@ var DefaultBlockedMetadataKeywords = []string{
 	"free-trial",
 }
 
-// AIWatermarkComment is the mandatory stream header watermark per KR AI Basic Act Art.31 (Spec 6.2.2).
-const AIWatermarkComment = "AI-Generated Audio (KR AI Basic Act Art.31 Compliant | Commercial License Verified)"
+// AIWatermarkComment is the stream header watermark noting AI generation and
+// the commercial-terms check (KR AI Basic Act Art.31 notice; process wording,
+// not a rights guarantee).
+const AIWatermarkComment = "AI-Generated Audio (KR AI Basic Act Art.31 notice | commercial terms checked)"
 
 // CheckBlockedMetadata scans all tags (keys and values, lowercased) for blocked
 // keywords (combining policy keywords and DefaultBlockedMetadataKeywords).

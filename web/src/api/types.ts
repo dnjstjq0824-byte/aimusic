@@ -15,6 +15,8 @@ export interface User {
   role: Role;
   displayName: string;
   isActive: boolean;
+  birthYear?: number | null;
+  ageConfirmedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +44,9 @@ export interface AIProviderPolicy {
   blockedMetadataKeywords: string[];
   rejectionMessageKo: string;
   commercialTermsUrl?: string | null;
+  maxGeneratedAt?: string | null;
+  termsSnapshotUrl?: string | null;
+  termsCheckedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,6 +89,9 @@ export interface Track {
   audioFingerprintHash?: string | null;
   waveformJson?: string | null;
   bitrateKbps?: number | null;
+  isrc?: string | null;
+  bpm?: number | null;
+  musicalKey?: string | null;
   status: string;
   rejectionReasonKo?: string | null;
   playCount: number;
@@ -112,6 +120,8 @@ export interface TrackRightsDeclaration {
   sourceModel?: string | null;
   subscriptionId?: string | null;
   generatedAt: string;
+  collectiveTrustStatus?: string;
+  collectiveName?: string | null;
   createdAt: string;
 }
 
@@ -152,6 +162,99 @@ export interface PlaylistTrack {
   addedAt: string;
 }
 
+export interface StoreBusiness {
+  id: string;
+  partnerId: string;
+  businessNumber: string;
+  storeName: string;
+  licenseCount: number;
+  status: string;
+  verifiedBy?: string | null;
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoreDevice {
+  id: string;
+  businessId: string;
+  deviceName: string;
+  pairingCode?: string | null;
+  pairingExpiresAt?: string | null;
+  status: string;
+  volume: number;
+  lastSeenAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoreSchedule {
+  id: string;
+  businessId: string;
+  weekday: number;
+  openTime: string;
+  closeTime: string;
+  playlistId?: string | null;
+  isClosed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StorePlayLog {
+  id: string;
+  deviceId: string;
+  trackId: string;
+  playedAt: string;
+  durationPlayedSecs: number;
+  countedAsPlay: boolean;
+  createdAt: string;
+}
+
+export interface DeviceQueueTrack {
+  trackId: string;
+  title: string;
+  durationMs?: number | null;
+}
+
+export interface DeviceQueue {
+  businessId: string;
+  businessName: string;
+  open: boolean;
+  reason: string;
+  playlistId?: string | null;
+  playlistName?: string;
+  volume: number;
+  tracks: DeviceQueueTrack[];
+}
+
+export interface DSPKitTrack {
+  trackId: string;
+  title: string;
+  artistName: string;
+  albumTitle?: string;
+  genre?: string;
+  moodTags?: string[];
+  durationMs?: number;
+  isrc: string;
+  bpm?: number | null;
+  musicalKey?: string;
+  aiProvider: string;
+  aiGenerated: boolean;
+  aiDisclosureText?: string;
+  planTierUsed?: string;
+  sourceModel?: string;
+  certPolicyVersion?: string;
+  masterObjectKey: string;
+  masterDownloadUrl: string;
+  masterUrlExpiry: string;
+}
+
+export interface DSPKit {
+  generatedAt: string;
+  tracks: DSPKitTrack[];
+  skipped: { trackId: string; reason: string }[];
+}
+
 export interface CopyrightDispute {
   id: string;
   trackId: string;
@@ -162,6 +265,12 @@ export interface CopyrightDispute {
   strikeApplied: boolean;
   resolvedBy?: string | null;
   resolvedAt?: string | null;
+  takedownRequestedAt?: string | null;
+  partnerNotifiedAt?: string | null;
+  resumeRequestedAt?: string | null;
+  resumeScheduledAt?: string | null;
+  resumedAt?: string | null;
+  slaNotifiedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -212,6 +321,8 @@ export interface StreamGrant {
   url: string;
   expiresAt: string;
   jti: string;
+  /** HQ (256k master, pass holders) or SQ (128k, free tier). */
+  quality: 'HQ' | 'SQ';
 }
 
 export interface PlaybackState {
@@ -225,7 +336,7 @@ export interface PlaybackState {
 
 export interface HeartbeatOutput {
   countedAsPlay: boolean;
-  positionMs: number;
+  fraudSuspected: boolean;
 }
 
 export interface PartnerSettlement {
@@ -239,6 +350,24 @@ export interface PartnerSettlement {
   playCount: number;
   status: string;
   forfeitureReason?: string | null;
+  incomeType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GenerationJob {
+  id: string;
+  partnerId: string;
+  prompt: string;
+  lyrics?: string | null;
+  model: string;
+  licenseRef?: string;
+  paramsJson: string;
+  status: string;
+  outputObjectKey?: string | null;
+  durationMs?: number | null;
+  error?: string | null;
+  attempts: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -293,6 +422,8 @@ export interface BillingOrder {
   status: string;
   tossPaymentKey?: string;
   approvedAt?: string;
+  refundConsentAt?: string | null;
+  refundTermsVersion?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -319,4 +450,15 @@ export interface AdminOverview {
   queueDepth: number | null;
   jobsFailed24h: number;
   settlementsPending: { count: number; netKrw: number };
+}
+
+export interface AuditEvent {
+  id: string;
+  actorUserId?: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  metadata?: string;
+  ip?: string;
+  createdAt: string;
 }

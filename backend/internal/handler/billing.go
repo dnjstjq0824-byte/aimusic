@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -29,7 +30,8 @@ func (h *BillingHandler) ListPlans(c *gin.Context) {
 }
 
 type createOrderRequest struct {
-	PlanCode string `json:"planCode" binding:"required"`
+	PlanCode        string `json:"planCode" binding:"required"`
+	RefundConsentAt string `json:"refundConsentAt" binding:"required"`
 }
 
 // CreateOrder opens a PENDING merchant order for the Toss checkout.
@@ -39,7 +41,12 @@ func (h *BillingHandler) CreateOrder(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	order, plan, err := h.Billing.CreateOrder(c.Request.Context(), CurrentUserID(c), req.PlanCode)
+	consentAt, err := time.Parse(time.RFC3339, req.RefundConsentAt)
+	if err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "refundConsentAt must be RFC3339")
+		return
+	}
+	order, plan, err := h.Billing.CreateOrder(c.Request.Context(), CurrentUserID(c), req.PlanCode, consentAt)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -100,4 +107,25 @@ func (h *BillingHandler) CancelSubscription(c *gin.Context) {
 		return
 	}
 	ok(c, gin.H{"cancelled": true})
+}
+
+type refundRequest struct {
+	// OrderID is the merchant order ID; empty refunds the ACTIVE pass.
+	OrderID string `json:"orderId"`
+	Reason  string `json:"reason"`
+}
+
+// Refund voids a PAID order at the PG and ends the pass immediately.
+func (h *BillingHandler) Refund(c *gin.Context) {
+	var req refundRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	order, err := h.Billing.Refund(c.Request.Context(), CurrentUserID(c), req.OrderID, req.Reason)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"order": order})
 }

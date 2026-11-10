@@ -100,6 +100,28 @@ const (
 	SettleForfeited = "FORFEITED"
 )
 
+// Settlement withholding income types (partner_settlements.income_type).
+const (
+	// IncomeBusiness33 is continuing business income: 3.3% withholding (33/1000).
+	IncomeBusiness33 = "BUSINESS_33"
+	// IncomeOther88 is occasional other income: 8.8% withholding (88/1000).
+	IncomeOther88 = "OTHER_88"
+)
+
+// ValidIncomeType reports whether t is a known withholding income type.
+func ValidIncomeType(t string) bool {
+	return t == IncomeBusiness33 || t == IncomeOther88
+}
+
+// Collective-trust declaration values (track_rights_declarations.collective_trust_status).
+const (
+	// CollectiveNone means no collecting-society trust (default).
+	CollectiveNone = "NONE"
+	// CollectiveTrusted means the track is trusted to a society (e.g. KOMCA);
+	// trusted tracks are refused until a society settlement path exists.
+	CollectiveTrusted = "TRUSTED"
+)
+
 // ValidDisputeReason reports whether r is a known dispute reason.
 func ValidDisputeReason(r string) bool {
 	switch r {
@@ -128,14 +150,22 @@ func NormalizeDisputeReason(r string) string {
 
 // User mirrors the users table.
 type User struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	Role         string    `json:"role"`
-	DisplayName  string    `json:"displayName"`
-	IsActive     bool      `json:"isActive"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID             string     `json:"id"`
+	Email          string     `json:"email"`
+	PasswordHash   string     `json:"-"`
+	Role           string     `json:"role"`
+	DisplayName    string     `json:"displayName"`
+	IsActive       bool       `json:"isActive"`
+	BirthYear      *int       `json:"birthYear,omitempty"`
+	AgeConfirmedAt *time.Time `json:"ageConfirmedAt,omitempty"`
+	TokenVersion   int        `json:"-"`
+	TOTPEnabled    bool       `json:"totpEnabled"`
+	TOTPEnrolledAt *time.Time `json:"totpEnrolledAt,omitempty"`
+	TOTPSecret     string     `json:"-"`
+	// TOTPRecoveryLeft counts unused recovery codes (hashes stay server-side).
+	TOTPRecoveryLeft int       `json:"totpRecoveryLeft"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 // PartnerProfile mirrors partner_profiles.
@@ -155,18 +185,21 @@ type PartnerProfile struct {
 
 // AIProviderPolicy mirrors ai_provider_policies.
 type AIProviderPolicy struct {
-	ID                        string    `json:"id"`
-	Provider                  string    `json:"provider"`
-	AllowsStandaloneStreaming bool      `json:"allowsStandaloneStreaming"`
-	AllowedPlanTiers          []string  `json:"allowedPlanTiers"`
-	BlockedPlanTiers          []string  `json:"blockedPlanTiers"`
-	SyncOnlyPlanTiers         []string  `json:"syncOnlyPlanTiers"`
-	MinBitrateKbps            int       `json:"minBitrateKbps"`
-	BlockedMetadataKeywords   []string  `json:"blockedMetadataKeywords"`
-	RejectionMessageKo        string    `json:"rejectionMessageKo"`
-	CommercialTermsURL        *string   `json:"commercialTermsUrl,omitempty"`
-	CreatedAt                 time.Time `json:"createdAt"`
-	UpdatedAt                 time.Time `json:"updatedAt"`
+	ID                        string     `json:"id"`
+	Provider                  string     `json:"provider"`
+	AllowsStandaloneStreaming bool       `json:"allowsStandaloneStreaming"`
+	AllowedPlanTiers          []string   `json:"allowedPlanTiers"`
+	BlockedPlanTiers          []string   `json:"blockedPlanTiers"`
+	SyncOnlyPlanTiers         []string   `json:"syncOnlyPlanTiers"`
+	MinBitrateKbps            int        `json:"minBitrateKbps"`
+	BlockedMetadataKeywords   []string   `json:"blockedMetadataKeywords"`
+	RejectionMessageKo        string     `json:"rejectionMessageKo"`
+	CommercialTermsURL        *string    `json:"commercialTermsUrl,omitempty"`
+	MaxGeneratedAt            *time.Time `json:"maxGeneratedAt,omitempty"`
+	TermsSnapshotURL          *string    `json:"termsSnapshotUrl,omitempty"`
+	TermsCheckedAt            *time.Time `json:"termsCheckedAt,omitempty"`
+	CreatedAt                 time.Time  `json:"createdAt"`
+	UpdatedAt                 time.Time  `json:"updatedAt"`
 }
 
 // PartnerAISubscription mirrors partner_ai_subscriptions.
@@ -242,6 +275,9 @@ type Track struct {
 	AIGenerated          bool      `json:"aiGenerated"`
 	AIDisclosureText     *string   `json:"aiDisclosureText,omitempty"`
 	BitrateKbps          *int      `json:"bitrateKbps,omitempty"`
+	ISRC                 *string   `json:"isrc,omitempty"`
+	BPM                  *float64  `json:"bpm,omitempty"`
+	MusicalKey           *string   `json:"musicalKey,omitempty"`
 	Status               string    `json:"status"`
 	RejectionReasonKo    *string   `json:"rejectionReasonKo,omitempty"`
 	PlayCount            int64     `json:"playCount"`
@@ -271,6 +307,10 @@ type TrackRightsDeclaration struct {
 	SourceModel                     *string    `json:"sourceModel,omitempty"`
 	SubscriptionID                  *string    `json:"subscriptionId,omitempty"`
 	GeneratedAt                     *time.Time `json:"generatedAt,omitempty"`
+	CollectiveTrustStatus           string     `json:"collectiveTrustStatus"`
+	CollectiveName                  *string    `json:"collectiveName,omitempty"`
+	CertSnapshotJSON                *string    `json:"certSnapshotJson,omitempty"`
+	CertSnapshotAt                  *time.Time `json:"certSnapshotAt,omitempty"`
 	DeclaredAt                      time.Time  `json:"declaredAt"`
 }
 
@@ -290,19 +330,119 @@ type TranscodingJob struct {
 	UpdatedAt      time.Time  `json:"updatedAt"`
 }
 
-// CopyrightDispute mirrors copyright_disputes.
-type CopyrightDispute struct {
+// GenerationJob mirrors generation_jobs (WI-03). Statuses reuse the
+// transcoding job constants (QUEUED/RUNNING/SUCCEEDED/FAILED).
+type GenerationJob struct {
+	ID              string     `json:"id"`
+	PartnerID       string     `json:"partnerId"`
+	Prompt          string     `json:"prompt"`
+	Lyrics          *string    `json:"lyrics,omitempty"`
+	Model           string     `json:"model"`
+	LicenseRef      string     `json:"licenseRef,omitempty"`
+	ParamsJSON      string     `json:"paramsJson"`
+	Status          string     `json:"status"`
+	OutputObjectKey *string    `json:"outputObjectKey,omitempty"`
+	DurationMs      *int       `json:"durationMs,omitempty"`
+	Error           *string    `json:"error,omitempty"`
+	Attempts        int        `json:"attempts"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// Store business/device statuses (WI-05).
+const (
+	StorePending   = "PENDING"
+	StoreApproved  = "APPROVED"
+	StoreSuspended = "SUSPENDED"
+	DevicePending  = "PENDING"
+	DeviceActive   = "ACTIVE"
+	DeviceRevoked  = "REVOKED"
+)
+
+// StoreBusiness mirrors store_businesses: one store = one license.
+type StoreBusiness struct {
 	ID             string     `json:"id"`
-	TrackID        string     `json:"trackId"`
-	ReporterUserID *string    `json:"reporterUserId,omitempty"`
-	Reason         string     `json:"reason"`
-	Description    string     `json:"description"`
+	PartnerID      string     `json:"partnerId"`
+	BusinessNumber string     `json:"businessNumber"`
+	StoreName      string     `json:"storeName"`
+	LicenseCount   int        `json:"licenseCount"`
 	Status         string     `json:"status"`
-	StrikeApplied  bool       `json:"strikeApplied"`
-	ResolvedBy     *string    `json:"resolvedBy,omitempty"`
-	ResolvedAt     *time.Time `json:"resolvedAt,omitempty"`
+	VerifiedBy     *string    `json:"verifiedBy,omitempty"`
+	VerifiedAt     *time.Time `json:"verifiedAt,omitempty"`
 	CreatedAt      time.Time  `json:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+// StoreDevice mirrors store_devices: a certified player terminal.
+type StoreDevice struct {
+	ID                string     `json:"id"`
+	BusinessID        string     `json:"businessId"`
+	DeviceName        string     `json:"deviceName"`
+	PairingCode       *string    `json:"pairingCode,omitempty"`
+	PairingExpiresAt  *time.Time `json:"pairingExpiresAt,omitempty"`
+	DeviceTokenHash   *string    `json:"-"`
+	Status            string     `json:"status"`
+	Volume            int        `json:"volume"`
+	LastSeenAt        *time.Time `json:"lastSeenAt,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
+}
+
+// StoreSchedule mirrors store_schedules: weekday 0=Sunday.
+type StoreSchedule struct {
+	ID         string    `json:"id"`
+	BusinessID string    `json:"businessId"`
+	Weekday    int       `json:"weekday"`
+	OpenTime   string    `json:"openTime"`
+	CloseTime  string    `json:"closeTime"`
+	PlaylistID *string   `json:"playlistId,omitempty"`
+	IsClosed   bool      `json:"isClosed"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+// StorePlayLog mirrors store_play_logs.
+type StorePlayLog struct {
+	ID                 string    `json:"id"`
+	DeviceID           string    `json:"deviceId"`
+	TrackID            string    `json:"trackId"`
+	PlayedAt           time.Time `json:"playedAt"`
+	DurationPlayedSecs int       `json:"durationPlayedSecs"`
+	CountedAsPlay      bool      `json:"countedAsPlay"`
+	CreatedAt          time.Time `json:"createdAt"`
+}
+
+// CopyrightDispute mirrors copyright_disputes.
+type CopyrightDispute struct {
+	ID                  string     `json:"id"`
+	TrackID             string     `json:"trackId"`
+	ReporterUserID      *string    `json:"reporterUserId,omitempty"`
+	Reason              string     `json:"reason"`
+	Description         string     `json:"description"`
+	Status              string     `json:"status"`
+	StrikeApplied       bool       `json:"strikeApplied"`
+	ResolvedBy          *string    `json:"resolvedBy,omitempty"`
+	ResolvedAt          *time.Time `json:"resolvedAt,omitempty"`
+	TakedownRequestedAt *time.Time `json:"takedownRequestedAt,omitempty"`
+	PartnerNotifiedAt   *time.Time `json:"partnerNotifiedAt,omitempty"`
+	ResumeRequestedAt   *time.Time `json:"resumeRequestedAt,omitempty"`
+	ResumeScheduledAt   *time.Time `json:"resumeScheduledAt,omitempty"`
+	ResumedAt           *time.Time `json:"resumedAt,omitempty"`
+	SLANotifiedAt       *time.Time `json:"slaNotifiedAt,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	UpdatedAt           time.Time  `json:"updatedAt"`
+}
+
+// AuditEvent mirrors audit_events (append-only admin action trail).
+type AuditEvent struct {
+	ID          string     `json:"id"`
+	ActorUserID *string    `json:"actorUserId,omitempty"`
+	Action      string     `json:"action"`
+	EntityType  string     `json:"entityType,omitempty"`
+	EntityID    string     `json:"entityId,omitempty"`
+	Metadata    string     `json:"metadata,omitempty"`
+	IP          string     `json:"ip,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt"`
 }
 
 // Playlist mirrors playlists.
@@ -360,10 +500,65 @@ type PartnerSettlement struct {
 	WithholdingKRW   int64     `json:"withholdingKrw"`
 	NetAmountKRW     int64     `json:"netAmountKrw"`
 	PlayCount        int64     `json:"playCount"`
-	Status           string    `json:"status"`
-	ForfeitureReason *string   `json:"forfeitureReason,omitempty"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
+	Status           string     `json:"status"`
+	ForfeitureReason *string    `json:"forfeitureReason,omitempty"`
+	IncomeType       string     `json:"incomeType"`
+	PaidAt           *time.Time `json:"paidAt,omitempty"`
+	PayoutReference  *string    `json:"payoutReference,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+}
+
+// Notification kinds (notifications.kind).
+const (
+	NotifyDisputeTakedown     = "DISPUTE_TAKEDOWN"
+	NotifyDisputeCounter      = "DISPUTE_COUNTER"
+	NotifyDisputeResolved     = "DISPUTE_RESOLVED"
+	NotifySettlementCalc      = "SETTLEMENT_CALCULATED"
+	NotifySettlementApproved  = "SETTLEMENT_APPROVED"
+	NotifySettlementPaid      = "SETTLEMENT_PAID"
+	NotifySubVerified         = "SUBSCRIPTION_VERIFIED"
+	NotifySubRejected         = "SUBSCRIPTION_REJECTED"
+	NotifyNotice              = "NOTICE"
+)
+
+// Notification mirrors the notifications table.
+type Notification struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"userId"`
+	Kind      string    `json:"kind"`
+	TitleKo   string    `json:"titleKo"`
+	BodyKo    string    `json:"bodyKo"`
+	LinkPath  string    `json:"linkPath"`
+	IsRead    bool      `json:"isRead"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// Admin action journal verbs (admin_action_logs.action).
+const (
+	AuditReviewTrack        = "REVIEW_TRACK"
+	AuditReviewPartner      = "REVIEW_PARTNER"
+	AuditReviewSubscription = "REVIEW_SUBSCRIPTION"
+	AuditPolicyUpdate       = "POLICY_UPDATE"
+	AuditDisputeResolve     = "DISPUTE_RESOLVE"
+	AuditTakedown           = "TAKEDOWN"
+	AuditSettleCalculate    = "SETTLEMENT_CALCULATE"
+	AuditSettleApprove      = "SETTLEMENT_APPROVE"
+	AuditSettleMarkPaid     = "SETTLEMENT_MARK_PAID"
+	AuditUserSetActive      = "USER_SET_ACTIVE"
+	AuditUserSetRole        = "USER_SET_ROLE"
+	AuditCurationCreate     = "CURATION_CREATE"
+)
+
+// AdminActionLog mirrors admin_action_logs.
+type AdminActionLog struct {
+	ID          string    `json:"id"`
+	AdminUserID *string   `json:"adminUserId,omitempty"`
+	Action      string    `json:"action"`
+	TargetType  string    `json:"targetType"`
+	TargetID    string    `json:"targetId"`
+	Reason      string    `json:"reason"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 // UserBlock mirrors user_blocks.

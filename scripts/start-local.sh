@@ -163,8 +163,108 @@ if [ "$BATCH2_EXISTS" != "t" ]; then
 else
   echo "[start-local] batch2 schema already present; skipping 000002_batch2.up.sql"
 fi
+BATCH3_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='ai_provider_policies' AND column_name='max_generated_at';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH3_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000003_compliance.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000003_compliance.up.sql
+  echo "[start-local] batch3 compliance schema applied"
+else
+  echo "[start-local] batch3 schema already present; skipping 000003_compliance.up.sql"
+fi
+BATCH4_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.notifications') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH4_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000004_operations.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000004_operations.up.sql
+  echo "[start-local] batch4 operations schema applied"
+else
+  echo "[start-local] batch4 schema already present; skipping 000004_operations.up.sql"
+fi
+BATCH5_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='token_version';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH5_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000005_auth_hardening.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000005_auth_hardening.up.sql
+  echo "[start-local] batch5 auth schema applied"
+else
+  echo "[start-local] batch5 schema already present; skipping 000005_auth_hardening.up.sql"
+fi
+BATCH6_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.audit_events') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH6_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000006_audit.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000006_audit.up.sql
+  echo "[start-local] batch6 audit schema applied"
+else
+  echo "[start-local] batch6 schema already present; skipping 000006_audit.up.sql"
+fi
+BATCH7_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='copyright_disputes' AND column_name='sla_notified_at';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH7_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000007_dispute_sla.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000007_dispute_sla.up.sql
+  echo "[start-local] batch7 dispute SLA schema applied"
+else
+  echo "[start-local] batch7 schema already present; skipping 000007_dispute_sla.up.sql"
+fi
+BATCH8_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='track_rights_declarations' AND column_name='cert_snapshot_json';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH8_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000008_cert_snapshot.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000008_cert_snapshot.up.sql
+  echo "[start-local] batch8 cert snapshot schema applied"
+else
+  echo "[start-local] batch8 schema already present; skipping 000008_cert_snapshot.up.sql"
+fi
+BATCH9_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.generation_jobs') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH9_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000009_generation_jobs.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000009_generation_jobs.up.sql
+  echo "[start-local] batch9 generation jobs schema applied"
+else
+  echo "[start-local] batch9 schema already present; skipping 000009_generation_jobs.up.sql"
+fi
+BATCH10_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='isrc';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH10_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000010_distribution_meta.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000010_distribution_meta.up.sql
+  echo "[start-local] batch10 distribution meta schema applied"
+else
+  echo "[start-local] batch10 schema already present; skipping 000010_distribution_meta.up.sql"
+fi
+BATCH11_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.store_businesses') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH11_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000011_store_player.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000011_store_player.up.sql
+  echo "[start-local] batch11 store player schema applied"
+else
+  echo "[start-local] batch11 schema already present; skipping 000011_store_player.up.sql"
+fi
+BATCH12_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='license_ref';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH12_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000012_generation_guards.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000012_generation_guards.up.sql
+  echo "[start-local] batch12 generation guards schema applied"
+else
+  echo "[start-local] batch12 schema already present; skipping 000012_generation_guards.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
-compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql
 echo "[start-local] seed applied"
 

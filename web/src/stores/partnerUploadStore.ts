@@ -41,6 +41,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   const isInstrumental = ref(false);
   const lyrics = ref('');
   const humanContributionDesc = ref('');
+  const collectiveTrust = ref('NONE');
+  const collectiveName = ref('');
   const declaresOwnership = ref(false);
   const declaresNoVoiceClone = ref(false);
   const declaresTrainingConsent = ref(false);
@@ -104,6 +106,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     () =>
       stagedKey.value !== null &&
       title.value.trim().length > 0 &&
+      collectiveTrust.value === 'NONE' &&
       declaresOwnership.value &&
       declaresNoVoiceClone.value &&
       declaresTrainingConsent.value &&
@@ -258,6 +261,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
           humanContributionDesc: humanContributionDesc.value.trim() || undefined,
           sourceModel: sourceModel.value || undefined,
           subscriptionId: subscriptionId.value || undefined,
+          collectiveTrustStatus: collectiveTrust.value,
+          collectiveName: collectiveName.value.trim() || undefined,
         },
       });
       finalized.value = out;
@@ -300,6 +305,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     isInstrumental.value = false;
     lyrics.value = '';
     humanContributionDesc.value = '';
+    collectiveTrust.value = 'NONE';
+    collectiveName.value = '';
     declaresOwnership.value = false;
     declaresNoVoiceClone.value = false;
     declaresTrainingConsent.value = false;
@@ -315,6 +322,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     gate3, gate3Message, uploading, uploadProgress, stagedKey,
     title, albumId, genre, moodTagsInput, disclosure, sourceModel,
     aiPrompt, isPromptPublic, isInstrumental, lyrics, humanContributionDesc,
+    collectiveTrust, collectiveName,
     declaresOwnership, declaresNoVoiceClone, declaresTrainingConsent, agreesCommercialTerms,
     finalized, finalizing, finalizeError,
     policies, subscriptions, selectedPolicy, availablePlanTiers, instantBlockReason, step2Blocked, canFinalize,

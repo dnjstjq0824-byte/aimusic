@@ -21,8 +21,9 @@ type billingStore interface {
 	ListActivePlans(ctx context.Context) ([]*domain.BillingPlan, error)
 	GetPlanByCode(ctx context.Context, code string) (*domain.BillingPlan, error)
 	GetPlanByID(ctx context.Context, id string) (*domain.BillingPlan, error)
-	CreateOrder(ctx context.Context, userID, planID, orderID string, amountKRW int) (*domain.BillingOrder, error)
+	CreateOrder(ctx context.Context, userID, planID, orderID string, amountKRW int, consentAt time.Time, termsVersion string) (*domain.BillingOrder, error)
 	GetOrderByMerchantID(ctx context.Context, orderID string) (*domain.BillingOrder, error)
+	GetOrder(ctx context.Context, id string) (*domain.BillingOrder, error)
 	MarkOrderPaid(ctx context.Context, orderID, paymentKey string) (*domain.BillingOrder, error)
 	SetOrderStatus(ctx context.Context, orderID, status string) error
 	ActivateSubscription(ctx context.Context, userID, planID, orderID string, periodStart, periodEnd time.Time) (*domain.BillingSubscription, error)
@@ -65,13 +66,22 @@ func merchantOrderID(now time.Time) (string, error) {
 	return fmt.Sprintf("AVIBE-%s-%s", now.Format("20060102"), strings.ToUpper(hex.EncodeToString(b))), nil
 }
 
-// CreateOrder opens a PENDING merchant order for a plan.
-func (s *BillingService) CreateOrder(ctx context.Context, userID, planCode string) (*domain.BillingOrder, *domain.BillingPlan, error) {
+// RefundTermsVersion is the checkout refund/withdrawal notice revision the
+// buyer consents to (C6). Bump when the notice text changes.
+const RefundTermsVersion = "2026-11-10-v1"
+
+// CreateOrder opens a PENDING merchant order for a plan. The buyer must have
+// consented to the refund/withdrawal notice on the checkout screen (C6): the
+// consent timestamp is required and must be within the last 24 hours.
+func (s *BillingService) CreateOrder(ctx context.Context, userID, planCode string, consentAt time.Time) (*domain.BillingOrder, *domain.BillingPlan, error) {
 	if !s.enabled {
 		return nil, nil, domain.ErrPaymentUnavailable
 	}
 	if userID == "" || strings.TrimSpace(planCode) == "" {
 		return nil, nil, fmt.Errorf("%w: user/plan", domain.ErrInvalidInput)
+	}
+	if consentAt.IsZero() || s.now().Sub(consentAt) < 0 || s.now().Sub(consentAt) > 24*time.Hour {
+		return nil, nil, fmt.Errorf("%w: 청약철회·환불 기준 동의가 필요합니다", domain.ErrInvalidInput)
 	}
 	plan, err := s.billing.GetPlanByCode(ctx, strings.TrimSpace(planCode))
 	if err != nil {
@@ -81,7 +91,7 @@ func (s *BillingService) CreateOrder(ctx context.Context, userID, planCode strin
 	if err != nil {
 		return nil, nil, err
 	}
-	order, err := s.billing.CreateOrder(ctx, userID, plan.ID, orderID, plan.AmountKRW)
+	order, err := s.billing.CreateOrder(ctx, userID, plan.ID, orderID, plan.AmountKRW, consentAt, RefundTermsVersion)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -234,4 +244,58 @@ func (s *BillingService) CancelSubscription(ctx context.Context, userID string) 
 		return fmt.Errorf("%w: user", domain.ErrInvalidInput)
 	}
 	return s.billing.CancelActiveSubscription(ctx, userID)
+}
+
+// Refund voids the order behind the user's ACTIVE pass (empty orderRef
+// resolves through the subscription) or a named merchant order.
+func (s *BillingService) Refund(ctx context.Context, userID, orderRef, reason string) (*domain.BillingOrder, error) {
+	merchantOrderID := strings.TrimSpace(orderRef)
+	if merchantOrderID == "" {
+		sub, err := s.billing.GetActiveSubscription(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: no active pass to refund", domain.ErrInvalidInput)
+		}
+		if sub.OrderID == nil || *sub.OrderID == "" {
+			return nil, fmt.Errorf("%w: pass has no order", domain.ErrInvalidInput)
+		}
+		orderRow, err := s.billing.GetOrder(ctx, *sub.OrderID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: pass order missing", domain.ErrInvalidInput)
+		}
+		merchantOrderID = orderRow.OrderID
+	}
+	return s.refundMerchantOrder(ctx, userID, merchantOrderID, reason)
+}
+
+// refundMerchantOrder voids a PAID order at Toss in full, marks it REFUNDED,
+// and ends the pass immediately. Already-cancelled-at-PG orders converge to
+// REFUNDED so double submits and confirm/webhook races stay idempotent.
+func (s *BillingService) refundMerchantOrder(ctx context.Context, userID, merchantOrderID, reason string) (*domain.BillingOrder, error) {
+	if !s.enabled {
+		return nil, domain.ErrPaymentUnavailable
+	}
+	if userID == "" || strings.TrimSpace(merchantOrderID) == "" {
+		return nil, fmt.Errorf("%w: user/order", domain.ErrInvalidInput)
+	}
+	order, err := s.billing.GetOrderByMerchantID(ctx, merchantOrderID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: unknown order", domain.ErrInvalidInput)
+	}
+	if order.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+	if order.Status != domain.BillingPaid || order.TossPaymentKey == nil || *order.TossPaymentKey == "" {
+		return nil, fmt.Errorf("%w: order is not refundable", domain.ErrInvalidInput)
+	}
+	if _, err := s.toss.CancelPayment(ctx, *order.TossPaymentKey, reason); err != nil {
+		var te *toss.TossError
+		if !(errors.As(err, &te) && te.Code == "ALREADY_CANCELED_TRANSACTION") {
+			return nil, err
+		}
+	}
+	if err := s.billing.SetOrderStatus(ctx, order.OrderID, domain.BillingRefunded); err != nil {
+		return nil, err
+	}
+	_ = s.billing.CancelActiveSubscription(ctx, userID)
+	return s.billing.GetOrderByMerchantID(ctx, merchantOrderID)
 }

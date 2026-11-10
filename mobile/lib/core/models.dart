@@ -25,6 +25,9 @@ class Track {
     this.aiDisclosureText,
     this.waveformJson,
     this.bitrateKbps,
+    this.isrc,
+    this.bpm,
+    this.musicalKey,
   });
 
   factory Track.fromJson(Map<String, dynamic> j) => Track(
@@ -52,6 +55,9 @@ class Track {
         aiDisclosureText: j['aiDisclosureText'] as String?,
         waveformJson: j['waveformJson'] as String?,
         bitrateKbps: (j['bitrateKbps'] as num?)?.toInt(),
+        isrc: j['isrc'] as String?,
+        bpm: (j['bpm'] as num?)?.toDouble(),
+        musicalKey: j['musicalKey'] as String?,
       );
 
   final String id;
@@ -75,6 +81,9 @@ class Track {
   final String? aiDisclosureText;
   final String? waveformJson;
   final int? bitrateKbps;
+  final String? isrc;
+  final double? bpm;
+  final String? musicalKey;
 
   bool get isReady => status == 'READY';
   bool get isTakenDown => status == 'TAKEN_DOWN' || status == 'TAKEDOWN';
@@ -86,17 +95,25 @@ class Track {
 
 /// Signed stream URL from GET /tracks/:id/stream.
 class StreamTicket {
-  StreamTicket({required this.url, required this.expiresAt, required this.jti});
+  StreamTicket(
+      {required this.url,
+      required this.expiresAt,
+      required this.jti,
+      required this.quality});
 
   factory StreamTicket.fromJson(Map<String, dynamic> j) => StreamTicket(
         url: j['url'] as String,
         expiresAt: DateTime.parse(j['expiresAt'] as String),
         jti: j['jti'] as String,
+        quality: (j['quality'] as String?) ?? 'SQ',
       );
 
   final String url;
   final DateTime expiresAt;
   final String jti;
+
+  /// HQ (256k master, pass holders) or SQ (128k, free tier).
+  final String quality;
 }
 
 /// Heartbeat result from POST /playback/heartbeat.
@@ -290,13 +307,106 @@ class TokenPair {
 
 /// Minimal auth principal from GET /auth/me.
 class AuthMe {
-  AuthMe({required this.userId, required this.role});
+  AuthMe({required this.userId, required this.role, this.ageConfirmedAt});
 
   factory AuthMe.fromJson(Map<String, dynamic> j) => AuthMe(
         userId: j['userId'] as String,
         role: (j['role'] as String?) ?? 'USER',
+        ageConfirmedAt: j['ageConfirmedAt'] as String?,
       );
 
   final String userId;
   final String role;
+  final String? ageConfirmedAt;
+
+  bool get needsAgeConfirm => ageConfirmedAt == null || ageConfirmedAt!.isEmpty;
+}
+
+/// Store device mirrors domain.StoreDevice (POST /store/device/claim).
+class StoreDevice {
+  StoreDevice({
+    required this.id,
+    required this.businessId,
+    required this.deviceName,
+    required this.status,
+    required this.volume,
+    this.pairingCode,
+    this.pairingExpiresAt,
+    this.lastSeenAt,
+  });
+
+  factory StoreDevice.fromJson(Map<String, dynamic> j) => StoreDevice(
+        id: j['id'] as String,
+        businessId: j['businessId'] as String,
+        deviceName: (j['deviceName'] as String?) ?? '',
+        status: (j['status'] as String?) ?? '',
+        volume: (j['volume'] as num?)?.toInt() ?? 70,
+        pairingCode: j['pairingCode'] as String?,
+        pairingExpiresAt: j['pairingExpiresAt'] as String?,
+        lastSeenAt: j['lastSeenAt'] as String?,
+      );
+
+  final String id;
+  final String businessId;
+  final String deviceName;
+  final String status;
+  final int volume;
+  final String? pairingCode;
+  final String? pairingExpiresAt;
+  final String? lastSeenAt;
+}
+
+/// One entry of a store device queue (GET /store/device/queue).
+class DeviceQueueTrack {
+  DeviceQueueTrack({
+    required this.trackId,
+    required this.title,
+    this.durationMs,
+  });
+
+  factory DeviceQueueTrack.fromJson(Map<String, dynamic> j) => DeviceQueueTrack(
+        trackId: j['trackId'] as String,
+        title: (j['title'] as String?) ?? '',
+        durationMs: (j['durationMs'] as num?)?.toInt(),
+      );
+
+  final String trackId;
+  final String title;
+  final int? durationMs;
+}
+
+/// Store playback queue with schedule gate + volume (GET /store/device/queue).
+class DeviceQueue {
+  DeviceQueue({
+    required this.businessId,
+    required this.businessName,
+    required this.open,
+    required this.reason,
+    required this.volume,
+    required this.tracks,
+    this.playlistId,
+    this.playlistName,
+  });
+
+  factory DeviceQueue.fromJson(Map<String, dynamic> j) => DeviceQueue(
+        businessId: (j['businessId'] as String?) ?? '',
+        businessName: (j['businessName'] as String?) ?? '',
+        open: (j['open'] as bool?) ?? false,
+        reason: (j['reason'] as String?) ?? '',
+        volume: (j['volume'] as num?)?.toInt() ?? 70,
+        tracks: ((j['tracks'] as List<dynamic>?) ?? const [])
+            .map((e) => DeviceQueueTrack.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        playlistId: j['playlistId'] as String?,
+        playlistName: j['playlistName'] as String?,
+      );
+
+  final String businessId;
+  final String businessName;
+  final bool open;
+  final String reason;
+  final int volume;
+  final List<DeviceQueueTrack> tracks;
+  final String? playlistId;
+  final String? playlistName;
 }

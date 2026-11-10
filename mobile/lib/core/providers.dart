@@ -12,6 +12,7 @@ import '../core/models.dart';
 import '../services/api_service.dart';
 import '../services/audio_handler.dart';
 import '../services/auth_repository.dart';
+import '../services/device_api_service.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(),
@@ -23,6 +24,18 @@ final dioProvider = Provider<Dio>(
 
 final apiProvider = Provider<ApiService>(
   (ref) => ApiService(ref.watch(dioProvider)),
+);
+
+/// Device Dio without the user auth interceptor (store-device JWT instead).
+final deviceDioProvider = Provider<Dio>(
+  (ref) => ApiClientFactory.createDevice(),
+);
+
+final deviceApiProvider = Provider<DeviceApiService>(
+  (ref) => DeviceApiService(
+    ref.watch(deviceDioProvider),
+    ref.watch(secureStorageProvider),
+  ),
 );
 
 final authRepositoryProvider = Provider<AuthRepository>(

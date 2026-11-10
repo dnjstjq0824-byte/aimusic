@@ -1,13 +1,17 @@
-import { api, unwrap } from './client';
+import { api, deviceApiClient, unwrap } from './client';
 import type {
   AdminOverview,
+  AuditEvent,
   AIDisclosure,
   Album,
   BillingOrder,
   BillingPlan,
   BillingSubscription,
   CopyrightDispute,
+  DeviceQueue,
+  DSPKit,
   FinalizeOutput,
+  GenerationJob,
   HeartbeatOutput,
   LegalTerm,
   OAuthProviderInfo,
@@ -20,6 +24,10 @@ import type {
   PrecheckOutput,
   ReviewQueues,
   Role,
+  StoreBusiness,
+  StoreDevice,
+  StorePlayLog,
+  StoreSchedule,
   StreamGrant,
   Tokens,
   Track,
@@ -33,18 +41,47 @@ import type {
 
 // Thin wrappers over the exact router.go URIs.
 
+export interface RegisterInput {
+  email: string;
+  password: string;
+  displayName: string;
+  birthYear?: number;
+  ageConfirmed: boolean;
+  inviteCode?: string;
+}
+
 export const authApi = {
-  register(email: string, password: string, displayName: string) {
-    return unwrap<User>(api.post('/auth/register', { email, password, displayName }));
+  register(input: RegisterInput) {
+    return unwrap<User>(api.post('/auth/register', input));
   },
-  registerPartner(input: { email: string; password: string; displayName: string; company: string; contactEmail?: string }) {
+  registerPartner(input: RegisterInput & { company: string; contactEmail?: string }) {
     return unwrap<{ user: User; partner: PartnerProfile }>(api.post('/auth/register/partner', input));
   },
-  login(email: string, password: string) {
-    return unwrap<{ tokens: Tokens; user: User }>(api.post('/auth/login', { email, password }));
+  login(email: string, password: string, totpCode?: string) {
+    return unwrap<{ tokens: Tokens; user: User }>(
+      api.post('/auth/login', totpCode ? { email, password, totpCode } : { email, password }),
+    );
+  },
+  logoutAll() {
+    return unwrap<{ revoked: boolean }>(api.post('/auth/logout-all'));
+  },
+  enrollTOTP() {
+    return unwrap<{ secret: string; provisioningUri: string }>(api.post('/auth/totp/enroll'));
+  },
+  confirmTOTPEnrollment(code: string) {
+    return unwrap<{ recoveryCodes: string[] }>(api.post('/auth/totp/confirm', { code }));
+  },
+  disableTOTP(password: string) {
+    return unwrap<{ disabled: boolean }>(api.post('/auth/totp/disable', { password }));
+  },
+  exportData() {
+    return unwrap<Record<string, unknown>>(api.get('/auth/export'));
   },
   me() {
-    return unwrap<{ userId: string; role: Role }>(api.get('/auth/me'));
+    return unwrap<{ userId: string; role: Role; ageConfirmedAt?: string | null }>(api.get('/auth/me'));
+  },
+  confirmAge(ageConfirmed: boolean, birthYear?: number) {
+    return unwrap<{ confirmed: boolean }>(api.post('/auth/age-confirm', { ageConfirmed, birthYear }));
   },
   withdraw() {
     return unwrap<{ withdrawn: boolean }>(api.post('/auth/withdraw'));
@@ -64,8 +101,10 @@ export const billingApi = {
   plans() {
     return unwrap<BillingPlan[]>(api.get('/billing/plans'));
   },
-  createOrder(planCode: string) {
-    return unwrap<{ order: BillingOrder; plan: BillingPlan }>(api.post('/billing/orders', { planCode }));
+  createOrder(planCode: string, refundConsentAt: string) {
+    return unwrap<{ order: BillingOrder; plan: BillingPlan }>(
+      api.post('/billing/orders', { planCode, refundConsentAt }),
+    );
   },
   confirmPayment(paymentKey: string, orderId: string, amount: number) {
     return unwrap<{ subscription: BillingSubscription }>(
@@ -77,6 +116,9 @@ export const billingApi = {
   },
   cancelSubscription() {
     return unwrap<{ cancelled: boolean }>(api.post('/billing/subscriptions/cancel'));
+  },
+  refundActivePass(reason?: string) {
+    return unwrap<{ order: BillingOrder }>(api.post('/billing/payments/refund', { reason }));
   },
 };
 
@@ -92,6 +134,9 @@ export const legalApi = {
   },
   myConsents() {
     return unwrap<UserTermConsent[]>(api.get('/legal/consents/me'));
+  },
+  pendingConsents() {
+    return unwrap<LegalTerm[]>(api.get('/legal/consents/pending'));
   },
 };
 
@@ -151,6 +196,8 @@ export const partnerApi = {
       humanContributionDesc?: string;
       sourceModel?: string;
       subscriptionId?: string;
+      collectiveTrustStatus?: string;
+      collectiveName?: string;
     };
   }) {
     return unwrap<FinalizeOutput>(api.post('/partner/finalize', input));
@@ -163,6 +210,59 @@ export const partnerApi = {
   },
   listMyTracks(limit = 20, offset = 0) {
     return unwrap<Track[]>(api.get('/partner/tracks', { params: { limit, offset } }));
+  },
+  submitGeneration(input: {
+    prompt: string;
+    lyrics?: string;
+    model?: string;
+    licenseRef?: string;
+    params?: Record<string, unknown>;
+  }) {
+    return unwrap<GenerationJob>(api.post('/partner/generations', input));
+  },
+  listGenerations(limit = 20) {
+    return unwrap<GenerationJob[]>(api.get('/partner/generations', { params: { limit } }));
+  },
+  getGeneration(id: string) {
+    return unwrap<GenerationJob>(api.get(`/partner/generations/${encodeURIComponent(id)}`));
+  },
+  registerStore(input: { businessNumber: string; storeName: string; licenseCount?: number }) {
+    return unwrap<StoreBusiness>(api.post('/partner/stores', input));
+  },
+  listStores() {
+    return unwrap<StoreBusiness[]>(api.get('/partner/stores'));
+  },
+  createStoreDevice(storeId: string, deviceName: string) {
+    return unwrap<StoreDevice>(api.post(`/partner/stores/${encodeURIComponent(storeId)}/devices`, { deviceName }));
+  },
+  listStoreDevices(storeId: string) {
+    return unwrap<StoreDevice[]>(api.get(`/partner/stores/${encodeURIComponent(storeId)}/devices`));
+  },
+  updateStoreDevice(storeId: string, deviceId: string, input: { deviceName: string; volume: number }) {
+    return unwrap<StoreDevice>(
+      api.put(`/partner/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}`, input),
+    );
+  },
+  revokeStoreDevice(storeId: string, deviceId: string) {
+    return unwrap<{ revoked: boolean }>(
+      api.post(`/partner/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}/revoke`),
+    );
+  },
+  listStoreSchedules(storeId: string) {
+    return unwrap<StoreSchedule[]>(api.get(`/partner/stores/${encodeURIComponent(storeId)}/schedules`));
+  },
+  upsertStoreSchedule(
+    storeId: string,
+    input: { weekday: number; openTime: string; closeTime: string; playlistId?: string | null; isClosed?: boolean },
+  ) {
+    return unwrap<StoreSchedule>(api.post(`/partner/stores/${encodeURIComponent(storeId)}/schedules`, input));
+  },
+  storeDeviceLogs(storeId: string, deviceId: string, limit = 50) {
+    return unwrap<StorePlayLog[]>(
+      api.get(`/partner/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}/logs`, {
+        params: { limit },
+      }),
+    );
   },
 };
 
@@ -283,6 +383,8 @@ export const adminApi = {
       blockedMetadataKeywords: string[];
       rejectionMessageKo: string;
       commercialTermsUrl?: string | null;
+      maxGeneratedAt?: string | null;
+      termsSnapshotUrl?: string | null;
     },
   ) {
     return unwrap<AIProviderPolicy>(api.put(`/admin/policies/${encodeURIComponent(provider)}`, input));
@@ -302,9 +404,15 @@ export const adminApi = {
   takedown(trackId: string, reason?: string) {
     return unwrap<Track>(api.post('/admin/curation/takedown', { trackId, reason }));
   },
-  calculateSettlement(partnerId: string, periodStart: string, periodEnd: string, ratePerPlayKrw?: number) {
+  calculateSettlement(
+    partnerId: string,
+    periodStart: string,
+    periodEnd: string,
+    ratePerPlayKrw?: number,
+    incomeType?: string,
+  ) {
     return unwrap<PartnerSettlement>(
-      api.post('/admin/settlements/calculate', { partnerId, periodStart, periodEnd, ratePerPlayKrw }),
+      api.post('/admin/settlements/calculate', { partnerId, periodStart, periodEnd, ratePerPlayKrw, incomeType }),
     );
   },
   listSettlements(partnerId: string) {
@@ -312,5 +420,71 @@ export const adminApi = {
   },
   approveSettlement(partnerId: string, periodStart: string, periodEnd: string) {
     return unwrap<PartnerSettlement>(api.post('/admin/settlements/approve', { partnerId, periodStart, periodEnd }));
+  },
+  markSettlementPaid(partnerId: string, periodStart: string, periodEnd: string, reference?: string) {
+    return unwrap<PartnerSettlement>(
+      api.post('/admin/settlements/mark-paid', { partnerId, periodStart, periodEnd, reference }),
+    );
+  },
+  getPartnerSettlementAccount(partnerId: string) {
+    return unwrap<{ bank: string; accountMasked: string }>(
+      api.get(`/admin/partners/${encodeURIComponent(partnerId)}/settlement`),
+    );
+  },
+  listUserBlocks(id: string) {
+    return unwrap<UserBlock[]>(api.get(`/admin/users/${encodeURIComponent(id)}/blocks`));
+  },
+  auditEvents(params: { action?: string; entityType?: string; limit?: number; offset?: number } = {}) {
+    return unwrap<AuditEvent[]>(api.get('/admin/audit-events', { params }));
+  },
+  listUsers(params: { q?: string; role?: string; limit?: number; offset?: number } = {}) {
+    return unwrap<User[]>(api.get('/admin/users', { params }));
+  },
+  setUserRole(id: string, role: string) {
+    return unwrap<User>(api.post(`/admin/users/${encodeURIComponent(id)}/role`, { role }));
+  },
+  setUserActive(id: string, active: boolean) {
+    return unwrap<User>(api.post(`/admin/users/${encodeURIComponent(id)}/active`, { active }));
+  },
+  setTrackISRC(id: string, isrc: string) {
+    return unwrap<Track>(api.put(`/admin/tracks/${encodeURIComponent(id)}/isrc`, { isrc }));
+  },
+  listStores(status = 'PENDING', limit = 20, offset = 0) {
+    return unwrap<StoreBusiness[]>(api.get('/admin/stores', { params: { status, limit, offset } }));
+  },
+  verifyStore(id: string, approve: boolean) {
+    return unwrap<StoreBusiness>(api.post(`/admin/stores/${encodeURIComponent(id)}/verify`, { approve }));
+  },
+  dspKit(trackIds: string[]) {
+    return unwrap<DSPKit>(api.get('/admin/distribution/dsp-kit', { params: { trackIds: trackIds.join(',') } }));
+  },
+  async dspKitCsv(trackIds: string[]): Promise<Blob> {
+    const res = await api.get('/admin/distribution/dsp-kit', {
+      params: { trackIds: trackIds.join(','), format: 'csv' },
+      responseType: 'blob',
+    });
+    return res.data as Blob;
+  },
+};
+
+export const storeDeviceApi = {
+  claim(pairingCode: string) {
+    return unwrap<{ device: StoreDevice; token: string }>(
+      deviceApiClient.post('/store/device/claim', { pairingCode }),
+    );
+  },
+  me() {
+    return unwrap<StoreDevice>(deviceApiClient.get('/store/device/me'));
+  },
+  queue() {
+    return unwrap<DeviceQueue>(deviceApiClient.get('/store/device/queue'));
+  },
+  heartbeat(trackId: string, durationSecs: number) {
+    return unwrap<{ counted: boolean }>(
+      deviceApiClient.post('/store/device/heartbeat', { trackId, durationSecs }),
+    );
+  },
+  stream(trackId: string) {
+    return unwrap<StreamGrant>(deviceApiClient.get(`/store/device/stream/${encodeURIComponent(trackId)}`));
   },
 };

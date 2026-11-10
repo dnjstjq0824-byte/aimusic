@@ -21,6 +21,7 @@ import (
 type resetUserStore interface {
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	UpdatePasswordHash(ctx context.Context, id, hash string) error
+	BumpTokenVersion(ctx context.Context, id string) error
 }
 
 // resetTokenStore is the reset-token surface password reset needs.
@@ -127,5 +128,6 @@ func (s *PasswordResetService) Confirm(ctx context.Context, token, newPassword s
 	if err := s.tokens.MarkUsed(ctx, t.ID); err != nil {
 		return domain.ErrInvalidCredentials
 	}
-	return nil
+	// A new password revokes every outstanding session (stolen tokens die).
+	return s.users.BumpTokenVersion(ctx, t.UserID)
 }

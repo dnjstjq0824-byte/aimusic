@@ -48,8 +48,8 @@ func (f *fakeBillingStore) GetPlanByID(_ context.Context, id string) (*domain.Bi
 	return p, nil
 }
 
-func (f *fakeBillingStore) CreateOrder(_ context.Context, userID, planID, orderID string, amount int) (*domain.BillingOrder, error) {
-	o := &domain.BillingOrder{ID: "ord-row-1", UserID: userID, PlanID: planID, OrderID: orderID, AmountKRW: amount, Status: domain.BillingPending}
+func (f *fakeBillingStore) CreateOrder(_ context.Context, userID, planID, orderID string, amount int, consentAt time.Time, termsVersion string) (*domain.BillingOrder, error) {
+	o := &domain.BillingOrder{ID: "ord-row-1", UserID: userID, PlanID: planID, OrderID: orderID, AmountKRW: amount, Status: domain.BillingPending, RefundConsentAt: &consentAt, RefundTermsVersion: &termsVersion}
 	if f.orders == nil {
 		f.orders = map[string]*domain.BillingOrder{}
 	}
@@ -63,6 +63,15 @@ func (f *fakeBillingStore) GetOrderByMerchantID(_ context.Context, orderID strin
 		return nil, domain.ErrNotFound
 	}
 	return o, nil
+}
+
+func (f *fakeBillingStore) GetOrder(_ context.Context, id string) (*domain.BillingOrder, error) {
+	for _, o := range f.orders {
+		if o.ID == id {
+			return o, nil
+		}
+	}
+	return nil, domain.ErrNotFound
 }
 
 func (f *fakeBillingStore) MarkOrderPaid(_ context.Context, orderID, key string) (*domain.BillingOrder, error) {
@@ -170,7 +179,8 @@ func seedPlan() map[string]*domain.BillingPlan {
 func TestCreateOrderHappy(t *testing.T) {
 	store := &fakeBillingStore{plans: seedPlan()}
 	s, _ := billingTestService(t, store, "DONE", nil)
-	order, plan, err := s.CreateOrder(context.Background(), "u-1", "LISTENER_PLUS_MONTHLY")
+	consentAt := time.Date(2026, 11, 7, 11, 59, 0, 0, time.UTC)
+	order, plan, err := s.CreateOrder(context.Background(), "u-1", "LISTENER_PLUS_MONTHLY", consentAt)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -180,14 +190,30 @@ func TestCreateOrderHappy(t *testing.T) {
 	if plan.Code != "LISTENER_PLUS_MONTHLY" {
 		t.Fatalf("plan = %+v", plan)
 	}
-	if _, _, err := s.CreateOrder(context.Background(), "u-1", "NOPE"); !errors.Is(err, domain.ErrInvalidInput) {
+	if order.RefundConsentAt == nil || !order.RefundConsentAt.Equal(consentAt) || order.RefundTermsVersion == nil || *order.RefundTermsVersion != RefundTermsVersion {
+		t.Fatalf("consent evidence = %+v", order)
+	}
+	if _, _, err := s.CreateOrder(context.Background(), "u-1", "NOPE", consentAt); !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("unknown plan err = %v", err)
+	}
+}
+
+func TestCreateOrderRequiresConsent(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	s, _ := billingTestService(t, store, "DONE", nil)
+	ctx := context.Background()
+	if _, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", time.Time{}); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("missing consent err = %v", err)
+	}
+	stale := time.Date(2026, 11, 6, 11, 0, 0, 0, time.UTC)
+	if _, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", stale); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("stale consent err = %v", err)
 	}
 }
 
 func TestCreateOrderDisabled(t *testing.T) {
 	s := &BillingService{billing: &fakeBillingStore{plans: seedPlan()}, enabled: false, now: time.Now}
-	if _, _, err := s.CreateOrder(context.Background(), "u-1", "LISTENER_PLUS_MONTHLY"); !errors.Is(err, domain.ErrPaymentUnavailable) {
+	if _, _, err := s.CreateOrder(context.Background(), "u-1", "LISTENER_PLUS_MONTHLY", time.Now()); !errors.Is(err, domain.ErrPaymentUnavailable) {
 		t.Fatalf("err = %v", err)
 	}
 	if plans, err := s.Plans(context.Background()); err != nil || len(plans) != 1 {
@@ -214,7 +240,7 @@ func TestConfirmActivatesSubscription(t *testing.T) {
 	t.Cleanup(srv.Close)
 	s := &BillingService{billing: store, toss: toss.NewClient("s", srv.URL, srv.Client()), enabled: true, now: func() time.Time { return fixedNow }}
 	ctx := context.Background()
-	order, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY")
+	order, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", fixedNow)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -241,7 +267,7 @@ func TestConfirmRejectsMisuse(t *testing.T) {
 	store := &fakeBillingStore{plans: seedPlan()}
 	s, hits := billingTestService(t, store, "DONE", nil)
 	ctx := context.Background()
-	order, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY")
+	order, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -260,7 +286,7 @@ func TestConfirmTossFailureMarksFailed(t *testing.T) {
 	store := &fakeBillingStore{plans: seedPlan()}
 	s, _ := billingTestService(t, store, "ERROR", nil)
 	ctx := context.Background()
-	order, _, _ := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY")
+	order, _, _ := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
 	if _, err := s.Confirm(ctx, "u-1", "pk-1", order.OrderID, 5900); !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("toss failure err = %v", err)
 	}
@@ -348,5 +374,92 @@ func TestWebhookRejectsAmountMismatch(t *testing.T) {
 	}
 	if store.orders["m-3"].Status != domain.BillingPending {
 		t.Fatalf("order status = %s", store.orders["m-3"].Status)
+	}
+}
+
+func refundTestSetup(t *testing.T, cancelCode string) (*BillingService, *fakeBillingStore, *string) {
+	t.Helper()
+	pk := "pk-r1"
+	store := &fakeBillingStore{plans: seedPlan()}
+	store.orders = map[string]*domain.BillingOrder{
+		"m-r1": {ID: "row-r1", UserID: "u-r1", PlanID: "plan-1", OrderID: "m-r1", AmountKRW: 5900, Status: domain.BillingPaid, TossPaymentKey: &pk},
+	}
+	store.subs = map[string]*domain.BillingSubscription{
+		"u-r1": {ID: "sub-r1", UserID: "u-r1", PlanID: "plan-1", Status: domain.BillSubActive},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if cancelCode != "" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"code":"` + cancelCode + `","message":"toss says no"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"paymentKey":"pk-r1","orderId":"m-r1","status":"CANCELED","totalAmount":5900,"method":"CARD"}`))
+	}))
+	t.Cleanup(srv.Close)
+	s := &BillingService{billing: store, toss: toss.NewClient("s", srv.URL, srv.Client()), enabled: true, now: time.Now}
+	return s, store, &pk
+}
+
+func TestRefundVoidsPaidOrder(t *testing.T) {
+	s, store, _ := refundTestSetup(t, "")
+	o, err := s.Refund(context.Background(), "u-r1", "m-r1", "변심")
+	if err != nil {
+		t.Fatalf("refund: %v", err)
+	}
+	if o.Status != domain.BillingRefunded || store.orders["m-r1"].Status != domain.BillingRefunded {
+		t.Fatalf("order status = %s", o.Status)
+	}
+	if store.subs["u-r1"].Status != domain.BillSubCancelled {
+		t.Fatalf("sub status = %s", store.subs["u-r1"].Status)
+	}
+	// Second refund is rejected (no longer PAID).
+	if _, err := s.Refund(context.Background(), "u-r1", "m-r1", "again"); err == nil {
+		t.Fatalf("double refund accepted")
+	}
+}
+
+func TestRefundAlreadyCanceledConverges(t *testing.T) {
+	s, store, _ := refundTestSetup(t, "ALREADY_CANCELED_TRANSACTION")
+	o, err := s.Refund(context.Background(), "u-r1", "m-r1", "")
+	if err != nil {
+		t.Fatalf("refund: %v", err)
+	}
+	if o.Status != domain.BillingRefunded || store.subs["u-r1"].Status != domain.BillSubCancelled {
+		t.Fatalf("not converged: order=%s sub=%s", o.Status, store.subs["u-r1"].Status)
+	}
+}
+
+func TestRefundResolvesActivePass(t *testing.T) {
+	s, store, _ := refundTestSetup(t, "")
+	rowID := "row-r1"
+	store.subs["u-r1"].OrderID = &rowID
+	o, err := s.Refund(context.Background(), "u-r1", "", "변심")
+	if err != nil {
+		t.Fatalf("refund active: %v", err)
+	}
+	if o.Status != domain.BillingRefunded {
+		t.Fatalf("order status = %s", o.Status)
+	}
+	if _, err := s.Refund(context.Background(), "nobody", "", ""); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("refund without pass: %v", err)
+	}
+}
+
+func TestRefundRejects(t *testing.T) {
+	s, _, _ := refundTestSetup(t, "FAILED_INTERNAL_SYSTEM")
+	if _, err := s.Refund(context.Background(), "u-r1", "m-r1", ""); err == nil {
+		t.Fatalf("toss hard failure accepted")
+	}
+	s2, _, _ := refundTestSetup(t, "")
+	if _, err := s2.Refund(context.Background(), "other-user", "m-r1", ""); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("cross-user refund: %v", err)
+	}
+	if _, err := s2.Refund(context.Background(), "u-r1", "nope", ""); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("unknown order: %v", err)
+	}
+	s2.enabled = false
+	if _, err := s2.Refund(context.Background(), "u-r1", "m-r1", ""); !errors.Is(err, domain.ErrPaymentUnavailable) {
+		t.Fatalf("disabled PG: %v", err)
 	}
 }

@@ -2,6 +2,9 @@ package storage
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -111,5 +114,125 @@ func TestNewFromEnvR2MissingConfig(t *testing.T) {
 	t.Setenv("R2_SECRET_ACCESS_KEY", "")
 	if _, _, err := NewFromEnv(); err == nil {
 		t.Fatalf("missing r2 config accepted")
+	}
+}
+
+// fakeS3 serves ListObjectsV2 pages and records DELETEs.
+type fakeS3 struct {
+	keys     []string
+	pages    int // pages served (pagination drill)
+	deleted  []string
+	failList bool
+}
+
+func (f *fakeS3) handler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			f.deleted = append(f.deleted, strings.TrimPrefix(r.URL.Path, "/bkt/"))
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.URL.Query().Get("list-type") != "2" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if f.failList {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		f.pages++
+		prefix := r.URL.Query().Get("prefix")
+		cont := r.URL.Query().Get("continuation-token")
+		// One key per page to force pagination.
+		start := 0
+		if cont != "" {
+			fmt.Sscanf(cont, "tok-%d", &start)
+		}
+		var sb strings.Builder
+		sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+		sb.WriteString(`<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">`)
+		matched := []string{}
+		for _, k := range f.keys {
+			if strings.HasPrefix(k, prefix) {
+				matched = append(matched, k)
+			}
+		}
+		if start < len(matched) {
+			sb.WriteString("<Contents><Key>" + matched[start] + "</Key></Contents>")
+		}
+		if start+1 < len(matched) {
+			sb.WriteString("<IsTruncated>true</IsTruncated>")
+			sb.WriteString(fmt.Sprintf("<NextContinuationToken>tok-%d</NextContinuationToken>", start+1))
+		} else {
+			sb.WriteString("<IsTruncated>false</IsTruncated>")
+		}
+		sb.WriteString("</ListBucketResult>")
+		w.Header().Set("Content-Type", "application/xml")
+		fmt.Fprint(w, sb.String())
+	}
+}
+
+func TestListPrefixPaginatesAndScopesToDirectory(t *testing.T) {
+	f := &fakeS3{keys: []string{
+		"hls/track-1/master.m3u8",
+		"hls/track-1/seg0.ts",
+		"hls/track-10/master.m3u8", // sibling: must NOT match hls/track-1
+		"staging/other.mp3",
+	}}
+	srv := httptest.NewServer(f.handler())
+	defer srv.Close()
+	s := New(srv.URL, "us-east-1", "ak", "sk", false)
+
+	keys, err := s.ListPrefix(context.Background(), "bkt", "hls/track-1")
+	if err != nil {
+		t.Fatalf("ListPrefix: %v", err)
+	}
+	if len(keys) != 2 {
+		t.Fatalf("keys = %v, want 2 under hls/track-1/", keys)
+	}
+	if f.pages != 2 {
+		t.Fatalf("pages = %d, want 2 (pagination)", f.pages)
+	}
+}
+
+func TestListPrefixRejectsEmpty(t *testing.T) {
+	s := New("http://localhost:9000", "us-east-1", "ak", "sk", false)
+	if _, err := s.ListPrefix(context.Background(), "bkt", ""); err == nil {
+		t.Fatalf("empty prefix accepted")
+	}
+	if _, err := s.ListPrefix(context.Background(), "bkt", "///"); err == nil {
+		t.Fatalf("blank prefix accepted")
+	}
+	if _, err := s.ListPrefix(context.Background(), "", "hls/a"); err == nil {
+		t.Fatalf("empty bucket accepted")
+	}
+}
+
+func TestDeletePrefixRemovesListedKeys(t *testing.T) {
+	f := &fakeS3{keys: []string{"hls/t9/master.m3u8", "hls/t9/seg0.ts"}}
+	srv := httptest.NewServer(f.handler())
+	defer srv.Close()
+	s := New(srv.URL, "us-east-1", "ak", "sk", false)
+
+	if err := s.DeletePrefix(context.Background(), "bkt", "hls/t9"); err != nil {
+		t.Fatalf("DeletePrefix: %v", err)
+	}
+	if len(f.deleted) != 2 {
+		t.Fatalf("deleted = %v, want 2 keys", f.deleted)
+	}
+}
+
+func TestDeletePrefixEmptyIsSuccessListFailureIsError(t *testing.T) {
+	f := &fakeS3{}
+	srv := httptest.NewServer(f.handler())
+	defer srv.Close()
+	s := New(srv.URL, "us-east-1", "ak", "sk", false)
+
+	if err := s.DeletePrefix(context.Background(), "bkt", "hls/nothing"); err != nil {
+		t.Fatalf("empty prefix: %v", err)
+	}
+	f.failList = true
+	if err := s.DeletePrefix(context.Background(), "bkt", "hls/nothing"); err == nil {
+		t.Fatalf("list failure accepted")
 	}
 }

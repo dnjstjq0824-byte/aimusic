@@ -4,15 +4,20 @@
 # Covers (grounded in backend/internal/handler/router.go + domain/errors.go):
 #   T01  GET /healthz
 #   T02  auth bootstrap (register/login, partner APPROVED, subscription VERIFIED)
+#        + C9 age gate: missing ageConfirmed -> 400
 #   T03  pre-check 403 on Suno Free      -> ERR_NON_COMMERCIAL_TIER
 #   T04  pre-check 403 out-of-window date -> ERR_RETROACTIVE_GENERATION_DATE (+expired -> ERR_NON_COMMERCIAL_TIER)
 #   T05  pre-check 403 SYNC-only license  -> ERR_SYNC_ONLY_LICENSE (SOUNDRAW/MUBERT seed FALSE)
+#   T05b pre-check 403 post-cutoff UDIO   -> ERR_NON_COMMERCIAL_TIER (B2 2025-10-30)
 #   T06  duplicate SHA-256 block          -> 409 ERR_DUPLICATE_AUDIO_FILE
 #        + finalize sha-mismatch bypass    -> 403 ERR_FORBIDDEN
+#        + finalize missing warranty       -> 400 ERR_INVALID_INPUT
+#        + finalize collective TRUSTED     -> 400 (C3 KOMCA refusal)
 #   T07  worker FFprobe block on Free-Trial-tagged fixture
 #        (admin adds "free-trial" to SUNO blocked_metadata_keywords, fixture tag triggers
 #         transcoding_jobs FAILED + tracks LICENSE_GATE_REJECTED; see worker/main.go + audio/processor.go)
 #   T08  happy path: HLS + APPROVED + playlist + stream + heartbeat
+#        (heartbeat deltas accumulate: 12s x3 crosses 30s on the third)
 #   T09  dispute lifecycle mapping (no TAKEDOWN_TEMP enum in schema; mapped to real states):
 #          TAKEDOWN_TEMP = tracks TAKEN_DOWN via POST /admin/curation/takedown (temporary, pending dispute)
 #          skip        = GET /tracks/:id/stream + heartbeat + playlist-add -> 403 ERR_NOT_STREAMABLE,
@@ -21,13 +26,15 @@
 #          restore     = POST /admin/disputes/:id/resolve uphold=false -> DISMISSED, then
 #                        POST /admin/review approve=true -> READY (stream works again)
 #          permanent   = resolve uphold=true -> UPHELD_TAKEDOWN + TAKEN_DOWN + strike_applied=true
+#          D1          = §103 timeline stamps verified via psql
 #   T10  strike_count 3 -> partner SUSPENDED (user_blocks strike_number 3, expires_at NULL)
 #   T11  settlement FORFEITED_VIOLATION + 3.3% check
 #        + AES-256-GCM account at rest + masked admin preview
+#        + B9 OTHER_88 8.8% withholding variant
 #        (gross=plays*rate, withholding=gross*33/1000, net=gross-withholding;
 #         violated -> FORFEITED + FORFEITED_VIOLATION + net 0; approve from FORFEITED fails)
 #   T12  batch2 APIs: password reset (request/confirm/login-rotation/single-use),
-#        oauth providers/start guards, billing plans/orders guards, admin overview
+#        oauth providers/start guards, billing plans/orders guards (C6 consent), admin overview
 #
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
@@ -41,12 +48,28 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Explicit environment wins over .env (container runs pass service hostnames
+# via -e; a blind `. .env` once retargeted everything at localhost).
+E2E_ENV_VARS="BASE_URL DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD REDIS_HOST REDIS_PORT S3_PORT S3_PUBLIC_ENDPOINT E2E_KEEP_FIXTURES"
+for _v in $E2E_ENV_VARS; do
+  if [ -n "${!_v+x}" ]; then
+    printf -v "_e2e_saved_${_v}" '%s' "${!_v}"
+  fi
+done
 if [ -f "$ROOT/.env" ]; then
   set -a
   # shellcheck disable=SC1091
   . "$ROOT/.env"
   set +a
 fi
+for _v in $E2E_ENV_VARS; do
+  _s="_e2e_saved_${_v}"
+  if [ -n "${!_s+x}" ]; then
+    printf -v "$_v" '%s' "${!_s}"
+  fi
+  unset "$_s"
+done
+unset _v _s E2E_ENV_VARS
 
 BASE_URL="${BASE_URL:-http://localhost:${API_PORT:-8080}}"
 API="$BASE_URL/api/v1"
@@ -94,6 +117,19 @@ need_cmd curl
 need_cmd psql
 need_cmd redis-cli
 need_cmd python3
+
+# retarget_hls swaps a signed grant's CDN host for the local S3 endpoint.
+# The grant signature is verified by the edge worker in prod; LocalStack
+# ignores the query, so this proves packaging + bytes, not the tunnel.
+retarget_hls() {
+  GRANT_URL="$1" PUBLIC_EP="$S3_PUBLIC_ENDPOINT" python3 -c "
+import os
+from urllib.parse import urlsplit, urlunsplit
+g = urlsplit(os.environ['GRANT_URL'])
+p = urlsplit(os.environ['PUBLIC_EP'])
+print(urlunsplit((p.scheme, p.netloc, g.path, g.query, '')))
+"
+}
 
 # --- HTTP helper: api METHOD PATH TOKEN DATA -> prints status code, body in $BODY ---
 api() {
@@ -161,8 +197,10 @@ assert_eq() {
 
 psql_q() {
   local sql="$1"
+  # -q suppresses command tags ("INSERT 0 1"); without it RETURNING output
+  # gets the tag glued to the value and poisons downstream UUIDs.
   PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -t -A -c "$sql" 2>"$TMP_DIR/psql.err" || echo "__PSQL_ERROR__"
+    -q -t -A -c "$sql" 2>"$TMP_DIR/psql.err" || echo "__PSQL_ERROR__"
 }
 
 redis_q() {
@@ -184,17 +222,55 @@ wait_psql_eq() {
 }
 
 rand_hex() { python3 -c "import secrets; print(secrets.token_hex($1))"; }
+# Real SHA-256 of a fixture file (the worker verifies staged bytes against the
+# declared hash, so upload sites must use this instead of rand_hex).
+file_sha256() { python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$1"; }
 now_rfc3339() { python3 -c "import datetime; print(datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z'))"; }
+# Mint the current 30s-step 6-digit TOTP for a base32 secret (stdlib only).
+totp_now() {
+  SECRET_B32="$1" python3 - <<'PY'
+import base64, hashlib, hmac, os, struct, time
+s = os.environ["SECRET_B32"].upper()
+s += "=" * (-len(s) % 8)
+key = base64.b32decode(s)
+ctr = struct.pack(">Q", int(time.time()) // 30)
+d = hmac.new(key, ctr, hashlib.sha1).digest()
+o = d[-1] & 0x0F
+code = (struct.unpack(">I", d[o:o+4])[0] & 0x7FFFFFFF) % 1000000
+print(f"{code:06d}")
+PY
+}
 
 # ============ T01 health ============
 section "T01 healthz + infra sanity"
 code="$(curl -s -o "$BODY" -w "%{http_code}" --max-time 10 "$BASE_URL/healthz" 2>/dev/null || echo "000")"
 assert_status "GET /healthz" "200" "$code"
 assert_contains "healthz body ok" '"ok"' "$(cat "$BODY" 2>/dev/null || echo "")"
+code="$(curl -s -o "$BODY" -w "%{http_code}" --max-time 10 "$BASE_URL/readyz" 2>/dev/null || echo "000")"
+assert_status "GET /readyz" "200" "$code"
+assert_contains "readyz db up" '"db":"up"' "$(cat "$BODY" 2>/dev/null | tr -d ' ' || echo "")"
+assert_contains "readyz redis up" '"redis":"up"' "$(cat "$BODY" 2>/dev/null | tr -d ' ' || echo "")"
 pg_ok="$(psql_q "SELECT 1;" | tr -d ' \r\n')"
 assert_eq "psql SELECT 1" "1" "$pg_ok"
 redis_pong="$(redis_q ping 2>/dev/null | tr -d '\r\n')"
 assert_eq "redis-cli ping" "PONG" "$redis_pong"
+# Schema completeness: start-local must apply every *.up.sql (000008+ drift
+# once 500'd all track reads; this fails the suite before fixtures instead).
+for obj in \
+  "SELECT to_regclass('public.generation_jobs') IS NOT NULL" \
+  "SELECT to_regclass('public.store_businesses') IS NOT NULL" \
+  "SELECT to_regclass('public.store_devices') IS NOT NULL" \
+  "SELECT to_regclass('public.generation_violations') IS NOT NULL" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='track_rights_declarations' AND column_name='cert_snapshot_json'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='isrc'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='license_ref'" ; do
+  case "$obj" in
+    SELECT\ to_regclass*) want="t" ;;
+    *) want="1" ;;
+  esac
+  got="$(psql_q "$obj;" | tr -d ' \r\n')"
+  assert_eq "schema: $obj" "$want" "$got"
+done
 
 # ============ T02 auth bootstrap ============
 section "T02 auth bootstrap (admin promote, partners, listener)"
@@ -206,7 +282,7 @@ PARTNER_B_EMAIL="e2e-pb-$STAMP@example.com"
 USER_EMAIL="e2e-user-$STAMP@example.com"
 PW="E2ePass123!"
 
-code="$(api POST "/auth/register" "" "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-admin\"}")"
+code="$(api POST "/auth/register" "" "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-admin\",\"ageConfirmed\":true}")"
 assert_status "register admin-candidate" "201" "$code"
 ADMIN_USER_ID="$(jget "data.id")"
 if [ -z "$ADMIN_USER_ID" ]; then fail "admin user id empty"; else pass "admin user id $ADMIN_USER_ID"; fi
@@ -221,7 +297,7 @@ if [ -z "$ADMIN_TOKEN" ]; then fail "admin token empty"; else pass "admin token 
 
 register_partner() {
   local email="$1"; local company="$2"
-  api POST "/auth/register/partner" "" "{\"email\":\"$email\",\"password\":\"$PW\",\"displayName\":\"$company\",\"company\":\"$company\"}"
+  api POST "/auth/register/partner" "" "{\"email\":\"$email\",\"password\":\"$PW\",\"displayName\":\"$company\",\"company\":\"$company\",\"ageConfirmed\":true}"
 }
 code="$(register_partner "$PARTNER_FREE_EMAIL" "E2EFreeMusic")"
 assert_status "register partnerFree" "201" "$code"
@@ -235,9 +311,12 @@ code="$(register_partner "$PARTNER_B_EMAIL" "E2EB-Music")"
 assert_status "register partnerB" "201" "$code"
 PB_USER_ID="$(jget "data.user.id")"
 PB_PARTNER_ID="$(jget "data.partner.id")"
-code="$(api POST "/auth/register" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-listener\"}")"
+code="$(api POST "/auth/register" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-listener\",\"ageConfirmed\":true}")"
 assert_status "register listener" "201" "$code"
 USER_ID="$(jget "data.id")"
+# C9 age gate: missing 14+ confirmation is rejected.
+code="$(api POST "/auth/register" "" "{\"email\":\"e2e-noage-$STAMP@example.com\",\"password\":\"$PW\",\"displayName\":\"e2e-noage\"}")"
+assert_status "register without ageConfirmed -> 400" "400" "$code"
 
 code="$(api POST "/auth/login" "" "{\"email\":\"$PARTNER_A_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "login partnerA" "200" "$code"
@@ -251,6 +330,36 @@ PFREE_TOKEN="$(jget "data.tokens.accessToken")"
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "login listener" "200" "$code"
 USER_TOKEN="$(jget "data.tokens.accessToken")"
+
+# Terms consent bootstrap: commercial surfaces (stream/orders/pre-check)
+# require consent to the latest required terms; consent every fixture user.
+consent_all_required() {
+  local token="$1"
+  API_URL="$API" API_TOKEN="$token" python3 - <<'PY'
+import json, os, urllib.request
+api, tok = os.environ["API_URL"], os.environ["API_TOKEN"]
+def call(method, path, data=None):
+    req = urllib.request.Request(api + path, method=method,
+        data=json.dumps(data).encode() if data is not None else None,
+        headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return r.status, json.load(r)
+_, pending = call("GET", "/legal/consents/pending")
+n = 0
+for t in pending.get("data", []):
+    st, _ = call("POST", "/legal/consents", {"termsId": t["id"]})
+    assert st in (200, 201), st
+    n += 1
+print(n)
+PY
+}
+for tok in "$ADMIN_TOKEN" "$PFREE_TOKEN" "$PA_TOKEN" "$PB_TOKEN" "$USER_TOKEN"; do
+  consented="$(consent_all_required "$tok")"
+  if [ "$consented" -ge 1 ] 2>/dev/null; then pass "consented $consented required terms"; else fail "consent bootstrap consented=$consented"; fi
+done
+code="$(api GET "/legal/consents/pending" "$USER_TOKEN" "")"
+assert_status "pending consents empty after bootstrap" "200" "$code"
+assert_contains "no pending terms" '"data":[]' "$(cat "$BODY" | tr -d ' \n')"
 
 for pid in "$PFREE_PARTNER_ID" "$PA_PARTNER_ID" "$PB_PARTNER_ID"; do
   code="$(api POST "/admin/review/partner" "$ADMIN_TOKEN" "{\"partnerId\":\"$pid\",\"approve\":true}")"
@@ -279,6 +388,49 @@ code="$(api POST "/admin/review/subscription" "$ADMIN_TOKEN" "{\"subscriptionId\
 assert_status "admin verify partnerB SUNO Pro" "200" "$code"
 pfree_status="$(psql_q "SELECT status FROM partner_ai_subscriptions WHERE id='$PFREE_SUB_ID'::uuid;" | tr -d ' \r\n')"
 assert_eq "partnerFree SUNO Free stays PENDING" "PENDING" "$pfree_status"
+
+section "T02c TOTP 2FA enroll -> gate -> recovery -> logout-all -> disable"
+code="$(api POST "/auth/totp/enroll" "$USER_TOKEN" "{}")"
+assert_status "totp enroll" "200" "$code"
+TOTP_SECRET="$(jget "data.secret")"
+if [ -z "$TOTP_SECRET" ]; then fail "totp secret empty"; else pass "totp secret issued"; fi
+code="$(api POST "/auth/totp/confirm" "$USER_TOKEN" "{\"code\":\"000000\"}")"
+assert_status "totp confirm wrong code -> 401" "401" "$code"
+TOTP_CODE="$(totp_now "$TOTP_SECRET")"
+code="$(api POST "/auth/totp/confirm" "$USER_TOKEN" "{\"code\":\"$TOTP_CODE\"}")"
+assert_status "totp confirm correct code" "200" "$code"
+RECOVERY0="$(BODY_PATH="$BODY" python3 -c "import json,os; print(json.load(open(os.environ['BODY_PATH']))['data']['recoveryCodes'][0])" 2>/dev/null || echo "")"
+if [ -z "$RECOVERY0" ]; then fail "recovery codes empty"; else pass "recovery codes issued"; fi
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "login without totp -> 403" "403" "$code"
+assert_contains "totp required code" "ERR_TOTP_REQUIRED" "$(cat "$BODY")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"000000\"}")"
+assert_status "login wrong totp -> 401" "401" "$code"
+assert_contains "totp invalid code" "ERR_TOTP_INVALID" "$(cat "$BODY")"
+TOTP_CODE2="$(totp_now "$TOTP_SECRET")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$TOTP_CODE2\"}")"
+assert_status "login with totp" "200" "$code"
+USER_TOKEN_NEW="$(jget "data.tokens.accessToken")"
+if [ -z "$USER_TOKEN_NEW" ]; then fail "totp login token empty"; else pass "totp login token issued"; fi
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$RECOVERY0\"}")"
+assert_status "login with recovery code" "200" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$RECOVERY0\"}")"
+assert_status "reused recovery code -> 401" "401" "$code"
+code="$(api POST "/auth/logout-all" "$USER_TOKEN_NEW" "{}")"
+assert_status "logout-all" "200" "$code"
+code="$(api GET "/auth/me" "$USER_TOKEN" "")"
+assert_status "pre-logout-all token rejected" "401" "$code"
+code="$(api GET "/auth/me" "$USER_TOKEN_NEW" "")"
+assert_status "post-logout-all token rejected" "401" "$code"
+TOTP_CODE3="$(totp_now "$TOTP_SECRET")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$TOTP_CODE3\"}")"
+assert_status "login after logout-all" "200" "$code"
+USER_TOKEN="$(jget "data.tokens.accessToken")"
+code="$(api POST "/auth/totp/disable" "$USER_TOKEN" "{\"password\":\"$PW\"}")"
+assert_status "totp disable with password" "200" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "login without totp after disable" "200" "$code"
+USER_TOKEN="$(jget "data.tokens.accessToken")"
 
 GEN_NOW="$(now_rfc3339)"
 GEN_OK="$(python3 -c "import datetime; print((datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(minutes=1)).isoformat().replace('+00:00','Z'))")"
@@ -313,9 +465,21 @@ assert_contains "AIVA Standard sync-only gate code" "ERR_SYNC_ONLY_LICENSE" "$(c
 policy_allows="$(psql_q "SELECT allows_standalone_streaming FROM ai_provider_policies WHERE provider='SOUNDRAW';" | tr -d ' \r\n')"
 assert_eq "SOUNDRAW allows_standalone_streaming=false via psql" "f" "$policy_allows"
 
+section "T05b pre-check 403 on post-cutoff generation (B2 Udio 2025-10-30)"
+SHA_CUTOFF="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"UDIO\",\"audioSha256\":\"$SHA_CUTOFF\",\"fileName\":\"post-cutoff.mp3\",\"generatedAt\":\"$GEN_OK\",\"requiresActiveSub\":false}")"
+assert_status "pre-check UDIO post-cutoff -> 403" "403" "$code"
+assert_contains "cutoff gate code" "ERR_NON_COMMERCIAL_TIER" "$(cat "$BODY")"
+assert_contains "cutoff message" "not eligible for distribution" "$(cat "$BODY")"
+cutoff_db="$(psql_q "SELECT max_generated_at::date::text FROM ai_provider_policies WHERE provider='UDIO';" | tr -d ' \r\n')"
+assert_eq "UDIO max_generated_at=2025-10-30 via psql" "2025-10-30" "$cutoff_db"
+
 # ---- fixture helpers (ffmpeg sine fixtures; WAV bypasses bitrate gate, MP3 enforces it) ----
 FIX_DIR="$TMP_DIR/fixtures"
 mkdir -p "$FIX_DIR"
+# Unique per run: fixtures must not collide with rows committed by previous
+# runs against the same persistent DB (duplicate SHA-256 is a 409 by design).
+RUN_ID="e2e-$(date +%s)-$$"
 HAVE_FFMPEG=1
 command -v ffmpeg >/dev/null 2>&1 || HAVE_FFMPEG=0
 command -v ffprobe >/dev/null 2>&1 || HAVE_FFMPEG=0
@@ -331,7 +495,7 @@ make_fixture() {
     eval "extra=($meta_args)"
   fi
   ffmpeg -hide_banner -loglevel error -y -f lavfi -i "sine=frequency=440:duration=$secs" \
-    -ar 44100 -ac 2 "${extra[@]}" "$out"
+    -ar 44100 -ac 2 -metadata comment="avibe-e2e run $RUN_ID" "${extra[@]}" "$out"
 }
 
 upload_presigned() {
@@ -392,9 +556,9 @@ section "T06 duplicate SHA-256 block (409 ERR_DUPLICATE_AUDIO_FILE)"
 if [ "$HAVE_FFMPEG" -eq 0 ]; then
   skip "T06 needs ffmpeg/ffprobe for upload fixtures"
 else
-  DUP_SHA="$(rand_hex 32)"
   DUP_FIX="$FIX_DIR/dup.wav"
   make_fixture "$DUP_FIX" "" 3
+  DUP_SHA="$(file_sha256 "$DUP_FIX")"
   code="$(precheck_and_upload "$PA_TOKEN" "SUNO" "$DUP_SHA" "dup.wav" "$GEN_OK" "$PA_SUB_ID" "true" "$DUP_FIX")"
   assert_status "dup first pre-check pass" "200" "$code"
   DUP_KEY="$(cat "$TMP_DIR/precheck.key" 2>/dev/null || echo "")"
@@ -416,6 +580,16 @@ else
     code="$(finalize_track "$PA_TOKEN" "$DUP_KEY" "E2E Bypass Attempt" "SUNO" "$PA_SUB_ID" "$WRONG_SHA" "$GEN_OK")"
     assert_status "finalize sha mismatch -> 403" "403" "$code"
     assert_contains "finalize bypass code" "ERR_FORBIDDEN" "$(cat "$BODY")"
+    # Rights warranties are enforced server-side (missing declares -> 400,
+    # checked before the duplicate gate so this payload is deterministic).
+    RIGHTS_BYPASS="$(python3 -c "import json; print(json.dumps({'stagingKey':'$DUP_KEY','title':'E2E Rights Bypass','provider':'SUNO','audioSha256':'$DUP_SHA','generatedAt':'$GEN_OK','subscriptionId':'$PA_SUB_ID','rights':{'declaresOwnership':False,'declaresNoVoiceClone':True,'declaresTrainingConsent':True,'subscriptionId':'$PA_SUB_ID'}}))")"
+    code="$(api POST "/partner/finalize" "$PA_TOKEN" "$RIGHTS_BYPASS")"
+    assert_status "finalize missing warranty -> 400" "400" "$code"
+    assert_contains "finalize warranty code" "ERR_INVALID_INPUT" "$(cat "$BODY")"
+    # KOMCA-trusted tracks are refused (C3).
+    TRUSTED_BYPASS="$(python3 -c "import json; print(json.dumps({'stagingKey':'$DUP_KEY','title':'E2E Trusted Bypass','provider':'SUNO','audioSha256':'$DUP_SHA','generatedAt':'$GEN_OK','subscriptionId':'$PA_SUB_ID','rights':{'declaresOwnership':True,'declaresNoVoiceClone':True,'declaresTrainingConsent':True,'subscriptionId':'$PA_SUB_ID','collectiveTrustStatus':'TRUSTED','collectiveName':'KOMCA'}}))")"
+    code="$(api POST "/partner/finalize" "$PA_TOKEN" "$TRUSTED_BYPASS")"
+    assert_status "finalize collective TRUSTED -> 400" "400" "$code"
   fi
 fi
 
@@ -444,10 +618,10 @@ print(json.dumps({'allowsStandaloneStreaming':True,'minBitrateKbps':192,'blocked
   code="$(api PUT "/admin/policies/SUNO" "$ADMIN_TOKEN" "$UPDATE_PAYLOAD")"
   assert_status "admin add free-trial keyword" "200" "$code"
   assert_contains "policy has free-trial" "free-trial" "$(cat "$BODY")"
-  BLOCK_SHA="$(rand_hex 32)"
   BLOCK_FIX="$FIX_DIR/blocked.mp3"
   # MP3 with comment tag containing free-trial triggers CheckBlockedMetadata.
-  make_fixture "$BLOCK_FIX" '-metadata comment="free-trial demo render" -codec:a libmp3lame -b:a 128k' 4
+  make_fixture "$BLOCK_FIX" "-metadata comment=\"free-trial demo render $RUN_ID\" -codec:a libmp3lame -b:a 128k" 4
+  BLOCK_SHA="$(file_sha256 "$BLOCK_FIX")"
   code="$(precheck_and_upload "$PA_TOKEN" "SUNO" "$BLOCK_SHA" "blocked.mp3" "$GEN_OK" "$PA_SUB_ID" "true" "$BLOCK_FIX")"
   assert_status "blocked pre-check passes (gate has no metadata yet)" "200" "$code"
   BLOCK_KEY="$(cat "$TMP_DIR/precheck.key" 2>/dev/null || echo "")"
@@ -477,15 +651,33 @@ print(json.dumps({'allowsStandaloneStreaming':True,'minBitrateKbps':192,'blocked
 ")"
   code="$(api PUT "/admin/policies/SUNO" "$ADMIN_TOKEN" "$RESTORE_PAYLOAD")"
   assert_status "restore SUNO policy" "200" "$code"
+  # Tampered upload: declared SHA differs from staged bytes -> worker rejects.
+  TAMPER_FIX="$FIX_DIR/tamper.wav"
+  make_fixture "$TAMPER_FIX" "" 2
+  TAMPER_SHA="$(rand_hex 32)"
+  code="$(precheck_and_upload "$PA_TOKEN" "SUNO" "$TAMPER_SHA" "tamper.wav" "$GEN_OK" "$PA_SUB_ID" "true" "$TAMPER_FIX")"
+  assert_status "tampered pre-check pass (bytes unchecked yet)" "200" "$code"
+  TAMPER_KEY="$(cat "$TMP_DIR/precheck.key" 2>/dev/null || echo "")"
+  code="$(finalize_track "$PA_TOKEN" "$TAMPER_KEY" "E2E Tampered Track" "SUNO" "$PA_SUB_ID" "$TAMPER_SHA" "$GEN_OK")"
+  assert_status "tampered finalize -> 201" "201" "$code"
+  TAMPER_TRACK_ID="$(jget "data.trackId")"
+  if wait_psql_eq "SELECT status FROM tracks WHERE id='$TAMPER_TRACK_ID'::uuid;" "LICENSE_GATE_REJECTED" 150; then
+    pass "worker rejected tampered bytes (LICENSE_GATE_REJECTED)"
+  else
+    got="$(psql_q "SELECT status FROM tracks WHERE id='$TAMPER_TRACK_ID'::uuid;" | tr -d ' \r\n')"
+    fail "tamper reject timeout (track status=$got)"
+  fi
+  tamper_reason="$(psql_q "SELECT COALESCE(rejection_reason_ko,'') FROM tracks WHERE id='$TAMPER_TRACK_ID'::uuid;")"
+  assert_contains "tamper reason integrity" "무결성 검증 실패" "$tamper_reason"
 fi
 
 section "T08 happy path: HLS + APPROVED + playlist + stream"
 if [ "$HAVE_FFMPEG" -eq 0 ]; then
   skip "T08 needs ffmpeg/ffprobe"
 else
-  HAPPY_SHA="$(rand_hex 32)"
   HAPPY_FIX="$FIX_DIR/happy.wav"
   make_fixture "$HAPPY_FIX" '-metadata title="E2E Happy" -metadata artist="E2E"' 6
+  HAPPY_SHA="$(file_sha256 "$HAPPY_FIX")"
   code="$(precheck_and_upload "$PA_TOKEN" "SUNO" "$HAPPY_SHA" "happy.wav" "$GEN_OK" "$PA_SUB_ID" "true" "$HAPPY_FIX")"
   assert_status "happy pre-check pass" "200" "$code"
   HAPPY_KEY="$(cat "$TMP_DIR/precheck.key" 2>/dev/null || echo "")"
@@ -532,24 +724,44 @@ else
   code="$(api GET "/playlists/$PLAYLIST_ID/tracks" "$USER_TOKEN" "")"
   assert_status "playlist list tracks" "200" "$code"
   assert_contains "playlist contains happy" "$HAPPY_TRACK_ID" "$(cat "$BODY")"
-  # Stream: signed HLS grant + master playlist fetch.
+  # Stream: login required; free tier gets the 128k SQ variant.
+  code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "" "")"
+  assert_status "anonymous stream -> 401" "401" "$code"
   code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
   assert_status "stream grant" "200" "$code"
   STREAM_URL="$(jget "data.url")"
   STREAM_JTI="$(jget "data.jti")"
-  if [[ "$STREAM_URL" == *"master.m3u8"* && "$STREAM_URL" == *"sig="* && "$STREAM_URL" == *"exp="* ]]; then
-    pass "stream URL signed (master.m3u8 + exp/jti/sig)"
+  assert_eq "free tier quality SQ" "SQ" "$(jget "data.quality")"
+  if [[ "$STREAM_URL" == *"stream_0.m3u8"* && "$STREAM_URL" == *"sig="* && "$STREAM_URL" == *"exp="* ]]; then
+    pass "stream URL signed (stream_0.m3u8 + exp/jti/sig)"
   else
     fail "stream URL not signed: $(printf '%s' "$STREAM_URL" | head -c 300)"
   fi
   if [ -n "$STREAM_URL" ]; then
-    hls_code="$(curl -s -o "$TMP_DIR/master.m3u8" -w "%{http_code}" --max-time 20 "$STREAM_URL" 2>/dev/null || echo "000")"
-    if [ "$hls_code" = "200" ] && grep -q "#EXTM3U" "$TMP_DIR/master.m3u8" 2>/dev/null; then
-      pass "HLS master.m3u8 fetchable (#EXTM3U)"
+    hls_code="$(curl -s -o "$TMP_DIR/variant.m3u8" -w "%{http_code}" --max-time 20 "$(retarget_hls "$STREAM_URL")" 2>/dev/null || echo "000")"
+    if [ "$hls_code" = "200" ] && grep -q "#EXTM3U" "$TMP_DIR/variant.m3u8" 2>/dev/null; then
+      pass "HLS stream_0.m3u8 fetchable (#EXTM3U)"
     else
-      fail "HLS master fetch failed (http=$hls_code)"
+      fail "HLS variant fetch failed (http=$hls_code)"
     fi
   fi
+  # HQ gate: an ACTIVE pass upgrades the grant to the master playlist.
+  E2E_PLAN_ID="$(psql_q "SELECT id::text FROM billing_plans WHERE code='LISTENER_PLUS_MONTHLY';" | tr -d ' \r\n')"
+  psql_q "INSERT INTO billing_subscriptions (user_id,plan_id,status,current_period_start,current_period_end) VALUES ('$USER_ID'::uuid,'$E2E_PLAN_ID'::uuid,'ACTIVE',NOW(),NOW()+interval '30 days') ON CONFLICT (user_id) WHERE status='ACTIVE' DO UPDATE SET status='ACTIVE', current_period_end=NOW()+interval '30 days';" >/dev/null
+  code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+  assert_status "stream grant (pass)" "200" "$code"
+  assert_eq "pass quality HQ" "HQ" "$(jget "data.quality")"
+  assert_contains "pass gets master playlist" "master.m3u8" "$(cat "$BODY")"
+  psql_q "DELETE FROM billing_subscriptions WHERE user_id='$USER_ID'::uuid;" >/dev/null
+  # Heartbeat: small deltas accumulate; the delta crossing 30s counts once.
+  for i in 1 2; do
+    code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":$((i * 12000)),\"playMs\":12000,\"jti\":\"$STREAM_JTI\"}")"
+    assert_status "heartbeat 12s delta #$i" "200" "$code"
+    assert_contains "delta #$i not yet counted" '"countedAsPlay":false' "$(cat "$BODY")"
+  done
+  code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":36000,\"playMs\":12000,\"jti\":\"$STREAM_JTI\"}")"
+  assert_status "heartbeat 12s delta #3 (crosses 30s)" "200" "$code"
+  assert_contains "crossing delta counted" '"countedAsPlay":true' "$(cat "$BODY")"
   # Heartbeat: 30s+ counts, short play does not; resume state persists.
   code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":31000,\"playMs\":35000,\"jti\":\"$STREAM_JTI\"}")"
   assert_status "heartbeat 35s" "200" "$code"
@@ -584,9 +796,9 @@ else
   pass "fallback seeded dispute track A $DISPUTE_TRACK_A"
 fi
 if [ "$HAVE_FFMPEG" -eq 1 ]; then
-  PB_SHA="$(rand_hex 32)"
   PB_FIX="$FIX_DIR/pb.wav"
   make_fixture "$PB_FIX" "" 4
+  PB_SHA="$(file_sha256 "$PB_FIX")"
   code="$(precheck_and_upload "$PB_TOKEN" "SUNO" "$PB_SHA" "pb.wav" "$GEN_OK" "$PB_SUB_ID" "true" "$PB_FIX")"
   assert_status "partnerB pre-check pass" "200" "$code"
   PB_KEY="$(cat "$TMP_DIR/precheck.key" 2>/dev/null || echo "")"
@@ -631,12 +843,26 @@ assert_contains "counter note persisted" "[COUNTER]" "$desc_a"
 code="$(api POST "/admin/disputes/$DISPUTE_A_ID/resolve" "$ADMIN_TOKEN" '{"uphold":false}')"
 assert_status "resolve dismiss A" "200" "$code"
 assert_contains "dismiss status" "DISMISSED" "$(cat "$BODY")"
+# D1: §103 timeline stamps are recorded (request/notice/resume-request/resume).
+timeline="$(psql_q "SELECT COALESCE(takedown_requested_at::text,'NULL')||'|'||COALESCE(partner_notified_at::text,'NULL')||'|'||COALESCE(resume_requested_at::text,'NULL')||'|'||COALESCE(resumed_at::text,'NULL') FROM copyright_disputes WHERE id='$DISPUTE_A_ID'::uuid;" | tr -d ' \r\n')"
+if [[ "$timeline" == *"NULL"* ]]; then fail "dispute A §103 timeline incomplete: $timeline"; else pass "dispute A §103 timeline stamped"; fi
 code="$(api POST "/admin/review" "$ADMIN_TOKEN" "{\"trackId\":\"$DISPUTE_TRACK_A\",\"approve\":true}")"
 assert_status "restore track A to READY" "200" "$code"
 code="$(api GET "/tracks/$DISPUTE_TRACK_A/stream" "$USER_TOKEN" "")"
 assert_status "restored stream works" "200" "$code"
 
 # --- B: report -> permanent (uphold) ---
+if [ "$HAVE_FFMPEG" -eq 1 ]; then
+  code="$(api GET "/tracks/$DISPUTE_TRACK_B/stream" "$USER_TOKEN" "")"
+  assert_status "track B stream grant pre-takedown" "200" "$code"
+  B_STREAM_URL="$(jget "data.url")"
+  pre_code="$(curl -s -o "$TMP_DIR/b-pre.m3u8" -w "%{http_code}" --max-time 20 "$(retarget_hls "$B_STREAM_URL")" 2>/dev/null || echo "000")"
+  if [ "$pre_code" = "200" ] && grep -q "#EXTM3U" "$TMP_DIR/b-pre.m3u8" 2>/dev/null; then
+    pass "track B HLS bytes exist pre-takedown"
+  else
+    fail "track B HLS missing pre-takedown (http=$pre_code)"
+  fi
+fi
 code="$(api POST "/disputes/report" "$USER_TOKEN" "{\"trackId\":\"$DISPUTE_TRACK_B\",\"reason\":\"VOICE_CLONE\",\"description\":\"e2e report B permanent\"}")"
 assert_status "report dispute B" "201" "$code"
 DISPUTE_B_ID="$(jget "data.id")"
@@ -647,6 +873,19 @@ b_status="$(psql_q "SELECT status FROM tracks WHERE id='$DISPUTE_TRACK_B'::uuid;
 assert_eq "track B permanent TAKEN_DOWN" "TAKEN_DOWN" "$b_status"
 code="$(api GET "/tracks/$DISPUTE_TRACK_B/stream" "$USER_TOKEN" "")"
 assert_status "permanent stream still 403" "403" "$code"
+if [ "$HAVE_FFMPEG" -eq 1 ] && [ -n "${B_STREAM_URL:-}" ]; then
+  post_code="$(curl -s -o "$TMP_DIR/b-post.m3u8" -w "%{http_code}" --max-time 20 "$(retarget_hls "$B_STREAM_URL")" 2>/dev/null || echo "000")"
+  if [ "$post_code" = "200" ] && grep -q "#EXTM3U" "$TMP_DIR/b-post.m3u8" 2>/dev/null; then
+    fail "takedown left HLS bytes reachable"
+  else
+    pass "takedown purged HLS bytes (http=$post_code)"
+  fi
+else
+  skip "takedown HLS purge check (no ffmpeg fixtures)"
+fi
+code="$(api GET "/admin/audit-events?action=DISPUTE_RESOLVE" "$ADMIN_TOKEN" "")"
+assert_status "audit-events list" "200" "$code"
+assert_contains "audit has DISPUTE_RESOLVE for B" "$DISPUTE_B_ID" "$(cat "$BODY")"
 strike1="$(psql_q "SELECT COUNT(*) FROM user_blocks WHERE user_id='$PB_USER_ID'::uuid;" | tr -d ' \r\n')"
 assert_eq "partnerB strikes after 1 uphold" "1" "$strike1"
 
@@ -725,6 +964,12 @@ code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$
 assert_status "approve FORFEITED fails 400" "400" "$code"
 code="$(api GET "/admin/settlements/$PA_PARTNER_ID" "$ADMIN_TOKEN" "")"
 assert_status "list settlements A" "200" "$code"
+# B9: occasional-income withholding 8.8% (same period recalculated; status resets to PENDING).
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"ratePerPlayKrw\":$RATE_KRW,\"incomeType\":\"OTHER_88\"}")"
+assert_status "calculate settlement A OTHER_88" "200" "$code"
+exp_with88=$((exp_gross * 88 / 1000))
+assert_eq "settlement A withholding 8.8%" "$exp_with88" "$(jget "data.withholdingKrw")"
+assert_eq "settlement A incomeType" "OTHER_88" "$(jget "data.incomeType")"
 # Settlement account AES-256-GCM: ciphertext at rest, masked preview over API.
 E2E_ACCT="98765432109876"
 code="$(api PUT "/partner/settlement" "$PA_TOKEN" "{\"bank\":\"E2E Bank\",\"accountNumber\":\"$E2E_ACCT\"}")"
@@ -734,6 +979,18 @@ if [ "$stored_acct" == "$E2E_ACCT" ] || [ -z "$stored_acct" ]; then fail "settle
 code="$(api GET "/admin/partners/$PA_PARTNER_ID/settlement" "$ADMIN_TOKEN" "")"
 assert_status "settlement preview -> 200" "200" "$code"
 assert_contains "settlement preview masked" "**********9876" "$(cat "$BODY")"
+# Payout execution record: approve (OTHER_88 row is PENDING) then mark-paid once.
+code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
+assert_status "re-approve settlement A" "200" "$code"
+code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reference\":\"E2E-SLIP-001\"}")"
+assert_status "mark-paid settlement A" "200" "$code"
+assert_contains "settlement A PAID" '"status":"PAID"' "$(cat "$BODY")"
+assert_contains "settlement A payout ref" "E2E-SLIP-001" "$(cat "$BODY")"
+assert_contains "settlement A paidAt" '"paidAt"' "$(cat "$BODY")"
+code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reference\":\"E2E-SLIP-002\"}")"
+assert_status "double mark-paid -> 400" "400" "$code"
+code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reference\":\"E2E-SLIP-003\"}")"
+assert_status "mark-paid FORFEITED -> 400" "400" "$code"
 
 section "T12 batch2: reset, oauth, billing, overview"
 # Migration proof: batch2 tables exist.
@@ -767,6 +1024,8 @@ assert_status "reset confirm known -> 200" "200" "$code"
 assert_contains "reset flag" '"reset":true' "$(cat "$BODY")"
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$E2E_NEW_PW\"}")"
 assert_status "login with rotated password" "200" "$code"
+# Password reset bumps token_version: the pre-reset USER_TOKEN is stale (401).
+USER_TOKEN="$(jget "data.tokens.accessToken")"
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "old password rejected" "401" "$code"
 code="$(api POST "/auth/password-reset/confirm" "" "{\"token\":\"$E2E_RAW\",\"newPassword\":\"E2eAgain12!\"}")"
@@ -794,16 +1053,92 @@ fi
 code="$(api GET "/billing/plans" "" "")"
 assert_status "billing plans -> 200" "200" "$code"
 assert_contains "plan catalog seeded" "LISTENER_PLUS_MONTHLY" "$(cat "$BODY")"
-code="$(api POST "/billing/orders" "$USER_TOKEN" '{"planCode":"LISTENER_PLUS_MONTHLY"}')"
+code="$(api POST "/billing/orders" "$USER_TOKEN" "{\"planCode\":\"LISTENER_PLUS_MONTHLY\",\"refundConsentAt\":\"$GEN_NOW\"}")"
 if [ "$code" = "503" ]; then
   assert_contains "orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
 elif [ "$code" = "201" ]; then
   assert_contains "order merchant id" "AVIBE-" "$(cat "$BODY")"
+  assert_contains "order consent version" "2026-11-10-v1" "$(cat "$BODY")"
 else
   fail "billing orders want 503/201 got $code"
 fi
 code="$(api POST "/billing/webhooks/toss" "" "")"
 if [ "$code" = "400" ]; then pass "webhook empty body -> 400"; else fail "webhook empty body want 400 got $code"; fi
+# Age gate: social-style account (NULL age_confirmed_at) is fenced off commerce.
+psql_q "UPDATE users SET age_confirmed_at=NULL WHERE id='$USER_ID'::uuid;" >/dev/null
+code="$(api POST "/billing/orders" "$USER_TOKEN" "{\"planCode\":\"LISTENER_PLUS_MONTHLY\",\"refundConsentAt\":\"$GEN_NOW\"}")"
+assert_status "orders without age confirm -> 403" "403" "$code"
+assert_contains "age gate code" "ERR_AGE_CONFIRM_REQUIRED" "$(cat "$BODY")"
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+assert_status "stream without age confirm -> 403" "403" "$code"
+code="$(api POST "/auth/age-confirm" "$USER_TOKEN" '{"ageConfirmed":false}')"
+assert_status "age-confirm false -> 400" "400" "$code"
+code="$(api POST "/auth/age-confirm" "$USER_TOKEN" '{"ageConfirmed":true,"birthYear":1995}')"
+assert_status "age-confirm true -> 200" "200" "$code"
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+assert_status "stream after age confirm -> 200" "200" "$code"
+# Re-consent: a new required version re-gates commerce until consented.
+NEW_TERMS_ID="$(psql_q "INSERT INTO legal_terms (code,version,title_ko,body_md,is_required,effective_at) VALUES ('TOS','v9.9-e2e-$STAMP','TOS e2e','e2e bump',TRUE,NOW()) RETURNING id::text;" | tr -d ' \r\n')"
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+assert_status "stream gated on new terms -> 403" "403" "$code"
+assert_contains "consent gate code" "ERR_CONSENT_REQUIRED" "$(cat "$BODY")"
+code="$(api POST "/legal/consents" "$USER_TOKEN" "{\"termsId\":\"$NEW_TERMS_ID\"}")"
+assert_status "re-consent new version" "201" "$code"
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+assert_status "stream after re-consent -> 200" "200" "$code"
+# Withdraw: immediate deactivation + PII purge, email freed for re-use.
+WD_EMAIL="e2e-wd-$STAMP@example.com"
+code="$(api POST "/auth/register" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-wd\",\"ageConfirmed\":true}")"
+assert_status "register withdraw-candidate" "201" "$code"
+WD_ID="$(jget "data.id")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "login withdraw-candidate" "200" "$code"
+WD_TOKEN="$(jget "data.tokens.accessToken")"
+code="$(api POST "/auth/withdraw" "$WD_TOKEN" "")"
+assert_status "withdraw -> 200" "200" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "login after withdraw -> 401" "401" "$code"
+wd_row="$(psql_q "SELECT is_active::text||'|'||email||'|'||display_name||'|'||COALESCE(birth_year::text,'NULL') FROM users WHERE id='$WD_ID'::uuid;" | tr -d ' \r\n')"
+assert_contains "withdraw deactivates" "false|" "$wd_row"
+assert_contains "withdraw anonymizes email" "@deleted.avibe.local" "$wd_row"
+assert_contains "withdraw purges display name" "탈퇴한사용자" "$(printf '%s' "$wd_row" | tr -d ' ')"
+code="$(api POST "/auth/register" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-wd2\",\"ageConfirmed\":true}")"
+assert_status "email reusable after withdraw" "201" "$code"
+WD2_ID="$(jget "data.id")"
+# Export: bundle contains profile+playlists, never secrets.
+code="$(api GET "/auth/export" "$USER_TOKEN" "")"
+assert_status "export my data -> 200" "200" "$code"
+assert_contains "export has profile" "$USER_EMAIL" "$(cat "$BODY")"
+assert_contains "export has playlists" '"playlists"' "$(cat "$BODY")"
+if grep -q "password_hash\|totp_secret\|settlement_account_encrypted" "$BODY" 2>/dev/null; then
+  fail "export leaks secrets"
+else
+  pass "export leaks no secrets"
+fi
+# Admin user management: search, role cycle, lock/unlock, self-guard.
+code="$(api GET "/admin/users?q=$(printf '%s' "$WD_EMAIL" | python3 -c "import sys,urllib.parse;print(urllib.parse.quote(sys.stdin.read()))")" "$ADMIN_TOKEN" "")"
+assert_status "admin users search -> 200" "200" "$code"
+assert_contains "search finds re-registered user" "$WD2_ID" "$(cat "$BODY")"
+code="$(api POST "/admin/users/$USER_ID/role" "$ADMIN_TOKEN" '{"role":"PARTNER"}')"
+assert_status "admin set role USER->PARTNER" "200" "$code"
+code="$(api POST "/admin/users/$USER_ID/role" "$ADMIN_TOKEN" '{"role":"USER"}')"
+assert_status "admin set role back to USER" "200" "$code"
+code="$(api POST "/admin/users/$ADMIN_USER_ID/role" "$ADMIN_TOKEN" '{"role":"USER"}')"
+assert_status "admin self-demote refused -> 400" "400" "$code"
+code="$(api POST "/admin/users/$WD2_ID/active" "$ADMIN_TOKEN" '{"active":false}')"
+assert_status "admin lock account" "200" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "locked login rejected" "403" "$code"
+code="$(api POST "/admin/users/$WD2_ID/active" "$ADMIN_TOKEN" '{"active":true}')"
+assert_status "admin unlock account" "200" "$code"
+code="$(api GET "/admin/users/$USER_ID/blocks" "$ADMIN_TOKEN" "")"
+assert_status "admin user blocks -> 200" "200" "$code"
+code="$(api GET "/admin/users/$USER_ID/blocks" "$USER_TOKEN" "")"
+assert_status "user blocks listener -> 403" "403" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "unlocked login works" "200" "$code"
+code="$(api GET "/admin/audit-events?action=USER_SET_ROLE" "$ADMIN_TOKEN" "")"
+assert_contains "audit has console role change" "$USER_ID" "$(cat "$BODY")"
 code="$(api GET "/billing/subscriptions/me" "$USER_TOKEN" "")"
 assert_status "my subscription -> 200" "200" "$code"
 # Admin overview: shape for admins, 403 for listeners.

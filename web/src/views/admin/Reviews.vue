@@ -87,6 +87,23 @@
             </div>
           </div>
 
+          <!-- ISRC inline assign -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-surface-border">
+            <UiInput
+              v-model="trackIsrc[t.id]"
+              :placeholder="t.isrc ? `ISRC: ${t.isrc}` : 'ISRC 입력 (예: KRA242600001)'"
+            />
+            <UiButton
+              variant="secondary"
+              size="sm"
+              class="shrink-0"
+              :loading="isrcBusyId === t.id"
+              @click="saveIsrc(t)"
+            >
+              ISRC 저장
+            </UiButton>
+          </div>
+
           <!-- Review Action Controls -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-surface-border">
             <UiInput
@@ -222,6 +239,8 @@ function subStatusKo(status: string): string {
 
 const trackReason = ref<Record<string, string>>({});
 const subExpiry = ref<Record<string, string>>({});
+const trackIsrc = ref<Record<string, string>>({});
+const isrcBusyId = ref<string | null>(null);
 
 const pendingTracks = computed(() => queues.value.tracks ?? []);
 
@@ -258,6 +277,25 @@ async function reviewTrack(trackId: string, approved: boolean) {
     await loadAll();
   } catch (err) {
     toast.error(errMessageOf(err), '처리 실패');
+  }
+}
+
+async function saveIsrc(t: Track) {
+  const isrc = (trackIsrc.value[t.id] ?? '').trim();
+  if (!isrc) {
+    toast.error('ISRC를 입력하세요.', 'ISRC 저장 실패');
+    return;
+  }
+  isrcBusyId.value = t.id;
+  try {
+    await adminApi.setTrackISRC(t.id, isrc);
+    toast.success(`ISRC가 저장되었습니다: ${isrc}`);
+    trackIsrc.value[t.id] = '';
+    await loadAll();
+  } catch (err) {
+    toast.error(errMessageOf(err), 'ISRC 저장 실패');
+  } finally {
+    isrcBusyId.value = null;
   }
 }
 

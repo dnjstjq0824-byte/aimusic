@@ -54,16 +54,18 @@ type BillingPlan struct {
 
 // BillingOrder mirrors billing_orders.
 type BillingOrder struct {
-	ID             string     `json:"id"`
-	UserID         string     `json:"userId"`
-	PlanID         string     `json:"planId"`
-	OrderID        string     `json:"orderId"`
-	AmountKRW      int        `json:"amountKrw"`
-	Status         string     `json:"status"`
-	TossPaymentKey *string    `json:"tossPaymentKey,omitempty"`
-	ApprovedAt     *time.Time `json:"approvedAt,omitempty"`
-	CreatedAt      time.Time  `json:"createdAt"`
-	UpdatedAt      time.Time  `json:"updatedAt"`
+	ID                 string     `json:"id"`
+	UserID             string     `json:"userId"`
+	PlanID             string     `json:"planId"`
+	OrderID            string     `json:"orderId"`
+	AmountKRW          int        `json:"amountKrw"`
+	Status             string     `json:"status"`
+	TossPaymentKey     *string    `json:"tossPaymentKey,omitempty"`
+	ApprovedAt         *time.Time `json:"approvedAt,omitempty"`
+	RefundConsentAt    *time.Time `json:"refundConsentAt,omitempty"`
+	RefundTermsVersion *string    `json:"refundTermsVersion,omitempty"`
+	CreatedAt          time.Time  `json:"createdAt"`
+	UpdatedAt          time.Time  `json:"updatedAt"`
 }
 
 // BillingSubscription mirrors billing_subscriptions.

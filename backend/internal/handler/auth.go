@@ -24,9 +24,12 @@ type userGetter interface {
 }
 
 type registerRequest struct {
-	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
-	DisplayName string `json:"displayName" binding:"required"`
+	Email        string `json:"email" binding:"required,email"`
+	Password     string `json:"password" binding:"required,min=8"`
+	DisplayName  string `json:"displayName" binding:"required"`
+	BirthYear    *int   `json:"birthYear"`
+	AgeConfirmed bool   `json:"ageConfirmed"`
+	InviteCode   string `json:"inviteCode"`
 }
 
 type registerPartnerRequest struct {
@@ -35,11 +38,15 @@ type registerPartnerRequest struct {
 	DisplayName  string `json:"displayName" binding:"required"`
 	Company      string `json:"company" binding:"required"`
 	ContactEmail string `json:"contactEmail"`
+	BirthYear    *int   `json:"birthYear"`
+	AgeConfirmed bool   `json:"ageConfirmed"`
+	InviteCode   string `json:"inviteCode"`
 }
 
 type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required"`
+	TOTPCode  string `json:"totpCode"`
 }
 
 type refreshRequest struct {
@@ -53,7 +60,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	u, err := h.Auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName)
+	u, err := h.Auth.Register(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.BirthYear, req.AgeConfirmed, req.InviteCode)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -68,7 +75,7 @@ func (h *AuthHandler) RegisterPartner(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	u, p, err := h.Auth.RegisterPartner(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Company, req.ContactEmail)
+	u, p, err := h.Auth.RegisterPartner(c.Request.Context(), req.Email, req.Password, req.DisplayName, req.Company, req.ContactEmail, req.BirthYear, req.AgeConfirmed, req.InviteCode)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -83,7 +90,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 		return
 	}
-	tokens, user, err := h.Auth.Login(c.Request.Context(), req.Email, req.Password)
+	tokens, user, err := h.Auth.Login(c.Request.Context(), req.Email, req.Password, req.TOTPCode)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -108,7 +115,42 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Me returns the authenticated principal.
 func (h *AuthHandler) Me(c *gin.Context) {
-	ok(c, gin.H{"userId": CurrentUserID(c), "role": CurrentRole(c)})
+	u, err := h.Auth.Profile(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"userId": u.ID, "role": u.Role, "ageConfirmedAt": u.AgeConfirmedAt})
+}
+
+// ExportData returns the caller's personal-data bundle as a download.
+func (h *AuthHandler) ExportData(c *gin.Context) {
+	bundle, err := h.Auth.ExportData(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	c.Header("Content-Disposition", "attachment; filename=avibe-my-data.json")
+	ok(c, bundle)
+}
+
+type ageConfirmRequest struct {
+	AgeConfirmed bool `json:"ageConfirmed"`
+	BirthYear    *int `json:"birthYear"`
+}
+
+// ConfirmAge records the 14+ self-declaration (required after social signup).
+func (h *AuthHandler) ConfirmAge(c *gin.Context) {
+	var req ageConfirmRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	if err := h.Auth.ConfirmAge(c.Request.Context(), CurrentUserID(c), req.AgeConfirmed, req.BirthYear); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"confirmed": true})
 }
 
 // Withdraw deactivates the authenticated user's account immediately.
@@ -118,6 +160,62 @@ func (h *AuthHandler) Withdraw(c *gin.Context) {
 		return
 	}
 	ok(c, gin.H{"withdrawn": true})
+}
+
+// LogoutAll revokes every outstanding token for the authenticated account.
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	if err := h.Auth.LogoutAll(c.Request.Context(), CurrentUserID(c)); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"loggedOutAll": true})
+}
+
+// EnrollTOTP stages a fresh second-factor secret (shown once).
+func (h *AuthHandler) EnrollTOTP(c *gin.Context) {
+	enrollment, err := h.Auth.EnrollTOTP(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, enrollment)
+}
+
+type totpCodeRequest struct {
+	Code string `json:"code" binding:"required"`
+}
+
+// ConfirmTOTPEnrollment activates 2FA and returns single-use recovery codes.
+func (h *AuthHandler) ConfirmTOTPEnrollment(c *gin.Context) {
+	var req totpCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	codes, err := h.Auth.ConfirmTOTPEnrollment(c.Request.Context(), CurrentUserID(c), req.Code)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"recoveryCodes": codes})
+}
+
+type totpDisableRequest struct {
+	Password string `json:"password" binding:"required"`
+}
+
+// DisableTOTP removes 2FA after password re-verification.
+func (h *AuthHandler) DisableTOTP(c *gin.Context) {
+	var req totpDisableRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	if err := h.Auth.DisableTOTP(c.Request.Context(), CurrentUserID(c), req.Password); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"disabled": true})
 }
 
 type passwordResetRequestRequest struct {

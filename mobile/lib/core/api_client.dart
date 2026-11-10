@@ -2,6 +2,8 @@
 // {"data": ...} / {"error": {"code","message"}} envelope handling.
 library;
 
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -13,6 +15,21 @@ import 'models.dart';
 abstract final class TokenKeys {
   static const access = 'avibe.access_token';
   static const refresh = 'avibe.refresh_token';
+
+  /// Store-device JWT from POST /store/device/claim (separate auth scheme).
+  static const device = 'avibe.store_device_token';
+}
+
+/// App-wide session lifecycle events (refresh rotation failed -> sign in again).
+abstract final class AuthSessionEvents {
+  static final StreamController<void> _controller =
+      StreamController<void>.broadcast();
+
+  static Stream<void> get stream => _controller.stream;
+
+  static void notifyExpired() {
+    if (!_controller.isClosed) _controller.add(null);
+  }
 }
 
 /// Builds the shared Dio instance rooted at [Env.apiBaseUrl]/api/v1.
@@ -30,6 +47,21 @@ class ApiClientFactory {
       AuthInterceptor(
         dio: dio,
         storage: storage ?? const FlutterSecureStorage(),
+      ),
+    );
+    dio.interceptors.add(EnvelopeInterceptor());
+    return dio;
+  }
+
+  /// Device Dio: same base URL/envelope, but no user AuthInterceptor.
+  /// Store-device calls attach their own `Authorization` header per request.
+  static Dio createDevice() {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: Env.apiBaseUrl + Env.apiPrefix,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 20),
+        contentType: 'application/json',
       ),
     );
     dio.interceptors.add(EnvelopeInterceptor());
@@ -77,27 +109,34 @@ class AuthInterceptor extends Interceptor {
       try {
         final refresh = await storage.read(key: TokenKeys.refresh);
         if (refresh != null && refresh.isNotEmpty) {
-          final res = await dio.post<Map<String, dynamic>>(
-            '/auth/refresh',
-            data: {'refreshToken': refresh},
-          );
-          final data = res.data?['data'] as Map<String, dynamic>?;
-          if (data != null) {
-            final pair = TokenPair.fromJson(data);
-            await storage.write(key: TokenKeys.access, value: pair.accessToken);
-            await storage.write(
-                key: TokenKeys.refresh, value: pair.refreshToken);
-            req.extra['retried'] = true;
-            req.headers['Authorization'] = 'Bearer ${pair.accessToken}';
-            final retry = await dio.fetch<Map<String, dynamic>>(req);
-            _refreshing = false;
-            return handler.resolve(retry);
+          try {
+            final res = await dio.post<Map<String, dynamic>>(
+              '/auth/refresh',
+              data: {'refreshToken': refresh},
+            );
+            final data = res.data?['data'] as Map<String, dynamic>?;
+            if (data != null) {
+              final pair = TokenPair.fromJson(data);
+              await storage.write(
+                  key: TokenKeys.access, value: pair.accessToken);
+              await storage.write(
+                  key: TokenKeys.refresh, value: pair.refreshToken);
+              req.extra['retried'] = true;
+              req.headers['Authorization'] = 'Bearer ${pair.accessToken}';
+              final retry = await dio.fetch<Map<String, dynamic>>(req);
+              return handler.resolve(retry);
+            }
+          } catch (_) {
+            // Rotation failed: fall through to expiry handling below.
           }
+          // A stored refresh token existed but rotation failed (revoked or
+          // expired): wipe the dead pair and send the user to sign in again.
+          await clear();
+          AuthSessionEvents.notifyExpired();
         }
-      } catch (_) {
-        // Fall through to the original 401 below.
+      } finally {
+        _refreshing = false;
       }
-      _refreshing = false;
     }
     handler.next(err);
   }

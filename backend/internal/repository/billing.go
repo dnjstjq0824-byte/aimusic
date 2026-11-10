@@ -60,33 +60,68 @@ func (r *BillingRepo) GetPlanByID(ctx context.Context, id string) (*domain.Billi
 
 func scanOrder(row interface{ Scan(...any) error }) (*domain.BillingOrder, error) {
 	o := &domain.BillingOrder{}
-	var key sql.NullString
-	var approved sql.NullTime
+	var key, termsVer sql.NullString
+	var approved, consentAt sql.NullTime
 	err := row.Scan(&o.ID, &o.UserID, &o.PlanID, &o.OrderID, &o.AmountKRW, &o.Status,
-		&key, &approved, &o.CreatedAt, &o.UpdatedAt)
+		&key, &approved, &consentAt, &termsVer, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	o.TossPaymentKey = strPtr(key)
 	o.ApprovedAt = timePtr(approved)
+	o.RefundConsentAt = timePtr(consentAt)
+	o.RefundTermsVersion = strPtr(termsVer)
 	return o, nil
 }
 
 const orderColumns = `id::text, user_id::text, plan_id::text, order_id, amount_krw, status,
-	toss_payment_key, approved_at, created_at, updated_at`
+	toss_payment_key, approved_at, refund_consent_at, refund_terms_version, created_at, updated_at`
 
-// CreateOrder inserts a PENDING merchant order.
-func (r *BillingRepo) CreateOrder(ctx context.Context, userID, planID, orderID string, amountKRW int) (*domain.BillingOrder, error) {
+// CreateOrder inserts a PENDING merchant order with refund-consent evidence.
+func (r *BillingRepo) CreateOrder(ctx context.Context, userID, planID, orderID string, amountKRW int, consentAt time.Time, termsVersion string) (*domain.BillingOrder, error) {
 	return scanOrder(r.db.QueryRowContext(ctx, `
-		INSERT INTO billing_orders (user_id, plan_id, order_id, amount_krw)
-		VALUES ($1::uuid, $2::uuid, $3, $4)
-		RETURNING `+orderColumns, userID, planID, orderID, amountKRW))
+		INSERT INTO billing_orders (user_id, plan_id, order_id, amount_krw, refund_consent_at, refund_terms_version)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)
+		RETURNING `+orderColumns, userID, planID, orderID, amountKRW, consentAt, nullStr(&termsVersion)))
 }
 
 // GetOrderByMerchantID returns an order by our merchant order ID.
 func (r *BillingRepo) GetOrderByMerchantID(ctx context.Context, orderID string) (*domain.BillingOrder, error) {
 	o, err := scanOrder(r.db.QueryRowContext(ctx,
 		`SELECT `+orderColumns+` FROM billing_orders WHERE order_id = $1`, orderID))
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	return o, err
+}
+
+// ListOrdersByUser returns a user's orders, newest first (data export).
+func (r *BillingRepo) ListOrdersByUser(ctx context.Context, userID string, limit int) ([]*domain.BillingOrder, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+orderColumns+` FROM billing_orders
+		WHERE user_id = $1::uuid ORDER BY created_at DESC LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.BillingOrder{}
+	for rows.Next() {
+		o, err := scanOrder(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, o)
+	}
+	return out, rows.Err()
+}
+
+// GetOrder returns an order by its row ID.
+func (r *BillingRepo) GetOrder(ctx context.Context, id string) (*domain.BillingOrder, error) {
+	o, err := scanOrder(r.db.QueryRowContext(ctx,
+		`SELECT `+orderColumns+` FROM billing_orders WHERE id = $1::uuid`, id))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
@@ -154,11 +189,13 @@ func (r *BillingRepo) ActivateSubscription(ctx context.Context, userID, planID, 
 	return s, nil
 }
 
-// GetActiveSubscription returns the user's ACTIVE subscription, if any.
+// GetActiveSubscription returns the user's in-period ACTIVE subscription, if
+// any. Expired rows do not count: without the period predicate an expired
+// pass would grant premium features forever.
 func (r *BillingRepo) GetActiveSubscription(ctx context.Context, userID string) (*domain.BillingSubscription, error) {
 	s, err := scanBillingSubscription(r.db.QueryRowContext(ctx,
 		`SELECT `+billingSubscriptionColumns+` FROM billing_subscriptions
-		WHERE user_id = $1::uuid AND status = 'ACTIVE'`, userID))
+		WHERE user_id = $1::uuid AND status = 'ACTIVE' AND current_period_end > NOW()`, userID))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}

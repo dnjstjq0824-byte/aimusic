@@ -123,3 +123,21 @@ func (c *Client) GetPayment(ctx context.Context, paymentKey string) (*Payment, e
 	}
 	return &p, nil
 }
+
+// CancelPayment voids a payment in full (POST /v1/payments/{paymentKey}/cancel).
+func (c *Client) CancelPayment(ctx context.Context, paymentKey, cancelReason string) (*Payment, error) {
+	if strings.TrimSpace(cancelReason) == "" {
+		cancelReason = "구매자 환불 요청"
+	}
+	raw, err := c.do(ctx, http.MethodPost, "/v1/payments/"+paymentKey+"/cancel", map[string]any{
+		"cancelReason": cancelReason,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var p Payment
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}

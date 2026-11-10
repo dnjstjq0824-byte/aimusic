@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/pkg/storage"
 	"avibe-platform/backend/internal/repository"
 )
 
@@ -87,6 +89,23 @@ func (s *ReviewService) ReviewTrack(ctx context.Context, trackID string, approve
 	return s.repos.Tracks.GetByID(ctx, trackID)
 }
 
+// SetTrackISRC assigns a distribution ISRC to a track (admin ops, WI-05).
+// The code is normalized to canonical 12-char form; the UNIQUE constraint
+// rejects duplicates.
+func (s *ReviewService) SetTrackISRC(ctx context.Context, trackID, rawISRC string) (*domain.Track, error) {
+	isrc, err := domain.NormalizeISRC(rawISRC)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.repos.Tracks.GetByID(ctx, trackID); err != nil {
+		return nil, err
+	}
+	if err := s.repos.Tracks.SetISRC(ctx, trackID, isrc); err != nil {
+		return nil, err
+	}
+	return s.repos.Tracks.GetByID(ctx, trackID)
+}
+
 // ReviewPartner approves or suspends a partner profile.
 func (s *ReviewService) ReviewPartner(ctx context.Context, partnerID string, approve bool) (*domain.PartnerProfile, error) {
 	status := domain.PartnerSuspended
@@ -113,7 +132,10 @@ func (s *ReviewService) ReviewSubscription(ctx context.Context, subscriptionID, 
 
 // DisputeService handles reports, counter-claims, takedowns, and strikes.
 type DisputeService struct {
-	repos *repository.Repos
+	repos         *repository.Repos
+	storage       storage.Storage
+	stagingBucket string
+	hlsBucket     string
 }
 
 // Report files a copyright dispute on a track.
@@ -170,6 +192,10 @@ func (s *DisputeService) Resolve(ctx context.Context, disputeID, resolverID stri
 	if err := s.repos.Tracks.UpdateStatus(ctx, track.ID, domain.TrackTakenDown, nil); err != nil {
 		return nil, err
 	}
+	if err := s.purgeTrackObjects(ctx, track); err != nil {
+		slog.Error("uphold purge failed", "track_id", track.ID, "err", err)
+		return nil, err
+	}
 	if err := s.repos.Disputes.Resolve(ctx, disputeID, domain.DisputeUpheld, resolverID, true); err != nil {
 		return nil, err
 	}
@@ -207,13 +233,43 @@ func (s *DisputeService) Resolve(ctx context.Context, disputeID, resolverID stri
 
 // Takedown immediately takes down a track.
 func (s *DisputeService) Takedown(ctx context.Context, trackID, reason string) (*domain.Track, error) {
-	if _, err := s.repos.Tracks.GetByID(ctx, trackID); err != nil {
+	track, err := s.repos.Tracks.GetByID(ctx, trackID)
+	if err != nil {
 		return nil, err
 	}
 	if err := s.repos.Tracks.UpdateStatus(ctx, trackID, domain.TrackTakenDown, &reason); err != nil {
 		return nil, err
 	}
+	// §103: the takedown doubles as the partner notice for open disputes.
+	if err := s.repos.Disputes.StampPartnerNotified(ctx, trackID); err != nil {
+		return nil, err
+	}
+	// Bytes must go with the status: purge staging + HLS objects. The status
+	// flip is kept on purge failure (retry the takedown to resume the purge).
+	if err := s.purgeTrackObjects(ctx, track); err != nil {
+		slog.Error("takedown purge failed", "track_id", trackID, "err", err)
+		return nil, err
+	}
 	return s.repos.Tracks.GetByID(ctx, trackID)
+}
+
+// purgeTrackObjects deletes the staged original and the whole HLS prefix.
+// A nil storage (unit-test wiring) skips the purge.
+func (s *DisputeService) purgeTrackObjects(ctx context.Context, track *domain.Track) error {
+	if s.storage == nil {
+		return nil
+	}
+	if track.OriginalObjectKey != "" {
+		if err := s.storage.Delete(ctx, s.stagingBucket, track.OriginalObjectKey); err != nil {
+			return err
+		}
+	}
+	if track.HLSPrefix != nil && *track.HLSPrefix != "" {
+		if err := s.storage.DeletePrefix(ctx, s.hlsBucket, *track.HLSPrefix); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // BlockArtist records a user blocking a partner/artist (App Store / Google Play UGC rule).

@@ -6,11 +6,11 @@
         <div class="col-span-2 space-y-3 md:col-span-1">
           <BrandLogo :size="32" />
           <p class="text-xs leading-relaxed text-neutral-400">
-            상업적 라이선스가 검증된 정식 유료 플랜 생성 AI 음원만을 유통하는 상용 스트리밍 플랫폼입니다.
+            상업 이용 조건 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.
           </p>
           <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-1 text-[11px] text-emerald-300">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            인공지능기본법 제31조 준수 플랫폼
+            AI 생성 표시 제공
           </div>
         </div>
 
@@ -31,7 +31,7 @@
           <ul class="space-y-2 text-xs">
             <li><RouterLink to="/partner/upload" class="hover:text-white transition-colors">4단계 상업 라이선스 업로드 게이트</RouterLink></li>
             <li><RouterLink to="/partner/subscriptions" class="hover:text-white transition-colors">유료 AI 구독 증빙 등록</RouterLink></li>
-            <li><RouterLink to="/partner" class="hover:text-white transition-colors">파트너 정산 대시보드 (70:30)</RouterLink></li>
+            <li><RouterLink to="/partner" class="hover:text-white transition-colors">파트너 정산 대시보드</RouterLink></li>
             <li><RouterLink to="/disputes" class="hover:text-white transition-colors">권리침해 신고 &amp; 소명 센터</RouterLink></li>
           </ul>
         </div>
@@ -48,10 +48,22 @@
         </div>
       </div>
 
+      <!-- Business identity block (C5): values come from VITE_BUSINESS_* env, hidden until registered -->
+      <div v-if="businessLines.length > 0" class="mt-8 border-t border-surface-border pt-6 text-[11px] leading-relaxed text-neutral-500">
+        <div class="font-bold text-neutral-300 mb-1">사업자 정보</div>
+        <p v-for="(line, i) in businessLines" :key="i">{{ line }}</p>
+        <p v-if="ospContact">
+          저작권 침해 중단 요구(수령인): <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
+        </p>
+      </div>
+      <div v-else-if="ospContact" class="mt-8 border-t border-surface-border pt-6 text-[11px] text-neutral-500">
+        저작권 침해 중단 요구(수령인): <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
+      </div>
+
       <!-- Bottom Compliance strip -->
       <div class="mt-10 border-t border-surface-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-[11px] text-neutral-500">
         <div>
-          © 2026 AVIBE — Beyond Your Music. All rights reserved. 대한민국 법령 준수 플랫폼.
+          © 2026 AVIBE — Beyond Your Music. All rights reserved.
         </div>
         <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <span>암호화: AES-256-GCM</span>
@@ -64,5 +76,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import BrandLogo from '@/components/BrandLogo.vue';
+
+const env = import.meta.env as Record<string, string | undefined>;
+const ospContact = (env.VITE_OSP_CONTACT_EMAIL ?? '').trim();
+
+// Electronic Commerce Act §10 business identity (C5). Each line renders only
+// when its env value is set, so nothing fictitious is ever displayed.
+const businessLines = computed(() => {
+  const lines: string[] = [];
+  const name = (env.VITE_BUSINESS_NAME ?? '').trim();
+  const ceo = (env.VITE_BUSINESS_CEO ?? '').trim();
+  const addr = (env.VITE_BUSINESS_ADDRESS ?? '').trim();
+  const tel = (env.VITE_BUSINESS_TEL ?? '').trim();
+  const email = (env.VITE_BUSINESS_EMAIL ?? '').trim();
+  const bizNo = (env.VITE_BUSINESS_REG_NO ?? '').trim();
+  const mailOrderNo = (env.VITE_BUSINESS_MAILORDER_NO ?? '').trim();
+  const hosting = (env.VITE_BUSINESS_HOSTING ?? '').trim();
+  if (name) lines.push(`상호: ${name}${ceo ? ` · 대표자: ${ceo}` : ''}`);
+  if (addr) lines.push(`주소: ${addr}`);
+  if (tel || email) lines.push(`연락처: ${[tel, email].filter(Boolean).join(' · ')}`);
+  if (bizNo) lines.push(`사업자등록번호: ${bizNo}`);
+  if (mailOrderNo) lines.push(`통신판매업 신고번호: ${mailOrderNo}`);
+  if (hosting) lines.push(`호스팅 제공자: ${hosting}`);
+  return lines;
+});
 </script>

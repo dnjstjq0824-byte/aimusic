@@ -75,3 +75,44 @@ func TestGetPaymentVerifiesByKey(t *testing.T) {
 		t.Fatalf("payment mismatch: %+v", p)
 	}
 }
+
+func TestCancelPaymentSuccess(t *testing.T) {
+	_, c := stubServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/payments/pk-1/cancel" {
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body["cancelReason"] != "변심" {
+			t.Errorf("cancelReason mismatch: %v", body)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"paymentKey":"pk-1","orderId":"ord-1","status":"CANCELED","totalAmount":5900,"method":"CARD"}`))
+	})
+	p, err := c.CancelPayment(context.Background(), "pk-1", "변심")
+	if err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	if p.Status != "CANCELED" {
+		t.Fatalf("payment mismatch: %+v", p)
+	}
+}
+
+func TestCancelPaymentDefaultsReason(t *testing.T) {
+	_, c := stubServer(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if strings.TrimSpace(body["cancelReason"].(string)) == "" {
+			t.Errorf("empty cancelReason sent: %v", body)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"paymentKey":"pk-1","orderId":"ord-1","status":"CANCELED","totalAmount":5900}`))
+	})
+	if _, err := c.CancelPayment(context.Background(), "pk-1", ""); err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+}

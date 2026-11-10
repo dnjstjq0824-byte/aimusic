@@ -65,3 +65,18 @@ data/*.wav
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Android release signing (never commit)
+mobile/android/key.properties
+mobile/android/app/*.jks
+mobile/android/app/*.keystore
+
+
+# Local scratch (may contain test credentials)
+scratch/
+
+# Python generation server (WI-03)
+generator/.venv/
+generator/__pycache__/
+generator/*.pyc
+

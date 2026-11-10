@@ -25,10 +25,10 @@
           <span class="text-3xl font-black text-white">₩0</span>
         </div>
         <p class="mt-2 text-xs leading-relaxed text-neutral-400">
-          검증 음원 스트리밍과 플레이리스트를 무료로 이용하세요.
+          확인 절차를 거친 음원 스트리밍과 플레이리스트를 무료로 이용하세요.
         </p>
         <ul class="mt-4 space-y-2 text-xs text-neutral-300">
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>전체 검증 음원 스트리밍</li>
+          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>전체 확인 음원 스트리밍 (표준 음질 128k)</li>
           <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>플레이리스트 무제한 생성</li>
           <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>모바일·웹 동기화</li>
         </ul>
@@ -58,8 +58,7 @@
         </div>
         <ul class="mt-4 space-y-2 text-xs text-neutral-300">
           <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>Free의 모든 혜택</li>
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>320kbps 고음질 스트리밍</li>
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>우선 심사·정산 리포트</li>
+          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>HQ 256k 고음질 스트리밍</li>
           <li v-if="plan.code === 'STUDIO_PRO_MONTHLY'" class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>파트너 스튜디오 프로 도구</li>
         </ul>
         <div class="mt-6 flex-1" />
@@ -81,7 +80,7 @@
           <path d="m9 12 2 2 4-4" />
         </svg>
         <div class="text-xs leading-relaxed text-neutral-300">
-          <div class="font-bold text-white">안심 결제 안내</div>
+          <div class="font-bold text-white">결제 안내</div>
           <p class="mt-1">
             결제는 Toss Payments 결제창에서 직접 처리되며, AVIBE 서버는 카드 정보를 보관하지 않습니다.
             이용권은 구매일로부터 1개월간 유효한 단기 패스로 자동 연장되지 않습니다.

@@ -1,0 +1,5 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.0
+# GPU machine only (install on the home PC, not here):
+# acestep  (plus torch/CUDA per the ACE-Step release README)

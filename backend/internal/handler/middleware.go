@@ -14,6 +14,7 @@ import (
 
 	"avibe-platform/backend/internal/config"
 	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/repository"
 	"avibe-platform/backend/internal/service"
 )
 
@@ -21,6 +22,7 @@ import (
 const (
 	ctxUserIDKey    = "auth.userID"
 	ctxRoleKey      = "auth.role"
+	ctxDeviceIDKey  = "auth.deviceID"
 	ctxRequestIDKey = "http.requestID"
 )
 
@@ -59,8 +61,12 @@ func JWTAuth(auth *service.AuthService) gin.HandlerFunc {
 			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "missing bearer token")
 			return
 		}
-		claims, err := auth.ParseAccess(token)
+		claims, err := auth.ValidateAccess(c.Request.Context(), token)
 		if err != nil {
+			if errors.Is(err, domain.ErrUserInactive) {
+				abort(c, http.StatusForbidden, "ERR_USER_INACTIVE", "account deactivated")
+				return
+			}
 			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "invalid token")
 			return
 		}
@@ -79,10 +85,88 @@ func JWTOptional(auth *service.AuthService) gin.HandlerFunc {
 			token = strings.TrimSpace(parts[1])
 		}
 		if token != "" {
-			if claims, err := auth.ParseAccess(token); err == nil {
+			if claims, err := auth.ValidateAccess(c.Request.Context(), token); err == nil {
 				c.Set(ctxUserIDKey, claims.UserID)
 				c.Set(ctxRoleKey, claims.Role)
 			}
+		}
+		c.Next()
+	}
+}
+
+// CurrentDeviceID returns the authenticated store device ID (empty when none).
+func CurrentDeviceID(c *gin.Context) string {
+	if v, ok := c.Get(ctxDeviceIDKey); ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// StoreDeviceAuth validates store player Bearer [REDACTED] and stores the device ID.
+func StoreDeviceAuth(store *service.StoreService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		token := ""
+		if parts := strings.SplitN(header, " ", 2); len(parts) == 2 && strings.EqualFold(parts[0], "bearer") {
+			token = strings.TrimSpace(parts[1])
+		}
+		if token == "" {
+			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "missing device token")
+			return
+		}
+		dev, err := store.AuthenticateDevice(c.Request.Context(), token)
+		if err != nil {
+			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "invalid device token")
+			return
+		}
+		c.Set(ctxDeviceIDKey, dev.ID)
+		c.Next()
+	}
+}
+
+// RequireAgeConfirmed blocks accounts missing the 14+ declaration (social
+// signups) from commercial surfaces until they POST /auth/age-confirm.
+// Must run after JWTAuth.
+func RequireAgeConfirmed(users *repository.UserRepo) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		uid := CurrentUserID(c)
+		if uid == "" {
+			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "missing principal")
+			return
+		}
+		u, err := users.GetByID(c.Request.Context(), uid)
+		if err != nil {
+			AbortError(c, err)
+			return
+		}
+		if u.AgeConfirmedAt == nil {
+			abort(c, http.StatusForbidden, "ERR_AGE_CONFIRM_REQUIRED", "age confirmation required")
+			return
+		}
+		c.Next()
+	}
+}
+
+// RequireConsents blocks accounts missing required-terms consent (including
+// re-consent after a new required version ships) until they consent.
+// Must run after JWTAuth.
+func RequireConsents(legal *repository.LegalRepo) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		uid := CurrentUserID(c)
+		if uid == "" {
+			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "missing principal")
+			return
+		}
+		pending, err := legal.ListPendingConsents(c.Request.Context(), uid)
+		if err != nil {
+			AbortError(c, err)
+			return
+		}
+		if len(pending) > 0 {
+			abort(c, http.StatusForbidden, "ERR_CONSENT_REQUIRED", "terms consent required")
+			return
 		}
 		c.Next()
 	}
@@ -110,39 +194,61 @@ type bucket struct {
 
 // RateLimiter is an in-memory token bucket keyed by client IP.
 type RateLimiter struct {
-	mu      sync.Mutex
-	buckets map[string]*bucket
-	rps     float64
-	burst   float64
+	mu        sync.Mutex
+	buckets   map[string]*bucket
+	rps       float64
+	burst     float64
+	lastSweep time.Time
 }
+
+// Stale rate-limit buckets are evicted (at most once a minute) so the map
+// cannot grow without bound under IP churn.
+const (
+	rateBucketIdleTTL  = 5 * time.Minute
+	rateBucketSweepMin = time.Minute
+)
 
 // RateLimit builds token-bucket middleware with rps refill and burst capacity.
 func RateLimit(rps float64, burst int) gin.HandlerFunc {
 	lim := &RateLimiter{buckets: map[string]*bucket{}, rps: rps, burst: float64(burst)}
 	return func(c *gin.Context) {
-		key := c.ClientIP()
-		now := time.Now()
-		lim.mu.Lock()
-		b, ok := lim.buckets[key]
-		if !ok {
-			b = &bucket{tokens: lim.burst, last: now}
-			lim.buckets[key] = b
-		}
-		elapsed := now.Sub(b.last).Seconds()
-		b.tokens += elapsed * lim.rps
-		if b.tokens > lim.burst {
-			b.tokens = lim.burst
-		}
-		b.last = now
-		if b.tokens < 1 {
-			lim.mu.Unlock()
+		if !lim.allow(c.ClientIP(), time.Now()) {
 			abort(c, http.StatusTooManyRequests, "ERR_RATE_LIMITED", "too many requests")
 			return
 		}
-		b.tokens--
-		lim.mu.Unlock()
 		c.Next()
 	}
+}
+
+// allow consumes one token for key. Buckets idle past the TTL are evicted
+// (sweep runs at most once a minute) so the map stays bounded.
+func (l *RateLimiter) allow(key string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if now.Sub(l.lastSweep) >= rateBucketSweepMin {
+		for k, v := range l.buckets {
+			if now.Sub(v.last) >= rateBucketIdleTTL {
+				delete(l.buckets, k)
+			}
+		}
+		l.lastSweep = now
+	}
+	b, ok := l.buckets[key]
+	if !ok {
+		b = &bucket{tokens: l.burst, last: now}
+		l.buckets[key] = b
+	}
+	elapsed := now.Sub(b.last).Seconds()
+	b.tokens += elapsed * l.rps
+	if b.tokens > l.burst {
+		b.tokens = l.burst
+	}
+	b.last = now
+	if b.tokens < 1 {
+		return false
+	}
+	b.tokens--
+	return true
 }
 
 // RequestID assigns (or propagates) a request ID for log correlation and
@@ -272,6 +378,16 @@ func errCodeOfDomain(err error) string {
 		return "ERR_INVALID_INPUT"
 	case errors.Is(err, domain.ErrPaymentUnavailable):
 		return "ERR_PAYMENT_UNAVAILABLE"
+	case errors.Is(err, domain.ErrTOTPRequired):
+		return "ERR_TOTP_REQUIRED"
+	case errors.Is(err, domain.ErrTOTPInvalid):
+		return "ERR_TOTP_INVALID"
+	case errors.Is(err, domain.ErrTooManyAttempts):
+		return "ERR_TOO_MANY_ATTEMPTS"
+	case errors.Is(err, domain.ErrAgeConfirmRequired):
+		return "ERR_AGE_CONFIRM_REQUIRED"
+	case errors.Is(err, domain.ErrConsentRequired):
+		return "ERR_CONSENT_REQUIRED"
 	default:
 		return ""
 	}
@@ -301,6 +417,16 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
 	case errors.Is(err, domain.ErrPaymentUnavailable):
 		abort(c, http.StatusServiceUnavailable, "ERR_PAYMENT_UNAVAILABLE", "payment provider not configured")
+	case errors.Is(err, domain.ErrTOTPRequired):
+		abort(c, http.StatusForbidden, "ERR_TOTP_REQUIRED", "second-factor code required")
+	case errors.Is(err, domain.ErrTOTPInvalid):
+		abort(c, http.StatusUnauthorized, "ERR_TOTP_INVALID", "invalid second-factor code")
+	case errors.Is(err, domain.ErrTooManyAttempts):
+		abort(c, http.StatusTooManyRequests, "ERR_TOO_MANY_ATTEMPTS", "too many attempts, try again later")
+	case errors.Is(err, domain.ErrAgeConfirmRequired):
+		abort(c, http.StatusForbidden, "ERR_AGE_CONFIRM_REQUIRED", "age confirmation required")
+	case errors.Is(err, domain.ErrConsentRequired):
+		abort(c, http.StatusForbidden, "ERR_CONSENT_REQUIRED", "terms consent required")
 	default:
 		slog.Error("internal_error",
 			"request_id", CurrentRequestID(c),

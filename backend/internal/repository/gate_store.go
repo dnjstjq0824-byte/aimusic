@@ -24,6 +24,7 @@ func (s *GateStore) AudioHashExists(ctx context.Context, sha256hex string) (bool
 func (s *GateStore) GetPolicy(ctx context.Context, provider string) (*licensegate.Policy, error) {
 	p := &licensegate.Policy{}
 	var allowedJoined, blockedTiersJoined, syncOnlyJoined, joined string
+	var maxGen sql.NullTime
 	err := s.db.QueryRowContext(ctx, `
 		SELECT provider, allows_standalone_streaming,
 			COALESCE(array_to_string(allowed_plan_tiers, chr(31)), ''),
@@ -31,11 +32,11 @@ func (s *GateStore) GetPolicy(ctx context.Context, provider string) (*licensegat
 			COALESCE(array_to_string(sync_only_plan_tiers, chr(31)), ''),
 			min_bitrate_kbps,
 			COALESCE(array_to_string(blocked_metadata_keywords, chr(31)), ''),
-			rejection_message_ko
+			rejection_message_ko, max_generated_at
 		FROM ai_provider_policies WHERE provider = $1`, provider,
 	).Scan(&p.Provider, &p.AllowsStandaloneStreaming,
 		&allowedJoined, &blockedTiersJoined, &syncOnlyJoined,
-		&p.MinBitrateKbps, &joined, &p.RejectionMessageKo)
+		&p.MinBitrateKbps, &joined, &p.RejectionMessageKo, &maxGen)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -46,6 +47,7 @@ func (s *GateStore) GetPolicy(ctx context.Context, provider string) (*licensegat
 	p.BlockedPlanTiers = splitKeywords(blockedTiersJoined)
 	p.SyncOnlyPlanTiers = splitKeywords(syncOnlyJoined)
 	p.BlockedMetadataKeywords = splitKeywords(joined)
+	p.MaxGeneratedAt = timePtr(maxGen)
 	return p, nil
 }
 

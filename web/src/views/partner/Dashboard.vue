@@ -36,7 +36,7 @@
       </UiCard>
 
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">검증된 AI 요금제</div>
+        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">확인된 AI 요금제</div>
         <div class="text-2xl font-black text-brand-400">{{ verifiedSubs }}개</div>
         <div class="text-[11px] text-neutral-400">Suno, AIVA Pro 등</div>
       </UiCard>

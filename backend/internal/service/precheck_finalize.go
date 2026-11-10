@@ -85,6 +85,8 @@ type RightsInput struct {
 	SignedIP                        *string
 	SourceModel                     *string
 	SubscriptionID                  *string
+	CollectiveTrustStatus           string
+	CollectiveName                  *string
 }
 
 // FinalizeInput carries the completed staging upload to register.
@@ -149,6 +151,28 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 	if keyPartner != in.PartnerID || !strings.EqualFold(keySHA, sha) {
 		return nil, fmt.Errorf("%w: stagingKey does not match pre-check grant", domain.ErrForbidden)
 	}
+	// The three legal warranties are enforced server-side so API clients
+	// cannot bypass the upload wizard checkboxes.
+	if !in.Rights.DeclaresOwnership || !in.Rights.DeclaresNoVoiceClone || !in.Rights.DeclaresTrainingConsent {
+		return nil, fmt.Errorf("%w: 권리 보유·보이스클로닝 부존재·소급음원 부존재 서약이 모두 필요합니다", domain.ErrInvalidInput)
+	}
+	// KOMCA/collecting-society trusted tracks are refused until a society
+	// settlement path exists (LAUNCH_COMPLIANCE C3).
+	trust := strings.ToUpper(strings.TrimSpace(in.Rights.CollectiveTrustStatus))
+	if trust == "" {
+		trust = domain.CollectiveNone
+	}
+	if trust != domain.CollectiveNone && trust != domain.CollectiveTrusted {
+		return nil, fmt.Errorf("%w: collectiveTrustStatus must be NONE|TRUSTED", domain.ErrInvalidInput)
+	}
+	if trust == domain.CollectiveTrusted {
+		return nil, fmt.Errorf("%w: 신탁단체(KOMCA 등) 신탁곡은 현재 접수할 수 없습니다. 미신탁 확인 후 다시 제출해 주세요", domain.ErrInvalidInput)
+	}
+	if in.Rights.SourceModel != nil {
+		if err := licensegate.ValidateSourceModel(*in.Rights.SourceModel); err != nil {
+			return nil, err
+		}
+	}
 	if _, err := licensegate.ValidateCommercialEligibility(ctx, s.repos.Gate, licensegate.PreCheckRequest{
 		PartnerID:                   in.PartnerID,
 		Provider:                    in.Provider,
@@ -206,6 +230,20 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		pt := in.PlanTierUsed
 		planTierPtr = &pt
 	}
+	snapshotJSON, err := licensegate.BuildCertSnapshot(licensegate.CertSnapshot{
+		Provider:              in.Provider,
+		PlanTierUsed:          planTierPtr,
+		SubscriptionID:        in.Rights.SubscriptionID,
+		GeneratedAt:           &generatedAt,
+		SourceModel:           in.Rights.SourceModel,
+		CollectiveTrustStatus: trust,
+		Gate1PolicyPassed:     true,
+		Gate2DatePassed:       true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	snapshotAt := time.Now().UTC()
 	if _, err := txRepos.Rights.Upsert(ctx, &domain.TrackRightsDeclaration{
 		TrackID:                         track.ID,
 		PartnerID:                       in.PartnerID,
@@ -224,6 +262,10 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		SourceModel:                     in.Rights.SourceModel,
 		SubscriptionID:                  in.Rights.SubscriptionID,
 		GeneratedAt:                     &generatedAt,
+		CollectiveTrustStatus:           trust,
+		CollectiveName:                  in.Rights.CollectiveName,
+		CertSnapshotJSON:                &snapshotJSON,
+		CertSnapshotAt:                  &snapshotAt,
 	}); err != nil {
 		return nil, err
 	}

@@ -154,6 +154,8 @@ type finalizeRequest struct {
 		HumanContributionDesc           *string  `json:"humanContributionDesc"`
 		SourceModel                     *string  `json:"sourceModel"`
 		SubscriptionID                  *string  `json:"subscriptionId"`
+		CollectiveTrustStatus           string   `json:"collectiveTrustStatus"`
+		CollectiveName                  *string  `json:"collectiveName"`
 	} `json:"rights"`
 }
 
@@ -197,6 +199,8 @@ func (h *PartnerHandler) Finalize(c *gin.Context) {
 			SignedIP:                        &signedIP,
 			SourceModel:                     req.Rights.SourceModel,
 			SubscriptionID:                  req.Rights.SubscriptionID,
+			CollectiveTrustStatus:           req.Rights.CollectiveTrustStatus,
+			CollectiveName:                  req.Rights.CollectiveName,
 		},
 	})
 	if err != nil {
@@ -266,6 +270,236 @@ func (h *PartnerHandler) UpdateSettlement(c *gin.Context) {
 		return
 	}
 	ok(c, gin.H{"updated": true})
+}
+
+type submitGenerationRequest struct {
+	Prompt     string         `json:"prompt" binding:"required"`
+	Lyrics     *string        `json:"lyrics"`
+	Model      string         `json:"model"`
+	LicenseRef string         `json:"licenseRef"`
+	Params     map[string]any `json:"params"`
+}
+
+// SubmitGeneration enqueues a music-generation job (WI-03 setup-only).
+func (h *PartnerHandler) SubmitGeneration(c *gin.Context) {
+	var req submitGenerationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	job, err := h.Services.Generation.Submit(c.Request.Context(), service.GenerationSubmitInput{
+		PartnerID: partnerID, Prompt: req.Prompt, Lyrics: req.Lyrics,
+		Model: req.Model, LicenseRef: req.LicenseRef, Params: req.Params,
+	})
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	created(c, job)
+}
+
+// GetGeneration returns one of the caller's generation jobs.
+func (h *PartnerHandler) GetGeneration(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	job, err := h.Services.Generation.Get(c.Request.Context(), partnerID, c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, job)
+}
+
+// ListGenerations returns the caller's generation jobs, newest first.
+func (h *PartnerHandler) ListGenerations(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	jobs, err := h.Services.Generation.List(c.Request.Context(), partnerID, queryInt(c, "limit", 20))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, jobs)
+}
+
+type registerStoreRequest struct {
+	BusinessNumber string `json:"businessNumber" binding:"required"`
+	StoreName      string `json:"storeName" binding:"required"`
+	LicenseCount   int    `json:"licenseCount"`
+}
+
+// RegisterStore files a store business for admin verification (WI-05 #19).
+func (h *PartnerHandler) RegisterStore(c *gin.Context) {
+	var req registerStoreRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	licenses := req.LicenseCount
+	if licenses == 0 {
+		licenses = 1
+	}
+	b, err := h.Services.Store.RegisterBusiness(c.Request.Context(), partnerID, req.BusinessNumber, req.StoreName, licenses)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	created(c, b)
+}
+
+// ListStores returns the caller's store businesses.
+func (h *PartnerHandler) ListStores(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	list, err := h.Services.Store.ListBusinesses(c.Request.Context(), partnerID)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, list)
+}
+
+type createStoreDeviceRequest struct {
+	DeviceName string `json:"deviceName" binding:"required"`
+}
+
+// CreateStoreDevice registers a player device and returns its pairing code.
+func (h *PartnerHandler) CreateStoreDevice(c *gin.Context) {
+	var req createStoreDeviceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	dev, err := h.Services.Store.CreateDevice(c.Request.Context(), partnerID, c.Param("id"), req.DeviceName)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	created(c, dev)
+}
+
+// ListStoreDevices returns a store's player devices.
+func (h *PartnerHandler) ListStoreDevices(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	list, err := h.Services.Store.ListDevices(c.Request.Context(), partnerID, c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, list)
+}
+
+type updateStoreDeviceRequest struct {
+	DeviceName string `json:"deviceName" binding:"required"`
+	Volume     int    `json:"volume"`
+}
+
+// UpdateStoreDevice renames or re-volumes a player (remote volume).
+func (h *PartnerHandler) UpdateStoreDevice(c *gin.Context) {
+	var req updateStoreDeviceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	dev, err := h.Services.Store.UpdateDevice(c.Request.Context(), partnerID, c.Param("deviceId"), req.DeviceName, req.Volume)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, dev)
+}
+
+// RevokeStoreDevice deactivates a player.
+func (h *PartnerHandler) RevokeStoreDevice(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	if err := h.Services.Store.RevokeDevice(c.Request.Context(), partnerID, c.Param("deviceId")); err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"revoked": true})
+}
+
+type upsertStoreScheduleRequest struct {
+	Weekday    int     `json:"weekday"`
+	OpenTime   string  `json:"openTime" binding:"required"`
+	CloseTime  string  `json:"closeTime" binding:"required"`
+	PlaylistID *string `json:"playlistId"`
+	IsClosed   bool    `json:"isClosed"`
+}
+
+// UpsertStoreSchedule sets one weekday row for a store.
+func (h *PartnerHandler) UpsertStoreSchedule(c *gin.Context) {
+	var req upsertStoreScheduleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	s, err := h.Services.Store.UpsertSchedule(c.Request.Context(), partnerID, c.Param("id"), req.Weekday, req.OpenTime, req.CloseTime, req.PlaylistID, req.IsClosed)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, s)
+}
+
+// ListStoreSchedules returns a store's weekly schedule.
+func (h *PartnerHandler) ListStoreSchedules(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	list, err := h.Services.Store.ListSchedules(c.Request.Context(), partnerID, c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, list)
+}
+
+// StoreDeviceLogs returns recent certified plays for a device.
+func (h *PartnerHandler) StoreDeviceLogs(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	logs, err := h.Services.Store.DeviceLogs(c.Request.Context(), partnerID, c.Param("deviceId"), queryInt(c, "limit", 50))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, logs)
 }
 
 // ListMyTracks returns the caller's tracks across statuses.

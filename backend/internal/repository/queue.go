@@ -22,6 +22,14 @@ type TranscodePayload struct {
 	OutputPrefix string `json:"outputPrefix"`
 }
 
+// GenerationQueueKey is the Redis list for pending generation jobs (WI-03).
+const GenerationQueueKey = "generation:queue"
+
+// GenerationPayload is the generation worker job envelope.
+type GenerationPayload struct {
+	JobID string `json:"jobId"`
+}
+
 // Queue wraps the Redis transcode queue.
 type Queue struct{ rdb *redis.Client }
 
@@ -59,6 +67,40 @@ func (q *Queue) QueueDepth(ctx context.Context) (int64, error) {
 	return q.rdb.LLen(ctx, TranscodeQueueKey).Result()
 }
 
+// EnqueueGeneration pushes a generation job onto the tail.
+func (q *Queue) EnqueueGeneration(ctx context.Context, p GenerationPayload) error {
+	b, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+	return q.rdb.RPush(ctx, GenerationQueueKey, string(b)).Err()
+}
+
+// DequeueGeneration blocks up to timeout for the next generation job.
+// It returns (nil, nil) on timeout.
+func (q *Queue) DequeueGeneration(ctx context.Context, timeout time.Duration) (*GenerationPayload, error) {
+	res, err := q.rdb.BLPop(ctx, timeout, GenerationQueueKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if len(res) < 2 {
+		return nil, nil
+	}
+	var p GenerationPayload
+	if err := json.Unmarshal([]byte(res[1]), &p); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// GenerationQueueDepth returns the pending generation job count.
+func (q *Queue) GenerationQueueDepth(ctx context.Context) (int64, error) {
+	return q.rdb.LLen(ctx, GenerationQueueKey).Result()
+}
+
 // Repos aggregates all repositories over one pool and one Redis client.
 type Repos struct {
 	DB            *sql.DB
@@ -72,6 +114,7 @@ type Repos struct {
 	Tracks        *TrackRepo
 	Rights        *RightsRepo
 	Jobs          *JobRepo
+	GenJobs       *GenerationJobRepo
 	Disputes      *DisputeRepo
 	Playlists     *PlaylistRepo
 	Playback      *PlaybackRepo
@@ -83,6 +126,9 @@ type Repos struct {
 	Resets        *PasswordResetRepo
 	OAuth         *OAuthRepo
 	Billing       *BillingRepo
+	Audit         *AuditRepo
+	Notify        *NotificationRepo
+	Store         *StoreRepo
 }
 
 // WithTx returns a repository aggregate whose catalog writes (albums,
@@ -111,6 +157,7 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Tracks:        &TrackRepo{db: db},
 		Rights:        &RightsRepo{db: db},
 		Jobs:          &JobRepo{db: db},
+		GenJobs:       &GenerationJobRepo{db: db},
 		Disputes:      &DisputeRepo{db: db},
 		Playlists:     &PlaylistRepo{db: db},
 		Playback:      &PlaybackRepo{db: db},
@@ -122,5 +169,8 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Resets:        &PasswordResetRepo{db: db},
 		OAuth:         &OAuthRepo{db: db},
 		Billing:       &BillingRepo{db: db},
+		Audit:         &AuditRepo{db: db},
+		Notify:        &NotificationRepo{db: db},
+		Store:         &StoreRepo{db: db},
 	}
 }

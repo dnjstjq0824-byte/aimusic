@@ -68,8 +68,16 @@ func (h *TrackHandler) GetTrack(c *gin.Context) {
 	ok(c, track)
 }
 
-// Stream issues a short-lived signed HLS URL for READY tracks (or LICENSE_GATE_PENDING for Admin review preview).
+// Stream issues a short-lived signed HLS URL for READY tracks (or
+// LICENSE_GATE_PENDING for Admin review preview). Login is required; pass
+// holders (and admins) get the master playlist (128k+256k), everyone else
+// gets the 128k standard-quality variant playlist.
 func (h *TrackHandler) Stream(c *gin.Context) {
+	userID := CurrentUserID(c)
+	if userID == "" {
+		abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "login required")
+		return
+	}
 	track, err := h.Repos.Tracks.GetByID(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		AbortError(c, err)
@@ -80,8 +88,8 @@ func (h *TrackHandler) Stream(c *gin.Context) {
 		AbortError(c, domain.ErrNotStreamable)
 		return
 	}
-	if h.Repos != nil && h.Repos.Blocks != nil && CurrentUserID(c) != "" {
-		if blocked, err := h.Repos.Blocks.IsArtistBlocked(c.Request.Context(), CurrentUserID(c), track.PartnerID); err == nil && blocked {
+	if h.Repos != nil && h.Repos.Blocks != nil {
+		if blocked, err := h.Repos.Blocks.IsArtistBlocked(c.Request.Context(), userID, track.PartnerID); err == nil && blocked {
 			AbortError(c, domain.ErrNotStreamable)
 			return
 		}
@@ -91,15 +99,28 @@ func (h *TrackHandler) Stream(c *gin.Context) {
 		if s3, ok := h.Storage.(*storage.S3Compat); ok {
 			base = strings.TrimRight(s3.Endpoint(), "/") + "/" + h.Buckets.PublicHLS
 		} else {
-			base = "https://cdn.example.com/" + h.Buckets.PublicHLS
+			AbortError(c, fmt.Errorf("%w: storage CDN base is not configured", domain.ErrInvalidInput))
+			return
 		}
 	}
-	playlistURL := base + "/" + strings.TrimPrefix(*track.HLSPrefix, "/") + "/master.m3u8"
+	// HQ gate: active pass (or admin role) unlocks the master playlist with
+	// the 256k variant; lookup failures fail open to standard quality so a
+	// billing outage never silences playback.
+	playlist := "stream_0.m3u8"
+	quality := "SQ"
+	if CurrentRole(c) == domain.RoleAdmin {
+		playlist, quality = "master.m3u8", "HQ"
+	} else if h.Repos != nil && h.Repos.Billing != nil {
+		if sub, err := h.Repos.Billing.GetActiveSubscription(c.Request.Context(), userID); err == nil && sub != nil {
+			playlist, quality = "master.m3u8", "HQ"
+		}
+	}
+	playlistURL := base + "/" + strings.TrimPrefix(*track.HLSPrefix, "/") + "/" + playlist
 	jti := uuid.NewString()
 	exp := time.Now().Add(time.Duration(h.Config.HLS.URLTTLSecs) * time.Second)
 	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, h.Config.HLS.SigningKey)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"url": signed, "expiresAt": exp.Format(time.RFC3339), "jti": jti,
+		"url": signed, "expiresAt": exp.Format(time.RFC3339), "jti": jti, "quality": quality,
 	}})
 }
 

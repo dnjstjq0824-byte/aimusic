@@ -12,7 +12,7 @@
       <UiSkeleton height="h-40" width="w-full" rounded="xl" />
     </div>
 
-    <template v-else-if="plan && order">
+    <template v-else-if="plan">
       <UiCard class="space-y-4">
         <div class="flex items-center justify-between border-b border-surface-border pb-3">
           <h2 class="text-sm font-bold text-white">주문서</h2>
@@ -23,7 +23,7 @@
             <dt class="text-neutral-500">상품</dt>
             <dd class="font-bold text-white">{{ plan.nameKo }}</dd>
           </div>
-          <div class="flex justify-between">
+          <div v-if="order" class="flex justify-between">
             <dt class="text-neutral-500">주문번호</dt>
             <dd class="font-mono text-neutral-300">{{ order.orderId }}</dd>
           </div>
@@ -33,9 +33,22 @@
           </div>
           <div class="flex justify-between border-t border-surface-border pt-2.5">
             <dt class="font-bold text-white">결제금액</dt>
-            <dd class="text-lg font-black text-brand-400">₩{{ order.amountKrw.toLocaleString('ko-KR') }}</dd>
+            <dd class="text-lg font-black text-brand-400">₩{{ plan.amountKrw.toLocaleString('ko-KR') }}</dd>
           </div>
         </dl>
+      </UiCard>
+
+      <!-- C6: withdrawal/refund consent gate (required before the order exists) -->
+      <UiCard class="space-y-3">
+        <h2 class="text-sm font-bold text-white">청약철회 및 환불 기준 동의 (필수)</h2>
+        <ul class="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-neutral-300">
+          <li>이용권은 결제 후 7일 이내 미사용 시 전액 환불됩니다.</li>
+          <li>디지털콘텐츠 제공이 개시된 후(스트리밍 이용 시작)에는 청약철회가 제한될 수 있습니다.</li>
+          <li>이용권은 1개월 단기 패스로 자동 연장되지 않으며, 잔여 기간 환불은 고객센터를 통해 신청할 수 있습니다.</li>
+        </ul>
+        <UiCheckbox v-model="refundAgreed" required>
+          위 청약철회 제한 조건과 환불 기준을 확인했으며 이에 동의합니다. (필수)
+        </UiCheckbox>
       </UiCard>
 
       <UiCard v-if="!tossReady">
@@ -52,8 +65,8 @@
         <RouterLink to="/pricing">
           <UiButton variant="ghost" size="md">요금제로 돌아가기</UiButton>
         </RouterLink>
-        <UiButton variant="brand" size="md" :loading="paying" :disabled="!tossReady" @click="pay">
-          Toss로 {{ order.amountKrw.toLocaleString('ko-KR') }}원 결제하기
+        <UiButton variant="brand" size="md" :loading="paying" :disabled="!tossReady || !refundAgreed" @click="pay">
+          Toss로 {{ plan.amountKrw.toLocaleString('ko-KR') }}원 결제하기
         </UiButton>
       </div>
     </template>
@@ -72,6 +85,7 @@ import type { BillingOrder, BillingPlan } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiCheckbox from '@/components/ui/UiCheckbox.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
@@ -85,6 +99,7 @@ const order = ref<BillingOrder | null>(null);
 const loading = ref(true);
 const paying = ref(false);
 const error = ref<string | null>(null);
+const refundAgreed = ref(false);
 
 const tossClientKey = (import.meta.env.VITE_TOSS_CLIENT_KEY as string | undefined) ?? '';
 const tossReady = tossClientKey !== '';
@@ -99,9 +114,15 @@ async function init(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const res = await billingApi.createOrder(code);
-    plan.value = res.plan;
-    order.value = res.order;
+    // The merchant order is created at pay time (with the refund consent
+    // timestamp), so init only resolves the plan from the public catalog.
+    const plans = await billingApi.plans();
+    const found = plans.find((p) => p.code === code);
+    if (!found) {
+      error.value = '요금제를 찾을 수 없습니다. 요금제에서 다시 선택해 주세요.';
+      return;
+    }
+    plan.value = found;
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {
@@ -110,9 +131,14 @@ async function init(): Promise<void> {
 }
 
 async function pay(): Promise<void> {
-  if (!plan.value || !order.value || !tossReady) return;
+  if (!plan.value || !tossReady || !refundAgreed.value) return;
   paying.value = true;
   try {
+    if (!order.value) {
+      const res = await billingApi.createOrder(plan.value.code, new Date().toISOString());
+      plan.value = res.plan;
+      order.value = res.order;
+    }
     const toss = await loadTossPayments(tossClientKey);
     const payment = toss.payment({ customerKey: auth.userId ?? 'guest' });
     const origin = window.location.origin;

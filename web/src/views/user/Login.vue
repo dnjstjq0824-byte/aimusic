@@ -5,7 +5,7 @@
       <BrandLogo :size="44" />
       <div>
         <h1 class="font-display text-2xl font-black text-white tracking-tight">AVIBE에 오신 것을 환영합니다</h1>
-        <p class="text-xs text-neutral-400 mt-1">상업 라이선스가 검증된 차세대 AI 음악 스트리밍</p>
+        <p class="text-xs text-neutral-400 mt-1">상업 이용 조건 확인 절차를 거친 AI 음악 스트리밍</p>
       </div>
     </div>
 
@@ -41,6 +41,15 @@
             </RouterLink>
           </template>
         </UiInput>
+        <UiInput
+          v-if="totpStep"
+          v-model="totpCode"
+          label="2단계 인증 코드"
+          placeholder="인증 앱 6자리 코드 또는 복구 코드"
+          autocomplete="one-time-code"
+          inputmode="text"
+          required
+        />
         <UiButton
           variant="brand"
           size="md"
@@ -48,7 +57,7 @@
           type="submit"
           :loading="busy"
         >
-          로그인
+          {{ totpStep ? '인증하고 로그인' : '로그인' }}
         </UiButton>
 
         <!-- Social login -->
@@ -83,8 +92,8 @@
           </UiButton>
         </div>
 
-        <!-- Test credentials quick pills -->
-        <div class="pt-4 border-t border-surface-border text-center">
+        <!-- Test credentials quick pills (dev only; never render in production) -->
+        <div v-if="isDev" class="pt-4 border-t border-surface-border text-center">
           <div class="text-[11px] text-neutral-400 mb-2 font-medium">체험용 빠른 로그인 (1-클릭)</div>
           <div class="flex flex-wrap justify-center gap-2">
             <button
@@ -138,11 +147,26 @@
           autocomplete="new-password"
           required
         />
+        <UiInput
+          v-model="suBirthYear"
+          type="number"
+          label="출생연도 (선택)"
+          placeholder="예: 1995"
+        />
+        <UiInput
+          v-model="suInviteCode"
+          label="초대 코드 (필요 시)"
+          placeholder="초대 코드가 있는 경우 입력"
+          autocomplete="off"
+        />
 
-        <div class="pt-2">
+        <div class="pt-2 space-y-3">
           <UiCheckbox v-model="suAgreeTerms" required>
             <RouterLink to="/legal/TOS" target="_blank" class="text-brand-400 underline">서비스 이용약관</RouterLink> 및
             <RouterLink to="/legal/PRIVACY" target="_blank" class="text-brand-400 underline">개인정보처리방침</RouterLink>에 동의합니다. (필수)
+          </UiCheckbox>
+          <UiCheckbox v-model="suAgeConfirmed" required>
+            만 14세 이상입니다. (필수, 만 14세 미만은 가입 불가)
           </UiCheckbox>
         </div>
 
@@ -152,7 +176,7 @@
           full-width
           type="submit"
           :loading="busy"
-          :disabled="!suAgreeTerms"
+          :disabled="!suAgreeTerms || !suAgeConfirmed"
         >
           리스너로 시작하기
         </UiButton>
@@ -189,11 +213,26 @@
           autocomplete="new-password"
           required
         />
+        <UiInput
+          v-model="ptBirthYear"
+          type="number"
+          label="출생연도 (선택)"
+          placeholder="예: 1995"
+        />
+        <UiInput
+          v-model="ptInviteCode"
+          label="초대 코드 (필요 시)"
+          placeholder="초대 코드가 있는 경우 입력"
+          autocomplete="off"
+        />
 
-        <div class="pt-2">
+        <div class="pt-2 space-y-3">
           <UiCheckbox v-model="ptAgreeContract" required>
             <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="text-brand-400 underline">파트너 음원유통·면책 계약서</RouterLink> 및
             <RouterLink to="/legal/COPYRIGHT_POLICY" target="_blank" class="text-brand-400 underline">AI 저작권 준수 확약</RouterLink>에 동의합니다. (필수)
+          </UiCheckbox>
+          <UiCheckbox v-model="ptAgeConfirmed" required>
+            만 14세 이상입니다. (필수, 만 14세 미만은 가입 불가)
           </UiCheckbox>
         </div>
 
@@ -203,7 +242,7 @@
           full-width
           type="submit"
           :loading="busy"
-          :disabled="!ptAgreeContract"
+          :disabled="!ptAgreeContract || !ptAgeConfirmed"
         >
           파트너 스튜디오 신청하기
         </UiButton>
@@ -215,10 +254,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { safeRedirect } from '@/router';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { authApi } from '@/api/endpoints';
-import { API_BASE_URL, errMessageOf } from '@/api/client';
+import { API_BASE_URL, errCodeOf, errMessageOf } from '@/api/client';
 import type { OAuthProviderInfo } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -247,12 +287,17 @@ const isDev = import.meta.env.DEV;
 // Login state
 const email = ref('');
 const password = ref('');
+const totpCode = ref('');
+const totpStep = ref(false);
 
 // Listener sign-up state
 const suEmail = ref('');
 const suPassword = ref('');
 const suName = ref('');
 const suAgreeTerms = ref(false);
+const suBirthYear = ref('');
+const suInviteCode = ref('');
+const suAgeConfirmed = ref(false);
 
 // Partner sign-up state
 const ptEmail = ref('');
@@ -260,6 +305,14 @@ const ptPassword = ref('');
 const ptName = ref('');
 const ptCompany = ref('');
 const ptAgreeContract = ref(false);
+const ptBirthYear = ref('');
+const ptInviteCode = ref('');
+const ptAgeConfirmed = ref(false);
+
+function parseBirthYear(raw: string): number | undefined {
+  const n = Number.parseInt(raw.trim(), 10);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 // Social login providers
 const providers = ref<OAuthProviderInfo[]>([]);
@@ -292,12 +345,17 @@ function fillCreds(e: string, p: string, autoSubmit = false) {
 async function submitLogin(): Promise<void> {
   busy.value = true;
   try {
-    await auth.login(email.value, password.value);
+    await auth.login(email.value, password.value, totpStep.value ? totpCode.value : undefined);
     toast.success('성공적으로 로그인되었습니다.');
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-    await router.push(redirect);
+    await router.push(safeRedirect(route.query.redirect));
   } catch (err: unknown) {
-    toast.error(errMessageOf(err), '로그인 실패');
+    if (errCodeOf(err) === 'ERR_TOTP_REQUIRED' && !totpStep.value) {
+      totpStep.value = true;
+      toast.info('인증 앱에 표시된 6자리 코드를 입력해 주세요.');
+    } else {
+      toast.error(errMessageOf(err), '로그인 실패');
+      if (errCodeOf(err) === 'ERR_TOTP_INVALID') totpCode.value = '';
+    }
   } finally {
     busy.value = false;
   }
@@ -306,7 +364,14 @@ async function submitLogin(): Promise<void> {
 async function submitRegister(): Promise<void> {
   busy.value = true;
   try {
-    await auth.register(suEmail.value, suPassword.value, suName.value);
+    await auth.register({
+      email: suEmail.value,
+      password: suPassword.value,
+      displayName: suName.value,
+      birthYear: parseBirthYear(suBirthYear.value),
+      ageConfirmed: suAgeConfirmed.value,
+      inviteCode: suInviteCode.value.trim() || undefined,
+    });
     toast.success('회원가입이 완료되었습니다. 로그인해 주세요.');
     email.value = suEmail.value;
     password.value = suPassword.value;
@@ -326,6 +391,9 @@ async function submitPartnerRegister(): Promise<void> {
       password: ptPassword.value,
       displayName: ptName.value,
       company: ptCompany.value,
+      birthYear: parseBirthYear(ptBirthYear.value),
+      ageConfirmed: ptAgeConfirmed.value,
+      inviteCode: ptInviteCode.value.trim() || undefined,
     });
     toast.success('파트너 계정이 등록되었습니다. 로그인해 주세요.');
     email.value = ptEmail.value;

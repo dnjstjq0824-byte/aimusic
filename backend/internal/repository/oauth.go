@@ -42,3 +42,9 @@ func (r *OAuthRepo) Upsert(ctx context.Context, userID, provider, providerUID st
 		ON CONFLICT (provider, provider_user_id) DO UPDATE SET email = EXCLUDED.email
 		RETURNING `+oauthColumns, userID, provider, providerUID, nullStr(email)))
 }
+
+// DeleteForUser unlinks every provider identity (withdrawal cleanup).
+func (r *OAuthRepo) DeleteForUser(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM oauth_accounts WHERE user_id = $1::uuid`, userID)
+	return err
+}

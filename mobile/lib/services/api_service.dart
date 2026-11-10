@@ -303,4 +303,16 @@ class ApiService {
       throw toApiException(e);
     }
   }
+
+  Future<List<LegalTerm>> pendingConsents() async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>('/legal/consents/pending');
+      final list = unwrapData<List<dynamic>>(res);
+      return list
+          .map((e) => LegalTerm.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
 }

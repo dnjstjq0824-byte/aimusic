@@ -12,6 +12,7 @@ const (
 	CodeRetroactiveGenerationDate = "ERR_RETROACTIVE_GENERATION_DATE"
 	CodeSyncOnlyLicense           = "ERR_SYNC_ONLY_LICENSE"
 	CodeDuplicateAudioFile        = "ERR_DUPLICATE_AUDIO_FILE"
+	CodeProviderNotAllowlisted    = "ERR_PROVIDER_NOT_ALLOWED"
 )
 
 // Settlement forfeiture reason for policy violations.
@@ -52,4 +53,14 @@ var (
 	ErrInvalidInput = errors.New("invalid input")
 	// ErrPaymentUnavailable marks billing calls when no payment provider is configured.
 	ErrPaymentUnavailable = errors.New("payment unavailable")
+	// ErrTOTPRequired marks logins that need a second-factor code.
+	ErrTOTPRequired = errors.New("totp required")
+	// ErrTOTPInvalid marks wrong second-factor codes.
+	ErrTOTPInvalid = errors.New("totp invalid")
+	// ErrTooManyAttempts marks rate-limited credential attempts.
+	ErrTooManyAttempts = errors.New("too many attempts")
+	// ErrAgeConfirmRequired marks accounts missing the 14+ declaration.
+	ErrAgeConfirmRequired = errors.New("age confirmation required")
+	// ErrConsentRequired marks accounts missing required terms consent.
+	ErrConsentRequired = errors.New("terms consent required")
 )

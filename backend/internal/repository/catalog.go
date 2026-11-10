@@ -79,13 +79,14 @@ type TrackRepo struct{ db DBTX }
 
 func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
-	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection sql.NullString
+	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey sql.NullString
 	var moodsJoined string
 	var duration, bitrate sql.NullInt64
+	var bpm sql.NullFloat64
 	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title,
 		&genre, &moodsJoined, &t.AIGenerationType, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
 		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
-		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &t.Status,
+		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
 		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -102,6 +103,9 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t.WaveformJSON = strPtr(waveform)
 	t.AIDisclosureText = strPtr(disclosure)
 	t.BitrateKbps = intPtr(bitrate)
+	t.ISRC = strPtr(isrc)
+	t.BPM = floatPtr(bpm)
+	t.MusicalKey = strPtr(mkey)
 	t.RejectionReasonKo = strPtr(rejection)
 	return t, nil
 }
@@ -111,7 +115,7 @@ const trackColumns = `id::text, album_id::text, partner_id::text, title,
 	ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
 	duration_ms, original_object_key, audio_fingerprint_hash, hls_prefix, waveform_json,
 	ai_provider, ai_generated, ai_disclosure_text,
-	bitrate_kbps, status, rejection_reason_ko, play_count, created_at, updated_at`
+	bitrate_kbps, isrc, bpm, musical_key, status, rejection_reason_ko, play_count, created_at, updated_at`
 
 func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track, error) {
 	if t.Status == "" {
@@ -328,6 +332,21 @@ func (r *TrackRepo) SetTranscoded(ctx context.Context, id, hlsPrefix string, bit
 	return err
 }
 
+// SetAnalysis stores worker-detected tempo/key (best-effort; nils clear).
+func (r *TrackRepo) SetAnalysis(ctx context.Context, id string, bpm *float64, musicalKey *string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE tracks SET bpm = $2, musical_key = $3 WHERE id = $1::uuid`,
+		id, nullFloat(bpm), nullStr(musicalKey))
+	return err
+}
+
+// SetISRC assigns the distribution ISRC (canonical 12-char form).
+func (r *TrackRepo) SetISRC(ctx context.Context, id, isrc string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE tracks SET isrc = $2 WHERE id = $1::uuid`, id, isrc)
+	return err
+}
+
 // IncrementPlayCount adds one counted play.
 func (r *TrackRepo) IncrementPlayCount(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx,
@@ -354,18 +373,20 @@ const rightsColumns = `id::text, track_id::text, partner_id::text, declares_owne
 	COALESCE(array_to_string(human_contribution_types, chr(31)), ''),
 	human_contribution_desc, gate1_policy_passed, gate2_date_passed, gate3_ffprobe_passed,
 	ffprobe_report_json, signed_ip, source_model,
-	subscription_id::text, generated_at, declared_at`
+	subscription_id::text, generated_at, collective_trust_status, collective_name,
+	cert_snapshot_json, cert_snapshot_at, declared_at`
 
 func scanRights(row interface{ Scan(...any) error }) (*domain.TrackRightsDeclaration, error) {
 	out := &domain.TrackRightsDeclaration{}
-	var planTier, trackURL, humanTypesJoined, humanDesc, ffprobeRep, signedIP, model, sub sql.NullString
-	var generated sql.NullTime
+	var planTier, trackURL, humanTypesJoined, humanDesc, ffprobeRep, signedIP, model, sub, collectiveName, certSnap sql.NullString
+	var generated, certSnapAt sql.NullTime
 	err := row.Scan(&out.ID, &out.TrackID, &out.PartnerID, &out.DeclaresOwnership,
 		&out.DeclaresNoVoiceClone, &out.DeclaresTrainingConsent,
 		&out.ConfirmedNoUnauthorizedSampling, &out.ConfirmedIndemnification,
 		&planTier, &trackURL, &humanTypesJoined, &humanDesc,
 		&out.Gate1PolicyPassed, &out.Gate2DatePassed, &out.Gate3FFprobePassed,
-		&ffprobeRep, &signedIP, &model, &sub, &generated, &out.DeclaredAt)
+		&ffprobeRep, &signedIP, &model, &sub, &generated,
+		&out.CollectiveTrustStatus, &collectiveName, &certSnap, &certSnapAt, &out.DeclaredAt)
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +401,9 @@ func scanRights(row interface{ Scan(...any) error }) (*domain.TrackRightsDeclara
 	out.SourceModel = strPtr(model)
 	out.SubscriptionID = strPtr(sub)
 	out.GeneratedAt = timePtr(generated)
+	out.CollectiveName = strPtr(collectiveName)
+	out.CertSnapshotJSON = strPtr(certSnap)
+	out.CertSnapshotAt = timePtr(certSnapAt)
 	return out, nil
 }
 
@@ -391,8 +415,10 @@ func (r *RightsRepo) Upsert(ctx context.Context, d *domain.TrackRightsDeclaratio
 			confirmed_no_unauthorized_sampling, confirmed_indemnification,
 			plan_tier_used, provider_track_url, human_contribution_types, human_contribution_desc,
 			gate1_policy_passed, gate2_date_passed, signed_ip,
-			source_model, subscription_id, generated_at)
-		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, string_to_array($10, chr(31)), $11, $12, $13, $14, $15, $16::uuid, $17)
+			source_model, subscription_id, generated_at,
+			collective_trust_status, collective_name,
+			cert_snapshot_json, cert_snapshot_at)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, string_to_array($10, chr(31)), $11, $12, $13, $14, $15, $16::uuid, $17, $18, $19, $20, $21)
 		ON CONFLICT (track_id) DO UPDATE SET
 			declares_ownership = EXCLUDED.declares_ownership,
 			declares_no_voice_clone = EXCLUDED.declares_no_voice_clone,
@@ -408,13 +434,19 @@ func (r *RightsRepo) Upsert(ctx context.Context, d *domain.TrackRightsDeclaratio
 			signed_ip = EXCLUDED.signed_ip,
 			source_model = EXCLUDED.source_model,
 			subscription_id = EXCLUDED.subscription_id,
-			generated_at = EXCLUDED.generated_at
+			generated_at = EXCLUDED.generated_at,
+			collective_trust_status = EXCLUDED.collective_trust_status,
+			collective_name = EXCLUDED.collective_name,
+			cert_snapshot_json = EXCLUDED.cert_snapshot_json,
+			cert_snapshot_at = EXCLUDED.cert_snapshot_at
 		RETURNING `+rightsColumns,
 		d.TrackID, d.PartnerID, d.DeclaresOwnership, d.DeclaresNoVoiceClone, d.DeclaresTrainingConsent,
 		d.ConfirmedNoUnauthorizedSampling, d.ConfirmedIndemnification,
 		nullStr(d.PlanTierUsed), nullStr(d.ProviderTrackURL), joinKeywords(d.HumanContributionTypes), nullStr(d.HumanContributionDesc),
 		d.Gate1PolicyPassed, d.Gate2DatePassed, nullStr(d.SignedIP),
 		nullStr(d.SourceModel), nullStr(d.SubscriptionID), nullTime(d.GeneratedAt),
+		d.CollectiveTrustStatus, nullStr(d.CollectiveName),
+		nullStr(d.CertSnapshotJSON), nullTime(d.CertSnapshotAt),
 	))
 }
 
@@ -424,6 +456,15 @@ func (r *RightsRepo) SetGate3Report(ctx context.Context, trackID string, passed 
 		UPDATE track_rights_declarations
 		SET gate3_ffprobe_passed = $2, ffprobe_report_json = $3
 		WHERE track_id = $1::uuid`, trackID, passed, reportJSON)
+	return err
+}
+
+// SetCertSnapshot records the worker's license-recheck certification snapshot.
+func (r *RightsRepo) SetCertSnapshot(ctx context.Context, trackID string, snapshotJSON string, snapshotAt time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE track_rights_declarations
+		SET cert_snapshot_json = $2, cert_snapshot_at = $3
+		WHERE track_id = $1::uuid`, trackID, snapshotJSON, snapshotAt)
 	return err
 }
 
@@ -508,4 +549,46 @@ func (r *JobRepo) MarkFailed(ctx context.Context, id, errMsg string) error {
 		UPDATE transcoding_jobs SET status = 'FAILED', error = $2,
 			attempts = attempts + 1, finished_at = NOW() WHERE id = $1::uuid`, id, errMsg)
 	return err
+}
+
+// ListStuckRunning returns RUNNING jobs whose start predates the cutoff
+// (worker died mid-job and the Redis payload is gone).
+func (r *JobRepo) ListStuckRunning(ctx context.Context, cutoff time.Time, limit int) ([]*domain.TranscodingJob, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+jobColumns+` FROM transcoding_jobs
+		WHERE status = 'RUNNING' AND started_at < $1
+		ORDER BY started_at ASC LIMIT $2`, cutoff, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.TranscodingJob{}
+	for rows.Next() {
+		j, err := scanJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, j)
+	}
+	return out, rows.Err()
+}
+
+// RequeueStuck resets one RUNNING job to QUEUED (attempts+1). It reports
+// whether the row was actually reset (a live worker may have finished it).
+func (r *JobRepo) RequeueStuck(ctx context.Context, id string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE transcoding_jobs SET status = 'QUEUED', attempts = attempts + 1,
+			started_at = NULL, error = NULL
+		WHERE id = $1::uuid AND status = 'RUNNING'`, id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
 }

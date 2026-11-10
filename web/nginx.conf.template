@@ -14,6 +14,14 @@ server {
     gzip_types text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1024;
 
+    # App-shell hardening (tokens live in localStorage). The Cloudflare
+    # Worker sets the same headers in prod; nginx covers local/docker.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob:; media-src 'self' blob: https: http://localhost:* http://127.0.0.1:*; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; frame-src https://pay.tosspayments.com https://*.tosspayments.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+
     # API reverse proxy (same-origin /api/* -> Go API, no CORS needed).
     location /api/ {
         proxy_pass http://api_backend;

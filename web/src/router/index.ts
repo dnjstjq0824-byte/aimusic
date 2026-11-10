@@ -60,6 +60,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'account/security',
+        name: 'account-security',
+        component: () => import('@/views/user/Security.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'legal',
         name: 'legal-root',
         component: () => import('@/views/legal/LegalTerms.vue'),
@@ -79,6 +85,8 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'partner-dashboard', component: () => import('@/views/partner/Dashboard.vue') },
       { path: 'upload', name: 'partner-upload', component: () => import('@/views/partner/Upload.vue') },
       { path: 'subscriptions', name: 'partner-subscriptions', component: () => import('@/views/partner/Subscriptions.vue') },
+      { path: 'stores', name: 'partner-stores', component: () => import('@/views/partner/Stores.vue') },
+      { path: 'generations', name: 'partner-generations', component: () => import('@/views/partner/Generations.vue') },
     ],
   },
   {
@@ -91,7 +99,17 @@ const routes: RouteRecordRaw[] = [
       { path: 'policies', name: 'admin-policies', component: () => import('@/views/admin/LicensePolicies.vue') },
       { path: 'disputes', name: 'admin-disputes', component: () => import('@/views/admin/Disputes.vue') },
       { path: 'curation', name: 'admin-curation', component: () => import('@/views/admin/Curation.vue') },
+      { path: 'audit', name: 'admin-audit', component: () => import('@/views/admin/Audit.vue') },
+      { path: 'users', name: 'admin-users', component: () => import('@/views/admin/Users.vue') },
+      { path: 'stores', name: 'admin-stores', component: () => import('@/views/admin/Stores.vue') },
+      { path: 'distribution', name: 'admin-distribution', component: () => import('@/views/admin/Distribution.vue') },
+      { path: 'settlements', name: 'admin-settlements', component: () => import('@/views/admin/Settlements.vue') },
     ],
+  },
+  {
+    path: '/store/player',
+    name: 'store-player',
+    component: () => import('@/views/store/Player.vue'),
   },
   {
     path: '/500',
@@ -113,12 +131,20 @@ export const router = createRouter({
   },
 });
 
+/** In-app redirects only: must be a same-origin absolute path, never `//host` or a scheme. */
+export function safeRedirect(raw: unknown): string {
+  if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) {
+    return '/';
+  }
+  return raw;
+}
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
   if (!auth.initialized) await auth.hydrate();
   // Already signed in: never show the login form again; continue to the target.
   if (to.name === 'login' && auth.isAuthenticated) {
-    const redirect = typeof to.query.redirect === 'string' && to.query.redirect.startsWith('/') ? to.query.redirect : '/';
+    const redirect = safeRedirect(to.query.redirect);
     return redirect === to.fullPath ? { name: 'home' } : redirect;
   }
   if (to.meta.requiresAuth && !auth.isAuthenticated) {

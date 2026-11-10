@@ -23,6 +23,9 @@ class AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    int? birthYear,
+    required bool ageConfirmed,
+    String? inviteCode,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -31,6 +34,9 @@ class AuthRepository {
           'email': email,
           'password': password,
           'displayName': displayName,
+          if (birthYear != null) 'birthYear': birthYear,
+          'ageConfirmed': ageConfirmed,
+          if (inviteCode != null && inviteCode.isNotEmpty) 'inviteCode': inviteCode,
         },
       );
       // Register returns the user; log in immediately for a token pair.
@@ -44,11 +50,16 @@ class AuthRepository {
   Future<TokenPair> login({
     required String email,
     required String password,
+    String? totpCode,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
         '/auth/login',
-        data: {'email': email, 'password': password},
+        data: {
+          'email': email,
+          'password': password,
+          if (totpCode != null && totpCode.isNotEmpty) 'totpCode': totpCode,
+        },
       );
       final data = unwrapData<Map<String, dynamic>>(res);
       final pair =
@@ -65,6 +76,20 @@ class AuthRepository {
     try {
       final res = await _dio.get<Map<String, dynamic>>('/auth/me');
       return AuthMe.fromJson(unwrapData<Map<String, dynamic>>(res));
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
+  Future<void> confirmAge({int? birthYear}) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '/auth/age-confirm',
+        data: {
+          'ageConfirmed': true,
+          if (birthYear != null) 'birthYear': birthYear,
+        },
+      );
     } catch (e) {
       throw toApiException(e);
     }

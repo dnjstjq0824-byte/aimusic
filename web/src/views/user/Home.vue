@@ -8,7 +8,7 @@
       />
       <div class="relative space-y-5">
         <UiBadge variant="brand" size="sm" dot>
-          상업 라이선스 100% 검증 스트리밍
+          상업 이용 조건 확인 절차를 거친 AI 음원
         </UiBadge>
 
         <h1 class="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl">
@@ -20,8 +20,8 @@
           {{ SLOGAN }}
         </p>
         <p class="mx-auto max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
-          상상하는 모든 노래를 검증된 음원으로. 저작권 걱정 없이 듣고, 플레이리스트에 담고,
-          영상에 쓰세요.
+          상상하는 모든 노래를 확인 절차를 거친 음원으로. 이용 조건을 확인한 음원으로 듣고,
+          플레이리스트에 담고, 영상에 쓰세요.
         </p>
 
         <!-- Prompt box -->
@@ -275,7 +275,7 @@
           <dl class="grid grid-cols-2 gap-4 text-xs">
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
               <dt class="font-semibold text-neutral-500">라이선스 기준</dt>
-              <dd class="font-bold text-emerald-400">100% 상업용 전용</dd>
+              <dd class="font-bold text-emerald-400">유료 상업 플랜 생성분만 접수</dd>
             </div>
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
               <dt class="font-semibold text-neutral-500">법적 컴플라이언스</dt>

@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +22,10 @@ type Storage interface {
 	PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	Delete(ctx context.Context, bucket, key string) error
+	// ListPrefix returns every key under prefix (directory-style listing).
+	ListPrefix(ctx context.Context, bucket, prefix string) ([]string, error)
+	// DeletePrefix removes every object under prefix; empty result is success.
+	DeletePrefix(ctx context.Context, bucket, prefix string) error
 }
 
 // Buckets holds the staging (private) and HLS (public) bucket names.
@@ -117,8 +122,96 @@ func (s *S3Compat) Delete(ctx context.Context, bucket, key string) error {
 	return fmt.Errorf("delete %s/%s: unexpected status %d", bucket, key, resp.StatusCode)
 }
 
+// listBucketResult mirrors the S3 ListObjectsV2 XML envelope.
+type listBucketResult struct {
+	XMLName  xml.Name `xml:"ListBucketResult"`
+	Contents []struct {
+		Key string `xml:"Key"`
+	} `xml:"Contents"`
+	IsTruncated           bool   `xml:"IsTruncated"`
+	NextContinuationToken string `xml:"NextContinuationToken"`
+}
+
+// ListPrefix returns every key under prefix via ListObjectsV2 (paginated).
+// The prefix is normalized to directory form ("hls/<id>" -> "hls/<id>/") so
+// sibling tracks can never match.
+func (s *S3Compat) ListPrefix(ctx context.Context, bucket, prefix string) ([]string, error) {
+	if bucket == "" || strings.Trim(prefix, "/") == "" {
+		return nil, fmt.Errorf("bucket and prefix are required")
+	}
+	prefix = strings.Trim(prefix, "/") + "/"
+	var out []string
+	token := ""
+	for {
+		extra := url.Values{}
+		extra.Set("list-type", "2")
+		extra.Set("prefix", prefix)
+		extra.Set("max-keys", "1000")
+		if token != "" {
+			extra.Set("continuation-token", token)
+		}
+		signed, err := s.presignQuery("GET", bucket, "", 5*time.Minute, extra)
+		if err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, signed, nil)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := s.client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+		resp.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("list %s/%s: unexpected status %d", bucket, prefix, resp.StatusCode)
+		}
+		var res listBucketResult
+		if err := xml.Unmarshal(body, &res); err != nil {
+			return nil, fmt.Errorf("list %s/%s: bad xml: %w", bucket, prefix, err)
+		}
+		for _, c := range res.Contents {
+			if strings.HasPrefix(c.Key, prefix) {
+				out = append(out, c.Key)
+			}
+		}
+		if !res.IsTruncated || res.NextContinuationToken == "" {
+			break
+		}
+		token = res.NextContinuationToken
+	}
+	return out, nil
+}
+
+// DeletePrefix removes every object under prefix. A prefix with no objects
+// is success; the first delete failure aborts with an error.
+func (s *S3Compat) DeletePrefix(ctx context.Context, bucket, prefix string) error {
+	keys, err := s.ListPrefix(ctx, bucket, prefix)
+	if err != nil {
+		return err
+	}
+	for _, k := range keys {
+		if err := s.Delete(ctx, bucket, k); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *S3Compat) presign(method, bucket, key string, ttl time.Duration) (string, error) {
-	if bucket == "" || key == "" {
+	return s.presignQuery(method, bucket, key, ttl, nil)
+}
+
+// presignQuery signs extra query parameters (e.g. ListObjectsV2) into the URL.
+func (s *S3Compat) presignQuery(method, bucket, key string, ttl time.Duration, extra url.Values) (string, error) {
+	if bucket == "" {
+		return "", fmt.Errorf("bucket and key are required")
+	}
+	if extra == nil && key == "" {
 		return "", fmt.Errorf("bucket and key are required")
 	}
 	if ttl <= 0 {
@@ -136,8 +229,16 @@ func (s *S3Compat) presign(method, bucket, key string, ttl time.Duration) (strin
 	dateStamp := now.Format("20060102")
 	credentialScope := dateStamp + "/" + s.region + "/s3/aws4_request"
 
-	canonicalURI := "/" + bucket + "/" + escapeKey(key)
+	canonicalURI := "/" + bucket + "/"
+	if key != "" {
+		canonicalURI += escapeKey(key)
+	}
 	q := url.Values{}
+	for k, vs := range extra {
+		for _, v := range vs {
+			q.Add(k, v)
+		}
+	}
 	q.Set("X-Amz-Algorithm", "AWS4-HMAC-SHA256")
 	q.Set("X-Amz-Credential", s.accessKey+"/"+credentialScope)
 	q.Set("X-Amz-Date", amzDate)

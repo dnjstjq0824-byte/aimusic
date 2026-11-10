@@ -36,7 +36,7 @@ type SMTPMailer struct {
 // NewSMTPMailer builds an SMTP mailer; From falls back to a no-reply address.
 func NewSMTPMailer(host string, port int, username, password, from, fromName string) *SMTPMailer {
 	if strings.TrimSpace(from) == "" {
-		from = "no-reply@avibe.kr"
+		from = "no-reply@avibemusic.com"
 	}
 	return &SMTPMailer{Host: host, Port: port, Username: username, Password: password, From: from, FromName: fromName}
 }

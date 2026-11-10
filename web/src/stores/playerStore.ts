@@ -57,6 +57,7 @@ export const usePlayerStore = defineStore('player', () => {
   const error = ref<string | null>(null);
   const skippedIds = ref<string[]>([]);
   const currentJti = ref<string | null>(null);
+  const currentQuality = ref<'HQ' | 'SQ'>('SQ');
 
   let hls: Hls | null = null;
   let heartbeatTimer: number | null = null;
@@ -280,6 +281,7 @@ export const usePlayerStore = defineStore('player', () => {
       if (seq !== loadSeq) return; // a newer track was picked meanwhile
 
       currentJti.value = grant.jti;
+      currentQuality.value = grant.quality;
       loadedTrackId = track.id;
       const startMs = resumeOffsetMs(savedMs, track.durationMs);
       const url = grant.url;
@@ -331,6 +333,11 @@ export const usePlayerStore = defineStore('player', () => {
         skippedIds.value.push(track.id);
         error.value = `차단된 음원을 건너뜁니다: ${track.title}`;
         await advance(true);
+        return;
+      }
+      if (code === 'ERR_UNAUTHORIZED') {
+        error.value = '재생하려면 로그인이 필요합니다.';
+        isPlaying.value = false;
         return;
       }
       error.value = code;
@@ -427,6 +434,7 @@ export const usePlayerStore = defineStore('player', () => {
     durationMs,
     error,
     skippedIds,
+    currentQuality,
     currentTrack,
     setQueue,
     enqueue,

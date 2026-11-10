@@ -22,7 +22,7 @@ func testAuthService() *AuthService {
 
 func TestIssueParseAccessRoundTrip(t *testing.T) {
 	s := testAuthService()
-	tok, err := s.Issue("user-1", domain.RoleUser)
+	tok, err := s.Issue(context.Background(), "user-1", domain.RoleUser)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestIssueParseAccessRoundTrip(t *testing.T) {
 
 func TestParseAccessRejectsRefreshToken(t *testing.T) {
 	s := testAuthService()
-	tok, err := s.Issue("user-1", domain.RoleUser)
+	tok, err := s.Issue(context.Background(), "user-1", domain.RoleUser)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}
@@ -52,9 +52,36 @@ func TestParseAccessRejectsRefreshToken(t *testing.T) {
 	}
 }
 
+func TestValidateAccessEnforcesVersionAndActive(t *testing.T) {
+	s := testAuthService()
+	user := &domain.User{ID: "user-1", Role: domain.RoleUser, IsActive: true, TokenVersion: 0}
+	s.getUser = func(_ context.Context, id string) (*domain.User, error) {
+		if id != user.ID {
+			return nil, domain.ErrNotFound
+		}
+		return user, nil
+	}
+	tok, err := s.Issue(context.Background(), "user-1", domain.RoleUser)
+	if err != nil {
+		t.Fatalf("Issue: %v", err)
+	}
+	if _, err := s.ValidateAccess(context.Background(), tok.AccessToken); err != nil {
+		t.Fatalf("fresh token rejected: %v", err)
+	}
+	user.TokenVersion = 1 // logout-all bump
+	if _, err := s.ValidateAccess(context.Background(), tok.AccessToken); err == nil {
+		t.Fatal("stale-version token accepted after logout-all")
+	}
+	user.TokenVersion = 0
+	user.IsActive = false
+	if _, err := s.ValidateAccess(context.Background(), tok.AccessToken); err == nil {
+		t.Fatal("deactivated account token accepted")
+	}
+}
+
 func TestParseAccessRejectsTamperedToken(t *testing.T) {
 	s := testAuthService()
-	tok, err := s.Issue("user-1", domain.RoleUser)
+	tok, err := s.Issue(context.Background(), "user-1", domain.RoleUser)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}
@@ -77,7 +104,7 @@ func TestParseAccessRejectsWrongKey(t *testing.T) {
 			RefreshTTLDays:   14,
 		},
 	})
-	tok, err := other.Issue("user-1", domain.RoleUser)
+	tok, err := other.Issue(context.Background(), "user-1", domain.RoleUser)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}
@@ -88,7 +115,7 @@ func TestParseAccessRejectsWrongKey(t *testing.T) {
 
 func TestRefreshRejectsAccessToken(t *testing.T) {
 	s := testAuthService()
-	tok, err := s.Issue("user-1", domain.RoleUser)
+	tok, err := s.Issue(context.Background(), "user-1", domain.RoleUser)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}

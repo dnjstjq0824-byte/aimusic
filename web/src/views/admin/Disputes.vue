@@ -41,8 +41,12 @@
               {{ disputeStatusKo(d.status) }}
             </UiBadge>
           </div>
-          <div class="text-[11px] text-neutral-400">
-            신고 접수: <strong>{{ d.reporterUserId ? `회원(${d.reporterUserId.slice(0, 8)})` : '외부/익명 접수' }}</strong>
+          <div class="flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
+            <span>신고 접수: <strong>{{ d.reporterUserId ? `회원(${d.reporterUserId.slice(0, 8)})` : '외부/익명 접수' }}</strong></span>
+            <UiBadge :variant="slaBreached(d) ? 'danger' : 'neutral'" size="xs">
+              {{ slaBreached(d) ? `SLA 초과 · ${slaLabel(d)}` : slaLabel(d) }}
+            </UiBadge>
+            <span v-if="d.slaNotifiedAt" class="text-neutral-500">SLA 알림 발송됨</span>
           </div>
         </div>
 
@@ -146,6 +150,25 @@ function disputeVariant(status: string): 'danger' | 'success' | 'warning' | 'neu
   if (status === 'DISMISSED') return 'success';
   if (status === 'UNDER_REVIEW' || status === 'OPEN') return 'warning';
   return 'neutral';
+}
+
+// SLA: open disputes older than 72h trigger the worker sweeper alert.
+const SLA_HOURS = 72;
+
+function slaElapsedHours(d: CopyrightDispute): number {
+  const ms = Date.now() - new Date(d.createdAt).getTime();
+  return Number.isFinite(ms) ? ms / 3_600_000 : 0;
+}
+
+function slaBreached(d: CopyrightDispute): boolean {
+  return (d.status === 'OPEN' || d.status === 'UNDER_REVIEW') && slaElapsedHours(d) >= SLA_HOURS;
+}
+
+function slaLabel(d: CopyrightDispute): string {
+  const h = Math.floor(slaElapsedHours(d));
+  if (h < 1) return '접수 1시간 이내';
+  if (h < 24) return `접수 후 ${h}시간 경과`;
+  return `접수 후 ${Math.floor(h / 24)}일 ${h % 24}시간 경과`;
 }
 
 function askResolve(id: string, uphold: boolean): void {

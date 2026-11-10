@@ -156,8 +156,8 @@ func (pc *PhaseCorrelator) Analyze(input *PCMBuffer) (*PhaseCorrelationResult, e
 	}, nil
 }
 
-// lowpassIIR implements a single-pole lowpass filter.
-func lowpassIIR(in []float64, sampleRate int, cutoff float64) []float64 {
+// LowpassIIR implements a single-pole lowpass filter.
+func LowpassIIR(in []float64, sampleRate int, cutoff float64) []float64 {
 	out := make([]float64, len(in))
 	dt := 1.0 / float64(sampleRate)
 	rc := 1.0 / (2.0 * math.Pi * cutoff)
@@ -170,6 +170,10 @@ func lowpassIIR(in []float64, sampleRate int, cutoff float64) []float64 {
 		prev = val
 	}
 	return out
+}
+
+func lowpassIIR(in []float64, sampleRate int, cutoff float64) []float64 {
+	return LowpassIIR(in, sampleRate, cutoff)
 }
 
 // highpassIIR implements a single-pole highpass filter.

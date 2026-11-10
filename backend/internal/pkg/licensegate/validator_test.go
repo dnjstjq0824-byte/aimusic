@@ -82,8 +82,17 @@ func TestValidateCommercialEligibility(t *testing.T) {
 		RejectionMessageKo:        "AIVA Standard는 Sync 전용입니다.",
 	}
 	blocked := &Policy{Provider: "MUBERT", AllowsStandaloneStreaming: false, RejectionMessageKo: "차단"}
+	udioCutoff := time.Date(2025, 10, 30, 0, 0, 0, 0, time.UTC)
+	udioPolicy := &Policy{
+		Provider:                  "UDIO",
+		AllowsStandaloneStreaming: true,
+		AllowedPlanTiers:          []string{"Standard", "Pro"},
+		MaxGeneratedAt:            &udioCutoff,
+	}
 	inWindow := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
 	beforeWindow := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	afterCutoff := time.Date(2025, 11, 1, 0, 0, 0, 0, time.UTC)
+	beforeCutoff := time.Date(2025, 10, 29, 0, 0, 0, 0, time.UTC)
 
 	cases := []struct {
 		name     string
@@ -131,6 +140,37 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			wantErr:  "generated before subscription window",
 			wantCode: domain.CodeRetroactiveGenerationDate,
 		},
+		{
+			name:     "udio post-cutoff blocked",
+			store:    &stubStore{policy: udioPolicy, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "UDIO", AudioSHA256: "aaa", GeneratedAt: afterCutoff, RequiresActiveSubAtCreation: false},
+			wantErr:  "not eligible for distribution",
+			wantCode: domain.CodeNonCommercialTier,
+		},
+		{
+			name:  "udio pre-cutoff passes",
+			store: &stubStore{policy: udioPolicy, sub: verifiedSub()},
+			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "UDIO", AudioSHA256: "aaa", GeneratedAt: beforeCutoff, RequiresActiveSubAtCreation: false},
+		},
+		{
+			name:     "unknown provider allowlisted-out",
+			store:    &stubStore{policy: nil, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "MUSICGEN", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: false},
+			wantErr:  "지원하지 않는 AI 제공자",
+			wantCode: domain.CodeProviderNotAllowlisted,
+		},
+		{
+			name:     "valid provider without policy row",
+			store:    &stubStore{policy: nil, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: false},
+			wantErr:  "정책이 등록되어 있지 않습니다",
+			wantCode: domain.CodeProviderNotAllowlisted,
+		},
+		{
+			name:  "lowercase provider normalized",
+			store: &stubStore{policy: allowed, sub: verifiedSub()},
+			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "suno", PlanTierUsed: "Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -139,8 +179,11 @@ func TestValidateCommercialEligibility(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)
 				}
-				if res == nil || res.Policy == nil || res.Subscription == nil {
-					t.Fatal("expected policy + subscription in result")
+				if res == nil || res.Policy == nil {
+					t.Fatal("expected policy in result")
+				}
+				if tc.req.RequiresActiveSubAtCreation && res.Subscription == nil {
+					t.Fatal("expected subscription in result")
 				}
 				return
 			}
@@ -155,5 +198,79 @@ func TestValidateCommercialEligibility(t *testing.T) {
 				t.Fatalf("want code %q, got %q", tc.wantCode, gateErr.Code)
 			}
 		})
+	}
+}
+
+func TestValidateSourceModel(t *testing.T) {
+	blocked := []string{"MusicGen", "musicgen-small", "AudioGen", "MUSICLM", "stable-audio-open"}
+	for _, m := range blocked {
+		if err := ValidateSourceModel(m); err == nil {
+			t.Errorf("non-commercial model %q accepted", m)
+		} else {
+			var gateErr *domain.GateError
+			if !errors.As(err, &gateErr) || gateErr.Code != domain.CodeNonCommercialTier {
+				t.Errorf("model %q: want ERR_NON_COMMERCIAL_TIER GateError, got %v", m, err)
+			}
+		}
+	}
+	allowed := []string{"", "suno-v4", "udio-v1.5", "chirp-v3", "ace-step-v1"}
+	for _, m := range allowed {
+		if err := ValidateSourceModel(m); err != nil {
+			t.Errorf("model %q rejected: %v", m, err)
+		}
+	}
+}
+
+func TestBuildCertSnapshotRoundTrip(t *testing.T) {
+	gen := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
+	tier := "PRO"
+	sub := "sub-123"
+	model := "suno-v4"
+	raw, err := BuildCertSnapshot(CertSnapshot{
+		Provider:            "SUNO",
+		PlanTierUsed:        &tier,
+		SubscriptionID:      &sub,
+		GeneratedAt:         &gen,
+		SourceModel:         &model,
+		CollectiveTrustStatus: domain.CollectiveNone,
+		Gate1PolicyPassed:   true,
+		Gate2DatePassed:     true,
+	})
+	if err != nil {
+		t.Fatalf("BuildCertSnapshot: %v", err)
+	}
+	got, err := ParseCertSnapshot(raw)
+	if err != nil {
+		t.Fatalf("ParseCertSnapshot: %v", err)
+	}
+	if got.PolicyVersion == "" || got.PolicyVersion != PolicyVersion {
+		t.Errorf("policy version = %q, want pinned %q", got.PolicyVersion, PolicyVersion)
+	}
+	if got.Provider != "SUNO" || got.PlanTierUsed == nil || *got.PlanTierUsed != "PRO" {
+		t.Errorf("round trip lost provider/tier: %+v", got)
+	}
+	if got.SubscriptionID == nil || *got.SubscriptionID != "sub-123" {
+		t.Errorf("round trip lost subscription: %+v", got)
+	}
+	if got.SourceModel == nil || *got.SourceModel != "suno-v4" {
+		t.Errorf("round trip lost source model: %+v", got)
+	}
+	if got.GeneratedAt == nil || !got.GeneratedAt.Equal(gen) {
+		t.Errorf("round trip lost generatedAt: %+v", got)
+	}
+	if !got.Gate1PolicyPassed || !got.Gate2DatePassed {
+		t.Errorf("round trip lost gate flags: %+v", got)
+	}
+	if got.DecidedAt.IsZero() {
+		t.Error("DecidedAt must default to build time")
+	}
+}
+
+func TestBuildCertSnapshotRequiresProvider(t *testing.T) {
+	if _, err := BuildCertSnapshot(CertSnapshot{}); err == nil {
+		t.Error("empty provider must fail")
+	}
+	if _, err := ParseCertSnapshot("not-json"); err == nil {
+		t.Error("malformed snapshot must fail")
 	}
 }

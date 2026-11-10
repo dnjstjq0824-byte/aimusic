@@ -23,6 +23,7 @@
       <template #header>
         <th class="p-3.5">제공자 (Provider)</th>
         <th class="p-3.5">단독 스트리밍 유통</th>
+        <th class="p-3.5">생성 컷오프</th>
         <th class="p-3.5">허용 플랜 (Allowed)</th>
         <th class="p-3.5">영상 BGM 전용 (Sync-Only)</th>
         <th class="p-3.5">차단 플랜 (Blocked)</th>
@@ -44,6 +45,10 @@
           >
             {{ p.allowsStandaloneStreaming ? '허용 (Standalone)' : '불허 (Sync-Only)' }}
           </UiBadge>
+        </td>
+        <td class="p-3.5 text-xs">
+          <span v-if="p.maxGeneratedAt" class="text-amber-300">{{ fmtDate(p.maxGeneratedAt) }} 이후 거부</span>
+          <span v-else class="text-neutral-500">없음</span>
         </td>
         <td class="p-3.5 font-mono text-neutral-300">
           {{ (p.allowedPlanTiers ?? []).join(', ') || '전체 허용' }}
@@ -100,6 +105,18 @@
           placeholder="해당 플랫폼의 요금제는 단독 음원 유통이 불가합니다."
         />
 
+        <UiInput
+          v-model="formMaxGeneratedAt"
+          label="생성 컷오프 (선택, RFC3339 — 이후 생성분 거부)"
+          placeholder="예: 2025-10-30T00:00:00Z (비우면 미적용)"
+        />
+
+        <UiInput
+          v-model="formTermsSnapshotUrl"
+          label="약관 스냅샷 URL (선택)"
+          placeholder="제공자 약관 PDF/캡처 보관 경로"
+        />
+
         <div class="flex justify-end gap-2 pt-2 border-t border-surface-border">
           <UiButton variant="ghost" size="sm" @click="editModalOpen = false">취소</UiButton>
           <UiButton variant="brand" size="sm" type="submit" :loading="saving">저장하기</UiButton>
@@ -138,7 +155,14 @@ const formAllowedTiers = ref('');
 const formSyncOnlyTiers = ref('');
 const formBlockedTiers = ref('');
 const formRejectionMsg = ref('');
+const formMaxGeneratedAt = ref('');
+const formTermsSnapshotUrl = ref('');
 const saving = ref(false);
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ko-KR');
+}
 
 async function load() {
   loading.value = true;
@@ -159,6 +183,8 @@ function openEdit(p: AIProviderPolicy) {
   formSyncOnlyTiers.value = (p.syncOnlyPlanTiers ?? []).join(', ');
   formBlockedTiers.value = (p.blockedPlanTiers ?? []).join(', ');
   formRejectionMsg.value = p.rejectionMessageKo || '';
+  formMaxGeneratedAt.value = p.maxGeneratedAt ?? '';
+  formTermsSnapshotUrl.value = p.termsSnapshotUrl ?? '';
   editModalOpen.value = true;
 }
 
@@ -176,6 +202,8 @@ async function savePolicy() {
       blockedMetadataKeywords: editingPolicy.value.blockedMetadataKeywords || [],
       rejectionMessageKo: formRejectionMsg.value || '단독 유통 불가',
       commercialTermsUrl: editingPolicy.value.commercialTermsUrl || null,
+      maxGeneratedAt: formMaxGeneratedAt.value.trim() || editingPolicy.value.maxGeneratedAt || null,
+      termsSnapshotUrl: formTermsSnapshotUrl.value.trim() || editingPolicy.value.termsSnapshotUrl || null,
     });
     toast.success('정책이 갱신되었습니다.');
     editModalOpen.value = false;

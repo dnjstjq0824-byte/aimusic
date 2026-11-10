@@ -45,6 +45,41 @@
               큐레이션 &amp; 정산배치
             </RouterLink>
             <RouterLink
+              to="/admin/audit"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'admin-audit' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              감사 추적
+            </RouterLink>
+            <RouterLink
+              to="/admin/users"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'admin-users' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              회원 관리
+            </RouterLink>
+            <RouterLink
+              to="/admin/stores"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'admin-stores' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              매장 승인
+            </RouterLink>
+            <RouterLink
+              to="/admin/distribution"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'admin-distribution' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              DSP 키트
+            </RouterLink>
+            <RouterLink
+              to="/admin/settlements"
+              class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
+              :class="route.name === 'admin-settlements' ? 'bg-surface-2 text-white font-bold' : ''"
+            >
+              정산 관리
+            </RouterLink>
+            <RouterLink
               to="/"
               class="rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-300 ml-2"
             >
@@ -123,6 +158,41 @@
           @click="mobileNavOpen = false"
         >
           큐레이션 &amp; 정산배치
+        </RouterLink>
+        <RouterLink
+          to="/admin/audit"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          감사 추적
+        </RouterLink>
+        <RouterLink
+          to="/admin/users"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          회원 관리
+        </RouterLink>
+        <RouterLink
+          to="/admin/stores"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          매장 승인
+        </RouterLink>
+        <RouterLink
+          to="/admin/distribution"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          DSP 키트
+        </RouterLink>
+        <RouterLink
+          to="/admin/settlements"
+          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          @click="mobileNavOpen = false"
+        >
+          정산 관리
         </RouterLink>
         <RouterLink
           to="/"

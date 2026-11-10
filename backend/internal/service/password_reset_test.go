@@ -15,6 +15,7 @@ import (
 type fakeResetUsers struct {
 	byEmail map[string]*domain.User
 	hashes  map[string]string
+	bumped  []string
 }
 
 func (f *fakeResetUsers) GetByEmail(_ context.Context, email string) (*domain.User, error) {
@@ -30,6 +31,11 @@ func (f *fakeResetUsers) UpdatePasswordHash(_ context.Context, id, hash string) 
 		f.hashes = map[string]string{}
 	}
 	f.hashes[id] = hash
+	return nil
+}
+
+func (f *fakeResetUsers) BumpTokenVersion(_ context.Context, id string) error {
+	f.bumped = append(f.bumped, id)
 	return nil
 }
 
