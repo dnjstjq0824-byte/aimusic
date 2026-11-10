@@ -149,10 +149,11 @@ func ParseWAV(r io.Reader) (*AudioStreamInfo, error) {
 			info.BitrateKbps = (byteRate * 8) / 1000
 			info.BitsPerSample = int(binary.LittleEndian.Uint16(fmtData[14:16]))
 
-			if audioFormat == 3 {
+			switch audioFormat {
+			case 3:
 				info.IsFloatingPoint = true
 				info.Codec = "pcm_f32le"
-			} else if audioFormat == 1 {
+			case 1:
 				info.Codec = fmt.Sprintf("pcm_s%dle", info.BitsPerSample)
 			}
 			foundFmt = true

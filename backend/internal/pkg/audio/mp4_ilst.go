@@ -511,10 +511,11 @@ func InjectMP4IlstMetadata(mp4Data []byte, meta *MP4Metadata) ([]byte, error) {
 	var currentOffset int64 = 0
 
 	for _, node := range topNodes {
-		if node.Type == BoxTypeMOOV {
+		switch node.Type {
+		case BoxTypeMOOV:
 			moovNode = node
 			moovStartOffset = currentOffset
-		} else if node.Type == BoxTypeMDAT {
+		case BoxTypeMDAT:
 			mdatStartOffset = currentOffset
 		}
 		currentOffset += int64(node.Size)
@@ -715,9 +716,10 @@ func ExtractMP4IlstMetadata(mp4Data []byte) (*MP4Metadata, error) {
 		case AtomTypeCoverArt:
 			if dataNode := findChildByType(item, AtomTypeDATA); dataNode != nil && len(dataNode.Payload) >= 8 {
 				typeCode := binary.BigEndian.Uint32(dataNode.Payload[0:4])
-				if typeCode == 13 {
+				switch typeCode {
+				case 13:
 					meta.CoverMimeType = "image/jpeg"
-				} else if typeCode == 14 {
+				case 14:
 					meta.CoverMimeType = "image/png"
 				}
 				meta.CoverArt = make([]byte, len(dataNode.Payload)-8)

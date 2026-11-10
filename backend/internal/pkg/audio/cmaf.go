@@ -539,7 +539,8 @@ func GenerateCMAFPackage(spec *CMAFPackageSpec) (*CMAFPackageResult, error) {
 
 	for i, name := range segmentNames {
 		hlsBuf.WriteString(fmt.Sprintf("#EXTINF:%.5f,\n", segmentDurations[i]))
-		hlsBuf.WriteString(name + "\n")
+		hlsBuf.WriteString(name)
+		hlsBuf.WriteByte('\n')
 	}
 	hlsBuf.WriteString("#EXT-X-ENDLIST\n")
 

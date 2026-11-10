@@ -138,8 +138,8 @@ func resampleToMono11025(input *audio.PCMBuffer) []float64 {
 // compute16BandFilterbank splits the 0..5512Hz spectrum into 16 logarithmically spaced frequency bands.
 func compute16BandFilterbank(samples []float64, frameSize, hopSize int) [][]float64 {
 	stftEngine, err := audio.NewSTFTEngine(audio.STFTConfig{
-		FFTSize:    1024,
-		HopSize:    512,
+		FFTSize:    frameSize,
+		HopSize:    hopSize,
 		Window:     audio.WindowHann,
 		NumMelBins: 16,
 	})
@@ -161,7 +161,7 @@ func compute16BandFilterbank(samples []float64, frameSize, hopSize int) [][]floa
 
 	numFrames := stftRes.NumFrames
 	numBins := stftRes.NumBins
-	binHz := 11025.0 / 1024.0
+	binHz := 11025.0 / float64(frameSize)
 
 	// 16 bands defined from ~150 Hz to 4500 Hz
 	bandEdges := make([]int, 17)
