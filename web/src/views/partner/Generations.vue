@@ -85,7 +85,7 @@
                 출력: {{ detail.outputObjectKey }}
               </div>
               <div v-if="detail.error" class="text-[11px] font-semibold text-accent-crimson">
-                실패 사유: {{ detail.error }}
+                실패 사유: {{ failureKo(detail.error) }}
               </div>
               <div v-if="detail.licenseRef" class="text-[11px] text-neutral-400">
                 라이선스 참조: {{ detail.licenseRef }}
@@ -162,6 +162,15 @@ const STATUS_KO: Record<string, string> = {
   SUCCEEDED: '완료',
   FAILED: '실패',
 };
+
+// EV-P08: never expose internal variable names; map known backend failures
+// to user-facing guidance. Backend connection itself is engine scope.
+function failureKo(raw: string): string {
+  if (raw.includes('GENERATION_BACKEND_URL')) {
+    return '음악 생성 서버가 연결되지 않았습니다. 관리자에게 생성 서버 연결을 요청하세요.';
+  }
+  return raw;
+}
 
 function statusKo(status: string): string {
   return STATUS_KO[status] ?? status;

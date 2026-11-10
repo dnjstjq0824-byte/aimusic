@@ -19,7 +19,7 @@
             v-if="player.claimed"
             type="button"
             class="text-neutral-500 hover:text-neutral-300"
-            @click="player.unclaim()"
+            @click="unclaimConfirmOpen = true"
           >
             연결 해제
           </button>
@@ -123,6 +123,16 @@
         </section>
       </div>
     </main>
+
+    <UiConfirmDialog
+      v-model="unclaimConfirmOpen"
+      title="매장 연결 해제"
+      description="이 태블릿의 매장 페어링을 해제하고 재생을 중지합니다."
+      body="다시 연결하려면 파트너 콘솔에서 새 페어링 코드를 발급받아야 합니다."
+      confirm-label="연결 해제"
+      danger
+      @confirm="player.unclaim()"
+    />
   </div>
 </template>
 
@@ -135,6 +145,7 @@ import BrandLogo from '@/components/BrandLogo.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
@@ -144,6 +155,7 @@ const listenerPlayer = usePlayerStore();
 const pairingCode = ref('');
 const claiming = ref(false);
 const claimError = ref<string | null>(null);
+const unclaimConfirmOpen = ref(false);
 
 const nowTitle = computed(() => player.currentTrack?.title ?? '재생할 곡이 없습니다');
 const canPlay = computed(() => (player.queue?.tracks.length ?? 0) > 0);

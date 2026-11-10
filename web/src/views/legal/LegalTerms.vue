@@ -103,13 +103,26 @@ function escapeHtml(s: string): string {
 
 const renderedContent = computed(() => {
   if (!currentTerm.value?.bodyMd) return '<p>내용이 등록되지 않았습니다.</p>';
-  // Escape first so stored markup can never execute; then apply the tiny
-  // heading/bold/list transforms on the escaped text.
-  return escapeHtml(currentTerm.value.bodyMd)
+  // Stored bodies may carry literal backslash-n sequences (seed.sql uses \n
+  // inside non-escape SQL strings, which PostgreSQL stores verbatim).
+  // Normalize them to real newlines so breaks render; genuine newlines pass
+  // through unchanged. Escape first so stored markup can never execute; then
+  // apply the tiny heading/bold/list transforms on the escaped text.
+  const withBreaks = currentTerm.value.bodyMd.replace(/\\r\\n|\\n/g, '\n');
+  // Render-layer only (stored text untouched): strip internal file-path
+  // references and unfilled business-registration placeholders from the
+  // user-facing view per EV-04 / SC-04.
+  const displayable = withBreaks
+    .replace(/전문은 `docs\/legal\/[^`]+`를 참조하세요\.?/g, '')
+    .replace(/\(사업자 등록 후 기재\)/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  return escapeHtml(displayable)
     .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-white mt-4 mb-2">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 class="text-base font-extrabold text-white mt-6 mb-3 border-b border-surface-border pb-1">$1</h2>')
     .replace(/^# (.*$)/gim, '<h1 class="text-lg font-black text-brand-400 mt-6 mb-4">$1</h1>')
     .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
+    .replace(/`([^`]+?)`/g, '<code class="rounded bg-surface-3 px-1 py-px font-mono text-[11px] text-brand-300">$1</code>')
     .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-neutral-300">$1</li>');
 });
 

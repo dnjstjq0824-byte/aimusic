@@ -86,8 +86,8 @@
             aria-label="사용자 메뉴"
             @click="userMenuOpen = !userMenuOpen"
           >
-            <UiAvatar :name="auth.userId ?? undefined" size="sm" />
-            <span class="max-w-[100px] truncate font-medium hidden sm:inline">{{ auth.role }}</span>
+            <UiAvatar :name="auth.displayLabel || undefined" size="sm" />
+            <span class="max-w-[100px] truncate font-medium hidden sm:inline">{{ auth.displayLabel }}</span>
             <svg class="h-3 w-3 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6" />
             </svg>
@@ -102,8 +102,8 @@
             class="absolute right-0 mt-2 w-48 rounded-xl border border-surface-border glass-dropdown py-1.5 shadow-2xl z-50 text-xs"
           >
             <div class="px-3 py-2 border-b border-surface-border text-neutral-400">
-              <div class="text-[10px] uppercase font-bold text-neutral-500">역할</div>
-              <div class="font-semibold text-white">{{ auth.role }}</div>
+              <div class="font-semibold text-white truncate">{{ auth.displayLabel }}</div>
+              <div class="text-[11px] text-neutral-500 truncate">{{ auth.email }}</div>
             </div>
             <RouterLink
               to="/my-library"

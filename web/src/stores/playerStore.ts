@@ -55,6 +55,7 @@ export const usePlayerStore = defineStore('player', () => {
   const positionMs = ref(0);
   const durationMs = ref(0);
   const error = ref<string | null>(null);
+  const errorCode = ref<string | null>(null);
   const skippedIds = ref<string[]>([]);
   const currentJti = ref<string | null>(null);
   const currentQuality = ref<'HQ' | 'SQ'>('SQ');
@@ -140,6 +141,7 @@ export const usePlayerStore = defineStore('player', () => {
     positionMs.value = 0;
     durationMs.value = 0;
     error.value = null;
+    errorCode.value = null;
   }
 
   function toggleShuffle(): void {
@@ -209,6 +211,7 @@ export const usePlayerStore = defineStore('player', () => {
     isPlaying.value = false;
     isLoading.value = false;
     error.value = message;
+    errorCode.value = null;
   }
 
   function bindAudioEvents(): void {
@@ -260,6 +263,7 @@ export const usePlayerStore = defineStore('player', () => {
     stopHeartbeat();
     el.pause();
     error.value = null;
+    errorCode.value = null;
     positionMs.value = 0;
     durationMs.value = track?.durationMs ?? 0;
     loadedTrackId = null;
@@ -328,10 +332,11 @@ export const usePlayerStore = defineStore('player', () => {
     } catch (err: unknown) {
       if (seq !== loadSeq) return;
       const code = errCodeOf(err);
+      errorCode.value = code;
       if (code === 'ERR_NOT_STREAMABLE' || code === 'ERR_FORBIDDEN') {
         // Takedown / blocked track: skip it explicitly and say so.
         skippedIds.value.push(track.id);
-        error.value = `차단된 음원을 건너뜁니다: ${track.title}`;
+        error.value = `재생할 수 없는 음원을 건너뜁니다: ${track.title}`;
         await advance(true);
         return;
       }
@@ -391,6 +396,7 @@ export const usePlayerStore = defineStore('player', () => {
   async function resume(): Promise<void> {
     bindAudioEvents();
     error.value = null;
+    errorCode.value = null;
     const track = currentTrack.value;
     if (track && loadedTrackId !== track.id) {
       await playCurrent();
@@ -433,6 +439,7 @@ export const usePlayerStore = defineStore('player', () => {
     positionMs,
     durationMs,
     error,
+    errorCode,
     skippedIds,
     currentQuality,
     currentTrack,

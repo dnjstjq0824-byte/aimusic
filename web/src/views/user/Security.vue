@@ -70,13 +70,21 @@
         </div>
       </div>
 
-      <!-- Default state -->
+      <!-- Default state: exactly one action matching the real 2FA state -->
       <div v-else class="space-y-4">
-        <UiButton variant="secondary" size="md" type="button" :loading="busy" @click="submitEnroll">
-          2단계 인증 설정 시작
-        </UiButton>
-        <form class="border-t border-surface-border pt-4 space-y-3" @submit.prevent="submitDisable">
-          <p class="text-xs text-neutral-400">이미 켜져 있다면 비밀번호 확인 후 끌 수 있습니다.</p>
+        <p class="text-xs" role="status">
+          <span class="text-neutral-400">현재 상태: </span>
+          <span v-if="auth.totpEnabled === true" class="font-bold text-accent-emerald">켜짐</span>
+          <span v-else-if="auth.totpEnabled === false" class="font-bold text-neutral-200">꺼짐</span>
+          <span v-else class="font-bold text-accent-amber">확인 중</span>
+        </p>
+        <div v-if="auth.totpEnabled === false">
+          <UiButton variant="secondary" size="md" type="button" :loading="busy" @click="submitEnroll">
+            2단계 인증 설정 시작
+          </UiButton>
+        </div>
+        <form v-else-if="auth.totpEnabled === true" class="space-y-3" @submit.prevent="submitDisable">
+          <p class="text-xs text-neutral-400">비밀번호 확인 후 2단계 인증을 끌 수 있습니다.</p>
           <UiInput
             v-model="disablePassword"
             type="password"
@@ -89,6 +97,11 @@
             2단계 인증 끄기
           </UiButton>
         </form>
+        <div v-else>
+          <UiButton variant="secondary" size="md" type="button" :loading="busy" @click="refreshTotpState">
+            상태 새로고침
+          </UiButton>
+        </div>
       </div>
     </UiCard>
 
@@ -206,6 +219,7 @@ async function submitConfirm(): Promise<void> {
     const res = await authApi.confirmTOTPEnrollment(confirmCode.value);
     recoveryCodes.value = res.recoveryCodes;
     confirmCode.value = '';
+    auth.totpEnabled = true;
   } catch (err: unknown) {
     totpError.value = errMessageOf(err);
   } finally {
@@ -218,12 +232,25 @@ function dismissRecovery(): void {
   enrollment.value = null;
 }
 
+async function refreshTotpState(): Promise<void> {
+  busy.value = true;
+  totpError.value = null;
+  try {
+    await auth.hydrate();
+  } catch (err: unknown) {
+    totpError.value = errMessageOf(err);
+  } finally {
+    busy.value = false;
+  }
+}
+
 async function submitDisable(): Promise<void> {
   busy.value = true;
   totpError.value = null;
   try {
     await authApi.disableTOTP(disablePassword.value);
     disablePassword.value = '';
+    auth.totpEnabled = false;
     toast.success('2단계 인증을 껐습니다.');
   } catch (err: unknown) {
     totpError.value = errMessageOf(err);

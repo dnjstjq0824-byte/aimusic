@@ -54,9 +54,6 @@
         </div>
 
         <div class="flex shrink-0 items-center gap-3 text-xs">
-          <span class="rounded-full bg-brand-950 border border-brand-500/30 px-2.5 py-1 text-brand-300 font-semibold hidden sm:inline">
-            파트너 프로필
-          </span>
           <button
             type="button"
             class="hidden sm:inline text-neutral-400 hover:text-white transition-colors"

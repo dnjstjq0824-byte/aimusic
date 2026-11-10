@@ -120,7 +120,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, gin.H{"userId": u.ID, "role": u.Role, "ageConfirmedAt": u.AgeConfirmedAt})
+	ok(c, gin.H{"userId": u.ID, "role": u.Role, "ageConfirmedAt": u.AgeConfirmedAt, "displayName": u.DisplayName, "email": u.Email, "totpEnabled": u.TOTPEnabled})
 }
 
 // ExportData returns the caller's personal-data bundle as a download.

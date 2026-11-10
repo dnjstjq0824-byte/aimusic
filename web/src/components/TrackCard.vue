@@ -79,7 +79,7 @@ defineEmits<{
 
 function fmtDuration(ms?: number | null): string {
   if (!ms) return '0:00';
-  const totalSec = Math.floor(ms / 1000);
+  const totalSec = Math.round(ms / 1000);
   return `${Math.floor(totalSec / 60)}:${String(totalSec % 60).padStart(2, '0')}`;
 }
 </script>

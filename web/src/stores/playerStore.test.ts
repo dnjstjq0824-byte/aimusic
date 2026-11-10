@@ -93,6 +93,21 @@ describe('usePlayerStore', () => {
     expect(lastAudio.src).toBe('https://cdn/B.mp3');
   });
 
+  it('a rejected grant exposes its code so the UI can offer login', async () => {
+    const { store } = await freshStore();
+    stream.mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: { code: 'ERR_UNAUTHORIZED', message: 'login required' } } },
+    });
+
+    store.setQueue([track('A')], 'A');
+    await flush();
+
+    expect(store.errorCode).toBe('ERR_UNAUTHORIZED');
+    expect(store.error).toBe('재생하려면 로그인이 필요합니다.');
+    expect(store.isPlaying).toBe(false);
+  });
+
   it('saves the leaving position under the track being left, not the next one', async () => {
     const { store } = await freshStore();
     stream.mockImplementation((id: string) => Promise.resolve({ url: `https://cdn/${id}.mp3`, jti: id }));

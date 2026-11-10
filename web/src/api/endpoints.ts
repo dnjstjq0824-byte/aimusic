@@ -78,7 +78,7 @@ export const authApi = {
     return unwrap<Record<string, unknown>>(api.get('/auth/export'));
   },
   me() {
-    return unwrap<{ userId: string; role: Role; ageConfirmedAt?: string | null }>(api.get('/auth/me'));
+    return unwrap<{ userId: string; role: Role; ageConfirmedAt?: string | null; displayName: string; email: string; totpEnabled?: boolean }>(api.get('/auth/me'));
   },
   confirmAge(ageConfirmed: boolean, birthYear?: number) {
     return unwrap<{ confirmed: boolean }>(api.post('/auth/age-confirm', { ageConfirmed, birthYear }));

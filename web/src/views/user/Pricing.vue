@@ -25,7 +25,7 @@
           <span class="text-3xl font-black text-white">₩0</span>
         </div>
         <p class="mt-2 text-xs leading-relaxed text-neutral-400">
-          확인 절차를 거친 음원 스트리밍과 플레이리스트를 무료로 이용하세요.
+          무료 가입 후 확인 절차를 거친 음원 스트리밍과 플레이리스트를 이용하세요.
         </p>
         <ul class="mt-4 space-y-2 text-xs text-neutral-300">
           <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>전체 확인 음원 스트리밍 (표준 음질 128k)</li>

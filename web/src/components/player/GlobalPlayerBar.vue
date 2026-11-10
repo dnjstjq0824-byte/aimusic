@@ -2,11 +2,18 @@
   <div class="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 border-t border-surface-border bg-surface-1/95 pt-2.5 backdrop-blur-2xl shadow-2xl transition-all sm:px-6">
     <!-- Notice strip if tracks were skipped -->
     <div v-if="player.skippedIds.length > 0" class="mx-auto max-w-7xl pb-1.5 text-center text-[11px] text-accent-amber font-medium" role="status">
-      비상업 라이선스 사유로 차단된 음원 {{ player.skippedIds.length }}곡을 재생 큐에서 건너뛰었습니다.
+      재생할 수 없는 음원 {{ player.skippedIds.length }}곡을 재생 큐에서 건너뛰었습니다.
     </div>
 
     <div v-if="player.error && player.currentTrack" class="mx-auto max-w-7xl pb-1.5 text-center text-[11px] text-accent-crimson font-medium" role="alert">
       {{ player.error }}
+      <RouterLink
+        v-if="player.errorCode === 'ERR_UNAUTHORIZED'"
+        :to="{ name: 'login', query: { redirect: $route.fullPath } }"
+        class="ml-2 font-bold text-brand-400 hover:underline"
+      >
+        로그인하기
+      </RouterLink>
     </div>
 
     <!--
@@ -22,7 +29,7 @@
           :seed="player.currentTrack?.id ?? 'idle'"
           :title="player.currentTrack?.title ?? '재생 대기 중'"
           size="sm"
-          :verified="Boolean(player.currentTrack)"
+          :verified="player.currentTrack?.status === 'READY'"
         />
 
         <div class="min-w-0 flex-1">
@@ -168,7 +175,7 @@
 
       <!-- Waveform Seekbar & time (full width on mobile) -->
       <div class="col-span-2 flex w-full items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-2">
-        <span class="w-8 shrink-0 text-right font-mono text-[10px] text-neutral-400">{{ fmt(player.positionMs) }}</span>
+        <span class="w-8 shrink-0 text-right font-mono text-[10px] text-neutral-400">{{ fmtPos(player.positionMs) }}</span>
         <div class="min-w-0 flex-1">
           <WaveformSeekbar
             :position-ms="player.positionMs"
@@ -177,7 +184,7 @@
             @seek="player.seek($event)"
           />
         </div>
-        <span class="w-8 shrink-0 font-mono text-[10px] text-neutral-400">{{ fmt(player.durationMs || player.currentTrack?.durationMs || 0) }}</span>
+        <span class="w-8 shrink-0 font-mono text-[10px] text-neutral-400">{{ fmtDur(player.durationMs || player.currentTrack?.durationMs || 0) }}</span>
       </div>
     </div>
   </div>
@@ -201,8 +208,13 @@ const repeatLabel = computed(() => {
   return '끔';
 });
 
-function fmt(ms: number): string {
+function fmtPos(ms: number): string {
   const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function fmtDur(ms: number): string {
+  const s = Math.round(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 </script>

@@ -222,7 +222,7 @@ const saving = ref(false);
 
 function fmtDuration(ms?: number | null) {
   if (!ms) return '0:00';
-  const totalSec = Math.floor(ms / 1000);
+  const totalSec = Math.round(ms / 1000);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;

@@ -17,6 +17,8 @@
       </template>
     </UiPageHeader>
 
+    <UiErrorBanner :message="error" title="음원 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+
     <!-- Filter Toolbar -->
     <UiCard class="space-y-4">
       <div class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -24,7 +26,7 @@
         <UiInput
           v-model="searchQuery"
           placeholder="곡 제목, 아티스트, 키워드 검색…"
-          @enter="onSearch"
+          @enter="submitSearch"
         />
 
         <!-- AI Provider -->
@@ -59,9 +61,9 @@
         </UiSelect>
       </div>
 
-      <!-- Quick Mood Chips -->
+      <!-- Quick Mood Chips (shortcuts for the mood filter above) -->
       <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-surface-border/50 text-xs">
-        <span class="text-neutral-500 font-medium mr-1 text-[11px]">추천 태그:</span>
+        <span class="text-neutral-500 font-medium mr-1 text-[11px]">무드 바로가기:</span>
         <button
           v-for="tag in popularTags"
           :key="tag"
@@ -96,7 +98,7 @@
       </UiCard>
     </div>
 
-    <div v-else-if="tracks.length === 0" class="py-12">
+    <div v-else-if="!error && tracks.length === 0" class="py-12">
       <UiEmptyState
         title="일치하는 음원이 없습니다"
         description="다른 검색어나 필터를 선택해 보세요. AVIBE에는 확인 절차를 거친 음원이 지속적으로 등록됩니다."
@@ -156,15 +158,17 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { trackApi, playlistApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { useAuthStore } from '@/stores/authStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
 import type { Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
@@ -176,6 +180,8 @@ import TrackCard from '@/components/TrackCard.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 
 const route = useRoute();
+const router = useRouter();
+const auth = useAuthStore();
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const toast = useToast();
@@ -183,7 +189,8 @@ const toast = useToast();
 const popularTags = ['Focus', 'Chill', 'Cyberpunk', 'Cinematic', 'Workout', 'Sleep'];
 
 const tracks = ref<Track[]>([]);
-const loading = ref(false);
+const loading = ref(true);
+const error = ref<string | null>(null);
 const offset = ref(0);
 const limit = 18;
 const total = ref(0);
@@ -199,6 +206,7 @@ const creatingPlaylist = ref(false);
 
 async function load() {
   loading.value = true;
+  error.value = null;
   try {
     const res = await trackApi.list(limit, offset.value, {
       q: searchQuery.value.trim() || undefined,
@@ -209,7 +217,7 @@ async function load() {
     tracks.value = res.items;
     total.value = res.total;
   } catch (err) {
-    toast.error(errMessageOf(err), '음원 목록 로딩 실패');
+    error.value = errMessageOf(err);
   } finally {
     loading.value = false;
   }
@@ -218,6 +226,14 @@ async function load() {
 function onSearch() {
   offset.value = 0;
   void load();
+}
+
+function submitSearch(): void {
+  if (!searchQuery.value.trim() && !filterProvider.value && !filterMood.value) {
+    toast.info('검색어를 입력해 주세요. 비워 두면 전체 음원이 표시됩니다.');
+    return;
+  }
+  onSearch();
 }
 
 function selectMood(mood: string) {
@@ -255,6 +271,11 @@ function playTrack(t: Track) {
 
 function playAll() {
   if (tracks.value.length === 0) return;
+  if (!auth.isAuthenticated) {
+    toast.info('음원을 들으려면 먼저 로그인하세요.');
+    void router.push({ name: 'login', query: { redirect: '/explore' } });
+    return;
+  }
   player.setQueue(tracks.value, tracks.value[0]?.id);
   toast.success(`${tracks.value.length}개 트랙을 재생 목록에 담았습니다.`);
 }
@@ -264,7 +285,15 @@ function enqueue(t: Track) {
   toast.info(`"${t.title}"을(를) 재생 대기열에 추가했습니다.`);
 }
 
+function requireLogin(action: string): boolean {
+  if (auth.isAuthenticated) return true;
+  toast.info(`${action}하려면 먼저 로그인하세요.`);
+  void router.push({ name: 'login', query: { redirect: route.fullPath } });
+  return false;
+}
+
 function openAddToPlaylist(t: Track) {
+  if (!requireLogin('플레이리스트에 담으')) return;
   playlistTargetTrack.value = t;
 }
 
@@ -295,6 +324,7 @@ async function createNewPlaylist(title: string) {
 }
 
 function openReport(t: Track) {
+  if (!requireLogin('신고')) return;
   reportTarget.value = t;
 }
 

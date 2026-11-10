@@ -1,8 +1,15 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './authStore';
+import { usePlayerStore } from './playerStore';
 import { authApi } from '@/api/endpoints';
 import { tokenStore } from '@/api/client';
+import type { Track } from '@/api/types';
+
+// Player cleanup on logout touches the shared audio element; stub it.
+vi.stubGlobal('Audio', class {
+  pause(): void { /* no-op */ }
+});
 
 vi.mock('@/api/endpoints', () => ({
   authApi: {
@@ -37,13 +44,14 @@ describe('useAuthStore', () => {
 
   it('hydrate resolves the principal from /me', async () => {
     tokenStore.set('a', 'r');
-    meMock.mockResolvedValue({ userId: 'u-1', role: 'PARTNER' } as never);
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'PARTNER', totpEnabled: true } as never);
     const store = useAuthStore();
     await store.hydrate();
     expect(store.userId).toBe('u-1');
     expect(store.isAuthenticated).toBe(true);
     expect(store.isPartner).toBe(true);
     expect(store.isAdmin).toBe(false);
+    expect(store.totpEnabled).toBe(true);
   });
 
   it('hydrate clears tokens when /me fails', async () => {
@@ -56,16 +64,38 @@ describe('useAuthStore', () => {
     expect(store.initialized).toBe(true);
   });
 
-  it('login stores tokens and the user', async () => {
+  it('login stores tokens and resolves the user from /me', async () => {
     loginMock.mockResolvedValue({
       tokens: { accessToken: 'a', refreshToken: 'r' },
       user: { id: 'u-9', role: 'ADMIN' },
     } as never);
+    meMock.mockResolvedValue({ userId: 'u-9', role: 'ADMIN', totpEnabled: false } as never);
     const store = useAuthStore();
     await store.login('a@x.io', 'password-1');
     expect(tokenStore.getAccess()).toBe('a');
     expect(store.userId).toBe('u-9');
     expect(store.isAdmin).toBe(true);
+    expect(store.totpEnabled).toBe(false);
+  });
+
+  it('hydrate exposes the display name for the navbar', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER', displayName: '김음악', email: 'm@x.io' } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.displayLabel).toBe('김음악');
+    expect(store.email).toBe('m@x.io');
+  });
+
+  it('displayLabel falls back to email and clears on logout', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'USER', displayName: '', email: 'm@x.io' } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.displayLabel).toBe('m@x.io');
+    store.logout();
+    expect(store.displayLabel).toBe('');
+    expect(store.email).toBeNull();
   });
 
   it('loginWithTokens resolves role from /me, not the redirect', async () => {
@@ -145,5 +175,16 @@ describe('useAuthStore', () => {
     expect(store.userId).toBeNull();
     expect(store.role).toBeNull();
     expect(store.isAuthenticated).toBe(false);
+  });
+
+  it('logout stops playback and clears the player queue', () => {
+    const auth = useAuthStore();
+    const player = usePlayerStore();
+    player.enqueue({ id: 't-1', title: 'queued track' } as Track);
+    expect(player.queue).toHaveLength(1);
+    auth.logout();
+    expect(player.queue).toHaveLength(0);
+    expect(player.currentTrack).toBeNull();
+    expect(player.isPlaying).toBe(false);
   });
 });

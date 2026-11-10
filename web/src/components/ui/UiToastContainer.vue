@@ -1,12 +1,12 @@
 <template>
   <div
-    class="pointer-events-none fixed bottom-32 left-4 right-4 z-50 flex flex-col gap-2.5 sm:bottom-28 sm:left-auto sm:right-6 sm:max-w-sm"
+    class="pointer-events-none fixed left-4 right-4 top-16 z-50 flex flex-col gap-2.5 sm:left-auto sm:right-6 sm:top-20 sm:max-w-sm"
     aria-live="polite"
     aria-atomic="false"
   >
     <TransitionGroup
       enter-active-class="transform ease-out duration-300 transition"
-      enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-4"
+      enter-from-class="-translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-4"
       enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
       leave-active-class="transition ease-in duration-200"
       leave-from-class="opacity-100"

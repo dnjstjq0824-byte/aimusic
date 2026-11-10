@@ -286,6 +286,7 @@ function scheduleClosed(storeId: string, weekday: number): boolean {
 function pairingLeft(d: StoreDevice): string {
   if (!d.pairingExpiresAt) return '';
   const ms = new Date(d.pairingExpiresAt).getTime() - Date.now();
+  if (Number.isNaN(ms)) return '';
   if (ms <= 0) return '만료됨';
   return `${Math.ceil(ms / 60000)}분`;
 }

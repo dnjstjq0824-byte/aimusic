@@ -55,8 +55,7 @@
         <div class="flex items-start gap-3">
           <UiBadge variant="neutral" size="sm">준비 중</UiBadge>
           <p class="text-xs leading-relaxed text-neutral-400">
-            결제 클라이언트 키가 설정되지 않아 결제창을 열 수 없습니다.
-            관리자에게 <span class="font-mono">VITE_TOSS_CLIENT_KEY</span> 설정을 요청하세요.
+            결제 준비 중입니다. 잠시 후 다시 시도해 주세요.
           </p>
         </div>
       </UiCard>

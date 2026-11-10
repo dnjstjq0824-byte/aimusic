@@ -39,7 +39,7 @@
       </div>
       <div v-else class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-xs leading-relaxed text-neutral-400">
-          이용권이 없습니다. 리스너 플러스로 고음질 스트리밍과 오프라인 큐를 이용해 보세요.
+          이용권이 없습니다. 리스너 플러스로 HQ 고음질 스트리밍을 이용해 보세요.
         </p>
         <RouterLink to="/pricing">
           <UiButton variant="brand" size="sm">요금제 보기</UiButton>

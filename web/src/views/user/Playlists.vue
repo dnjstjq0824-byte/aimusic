@@ -62,7 +62,7 @@
 
       <div v-if="!auth.isAuthenticated" class="rounded-2xl border border-dashed border-surface-border p-8 text-center">
         <p class="text-sm font-semibold text-white">로그인하면 나만의 플레이리스트를 만들 수 있어요</p>
-        <p class="mt-1 text-xs text-neutral-400">아래 추천 믹스는 로그인 없이도 바로 들을 수 있습니다.</p>
+        <p class="mt-1 text-xs text-neutral-400">추천 믹스 재생에도 로그인이 필요합니다. 1분이면 가입할 수 있어요.</p>
       </div>
 
       <div v-else-if="playlists.loading && playlists.playlists.length === 0" :class="gridClass">
@@ -305,6 +305,11 @@ async function loadCounts(): Promise<void> {
 
 function playMix(mix: Mix, shuffled: boolean): void {
   if (mix.tracks.length === 0) return;
+  if (!auth.isAuthenticated) {
+    toast.info('믹스를 들으려면 먼저 로그인하세요.');
+    void router.push({ name: 'login', query: { redirect: '/playlists' } });
+    return;
+  }
   if (player.shuffle !== shuffled) player.toggleShuffle();
   player.setQueue(mix.tracks);
   toast.success(`「${mix.title}」 ${mix.tracks.length}곡을 재생합니다.`);

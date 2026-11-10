@@ -153,7 +153,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 const PAGE = 20;
 
 const users = ref<User[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const busyId = ref<string | null>(null);
 const blocksBusyId = ref<string | null>(null);

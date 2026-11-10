@@ -37,7 +37,7 @@
             <div class="flex items-center justify-between border-b border-surface-border px-5 py-4 shrink-0">
               <div class="min-w-0 pr-4">
                 <h3 :id="titleId" class="text-base font-bold text-white truncate">{{ title }}</h3>
-                <p v-if="description" :id="descId" class="mt-0.5 text-xs text-neutral-400 truncate">{{ description }}</p>
+                <p v-if="description" :id="descId" class="mt-0.5 text-xs leading-relaxed text-neutral-400">{{ description }}</p>
               </div>
               <button
                 type="button"

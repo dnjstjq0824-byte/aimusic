@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/composables/useToast';
 import UserLayout from '@/layouts/UserLayout.vue';
 import PartnerLayout from '@/layouts/PartnerLayout.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
@@ -152,6 +153,10 @@ router.beforeEach(async (to) => {
   }
   const roles = to.meta.roles as string[] | undefined;
   if (roles && auth.role && !roles.includes(auth.role)) {
+    const needAdmin = roles.length === 1 && roles[0] === 'ADMIN';
+    useToast().warning(
+      needAdmin ? '관리자 전용 페이지입니다.' : '파트너 전용 페이지입니다. 파트너 승인 후 이용하세요.',
+    );
     return { name: 'home' };
   }
   return true;

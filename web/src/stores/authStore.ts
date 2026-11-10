@@ -3,12 +3,17 @@ import { computed, ref } from 'vue';
 import { authApi, legalApi, type RegisterInput } from '@/api/endpoints';
 import { AUTH_TOKENS_EVENT, tokenStore } from '@/api/client';
 import type { LegalTerm, Role, User } from '@/api/types';
+import { usePlayerStore } from './playerStore';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const role = ref<Role | null>(null);
   const userId = ref<string | null>(null);
+  const displayName = ref<string | null>(null);
+  const email = ref<string | null>(null);
   const ageConfirmedAt = ref<string | null>(null);
+  // null = unknown (not yet resolved from /me); never guess the 2FA state.
+  const totpEnabled = ref<boolean | null>(null);
   const pendingConsents = ref<LegalTerm[]>([]);
   const initialized = ref(false);
   // Reactive mirror of the stored access token. localStorage itself is not
@@ -23,6 +28,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null;
       userId.value = null;
       role.value = null;
+      displayName.value = null;
+      email.value = null;
       ageConfirmedAt.value = null;
       pendingConsents.value = [];
     }
@@ -36,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => accessToken.value !== null && userId.value !== null);
+  const displayLabel = computed(() => displayName.value || email.value || '');
   const isPartner = computed(() => role.value === 'PARTNER' || role.value === 'ADMIN');
   const isAdmin = computed(() => role.value === 'ADMIN');
   const needsAgeConfirm = computed(() => isAuthenticated.value && ageConfirmedAt.value == null);
@@ -63,28 +71,38 @@ export const useAuthStore = defineStore('auth', () => {
       const me = await authApi.me();
       userId.value = me.userId;
       role.value = me.role;
+      displayName.value = me.displayName;
+      email.value = me.email;
       ageConfirmedAt.value = me.ageConfirmedAt ?? null;
+      totpEnabled.value = me.totpEnabled ?? null;
       await refreshPendingConsents();
     } catch {
       tokenStore.clear();
       user.value = null;
       userId.value = null;
       role.value = null;
+      displayName.value = null;
+      email.value = null;
       ageConfirmedAt.value = null;
+      totpEnabled.value = null;
       pendingConsents.value = [];
     } finally {
       initialized.value = true;
     }
   }
 
-  async function login(email: string, password: string, totpCode?: string): Promise<void> {
-    const { tokens, user: u } = await authApi.login(email, password, totpCode);
+  async function login(loginEmail: string, password: string, totpCode?: string): Promise<void> {
+    const { tokens, user: u } = await authApi.login(loginEmail, password, totpCode);
     tokenStore.set(tokens.accessToken, tokens.refreshToken);
     user.value = u;
     userId.value = u.id;
     role.value = u.role;
+    displayName.value = u.displayName;
+    email.value = u.email;
     ageConfirmedAt.value = u.ageConfirmedAt ?? null;
-    await refreshPendingConsents();
+    // The login response carries no 2FA state; resolve it from /me so the
+    // security screen never shows the wrong 2FA action after login.
+    await hydrate();
   }
 
   // Applies tokens issued out-of-band (social login callback), then resolves
@@ -95,13 +113,19 @@ export const useAuthStore = defineStore('auth', () => {
       const me = await authApi.me();
       userId.value = me.userId;
       role.value = me.role;
+      displayName.value = me.displayName;
+      email.value = me.email;
       ageConfirmedAt.value = me.ageConfirmedAt ?? null;
+      totpEnabled.value = me.totpEnabled ?? null;
       await refreshPendingConsents();
     } catch {
       tokenStore.clear();
       userId.value = null;
       role.value = null;
+      displayName.value = null;
+      email.value = null;
       ageConfirmedAt.value = null;
+      totpEnabled.value = null;
       pendingConsents.value = [];
       throw new Error('소셜 로그인 세션을 확인할 수 없습니다.');
     }
@@ -126,13 +150,24 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout(): void {
+    // Stop playback and drop the queue FIRST, while tokens are still valid
+    // so the final resume position can persist; otherwise the detached audio
+    // element keeps playing after logout.
+    try {
+      usePlayerStore().clearQueue();
+    } catch {
+      // Player store unavailable in this context; auth cleanup continues.
+    }
     tokenStore.clear();
     user.value = null;
     userId.value = null;
     role.value = null;
+    displayName.value = null;
+    email.value = null;
     ageConfirmedAt.value = null;
+    totpEnabled.value = null;
     pendingConsents.value = [];
   }
 
-  return { user, role, userId, ageConfirmedAt, pendingConsents, initialized, isAuthenticated, isPartner, isAdmin, needsAgeConfirm, needsTermsConsent, hydrate, login, loginWithTokens, register, registerPartner, confirmAge, consentTerms, refreshPendingConsents, logout };
+  return { user, role, userId, displayName, email, displayLabel, ageConfirmedAt, totpEnabled, pendingConsents, initialized, isAuthenticated, isPartner, isAdmin, needsAgeConfirm, needsTermsConsent, hydrate, login, loginWithTokens, register, registerPartner, confirmAge, consentTerms, refreshPendingConsents, logout };
 });

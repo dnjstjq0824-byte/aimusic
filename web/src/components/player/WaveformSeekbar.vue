@@ -5,7 +5,7 @@
     :aria-valuenow="Math.round(positionMs)"
     :aria-valuemin="0"
     :aria-valuemax="Math.round(durationMs)"
-    :aria-valuetext="`${fmt(positionMs)} / ${fmt(durationMs)}`"
+    :aria-valuetext="`${fmtPos(positionMs)} / ${fmtDur(durationMs)}`"
     aria-label="재생 위치"
     tabindex="0"
     @click="onClick"
@@ -65,8 +65,13 @@ function nudge(delta: number): void {
   emit('seek', Math.max(0, Math.min(props.durationMs, props.positionMs + delta)));
 }
 
-function fmt(ms: number): string {
+function fmtPos(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
+}
+
+function fmtDur(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
 }
 </script>

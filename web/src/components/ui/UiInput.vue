@@ -19,6 +19,7 @@
       </div>
       <input
         :id="inputId"
+        ref="inputRef"
         :value="modelValue"
         :type="computedType"
         :placeholder="placeholder"
@@ -31,7 +32,7 @@
         :max="max"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy || undefined"
-        class="w-full bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
+        class="w-full min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @blur="$emit('blur', $event)"
         @focus="$emit('focus', $event)"
@@ -46,6 +47,19 @@
           @click="showPassword = !showPassword"
         >
           {{ showPassword ? '숨김' : '표시' }}
+        </button>
+      </div>
+      <div v-else-if="isPickerType" class="shrink-0 pr-3">
+        <button
+          type="button"
+          class="rounded p-0.5 text-neutral-400 transition-colors hover:text-neutral-200"
+          aria-label="날짜 선택 달력 열기"
+          @click="openPicker"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M8 3v4M16 3v4M3 10h18" />
+          </svg>
         </button>
       </div>
       <div v-else-if="$slots.suffix" class="pr-3 text-neutral-400">
@@ -98,6 +112,7 @@ defineEmits<{
 
 const showPassword = ref(false);
 const autoId = useId();
+const inputRef = ref<HTMLInputElement | null>(null);
 
 const inputId = computed(() => props.id ?? `ui-input-${autoId}`);
 const errorId = computed(() => `${inputId.value}-error`);
@@ -114,4 +129,13 @@ const computedType = computed(() => {
   }
   return props.type;
 });
+
+// EV-P02: the native calendar indicator alone is unreliable in dark theme,
+// so date inputs get an explicit button that opens the picker; the picked
+// value flows back through the native input event into v-model.
+const isPickerType = computed(() => props.type === 'date' || props.type === 'datetime-local');
+
+function openPicker(): void {
+  inputRef.value?.showPicker?.();
+}
 </script>

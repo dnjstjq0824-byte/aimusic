@@ -5,12 +5,12 @@
       {{ disclosureLabel }}
     </UiBadge>
     <UiBadge
-      v-if="track.status === 'READY'"
+      v-if="isCertified"
       variant="commercial"
       size="xs"
       title="상업 라이선스 검증 완료 (Gate1-3 통과 + 심사 승인)"
     >
-      상업 검증됨
+      상업적 이용권 보유 인증
     </UiBadge>
     <UiBadge v-else variant="warning" size="xs">
       {{ statusLabel }}
@@ -43,4 +43,11 @@ const disclosureLabel = computed(() => {
 });
 
 const statusLabel = computed(() => STATUS_KO[props.track.status] ?? '처리 중');
+
+// Demo/launch tracks carry "(Launch Demo)" in the title and must never show
+// the certification badge. The track API exposes no per-track cert field, so
+// the title marker is the only frontend-distinguishable signal (a backend
+// cert/demo field is the structural fix, engine scope).
+const isDemo = computed(() => props.track.title.includes('(Launch Demo)'));
+const isCertified = computed(() => props.track.status === 'READY' && !isDemo.value);
 </script>

@@ -368,8 +368,10 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { trackApi, playlistApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { useAuthStore } from '@/stores/authStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
@@ -390,9 +392,11 @@ import { SLOGAN } from '@/components/BrandLogo.vue';
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const toast = useToast();
+const auth = useAuthStore();
+const router = useRouter();
 
 const tracks = ref<Track[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const offset = ref(0);
 const limit = 18;
 const total = ref(0);
@@ -435,6 +439,10 @@ async function load(): Promise<void> {
 }
 
 function submitHero(): void {
+  if (!heroQuery.value.trim()) {
+    toast.info('검색어를 입력해 주세요. 비워 두면 전체 음원이 표시됩니다.');
+    return;
+  }
   searchQuery.value = heroQuery.value.trim();
   filterProvider.value = '';
   filterMood.value = '';
@@ -508,6 +516,11 @@ function playOne(t: Track): void {
 
 function playAll(): void {
   if (tracks.value.length === 0) return;
+  if (!auth.isAuthenticated) {
+    toast.info('음원을 들으려면 먼저 로그인하세요.');
+    void router.push({ name: 'login', query: { redirect: '/' } });
+    return;
+  }
   player.setQueue(tracks.value, tracks.value[0]?.id);
   toast.success(`${tracks.value.length}개 검증 음원을 스트리밍합니다.`);
 }

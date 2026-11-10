@@ -51,7 +51,7 @@
                 </UiBadge>
               </div>
 
-              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight line-clamp-2 break-words sm:line-clamp-none sm:truncate">
+              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight break-words">
                 {{ track.title }}
               </h1>
 
@@ -63,7 +63,7 @@
                 <span>시간 <strong class="text-neutral-200">{{ fmtDuration(track.durationMs) }}</strong></span>
                 <template v-if="track.bpm">
                   <span>·</span>
-                  <span>BPM <strong class="text-neutral-200">{{ track.bpm }}</strong></span>
+                  <span>BPM <strong class="text-neutral-200">{{ fmtBpm(track.bpm) }}</strong></span>
                 </template>
                 <template v-if="track.musicalKey">
                   <span>·</span>
@@ -114,7 +114,7 @@
             />
           </div>
           <div v-else class="py-6 text-center text-xs text-neutral-500">
-            파형 메타데이터 분석 완료
+            이 음원의 파형 데이터가 아직 없습니다.
           </div>
         </UiCard>
 
@@ -186,9 +186,18 @@
               <span>검증 상태</span>
               <span class="font-semibold text-emerald-400">{{ statusKo }}</span>
             </div>
-            <div class="flex justify-between">
-              <span>트랙 고유 ID</span>
-              <span class="font-mono text-neutral-500 truncate max-w-[150px]">{{ track.id }}</span>
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <span>트랙 고유 ID</span>
+                <button
+                  type="button"
+                  class="shrink-0 font-semibold text-brand-400 hover:underline"
+                  @click="copyTrackId"
+                >
+                  복사
+                </button>
+              </div>
+              <div class="break-all font-mono text-neutral-300">{{ track.id }}</div>
             </div>
           </div>
         </UiCard>
@@ -205,7 +214,7 @@
               variant="outline"
               size="sm"
               full-width
-              @click="reportModalOpen = true"
+              @click="openReport"
             >
               권리침해 신고 (OSP 제103조)
             </UiButton>
@@ -258,7 +267,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { trackApi, playlistApi, userBlocksApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -278,6 +287,7 @@ import AiBadge from '@/components/legal/AiBadge.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 
 const route = useRoute();
+const router = useRouter();
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const auth = useAuthStore();
@@ -307,20 +317,41 @@ const statusKo = computed(() => {
   return STATUS_KO[track.value.status] ?? '처리 중';
 });
 
-const waveformPeaks = computed<number[]>(() => {
-  if (!track.value?.waveformJson) {
-    return Array.from({ length: 48 }, () => Math.random() * 0.7 + 0.2);
-  }
-  const raw = track.value.waveformJson;
-  if (Array.isArray(raw) && raw.every((n) => typeof n === 'number')) {
+function toPeaks(raw: unknown): number[] {
+  if (Array.isArray(raw) && raw.length > 0 && raw.every((n) => typeof n === 'number')) {
     return raw as number[];
   }
-  return Array.from({ length: 48 }, () => Math.random() * 0.7 + 0.2);
-});
+  if (typeof raw === 'string' && raw.length > 0) {
+    try {
+      return toPeaks(JSON.parse(raw) as unknown);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+const waveformPeaks = computed<number[]>(() => toPeaks(track.value?.waveformJson));
+
+// EV-P03: BPM to integer or 1 decimal (never float32 artifacts).
+function fmtBpm(bpm?: number | null): string {
+  if (bpm === null || bpm === undefined) return '';
+  return String(Math.round(bpm * 10) / 10);
+}
+
+async function copyTrackId(): Promise<void> {
+  if (!track.value) return;
+  try {
+    await navigator.clipboard.writeText(track.value.id);
+    toast.success('트랙 ID를 복사했습니다.');
+  } catch {
+    toast.error('클립보드 복사에 실패했습니다.');
+  }
+}
 
 function fmtDuration(ms?: number | null) {
   if (!ms) return '0:00';
-  const totalSec = Math.floor(ms / 1000);
+  const totalSec = Math.round(ms / 1000);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
@@ -387,6 +418,15 @@ async function confirmBlockPartner() {
   } finally {
     blocking.value = false;
   }
+}
+
+function openReport() {
+  if (!auth.isAuthenticated) {
+    toast.info('신고하려면 먼저 로그인하세요.');
+    void router.push({ name: 'login', query: { redirect: route.fullPath } });
+    return;
+  }
+  reportModalOpen.value = true;
 }
 
 function onReported(id: string) {

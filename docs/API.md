@@ -52,7 +52,7 @@ Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 4
 | POST | `/auth/register/partner` | – | `{email,password,displayName,company,contactEmail?,birthYear?,ageConfirmed:true,inviteCode?}` → `{user,partner(PENDING)}` |
 | POST | `/auth/login` | – | `{email,password,totpCode?}` → `{tokens:{accessToken,refreshToken,expiresIn},user}` (2FA accounts: `403 ERR_TOTP_REQUIRED` without code, `401 ERR_TOTP_INVALID` on wrong code; recovery codes accepted single-use; 10 failures/15 min → `429 LOGIN_LOCKED`) |
 | POST | `/auth/refresh` | – | `{refreshToken}` → `{tokens}` |
-| GET | `/auth/me` | JWT | – → `{userId,role,ageConfirmedAt}` |
+| GET | `/auth/me` | JWT | – → `{userId,role,ageConfirmedAt,displayName,email,totpEnabled}` |
 | POST | `/auth/age-confirm` | JWT | `{ageConfirmed:true,birthYear?}` → `{confirmed:true}` (social signups must confirm 14+; commerce gated → `403 ERR_AGE_CONFIRM_REQUIRED`) |
 | GET | `/auth/export` | JWT | personal-data bundle download (profile sans secrets, consents, playlists, playback, logs, disputes, orders, partner data) |
 | POST | `/auth/logout-all` | JWT | – → `{revoked:true}` (bumps `users.token_version`; all prior access/refresh tokens 401) |

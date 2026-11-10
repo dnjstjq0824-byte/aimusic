@@ -124,7 +124,7 @@ const knownActions = [
 ];
 
 const events = ref<AuditEvent[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const actionFilter = ref('');
 const entityFilter = ref('');

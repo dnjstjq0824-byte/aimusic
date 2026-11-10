@@ -22,7 +22,14 @@
     <UiErrorBanner :message="error" title="대시보드를 불러오지 못했습니다" />
 
     <!-- Metrics Cards -->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div v-if="loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <UiCard v-for="i in 4" :key="i" class="space-y-2">
+        <UiSkeleton height="h-3" width="w-1/2" />
+        <UiSkeleton height="h-8" width="w-2/3" />
+        <UiSkeleton height="h-3" width="w-3/4" />
+      </UiCard>
+    </div>
+    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <UiCard class="space-y-1">
         <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">등록된 전체 음원</div>
         <div class="text-2xl font-black text-white">{{ tracks.length }}곡</div>
@@ -38,7 +45,7 @@
       <UiCard class="space-y-1">
         <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">확인된 AI 요금제</div>
         <div class="text-2xl font-black text-brand-400">{{ verifiedSubs }}개</div>
-        <div class="text-[11px] text-neutral-400">Suno, AIVA Pro 등</div>
+        <div class="text-[11px] text-neutral-400">{{ verifiedPlanLabel }}</div>
       </UiCard>
 
       <UiCard class="space-y-1">
@@ -49,7 +56,13 @@
     </div>
 
     <!-- Settlement Projection & Tax Card -->
-    <UiCard border-variant="brand">
+    <UiCard v-if="loading" border-variant="brand">
+      <div class="space-y-2">
+        <UiSkeleton height="h-4" width="w-1/3" />
+        <UiSkeleton height="h-3" width="w-full" />
+      </div>
+    </UiCard>
+    <UiCard v-else border-variant="brand">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
@@ -159,6 +172,13 @@ const error = ref<string | null>(null);
 
 const readyCount = computed(() => tracks.value.filter((t) => t.status === 'READY').length);
 const verifiedSubs = computed(() => subs.value.filter((s) => s.status === 'VERIFIED').length);
+// EV-P05: plan labels always derive from the actual proofs, never hardcode.
+const verifiedPlanLabel = computed(() => {
+  const names = subs.value
+    .filter((s) => s.status === 'VERIFIED')
+    .map((s) => `${s.provider} ${s.planName}`.trim());
+  return names.length > 0 ? names.join(', ') : '등록된 요금제 없음';
+});
 const totalPlays = computed(() => tracks.value.reduce((acc, t) => acc + (t.playCount || 0), 0));
 // Mirrors backend settlement math: gross = plays × ₩10, withholding 3.3%.
 const estimatedNet = computed(() => {
