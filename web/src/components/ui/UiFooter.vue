@@ -42,7 +42,7 @@
           <ul class="space-y-2 text-xs">
             <li><RouterLink to="/legal/TOS" class="hover:text-white transition-colors">서비스 이용약관</RouterLink></li>
             <li><RouterLink to="/legal/PRIVACY" class="hover:text-white transition-colors font-medium text-neutral-300">개인정보처리방침</RouterLink></li>
-            <li><RouterLink to="/legal/AI_COPYRIGHT_POLICY" class="hover:text-white transition-colors">AI 저작권 및 OSP 면책 정책</RouterLink></li>
+            <li><RouterLink to="/legal/COPYRIGHT_POLICY" class="hover:text-white transition-colors">AI 저작권 및 OSP 면책 정책</RouterLink></li>
             <li><RouterLink to="/legal/PARTNER_CONTRACT" class="hover:text-white transition-colors">파트너 음원유통·면책 계약서</RouterLink></li>
           </ul>
         </div>

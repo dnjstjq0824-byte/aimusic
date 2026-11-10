@@ -784,6 +784,43 @@ seed_ready_track() {
   printf '%s' "$tid"
 }
 
+section "T08b download API: pass gate + quota + tagged master (P2-1 #22)"
+# HAPPY_TRACK_ID resolves in both paths (ffmpeg upload or fallback seed).
+if [ -z "${HAPPY_TRACK_ID:-}" ]; then
+  HAPPY_TRACK_ID="$(seed_ready_track "$PA_PARTNER_ID" "E2E Happy")"
+fi
+# No pass: 403 (authz runs before any fetch).
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/download" "$USER_TOKEN" "")"
+assert_status "download without pass -> 403" "403" "$code"
+assert_contains "download requires pass code" "ERR_DOWNLOAD_REQUIRES_PASS" "$(cat "$BODY")"
+E2E_PLAN_ID="$(psql_q "SELECT id::text FROM billing_plans WHERE code='LISTENER_PLUS_MONTHLY';" | tr -d ' \r\n')"
+psql_q "INSERT INTO billing_subscriptions (user_id,plan_id,status,current_period_start,current_period_end) VALUES ('$USER_ID'::uuid,'$E2E_PLAN_ID'::uuid,'ACTIVE',NOW(),NOW()+interval '30 days') ON CONFLICT (user_id) WHERE status='ACTIVE' DO UPDATE SET status='ACTIVE', current_period_end=NOW()+interval '30 days';" >/dev/null
+# Quota: 50 seeded rows exhaust the daily allowance.
+psql_q "INSERT INTO download_logs (user_id,track_id,bytes) SELECT '$USER_ID'::uuid,'$HAPPY_TRACK_ID'::uuid,100 FROM generate_series(1,50);" >/dev/null
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/download" "$USER_TOKEN" "")"
+assert_status "download over quota -> 429" "429" "$code"
+assert_contains "download quota code" "ERR_DOWNLOAD_QUOTA" "$(cat "$BODY")"
+psql_q "DELETE FROM download_logs WHERE user_id='$USER_ID'::uuid;" >/dev/null
+# Empty lists serialize as [] (never null) — menu crash guard.
+code="$(api GET "/users/blocks" "$USER_TOKEN" "")"
+assert_status "blocks empty -> 200" "200" "$code"
+assert_contains "blocks empty array" '"data":[]' "$(cat "$BODY")"
+code="$(api GET "/tracks?q=zz-no-such-track-zz&limit=5" "" "")"
+assert_status "empty search -> 200" "200" "$code"
+assert_contains "search items empty array" '"items":[]' "$(cat "$BODY")"
+if [ "$HAVE_FFMPEG" -eq 1 ]; then
+  code="$(api GET "/tracks/$HAPPY_TRACK_ID/download" "$USER_TOKEN" "")"
+  assert_status "download with pass -> 200" "200" "$code"
+  if [ "$(head -c 4 "$BODY" 2>/dev/null)" = "RIFF" ]; then pass "download body is WAV"; else fail "download body not WAV"; fi
+  if grep -aq "ICMT" "$BODY" 2>/dev/null && grep -aq "AI-generated music" "$BODY" 2>/dev/null; then pass "download carries AI disclosure chunk"; else fail "download missing AI disclosure"; fi
+  dl_logged="$(psql_q "SELECT COUNT(*) FROM download_logs WHERE user_id='$USER_ID'::uuid AND track_id='$HAPPY_TRACK_ID'::uuid;" | tr -d ' \r\n')"
+  assert_eq "download logged" "1" "$dl_logged"
+else
+  pass "download body asserts skipped (no ffmpeg master object)"
+fi
+psql_q "DELETE FROM billing_subscriptions WHERE user_id='$USER_ID'::uuid;" >/dev/null
+psql_q "DELETE FROM download_logs WHERE user_id='$USER_ID'::uuid;" >/dev/null
+
 section "T09 dispute TAKEDOWN_TEMP + skip + counter + restore/permanent"
 # Resolve track ids for both ffmpeg and fallback paths.
 if [ "$HAVE_FFMPEG" -eq 1 ] && [ -n "${HAPPY_TRACK_ID:-}" ]; then
@@ -923,53 +960,74 @@ print(start.isoformat()+' '+end.isoformat())
 PERIOD_START="$(printf '%s' "$PERIOD_DATES" | cut -d' ' -f1)"
 PERIOD_END="$(printf '%s' "$PERIOD_DATES" | cut -d' ' -f2)"
 info "settlement period $PERIOD_START .. $PERIOD_END"
-RATE_KRW=100
-# Deterministic counted plays: wipe period rows for our partners, then insert exact counts.
+# 70:30 canon (방향결정서 §5-1): the per-play rate is abolished.
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"ratePerPlayKrw\":100}")"
+assert_status "legacy ratePerPlayKrw rejected" "400" "$code"
+assert_contains "legacy rate abolished message" "abolished" "$(cat "$BODY")"
+# General streaming plays alone create no money: 10 counted plays each, zero revenue inputs.
 psql_q "DELETE FROM streaming_logs WHERE partner_id IN ('$PA_PARTNER_ID'::uuid,'$PB_PARTNER_ID'::uuid) AND played_at >= '$PERIOD_START'::date AND played_at < '$PERIOD_END'::date;" >/dev/null
 psql_q "INSERT INTO streaming_logs (user_id,track_id,partner_id,played_at,play_ms,counted_as_play) SELECT '$USER_ID'::uuid,'$DISPUTE_TRACK_A'::uuid,'$PA_PARTNER_ID'::uuid,NOW(),35000,TRUE FROM generate_series(1,10);" >/dev/null
 psql_q "INSERT INTO streaming_logs (user_id,track_id,partner_id,played_at,play_ms,counted_as_play) SELECT '$USER_ID'::uuid,'$DISPUTE_TRACK_B'::uuid,'$PB_PARTNER_ID'::uuid,NOW(),35000,TRUE FROM generate_series(1,10);" >/dev/null
 pa_plays="$(psql_q "SELECT COUNT(*) FROM streaming_logs WHERE partner_id='$PA_PARTNER_ID'::uuid AND counted_as_play=TRUE AND played_at >= '$PERIOD_START'::date AND played_at < '$PERIOD_END'::date;" | tr -d ' \r\n')"
 assert_eq "partnerA counted plays=10" "10" "$pa_plays"
-# Clean partnerA: PENDING with 3.3% math (gross 1000, withholding 33, net 967).
-code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"ratePerPlayKrw\":$RATE_KRW}")"
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":0,\"directKrw\":0}")"
+assert_status "calculate settlement A zero revenue" "200" "$code"
+assert_eq "plays alone pay zero gross" "0" "$(jget "data.grossAmountKrw")"
+assert_eq "plays alone pay zero net" "0" "$(jget "data.netAmountKrw")"
+assert_eq "zero revenue PENDING" "PENDING" "$(jget "data.status")"
+# Store pool fixtures: one APPROVED business + ACTIVE device; PA 90s, PB 30s (all 30s+ counted).
+E2E_BIZ="e2e00000-0000-4000-8000-000000000001"
+E2E_DEV="e2e00000-0000-4000-8000-000000000002"
+psql_q "DELETE FROM store_play_logs WHERE played_at >= '$PERIOD_START'::date AND played_at < '$PERIOD_END'::date;" >/dev/null
+psql_q "DELETE FROM store_devices WHERE id='$E2E_DEV'::uuid;" >/dev/null
+psql_q "DELETE FROM store_businesses WHERE id='$E2E_BIZ'::uuid;" >/dev/null
+psql_q "INSERT INTO store_businesses (id,partner_id,business_number,store_name,status) VALUES ('$E2E_BIZ'::uuid,'$PA_PARTNER_ID'::uuid,'E2E-SETTLE-001','E2E Settle Store','APPROVED');" >/dev/null
+psql_q "INSERT INTO store_devices (id,business_id,device_name,status) VALUES ('$E2E_DEV'::uuid,'$E2E_BIZ'::uuid,'E2E Player','ACTIVE');" >/dev/null
+psql_q "INSERT INTO store_play_logs (device_id,track_id,played_at,duration_played_secs,counted_as_play) SELECT '$E2E_DEV'::uuid,'$DISPUTE_TRACK_A'::uuid,NOW(),30,TRUE FROM generate_series(1,3);" >/dev/null
+psql_q "INSERT INTO store_play_logs (device_id,track_id,played_at,duration_played_secs,counted_as_play) VALUES ('$E2E_DEV'::uuid,'$DISPUTE_TRACK_B'::uuid,NOW(),30,TRUE);" >/dev/null
+# Clean partnerA: pool 100000 split 90/120 = 75000 + direct 10000 = 85000; gross 70% = 59500, with 3.3% = 1963, net 57537.
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":10000}")"
 assert_status "calculate settlement A" "200" "$code"
-gross_a="$(jget "data.grossAmountKrw")"
-with_a="$(jget "data.withholdingKrw")"
-net_a="$(jget "data.netAmountKrw")"
-status_a="$(jget "data.status")"
-exp_gross=$((10 * RATE_KRW))
-exp_with=$((exp_gross * 33 / 1000))
-exp_net=$((exp_gross - exp_with))
-assert_eq "settlement A gross" "$exp_gross" "$gross_a"
-assert_eq "settlement A withholding 3.3%" "$exp_with" "$with_a"
-assert_eq "settlement A net" "$exp_net" "$net_a"
-assert_eq "settlement A PENDING" "PENDING" "$status_a"
+assert_eq "settlement A gross 70%" "59500" "$(jget "data.grossAmountKrw")"
+assert_eq "settlement A withholding 3.3%" "1963" "$(jget "data.withholdingKrw")"
+assert_eq "settlement A net" "57537" "$(jget "data.netAmountKrw")"
+assert_eq "settlement A PENDING" "PENDING" "$(jget "data.status")"
+assert_eq "settlement A store secs" "90" "$(jget "data.storePlaySecs")"
+assert_eq "settlement A total store secs" "120" "$(jget "data.totalStorePlaySecs")"
+assert_eq "settlement A pool recorded" "100000" "$(jget "data.storePoolKrw")"
+assert_eq "settlement A direct recorded" "10000" "$(jget "data.directKrw")"
 code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
 assert_status "approve settlement A" "200" "$code"
 assert_contains "settlement A APPROVED" "APPROVED" "$(cat "$BODY")"
-# Violated partnerB (SUSPENDED + upheld): FORFEITED + FORFEITED_VIOLATION + net 0.
-code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"ratePerPlayKrw\":$RATE_KRW}")"
+# Violated partnerB (SUSPENDED + upheld): share 25000, gross 17500, FORFEITED + FORFEITED_VIOLATION + net 0.
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":0}")"
 assert_status "calculate settlement B" "200" "$code"
-gross_b="$(jget "data.grossAmountKrw")"
-with_b="$(jget "data.withholdingKrw")"
-net_b="$(jget "data.netAmountKrw")"
-status_b="$(jget "data.status")"
-reason_b="$(jget "data.forfeitureReason")"
-assert_eq "settlement B gross" "$exp_gross" "$gross_b"
-assert_eq "settlement B withholding 3.3%" "$exp_with" "$with_b"
-assert_eq "settlement B net zero" "0" "$net_b"
-assert_eq "settlement B FORFEITED" "FORFEITED" "$status_b"
-assert_eq "settlement B reason" "FORFEITED_VIOLATION" "$reason_b"
+assert_eq "settlement B gross 70%" "17500" "$(jget "data.grossAmountKrw")"
+assert_eq "settlement B withholding 3.3%" "577" "$(jget "data.withholdingKrw")"
+assert_eq "settlement B net zero" "0" "$(jget "data.netAmountKrw")"
+assert_eq "settlement B FORFEITED" "FORFEITED" "$(jget "data.status")"
+assert_eq "settlement B reason" "FORFEITED_VIOLATION" "$(jget "data.forfeitureReason")"
 code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
 assert_status "approve FORFEITED fails 400" "400" "$code"
 code="$(api GET "/admin/settlements/$PA_PARTNER_ID" "$ADMIN_TOKEN" "")"
 assert_status "list settlements A" "200" "$code"
 # B9: occasional-income withholding 8.8% (same period recalculated; status resets to PENDING).
-code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"ratePerPlayKrw\":$RATE_KRW,\"incomeType\":\"OTHER_88\"}")"
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":10000,\"incomeType\":\"OTHER_88\"}")"
 assert_status "calculate settlement A OTHER_88" "200" "$code"
-exp_with88=$((exp_gross * 88 / 1000))
-assert_eq "settlement A withholding 8.8%" "$exp_with88" "$(jget "data.withholdingKrw")"
+assert_eq "settlement A withholding 8.8%" "5236" "$(jget "data.withholdingKrw")"
 assert_eq "settlement A incomeType" "OTHER_88" "$(jget "data.incomeType")"
+# P2-2 (#12): hold suspends PENDING with reason; approve + double-hold refused; release resumes.
+code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reason\":\"E2E fraud hold\"}")"
+assert_status "hold settlement A" "200" "$code"
+assert_eq "settlement A HELD" "HELD" "$(jget "data.status")"
+assert_eq "settlement A hold reason" "E2E fraud hold" "$(jget "data.holdReason")"
+code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
+assert_status "approve HELD fails 400" "400" "$code"
+code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reason\":\"E2E fraud hold again\"}")"
+assert_status "double hold fails 400" "400" "$code"
+code="$(api POST "/admin/settlements/release" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
+assert_status "release settlement A" "200" "$code"
+assert_eq "settlement A back to PENDING" "PENDING" "$(jget "data.status")"
 # Settlement account AES-256-GCM: ciphertext at rest, masked preview over API.
 E2E_ACCT="98765432109876"
 code="$(api PUT "/partner/settlement" "$PA_TOKEN" "{\"bank\":\"E2E Bank\",\"accountNumber\":\"$E2E_ACCT\"}")"
@@ -991,6 +1049,26 @@ code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\
 assert_status "double mark-paid -> 400" "400" "$code"
 code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reference\":\"E2E-SLIP-003\"}")"
 assert_status "mark-paid FORFEITED -> 400" "400" "$code"
+
+section "T11b track certificate issue + public verify (P2-6 #24)"
+CERT_TRACK="$(seed_ready_track "$PA_PARTNER_ID" "E2E Cert Track")"
+code="$(api POST "/admin/tracks/$CERT_TRACK/certificate" "$ADMIN_TOKEN" "")"
+assert_status "issue certificate -> 201" "201" "$code"
+CERT_NUM="$(jget "data.certNumber")"
+if [[ "$CERT_NUM" == AVB-* ]]; then pass "cert number format $CERT_NUM"; else fail "cert number format $CERT_NUM"; fi
+code="$(api POST "/admin/tracks/$CERT_TRACK/certificate" "$ADMIN_TOKEN" "")"
+assert_status "re-issue idempotent -> 201" "201" "$code"
+assert_eq "re-issue same number" "$CERT_NUM" "$(jget "data.certNumber")"
+code="$(api GET "/certificates/$CERT_NUM" "" "")"
+assert_status "public verify by number -> 200" "200" "$code"
+assert_eq "verify title" "E2E Cert Track" "$(jget "data.title")"
+code="$(api GET "/tracks/$CERT_TRACK/certificate" "" "")"
+assert_status "public verify by track -> 200" "200" "$code"
+assert_eq "verify same number" "$CERT_NUM" "$(jget "data.certificate.certNumber")"
+code="$(api GET "/certificates/AVB-AAAAAAAAAA" "" "")"
+assert_status "unknown number -> 404" "404" "$code"
+code="$(api GET "/certificates/not-a-number" "" "")"
+assert_status "malformed number -> 404" "404" "$code"
 
 section "T12 batch2: reset, oauth, billing, overview"
 # Migration proof: batch2 tables exist.

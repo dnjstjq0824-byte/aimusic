@@ -70,12 +70,12 @@
               <rect x="3" y="6" width="18" height="13" rx="2" />
               <path d="M3 10h18M16 15h2" />
             </svg>
-            <h3 class="text-xs font-bold text-white uppercase tracking-wider">예상 정산 (30초 유효 스트리밍)</h3>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">정산 기준 (유통 순매출 70:30)</h3>
           </div>
           <p class="text-xs text-neutral-300">
             총 누적 유효 스트리밍: <strong class="text-white font-mono">{{ totalPlays.toLocaleString() }}회</strong>
-            · 추정 정산금액: <strong class="text-brand-400 font-mono">약 ₩{{ estimatedNet.toLocaleString() }}원</strong>
-            (재생당 10원 · 소득세 3.3% 원천징수 후 추정치)
+            · 파트너 귀속 <strong class="text-brand-400 font-mono">70%</strong>
+            (매장 구독료 풀은 30초 이상 매장 재생 시간 비례 배분 · 직접 판매·라이선스는 직접 귀속 · 소득세 원천징수 후 지급 · 정산 주기에 확정)
           </p>
         </div>
         <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="text-xs text-brand-400 hover:underline shrink-0">
@@ -180,11 +180,6 @@ const verifiedPlanLabel = computed(() => {
   return names.length > 0 ? names.join(', ') : '등록된 요금제 없음';
 });
 const totalPlays = computed(() => tracks.value.reduce((acc, t) => acc + (t.playCount || 0), 0));
-// Mirrors backend settlement math: gross = plays × ₩10, withholding 3.3%.
-const estimatedNet = computed(() => {
-  const gross = totalPlays.value * 10;
-  return gross - Math.floor((gross * 33) / 1000);
-});
 
 const STATUS_KO: Record<string, string> = {
   UPLOADED: '업로드됨',

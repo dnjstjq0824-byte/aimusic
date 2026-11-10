@@ -283,7 +283,7 @@ async function loadMixes(): Promise<void> {
   mixError.value = null;
   try {
     const page = await trackApi.list(50, 0, {});
-    allTracks.value = page.items.filter((t) => t.status === 'READY');
+    allTracks.value = (page.items ?? []).filter((t) => t.status === 'READY');
   } catch (err) {
     mixError.value = errMessageOf(err);
   } finally {

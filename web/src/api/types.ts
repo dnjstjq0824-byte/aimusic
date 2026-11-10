@@ -348,11 +348,40 @@ export interface PartnerSettlement {
   withholdingKrw: number;
   netAmountKrw: number;
   playCount: number;
+  storePoolKrw: number;
+  directKrw: number;
+  storePlaySecs: number;
+  totalStorePlaySecs: number;
   status: string;
+  holdReason?: string | null;
+  heldAt?: string | null;
+  heldBy?: string | null;
   forfeitureReason?: string | null;
   incomeType: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TrackCertificate {
+  id: string;
+  trackId: string;
+  certNumber: string;
+  issuedBy?: string | null;
+  issuedAt: string;
+  createdAt: string;
+}
+
+export interface CertificateView {
+  certificate: TrackCertificate;
+  trackId: string;
+  title: string;
+  aiProvider: string;
+  aiModel?: string | null;
+  isrc?: string | null;
+  status: string;
+  planTier?: string | null;
+  generatedAt?: string | null;
+  gatesPassed: boolean;
 }
 
 export interface GenerationJob {

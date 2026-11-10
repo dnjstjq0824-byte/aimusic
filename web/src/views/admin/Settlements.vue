@@ -3,7 +3,7 @@
     <UiPageHeader
       eyebrow="Admin Finance"
       title="파트너 정산 관리"
-      description="재생 집계 정산 계산, 승인, 지급 완료 처리를 수행합니다. 계좌는 마스킹된 미리보기만 노출됩니다."
+      description="유통 순매출 70:30 정산 계산, 승인, 지급 완료 처리를 수행합니다. 계좌는 마스킹된 미리보기만 노출됩니다."
     >
       <template #actions>
         <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">
@@ -47,12 +47,22 @@
       </div>
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
         <label class="flex-1 text-xs text-neutral-400">
-          <span class="mb-1 block font-semibold">재생당 단가 KRW (선택, 기본 10원)</span>
+          <span class="mb-1 block font-semibold">매장 구독료 풀 KRW (기간 합산)</span>
           <input
-            v-model="ratePerPlay"
+            v-model="storePool"
             type="number"
             min="0"
-            placeholder="10"
+            placeholder="0"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
+          />
+        </label>
+        <label class="flex-1 text-xs text-neutral-400">
+          <span class="mb-1 block font-semibold">직접 귀속 매출 KRW (이 파트너)</span>
+          <input
+            v-model="directRevenue"
+            type="number"
+            min="0"
+            placeholder="0"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
           />
         </label>
@@ -93,12 +103,17 @@
               <UiBadge :variant="statusVariant(s.status)" size="xs">{{ statusKo(s.status) }}</UiBadge>
             </div>
             <div class="mt-1 font-mono text-[11px] text-neutral-400">
-              재생 {{ s.playCount.toLocaleString() }}회 · 총액 {{ s.grossAmountKrw.toLocaleString() }}원
+              매장 {{ s.playCount.toLocaleString() }}회·{{ s.storePlaySecs.toLocaleString() }}초(전체 {{ s.totalStorePlaySecs.toLocaleString() }}초)
+              · 풀 {{ s.storePoolKrw.toLocaleString() }}원·직접 {{ s.directKrw.toLocaleString() }}원
+              · 총액(70%) {{ s.grossAmountKrw.toLocaleString() }}원
               · 원천징수 {{ s.withholdingKrw.toLocaleString() }}원
               · 실지급 <strong class="text-accent-emerald">{{ s.netAmountKrw.toLocaleString() }}원</strong>
             </div>
             <div v-if="s.forfeitureReason" class="mt-1 text-[11px] font-semibold text-accent-crimson">
               몰수 사유: {{ s.forfeitureReason }}
+            </div>
+            <div v-if="s.status === 'HELD'" class="mt-1 text-[11px] font-semibold text-accent-amber">
+              지급 보류 중: {{ s.holdReason }}
             </div>
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-2">
@@ -125,6 +140,31 @@
               @click="markPaid(s)"
             >
               지급 완료
+            </UiButton>
+            <input
+              v-if="s.status === 'PENDING'"
+              v-model="holdReason[s.id]"
+              type="text"
+              placeholder="보류 사유 (필수)"
+              class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 text-[11px] text-white placeholder:text-neutral-600"
+            />
+            <UiButton
+              v-if="s.status === 'PENDING'"
+              variant="secondary"
+              size="xs"
+              :loading="busyId === `hold-${s.id}`"
+              @click="hold(s)"
+            >
+              보류
+            </UiButton>
+            <UiButton
+              v-if="s.status === 'HELD'"
+              variant="secondary"
+              size="xs"
+              :loading="busyId === `release-${s.id}`"
+              @click="release(s)"
+            >
+              보류 해제
             </UiButton>
           </div>
         </div>
@@ -154,6 +194,7 @@ const STATUS_KO: Record<string, string> = {
   APPROVED: '승인됨',
   PAID: '지급 완료',
   FORFEITED: '몰수됨',
+  HELD: '지급 보류',
 };
 
 function statusKo(status: string): string {
@@ -182,9 +223,11 @@ const busyId = ref<string | null>(null);
 const partnerId = ref('');
 const periodStart = ref('');
 const periodEnd = ref('');
-const ratePerPlay = ref('');
+const storePool = ref('');
+const directRevenue = ref('');
 const incomeType = ref('');
 const reference = ref<Record<string, string>>({});
+const holdReason = ref<Record<string, string>>({});
 
 function requirePartner(): boolean {
   if (!partnerId.value.trim()) {
@@ -204,7 +247,7 @@ async function reload(): Promise<void> {
       adminApi.listSettlements(partnerId.value.trim()),
       adminApi.getPartnerSettlementAccount(partnerId.value.trim()).catch(() => null),
     ]);
-    settlements.value = rows;
+    settlements.value = rows ?? [];
     account.value = acct;
   } catch (err: unknown) {
     error.value = errMessageOf(err);
@@ -221,12 +264,14 @@ async function calculate(): Promise<void> {
   }
   calcBusy.value = true;
   try {
-    const rate = ratePerPlay.value === '' ? undefined : Number(ratePerPlay.value);
+    const pool = storePool.value === '' ? undefined : Number(storePool.value);
+    const direct = directRevenue.value === '' ? undefined : Number(directRevenue.value);
     await adminApi.calculateSettlement(
       partnerId.value.trim(),
       periodStart.value.trim(),
       periodEnd.value.trim(),
-      rate,
+      pool,
+      direct,
       incomeType.value.trim() || undefined,
     );
     toast.success('정산이 계산되었습니다.');
@@ -259,6 +304,38 @@ async function markPaid(s: PartnerSettlement): Promise<void> {
     await reload();
   } catch (err: unknown) {
     toast.error(errMessageOf(err), '지급 처리 실패');
+  } finally {
+    busyId.value = null;
+  }
+}
+
+async function hold(s: PartnerSettlement): Promise<void> {
+  const reason = (holdReason.value[s.id] ?? '').trim();
+  if (!reason) {
+    toast.error('보류 사유를 입력하세요.', '입력 필요');
+    return;
+  }
+  busyId.value = `hold-${s.id}`;
+  try {
+    await adminApi.holdSettlement(s.partnerId, ymd(s.periodStart), ymd(s.periodEnd), reason);
+    toast.success('정산이 보류되었습니다.');
+    holdReason.value[s.id] = '';
+    await reload();
+  } catch (err: unknown) {
+    toast.error(errMessageOf(err), '보류 실패');
+  } finally {
+    busyId.value = null;
+  }
+}
+
+async function release(s: PartnerSettlement): Promise<void> {
+  busyId.value = `release-${s.id}`;
+  try {
+    await adminApi.releaseSettlement(s.partnerId, ymd(s.periodStart), ymd(s.periodEnd));
+    toast.success('보류가 해제되었습니다.');
+    await reload();
+  } catch (err: unknown) {
+    toast.error(errMessageOf(err), '해제 실패');
   } finally {
     busyId.value = null;
   }

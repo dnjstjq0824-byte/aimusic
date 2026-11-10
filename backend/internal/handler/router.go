@@ -79,6 +79,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	adminH := &AdminHandler{Repos: d.Repos, Services: d.Services}
 	billingH := &BillingHandler{Billing: d.Services.Billing}
 	deviceH := &DeviceHandler{Repos: d.Repos, Services: d.Services, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
+	certH := &CertificateHandler{Services: d.Services}
 
 	v1 := r.Group("/api/v1")
 
@@ -140,7 +141,11 @@ func SetupRouter(d *Deps) *gin.Engine {
 	tracks := v1.Group("/tracks")
 	tracks.GET("", trackH.ListTracks)
 	tracks.GET("/:id", trackH.GetTrack)
+	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
+	certs := v1.Group("/certificates")
+	certs.GET("/:number", certH.VerifyCertificate)
 	tracks.GET("/:id/stream", JWTAuth(d.Services.Auth), RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), trackH.Stream)
+	tracks.GET("/:id/download", JWTAuth(d.Services.Auth), RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), trackH.Download)
 
 	playback := v1.Group("/playback")
 	playback.Use(JWTAuth(d.Services.Auth))
@@ -199,6 +204,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	admin.POST("/review", adminH.ReviewTrack)
 	admin.POST("/tracks/:id/review", adminH.ReviewTrack)
 	admin.PUT("/tracks/:id/isrc", adminH.SetTrackISRC)
+	admin.POST("/tracks/:id/certificate", certH.IssueCertificate)
 	admin.GET("/distribution/dsp-kit", adminH.DSPKit)
 	admin.POST("/review/partner", adminH.ReviewPartner)
 	admin.POST("/review/subscription", adminH.ReviewSubscription)
@@ -215,6 +221,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	admin.GET("/settlements/:partnerId", adminH.ListSettlements)
 	admin.POST("/settlements/approve", adminH.ApproveSettlement)
 	admin.POST("/settlements/mark-paid", adminH.MarkPaidSettlement)
+	admin.POST("/settlements/hold", adminH.HoldSettlement)
+	admin.POST("/settlements/release", adminH.ReleaseSettlement)
 	admin.GET("/partners/:partnerId/settlement", adminH.GetPartnerSettlement)
 	admin.GET("/stores", adminH.ListStores)
 	admin.POST("/stores/:id/verify", adminH.VerifyStore)

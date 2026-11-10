@@ -32,7 +32,7 @@ func (h *PartnerHandler) ListPolicies(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, policies)
+	okList(c, policies)
 }
 
 // GetPolicy returns one provider policy.
@@ -56,7 +56,7 @@ func (h *PartnerHandler) ListSubscriptions(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, subs)
+	okList(c, subs)
 }
 
 type createSubscriptionRequest struct {
@@ -246,7 +246,7 @@ func (h *PartnerHandler) ListAlbums(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, albums)
+	okList(c, albums)
 }
 
 type updateSettlementRequest struct {
@@ -327,7 +327,7 @@ func (h *PartnerHandler) ListGenerations(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, jobs)
+	okList(c, jobs)
 }
 
 type registerStoreRequest struct {
@@ -370,7 +370,7 @@ func (h *PartnerHandler) ListStores(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, list)
+	okList(c, list)
 }
 
 type createStoreDeviceRequest struct {
@@ -407,7 +407,7 @@ func (h *PartnerHandler) ListStoreDevices(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, list)
+	okList(c, list)
 }
 
 type updateStoreDeviceRequest struct {
@@ -485,7 +485,7 @@ func (h *PartnerHandler) ListStoreSchedules(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, list)
+	okList(c, list)
 }
 
 // StoreDeviceLogs returns recent certified plays for a device.
@@ -499,7 +499,7 @@ func (h *PartnerHandler) StoreDeviceLogs(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, logs)
+	okList(c, logs)
 }
 
 // ListMyTracks returns the caller's tracks across statuses.
@@ -513,5 +513,5 @@ func (h *PartnerHandler) ListMyTracks(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	ok(c, tracks)
+	okList(c, tracks)
 }

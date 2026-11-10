@@ -76,6 +76,11 @@ const routes: RouteRecordRaw[] = [
         name: 'legal-terms',
         component: () => import('@/views/legal/LegalTerms.vue'),
       },
+      {
+        path: 'certificate/:number',
+        name: 'certificate-verify',
+        component: () => import('@/views/legal/CertificateVerify.vue'),
+      },
     ],
   },
   {

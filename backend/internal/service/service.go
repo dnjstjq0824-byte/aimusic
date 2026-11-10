@@ -28,6 +28,7 @@ type Services struct {
 	Generation    *GenerationService
 	Distribution  *DistributionService
 	Store         *StoreService
+	Certificates  *CertificateService
 }
 
 // New builds the service aggregate.
@@ -56,7 +57,7 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		Disputes:      &DisputeService{repos: repos, storage: st, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
 		Playlists:     &PlaylistService{repos: repos},
 		Playback:      &PlaybackService{repos: repos},
-		Settlement:    &SettlementService{repos: repos, defaultRatePerPlayKRW: 10, cipher: settlementCipher},
+		Settlement:    &SettlementService{repos: repos, cipher: settlementCipher},
 		PasswordReset: NewPasswordResetService(repos, mailer, cfg),
 		OAuth:         NewOAuthService(repos, auth, cfg, nil),
 		Billing:       NewBillingService(repos, cfg),
@@ -64,5 +65,6 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		Generation:    NewGenerationService(repos, cfg.Generation.DailyCapPerPartner, cfg.Generation.BannedKeywordsExtra),
 		Distribution:  NewDistributionService(repos, st, buckets.Staging),
 		Store:         NewStoreService(repos),
+		Certificates:  NewCertificateService(repos),
 	}
 }

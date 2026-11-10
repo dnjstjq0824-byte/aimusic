@@ -135,7 +135,8 @@ function shortId(id: string): string {
   return id.length > 13 ? `${id.slice(0, 8)}…` : id;
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return '-';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ko-KR', { hour12: false });
 }
@@ -152,12 +153,12 @@ async function fetchPage(reset: boolean): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const page = await adminApi.auditEvents({
+    const page = (await adminApi.auditEvents({
       action: actionFilter.value || undefined,
       entityType: entityFilter.value.trim() || undefined,
       limit: PAGE,
       offset: reset ? 0 : offset.value,
-    });
+    })) ?? [];
     if (reset) {
       events.value = page;
       offset.value = page.length;

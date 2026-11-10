@@ -7,6 +7,7 @@ import type {
   BillingOrder,
   BillingPlan,
   BillingSubscription,
+  CertificateView,
   CopyrightDispute,
   DeviceQueue,
   DSPKit,
@@ -31,6 +32,7 @@ import type {
   StreamGrant,
   Tokens,
   Track,
+  TrackCertificate,
   TrackPage,
   User,
   UserArtistBlock,
@@ -280,6 +282,18 @@ export const trackApi = {
   stream(id: string) {
     return unwrap<StreamGrant>(api.get(`/tracks/${encodeURIComponent(id)}/stream`));
   },
+  async download(id: string): Promise<{ blob: Blob; filename: string }> {
+    const res = await api.get(`/tracks/${encodeURIComponent(id)}/download`, { responseType: 'blob' });
+    const disp = String(res.headers?.['content-disposition'] ?? '');
+    const m = /filename="([^"]+)"/.exec(disp);
+    return { blob: res.data as Blob, filename: m?.[1] ?? `AVIBE-${id.slice(0, 8)}.bin` };
+  },
+  getCertificate(id: string) {
+    return unwrap<CertificateView>(api.get(`/tracks/${encodeURIComponent(id)}/certificate`));
+  },
+  verifyCertificate(number: string) {
+    return unwrap<CertificateView>(api.get(`/certificates/${encodeURIComponent(number)}`));
+  },
 };
 
 export const playbackApi = {
@@ -408,11 +422,12 @@ export const adminApi = {
     partnerId: string,
     periodStart: string,
     periodEnd: string,
-    ratePerPlayKrw?: number,
+    storePoolKrw?: number,
+    directKrw?: number,
     incomeType?: string,
   ) {
     return unwrap<PartnerSettlement>(
-      api.post('/admin/settlements/calculate', { partnerId, periodStart, periodEnd, ratePerPlayKrw, incomeType }),
+      api.post('/admin/settlements/calculate', { partnerId, periodStart, periodEnd, storePoolKrw, directKrw, incomeType }),
     );
   },
   listSettlements(partnerId: string) {
@@ -424,6 +439,21 @@ export const adminApi = {
   markSettlementPaid(partnerId: string, periodStart: string, periodEnd: string, reference?: string) {
     return unwrap<PartnerSettlement>(
       api.post('/admin/settlements/mark-paid', { partnerId, periodStart, periodEnd, reference }),
+    );
+  },
+  holdSettlement(partnerId: string, periodStart: string, periodEnd: string, reason: string) {
+    return unwrap<PartnerSettlement>(
+      api.post('/admin/settlements/hold', { partnerId, periodStart, periodEnd, reason }),
+    );
+  },
+  releaseSettlement(partnerId: string, periodStart: string, periodEnd: string) {
+    return unwrap<PartnerSettlement>(
+      api.post('/admin/settlements/release', { partnerId, periodStart, periodEnd }),
+    );
+  },
+  issueTrackCertificate(trackId: string) {
+    return unwrap<TrackCertificate>(
+      api.post(`/admin/tracks/${encodeURIComponent(trackId)}/certificate`, {}),
     );
   },
   getPartnerSettlementAccount(partnerId: string) {

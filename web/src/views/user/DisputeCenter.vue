@@ -161,7 +161,7 @@ function shortId(id: string): string {
 async function loadBlocks() {
   loading.value = true;
   try {
-    blocks.value = await userBlocksApi.listArtistBlocks();
+    blocks.value = (await userBlocksApi.listArtistBlocks()) ?? [];
   } catch (err) {
     toast.error(errMessageOf(err), '차단 목록 불러오기 실패');
   } finally {
@@ -176,7 +176,7 @@ async function searchTracks(): Promise<void> {
   searched.value = true;
   try {
     const page = await trackApi.list(10, 0, { q });
-    searchResults.value = page.items;
+    searchResults.value = page.items ?? [];
   } catch (err) {
     toast.error(errMessageOf(err), '음원 검색 실패');
   } finally {

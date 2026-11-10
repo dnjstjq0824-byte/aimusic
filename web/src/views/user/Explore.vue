@@ -214,7 +214,7 @@ async function load() {
       mood: filterMood.value || undefined,
       sort: sortBy.value || undefined,
     });
-    tracks.value = res.items;
+    tracks.value = res.items ?? [];
     total.value = res.total;
   } catch (err) {
     error.value = errMessageOf(err);

@@ -163,10 +163,11 @@ Layers:
 - `POST /admin/disputes/:id/resolve uphold=false` → `DISMISSED` (no strike);
   re-approve restores `READY`. `uphold=true` → `UPHELD_TAKEDOWN` + `TAKEN_DOWN` +
   `strike_applied` + `user_blocks(strike_number 1..3)`; #3 suspends partner.
-- `POST /admin/settlements/calculate` counts `counted_as_play` in period;
+- `POST /admin/settlements/calculate` applies the 70:30 canon: admin-attested
+  `storePoolKrw` splits by qualified 30s+ store-play seconds, `directKrw`
+  attributes in full, partner keeps 70%, withholding applies;
   violated (suspended/terminated or upheld>0) → `FORFEITED/FORFEITED_VIOLATION/
-  net=0`, else `PENDING` with 3.3% withholding; `approve` → `APPROVED` (never from
-  `FORFEITED`).
+  net=0`, else `PENDING`; `approve` → `APPROVED` (never from `FORFEITED`).
 
 ## Frontend
 

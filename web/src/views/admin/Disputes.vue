@@ -183,7 +183,7 @@ async function load() {
   loading.value = true;
   error.value = null;
   try {
-    disputes.value = await adminApi.listDisputes();
+    disputes.value = (await adminApi.listDisputes()) ?? [];
   } catch (err) {
     error.value = errMessageOf(err);
   } finally {

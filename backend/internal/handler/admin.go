@@ -503,11 +503,16 @@ func (h *AdminHandler) Takedown(c *gin.Context) {
 }
 
 type calculateSettlementRequest struct {
-	PartnerID      string `json:"partnerId" binding:"required"`
-	PeriodStart    string `json:"periodStart" binding:"required"`
-	PeriodEnd      string `json:"periodEnd" binding:"required"`
-	RatePerPlayKRW int64  `json:"ratePerPlayKrw"`
+	PartnerID   string `json:"partnerId" binding:"required"`
+	PeriodStart string `json:"periodStart" binding:"required"`
+	PeriodEnd   string `json:"periodEnd" binding:"required"`
+	// 70:30 canon inputs (admin-attested period revenue). The per-play
+	// rate was abolished: a present ratePerPlayKrw is rejected so stale
+	// callers fail loudly instead of silently getting new math.
+	StorePoolKRW   int64  `json:"storePoolKrw"`
+	DirectKRW      int64  `json:"directKrw"`
 	IncomeType     string `json:"incomeType"`
+	RatePerPlayKRW *int64 `json:"ratePerPlayKrw"`
 }
 
 // CalculateSettlement runs settlement calc for a partner period.
@@ -515,6 +520,10 @@ func (h *AdminHandler) CalculateSettlement(c *gin.Context) {
 	var req calculateSettlementRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	if req.RatePerPlayKRW != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "ratePerPlayKrw was abolished with the 70:30 canon; send storePoolKrw/directKrw")
 		return
 	}
 	start, err := time.Parse("2006-01-02", req.PeriodStart)
@@ -527,12 +536,17 @@ func (h *AdminHandler) CalculateSettlement(c *gin.Context) {
 		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "periodEnd must be YYYY-MM-DD")
 		return
 	}
-	s, err := h.Services.Settlement.Calculate(c.Request.Context(), req.PartnerID, start, end, req.RatePerPlayKRW, req.IncomeType)
+	s, err := h.Services.Settlement.Calculate(c.Request.Context(), req.PartnerID, start, end, service.SettlementInput{
+		StorePoolKRW: req.StorePoolKRW, DirectKRW: req.DirectKRW, IncomeType: req.IncomeType,
+	})
 	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	h.recordAudit(c, "SETTLEMENT_CALCULATE", "settlement", req.PartnerID, map[string]any{"periodStart": req.PeriodStart, "periodEnd": req.PeriodEnd})
+	h.recordAudit(c, "SETTLEMENT_CALCULATE", "settlement", req.PartnerID, map[string]any{
+		"periodStart": req.PeriodStart, "periodEnd": req.PeriodEnd,
+		"storePoolKrw": req.StorePoolKRW, "directKrw": req.DirectKRW,
+	})
 	ok(c, s)
 }
 
@@ -593,6 +607,71 @@ type markPaidRequest struct {
 	PeriodStart string `json:"periodStart" binding:"required"`
 	PeriodEnd   string `json:"periodEnd" binding:"required"`
 	Reference   string `json:"reference"`
+}
+
+type holdSettlementRequest struct {
+	PartnerID   string `json:"partnerId" binding:"required"`
+	PeriodStart string `json:"periodStart" binding:"required"`
+	PeriodEnd   string `json:"periodEnd" binding:"required"`
+	Reason      string `json:"reason" binding:"required"`
+}
+
+// HoldSettlement suspends a PENDING settlement (P2-2 #12, confirmed fraud).
+func (h *AdminHandler) HoldSettlement(c *gin.Context) {
+	var req holdSettlementRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	start, err := time.Parse("2006-01-02", req.PeriodStart)
+	if err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "periodStart must be YYYY-MM-DD")
+		return
+	}
+	end, err := time.Parse("2006-01-02", req.PeriodEnd)
+	if err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "periodEnd must be YYYY-MM-DD")
+		return
+	}
+	s, err := h.Services.Settlement.Hold(c.Request.Context(), req.PartnerID, start, end, req.Reason, CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	h.recordAudit(c, domain.AuditSettleHold, "settlement", req.PartnerID, map[string]any{"periodStart": req.PeriodStart, "periodEnd": req.PeriodEnd, "reason": req.Reason})
+	ok(c, s)
+}
+
+type releaseSettlementRequest struct {
+	PartnerID   string `json:"partnerId" binding:"required"`
+	PeriodStart string `json:"periodStart" binding:"required"`
+	PeriodEnd   string `json:"periodEnd" binding:"required"`
+}
+
+// ReleaseSettlement returns a HELD settlement to PENDING.
+func (h *AdminHandler) ReleaseSettlement(c *gin.Context) {
+	var req releaseSettlementRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	start, err := time.Parse("2006-01-02", req.PeriodStart)
+	if err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "periodStart must be YYYY-MM-DD")
+		return
+	}
+	end, err := time.Parse("2006-01-02", req.PeriodEnd)
+	if err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "periodEnd must be YYYY-MM-DD")
+		return
+	}
+	s, err := h.Services.Settlement.Release(c.Request.Context(), req.PartnerID, start, end)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	h.recordAudit(c, domain.AuditSettleRelease, "settlement", req.PartnerID, map[string]any{"periodStart": req.PeriodStart, "periodEnd": req.PeriodEnd})
+	ok(c, s)
 }
 
 // MarkPaidSettlement records an executed bank transfer (APPROVED -> PAID).

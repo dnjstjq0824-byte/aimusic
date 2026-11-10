@@ -27,7 +27,7 @@ func (r *BillingRepo) ListActivePlans(ctx context.Context) ([]*domain.BillingPla
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.BillingPlan
+	out := []*domain.BillingPlan{}
 	for rows.Next() {
 		p, err := scanPlan(rows)
 		if err != nil {

@@ -429,7 +429,7 @@ async function load(): Promise<void> {
       mood: filterMood.value || undefined,
       q: searchQuery.value || undefined,
     });
-    tracks.value = page.items;
+    tracks.value = page.items ?? [];
     total.value = page.total;
   } catch (err: unknown) {
     toast.error(errMessageOf(err), '음원 로드 실패');

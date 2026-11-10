@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -123,6 +124,35 @@ func TestRateLimitBurstsThen429(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/ping", nil))
 	if w.Code != http.StatusTooManyRequests {
 		t.Fatalf("burst-exceeded status = %d, want 429", w.Code)
+	}
+}
+
+func TestOkListNilEmitsEmptyArray(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/nil", func(c *gin.Context) {
+		var items []string
+		okList(c, items)
+	})
+	r.GET("/empty", func(c *gin.Context) {
+		okList(c, []string{})
+	})
+	r.GET("/items", func(c *gin.Context) {
+		okList(c, []string{"a", "b"})
+	})
+	for path, want := range map[string]string{
+		"/nil":   `{"data":[]}`,
+		"/empty": `{"data":[]}`,
+		"/items": `{"data":["a","b"]}`,
+	} {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s status = %d, want 200", path, w.Code)
+		}
+		if got := strings.TrimSpace(w.Body.String()); got != want {
+			t.Fatalf("%s body = %s, want %s", path, got, want)
+		}
 	}
 }
 

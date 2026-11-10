@@ -122,7 +122,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    plans.value = await billingApi.plans();
+    plans.value = (await billingApi.plans()) ?? [];
     if (auth.isAuthenticated) {
       const res = await billingApi.mySubscription();
       subscription.value = res.subscription;

@@ -168,7 +168,7 @@ async function load() {
   loading.value = true;
   error.value = null;
   try {
-    policies.value = await adminApi.listPolicies();
+    policies.value = (await adminApi.listPolicies()) ?? [];
   } catch (err) {
     error.value = errMessageOf(err);
   } finally {

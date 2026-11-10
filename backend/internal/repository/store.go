@@ -309,6 +309,41 @@ func (r *StoreRepo) CountPartnerPlaysInWindow(ctx context.Context, partnerID str
 	return n, err
 }
 
+// SumQualifiedStoreSecs sums 30s+ store play seconds for a partner's tracks
+// in [start, end) from APPROVED businesses' ACTIVE devices. This is the
+// time-pro-rata basis of the 70:30 store pool (방향결정서 §5-1).
+func (r *StoreRepo) SumQualifiedStoreSecs(ctx context.Context, partnerID string, start, end time.Time) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(l.duration_played_secs), 0)
+		FROM store_play_logs l
+		JOIN store_devices d ON d.id = l.device_id
+		JOIN store_businesses b ON b.id = d.business_id
+		JOIN tracks t ON t.id = l.track_id
+		WHERE t.partner_id = $1::uuid AND l.counted_as_play
+			AND l.played_at >= $2 AND l.played_at < $3
+			AND b.status = 'APPROVED' AND d.status = 'ACTIVE'`,
+		partnerID, start, end).Scan(&n)
+	return n, err
+}
+
+// SumQualifiedStoreSecsAll sums the same basis across all partners: the
+// denominator of the 70:30 store-pool split for the window.
+func (r *StoreRepo) SumQualifiedStoreSecsAll(ctx context.Context, start, end time.Time) (int64, error) {
+	var n int64
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(l.duration_played_secs), 0)
+		FROM store_play_logs l
+		JOIN store_devices d ON d.id = l.device_id
+		JOIN store_businesses b ON b.id = d.business_id
+		JOIN tracks t ON t.id = l.track_id
+		WHERE l.counted_as_play
+			AND l.played_at >= $1 AND l.played_at < $2
+			AND b.status = 'APPROVED' AND d.status = 'ACTIVE'`,
+		start, end).Scan(&n)
+	return n, err
+}
+
 // CountCountedPlaysByBusiness counts counted store plays per track for a
 // business since a time (settlement input, WI-05 #21).
 func (r *StoreRepo) CountCountedPlaysByBusiness(ctx context.Context, businessID string, since time.Time) (map[string]int64, error) {

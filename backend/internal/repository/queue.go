@@ -129,6 +129,8 @@ type Repos struct {
 	Audit         *AuditRepo
 	Notify        *NotificationRepo
 	Store         *StoreRepo
+	Certificates  *CertificateRepo
+	Downloads     *DownloadRepo
 }
 
 // WithTx returns a repository aggregate whose catalog writes (albums,
@@ -172,5 +174,7 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Audit:         &AuditRepo{db: db},
 		Notify:        &NotificationRepo{db: db},
 		Store:         &StoreRepo{db: db},
+		Certificates:  &CertificateRepo{db: db},
+		Downloads:     &DownloadRepo{db: db},
 	}
 }

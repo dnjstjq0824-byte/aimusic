@@ -174,6 +174,9 @@ that bypassed finalize can never reach transcode.
 | GET | `/tracks?q=&provider=&genre=&mood=&sort=&limit=&offset=` | – | `READY` only page `{items,total,limit,offset}`; `sort=recent\|oldest\|popular\|title` (default `recent`), `q` = title substring (max 100 chars) |
 | GET | `/tracks/:id` | – | one track (any status) |
 | GET | `/tracks/:id/stream` | JWT (login required, anonymous 401) | `READY` + `hls_prefix` only → `{url,expiresAt,jti,quality}` signed (`exp,jti,sig`, TTL `HLS_URL_TTL_SECONDS` default 300). Active pass/admin → `master.m3u8` (`HQ` 256k); free → `stream_0.m3u8` (`SQ` 128k). Artist-blocked → `ERR_NOT_STREAMABLE` |
+| GET | `/tracks/:id/download` | JWT | `READY` master bytes as attachment (P2-1 #22). Paid passes only — owner + admin exempt (`ERR_DOWNLOAD_REQUIRES_PASS` 403), 50/day quota (`ERR_DOWNLOAD_QUOTA` 429). WAV gains a LIST-INFO AI-disclosure chunk, MP3 an ID3v2 comment; every download is logged (`download_logs`) |
+| GET | `/tracks/:id/certificate` | – | public certificate view for one track, 404 when none (P2-6 #24) |
+| GET | `/certificates/:number` | – | public verification by number (`AVB-` + 10 chars; unknown/malformed → 404) |
 
 Stream URL: `<CDNBaseURL or S3 endpoint>/<public-hls>/<hls_prefix>/master.m3u8?exp=&jti=&sig=`
 (HMAC-SHA256 over `trackId|jti|exp`, see `pkg/crypto/crypto.go`).
@@ -267,17 +270,22 @@ Every dispute carries the §103 timeline: `takedown_requested_at` (report),
 | POST | `/admin/users/:id/role` | `{role}` (self-change + last-admin demote refused) |
 | POST | `/admin/users/:id/active` | `{active}` (locks revoke sessions; self-lock refused) |
 | GET | `/admin/users/:id/blocks` | strike/block history of one account (admin console 제재 내역) |
-| POST | `/admin/settlements/calculate` | `{partnerId,periodStart:YYYY-MM-DD,periodEnd:YYYY-MM-DD,ratePerPlayKrw?,incomeType?}` → upserted settlement (`BUSINESS_33` 3.3% default, `OTHER_88` 8.8% occasional income) |
+| POST | `/admin/settlements/calculate` | `{partnerId,periodStart:YYYY-MM-DD,periodEnd:YYYY-MM-DD,storePoolKrw?,directKrw?,incomeType?}` → upserted 70:30 settlement (`BUSINESS_33` 3.3% default, `OTHER_88` 8.8% occasional income; a present `ratePerPlayKrw` is rejected 400 — the per-play rate is abolished) |
 | GET | `/admin/settlements/:partnerId` | settlements newest first |
-| POST | `/admin/settlements/approve` | `{partnerId,periodStart,periodEnd}` → `APPROVED` (never from `FORFEITED`) |
+| POST | `/admin/settlements/approve` | `{partnerId,periodStart,periodEnd}` → `APPROVED` (never from `FORFEITED`/`HELD`) |
+| POST | `/admin/settlements/hold` | `{partnerId,periodStart,periodEnd,reason}` → `HELD` with reason + actor (P2-2 #12, PENDING only) |
+| POST | `/admin/settlements/release` | `{partnerId,periodStart,periodEnd}` → back to `PENDING` (HELD only; history kept) |
 | POST | `/admin/settlements/mark-paid` | `{partnerId,periodStart,periodEnd,reference?}` → `PAID` once (double-pay → 409) |
+| POST | `/admin/tracks/:id/certificate` | issue per-track certificate, idempotent per track (P2-6 #24, READY only) |
 | GET | `/admin/partners/:partnerId/settlement` | `{bank,accountMasked}` (decrypt-then-mask; never plaintext) |
 
-Settlement math (`SettlementService.Calculate`, default 10 KRW/play):
-`gross=plays*rate`, `withholding=gross*33/1000` (3.3% business income) or `gross*88/1000` (8.8% occasional income), `net=gross-withholding`.
+Settlement math — 70:30 canon (`SettlementService.Calculate`, 방향결정서 §5-1):
+`share=storePool*partnerSecs/totalSecs` (qualified 30s+ store-play seconds, `APPROVED` businesses/`ACTIVE` devices, capped at the pool; 0 when the basis is empty),
+`attributed=share+direct`, `gross=attributed*70/100`, `withholding=gross*33/1000` (3.3% business income) or `gross*88/1000` (8.8% occasional income), `net=gross-withholding`.
+Integer math floors at each step. General streaming plays never create money.
 If partner `SUSPENDED|TERMINATED` or any `UPHELD_TAKEDOWN` on their tracks:
 `status=FORFEITED`, `forfeitureReason=FORFEITED_VIOLATION`, `net=0`.
-`plays` counts `streaming_logs` with `counted_as_play` in `[periodStart, periodEnd)`.
+`storePoolKrw`/`directKrw` are admin-attested period revenue inputs recorded on the row; the basis (`storePlaySecs`/`totalStorePlaySecs`, `playCount` = qualifying store plays) is read from `store_play_logs` in `[periodStart, periodEnd)`.
 
 ## Billing (`/billing`, Toss Payments)
 

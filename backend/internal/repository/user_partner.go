@@ -321,7 +321,7 @@ func (r *PartnerRepo) ListByStatus(ctx context.Context, status string, limit, of
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.PartnerProfile
+	out := []*domain.PartnerProfile{}
 	for rows.Next() {
 		p, err := scanPartner(rows)
 		if err != nil {
@@ -419,7 +419,7 @@ func (r *SubscriptionRepo) ListByPartner(ctx context.Context, partnerID string) 
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.PartnerAISubscription
+	out := []*domain.PartnerAISubscription{}
 	for rows.Next() {
 		s, err := scanSubscription(rows)
 		if err != nil {
@@ -447,7 +447,7 @@ func (r *SubscriptionRepo) ListPending(ctx context.Context, limit, offset int) (
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.PartnerAISubscription
+	out := []*domain.PartnerAISubscription{}
 	for rows.Next() {
 		s, err := scanSubscription(rows)
 		if err != nil {
@@ -517,7 +517,7 @@ func (r *PolicyRepo) List(ctx context.Context) ([]*domain.AIProviderPolicy, erro
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.AIProviderPolicy
+	out := []*domain.AIProviderPolicy{}
 	for rows.Next() {
 		p, err := scanPolicy(rows)
 		if err != nil {

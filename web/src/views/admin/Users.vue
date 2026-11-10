@@ -165,7 +165,8 @@ const offset = ref(0);
 const hasMore = ref(true);
 const toast = useToast();
 
-function formatTime(iso: string): string {
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return '-';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ko-KR', { hour12: false });
 }
@@ -174,12 +175,12 @@ async function fetchPage(reset: boolean): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const page = await adminApi.listUsers({
+    const page = (await adminApi.listUsers({
       q: query.value.trim() || undefined,
       role: roleFilter.value || undefined,
       limit: PAGE,
       offset: reset ? 0 : offset.value,
-    });
+    })) ?? [];
     if (reset) {
       users.value = page;
       offset.value = page.length;

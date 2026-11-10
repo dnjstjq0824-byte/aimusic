@@ -93,6 +93,16 @@
             >
               + 플레이리스트에 담기
             </UiButton>
+            <UiButton
+              v-if="auth.isAuthenticated"
+              variant="secondary"
+              size="sm"
+              :disabled="track.status !== 'READY'"
+              :loading="downloading"
+              @click="downloadTrack"
+            >
+              다운로드 (유료)
+            </UiButton>
           </div>
         </UiCard>
 
@@ -186,6 +196,20 @@
               <span>검증 상태</span>
               <span class="font-semibold text-emerald-400">{{ statusKo }}</span>
             </div>
+            <div v-if="cert" class="flex items-center justify-between gap-2">
+              <span>인증서 번호</span>
+              <RouterLink
+                :to="`/certificate/${cert.certificate.certNumber}`"
+                class="font-mono font-semibold text-brand-400 hover:underline"
+              >
+                {{ cert.certificate.certNumber }}
+              </RouterLink>
+            </div>
+            <div v-else-if="canIssueCert" class="pt-1">
+              <UiButton variant="secondary" size="xs" :loading="issuingCert" @click="issueCert">
+                곡별 인증서 발급
+              </UiButton>
+            </div>
             <div class="space-y-1">
               <div class="flex items-center justify-between gap-2">
                 <span>트랙 고유 ID</span>
@@ -268,13 +292,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { trackApi, playlistApi, userBlocksApi } from '@/api/endpoints';
-import { errMessageOf } from '@/api/client';
+import { trackApi, playlistApi, userBlocksApi, adminApi } from '@/api/endpoints';
+import { errCodeOf, errMessageOf } from '@/api/client';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
-import type { Track } from '@/api/types';
+import type { Track, CertificateView } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
@@ -296,6 +320,13 @@ const toast = useToast();
 const track = ref<Track | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const cert = ref<CertificateView | null>(null);
+const issuingCert = ref(false);
+const downloading = ref(false);
+
+const canIssueCert = computed(
+  () => auth.isAdmin && track.value?.status === 'READY' && cert.value === null,
+);
 
 const reportModalOpen = ref(false);
 const playlistModalOpen = ref(false);
@@ -364,10 +395,25 @@ async function loadTrack() {
   error.value = null;
   try {
     track.value = await trackApi.get(id);
+    cert.value = await trackApi.getCertificate(id).catch(() => null);
   } catch (err) {
     error.value = errMessageOf(err);
   } finally {
     loading.value = false;
+  }
+}
+
+async function issueCert(): Promise<void> {
+  if (!track.value) return;
+  issuingCert.value = true;
+  try {
+    await adminApi.issueTrackCertificate(track.value.id);
+    cert.value = await trackApi.getCertificate(track.value.id).catch(() => null);
+    toast.success('곡별 인증서가 발급되었습니다.');
+  } catch (err) {
+    toast.error(errMessageOf(err), '발급 실패');
+  } finally {
+    issuingCert.value = false;
   }
 }
 
@@ -380,6 +426,34 @@ function enqueue() {
   if (!track.value) return;
   player.enqueue(track.value);
   toast.info(`"${track.value.title}"을(를) 재생 큐에 추가했습니다.`);
+}
+
+async function downloadTrack(): Promise<void> {
+  if (!track.value) return;
+  downloading.value = true;
+  try {
+    const { blob, filename } = await trackApi.download(track.value.id);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success('다운로드가 시작되었습니다.');
+  } catch (err) {
+    const code = errCodeOf(err);
+    if (code === 'ERR_DOWNLOAD_REQUIRES_PASS') {
+      toast.error('다운로드는 유료 이용권이 필요합니다.', '유료 전용');
+    } else if (code === 'ERR_DOWNLOAD_QUOTA') {
+      toast.error('일일 다운로드 한도(50회)를 초과했습니다.', '한도 초과');
+    } else {
+      toast.error(errMessageOf(err), '다운로드 실패');
+    }
+  } finally {
+    downloading.value = false;
+  }
 }
 
 async function addToPlaylist(playlistId: string) {

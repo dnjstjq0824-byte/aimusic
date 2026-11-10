@@ -408,7 +408,7 @@ async function submitPartnerRegister(): Promise<void> {
 
 onMounted(async () => {
   try {
-    providers.value = await authApi.oauthProviders();
+    providers.value = (await authApi.oauthProviders()) ?? [];
   } catch {
     providers.value = [];
   } finally {

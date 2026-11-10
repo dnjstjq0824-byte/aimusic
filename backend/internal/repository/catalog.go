@@ -57,7 +57,7 @@ func (r *AlbumRepo) ListByPartner(ctx context.Context, partnerID string, limit, 
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.Album
+	out := []*domain.Album{}
 	for rows.Next() {
 		a, err := scanAlbum(rows)
 		if err != nil {
@@ -153,7 +153,7 @@ func (r *TrackRepo) listTracks(ctx context.Context, query string, args ...any) (
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.Track
+	out := []*domain.Track{}
 	for rows.Next() {
 		t, err := scanTrack(rows)
 		if err != nil {

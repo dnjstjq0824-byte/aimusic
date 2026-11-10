@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/service"
 )
 
@@ -23,10 +22,7 @@ func (h *BillingHandler) ListPlans(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	if plans == nil {
-		plans = []*domain.BillingPlan{}
-	}
-	ok(c, plans)
+	okList(c, plans)
 }
 
 type createOrderRequest struct {

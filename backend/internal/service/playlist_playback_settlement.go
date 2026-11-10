@@ -240,11 +240,66 @@ const (
 	withholdingDen         = 1000
 )
 
+// Partner share of attributed distribution revenue: 70/100 (방향결정서 §5-1).
+const (
+	partnerShareNum = 70
+	partnerShareDen = 100
+)
+
 // SettlementService calculates partner settlements.
 type SettlementService struct {
-	repos                 *repository.Repos
-	defaultRatePerPlayKRW int64
-	cipher                *apcrypto.Cipher
+	repos  *repository.Repos
+	cipher *apcrypto.Cipher
+}
+
+// SettlementInput carries the admin-attested revenue inputs for one
+// settlement calculation. No in-system revenue ledger exists for the paid
+// channels yet, so the period totals are attested from external books
+// (store subscriptions, license/direct deals) and recorded on the row.
+type SettlementInput struct {
+	// StorePoolKRW is the total store-subscription pool collected for the
+	// period, split across partners by qualified store play time.
+	StorePoolKRW int64
+	// DirectKRW is this partner's directly attributed revenue (direct
+	// sales and license deals on their tracks).
+	DirectKRW  int64
+	IncomeType string
+}
+
+// withholdNum validates the input and resolves the withholding per-mille
+// numerator (BUSINESS_33 default, OTHER_88 occasional income).
+func (in SettlementInput) withholdNum() (int64, error) {
+	if in.StorePoolKRW < 0 || in.DirectKRW < 0 {
+		return 0, fmt.Errorf("%w: storePoolKrw/directKrw must be >= 0", domain.ErrInvalidInput)
+	}
+	incomeType := in.IncomeType
+	if incomeType == "" {
+		incomeType = domain.IncomeBusiness33
+	}
+	if !domain.ValidIncomeType(incomeType) {
+		return 0, fmt.Errorf("%w: incomeType must be BUSINESS_33|OTHER_88", domain.ErrInvalidInput)
+	}
+	if incomeType == domain.IncomeOther88 {
+		return withholdingNumOther, nil
+	}
+	return withholdingNumBusiness, nil
+}
+
+// splitSettlement7030 applies the 70:30 canon in pure integer math,
+// flooring at each step. The pool share is capped at the pool so skew
+// between the partner and total basis reads can never overpay.
+func splitSettlement7030(storePool, direct, partnerSecs, totalSecs, withholdNum int64) (poolShare, attributed, gross, withholding, net int64) {
+	if totalSecs > 0 && partnerSecs > 0 && storePool > 0 {
+		poolShare = storePool * partnerSecs / totalSecs
+		if poolShare > storePool {
+			poolShare = storePool
+		}
+	}
+	attributed = poolShare + direct
+	gross = attributed * partnerShareNum / partnerShareDen
+	withholding = gross * withholdNum / withholdingDen
+	net = gross - withholding
+	return poolShare, attributed, gross, withholding, net
 }
 
 // UpdateSettlementAccount stores bank + AES-256-GCM encrypted account number.
@@ -305,51 +360,51 @@ func (s *SettlementService) SettlementAccountPreview(ctx context.Context, partne
 	return bank, strings.Repeat("*", len(digits)-4) + digits[len(digits)-4:], nil
 }
 
-// Calculate counts valid plays in [start, end), applies withholding, and
-// forfeits (FORFEITED_VIOLATION, net zero) when a violation is active.
-// incomeType selects the withholding rate: BUSINESS_33 (3.3%, default) or
-// OTHER_88 (8.8% occasional income). Business partners settle via tax invoice
+// Calculate settles one partner period under the 70:30 canon (방향결정서
+// §5-1): the store pool splits by qualified 30s+ store play time, direct
+// revenue attributes in full, the partner keeps 70%, withholding applies,
+// and violations forfeit (FORFEITED_VIOLATION, net zero). General streaming
+// plays never create money. Business partners settle via tax invoice
 // outside this flow (B9).
-func (s *SettlementService) Calculate(ctx context.Context, partnerID string, start, end time.Time, ratePerPlayKRW int64, incomeType string) (*domain.PartnerSettlement, error) {
+func (s *SettlementService) Calculate(ctx context.Context, partnerID string, start, end time.Time, in SettlementInput) (*domain.PartnerSettlement, error) {
 	if partnerID == "" || !start.Before(end) {
 		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
 	}
+	num, err := in.withholdNum()
+	if err != nil {
+		return nil, err
+	}
+	incomeType := in.IncomeType
 	if incomeType == "" {
 		incomeType = domain.IncomeBusiness33
 	}
-	if !domain.ValidIncomeType(incomeType) {
-		return nil, fmt.Errorf("%w: incomeType must be BUSINESS_33|OTHER_88", domain.ErrInvalidInput)
-	}
-	if ratePerPlayKRW <= 0 {
-		ratePerPlayKRW = s.defaultRatePerPlayKRW
-	}
-	plays, err := s.repos.Streaming.CountPartnerPlaysInWindow(ctx, partnerID, start, end)
+	partnerSecs, err := s.repos.Store.SumQualifiedStoreSecs(ctx, partnerID, start, end)
 	if err != nil {
 		return nil, err
 	}
-	// Certified store-player plays settle at the same fixed rate (WI-05 #21).
-	storePlays, err := s.repos.Store.CountPartnerPlaysInWindow(ctx, partnerID, start, end)
+	totalSecs, err := s.repos.Store.SumQualifiedStoreSecsAll(ctx, start, end)
 	if err != nil {
 		return nil, err
 	}
-	plays += storePlays
-	num := int64(withholdingNumBusiness)
-	if incomeType == domain.IncomeOther88 {
-		num = withholdingNumOther
+	playCount, err := s.repos.Store.CountPartnerPlaysInWindow(ctx, partnerID, start, end)
+	if err != nil {
+		return nil, err
 	}
-	gross := plays * ratePerPlayKRW
-	withholding := gross * num / withholdingDen
-	net := gross - withholding
+	_, _, gross, withholding, net := splitSettlement7030(in.StorePoolKRW, in.DirectKRW, partnerSecs, totalSecs, num)
 	settlement := &domain.PartnerSettlement{
-		PartnerID:      partnerID,
-		PeriodStart:    start,
-		PeriodEnd:      end,
-		GrossAmountKRW: gross,
-		WithholdingKRW: withholding,
-		NetAmountKRW:   net,
-		PlayCount:      plays,
-		Status:         domain.SettlePending,
-		IncomeType:     incomeType,
+		PartnerID:          partnerID,
+		PeriodStart:        start,
+		PeriodEnd:          end,
+		GrossAmountKRW:     gross,
+		WithholdingKRW:     withholding,
+		NetAmountKRW:       net,
+		PlayCount:          playCount,
+		StorePoolKRW:       in.StorePoolKRW,
+		DirectKRW:          in.DirectKRW,
+		StorePlaySecs:      partnerSecs,
+		TotalStorePlaySecs: totalSecs,
+		Status:             domain.SettlePending,
+		IncomeType:         incomeType,
 	}
 	violated, err := s.ViolationActive(ctx, partnerID)
 	if err != nil {
@@ -381,7 +436,13 @@ func (s *SettlementService) ViolationActive(ctx context.Context, partnerID strin
 	return upheld > 0, nil
 }
 
-// Approve moves a settlement to APPROVED (never from FORFEITED).
+// canHold reports whether a settlement in status may be held (P2-2 #12).
+func canHold(status string) bool { return status == domain.SettlePending }
+
+// canRelease reports whether a settlement in status may be released.
+func canRelease(status string) bool { return status == domain.SettleHeld }
+
+// Approve moves a settlement to APPROVED (never from FORFEITED or HELD).
 func (s *SettlementService) Approve(ctx context.Context, partnerID string, start, end time.Time) (*domain.PartnerSettlement, error) {
 	cur, err := s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
 	if err != nil {
@@ -390,7 +451,50 @@ func (s *SettlementService) Approve(ctx context.Context, partnerID string, start
 	if cur.Status == domain.SettleForfeited {
 		return nil, fmt.Errorf("%w: forfeited settlement", domain.ErrInvalidInput)
 	}
+	if cur.Status == domain.SettleHeld {
+		return nil, fmt.Errorf("%w: held settlement must be released first", domain.ErrInvalidInput)
+	}
 	if err := s.repos.Settlements.UpdateStatus(ctx, cur.ID, domain.SettleApproved, nil); err != nil {
+		return nil, err
+	}
+	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
+}
+
+// Hold suspends a PENDING settlement while confirmed fraud is reviewed.
+// Reason is required evidence; the actor is the holding admin.
+func (s *SettlementService) Hold(ctx context.Context, partnerID string, start, end time.Time, reason, actorID string) (*domain.PartnerSettlement, error) {
+	if partnerID == "" || !start.Before(end) {
+		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
+	}
+	if strings.TrimSpace(reason) == "" {
+		return nil, fmt.Errorf("%w: hold reason", domain.ErrInvalidInput)
+	}
+	cur, err := s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	if !canHold(cur.Status) {
+		return nil, fmt.Errorf("%w: only PENDING settlements can be held", domain.ErrInvalidInput)
+	}
+	if err := s.repos.Settlements.Hold(ctx, cur.ID, strings.TrimSpace(reason), actorID); err != nil {
+		return nil, err
+	}
+	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
+}
+
+// Release returns a HELD settlement to PENDING for the normal flow.
+func (s *SettlementService) Release(ctx context.Context, partnerID string, start, end time.Time) (*domain.PartnerSettlement, error) {
+	if partnerID == "" || !start.Before(end) {
+		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
+	}
+	cur, err := s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	if !canRelease(cur.Status) {
+		return nil, fmt.Errorf("%w: only HELD settlements can be released", domain.ErrInvalidInput)
+	}
+	if err := s.repos.Settlements.Release(ctx, cur.ID); err != nil {
 		return nil, err
 	}
 	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)

@@ -20,7 +20,7 @@ func (r *LegalRepo) ListTerms(ctx context.Context) ([]*domain.LegalTerm, error) 
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.LegalTerm
+	out := []*domain.LegalTerm{}
 	for rows.Next() {
 		t := &domain.LegalTerm{}
 		if err := rows.Scan(&t.ID, &t.Code, &t.Version, &t.TitleKo, &t.BodyMd, &t.IsRequired, &t.EffectiveAt, &t.CreatedAt); err != nil {
@@ -70,7 +70,7 @@ func (r *LegalRepo) ListPendingConsents(ctx context.Context, userID string) ([]*
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.LegalTerm
+	out := []*domain.LegalTerm{}
 	for rows.Next() {
 		t := &domain.LegalTerm{}
 		if err := rows.Scan(&t.ID, &t.Code, &t.Version, &t.TitleKo, &t.BodyMd, &t.IsRequired, &t.EffectiveAt, &t.CreatedAt); err != nil {
@@ -90,7 +90,7 @@ func (r *LegalRepo) ListConsentsByUser(ctx context.Context, userID string) ([]*d
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.UserTermConsent
+	out := []*domain.UserTermConsent{}
 	for rows.Next() {
 		c := &domain.UserTermConsent{}
 		var ip, ua sql.NullString
@@ -161,7 +161,7 @@ func (r *DisputeRepo) ListByStatus(ctx context.Context, status string, limit, of
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.CopyrightDispute
+	out := []*domain.CopyrightDispute{}
 	for rows.Next() {
 		d, err := scanDispute(rows)
 		if err != nil {
@@ -181,7 +181,7 @@ func (r *DisputeRepo) ListOpen(ctx context.Context, limit, offset int) ([]*domai
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.CopyrightDispute
+	out := []*domain.CopyrightDispute{}
 	for rows.Next() {
 		d, err := scanDispute(rows)
 		if err != nil {
@@ -342,7 +342,7 @@ func (r *BlockRepo) ListByUser(ctx context.Context, userID string) ([]*domain.Us
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.UserBlock
+	out := []*domain.UserBlock{}
 	for rows.Next() {
 		b := &domain.UserBlock{}
 		var by sql.NullString
@@ -398,7 +398,7 @@ func (r *BlockRepo) ListBlockedArtists(ctx context.Context, blockerUserID string
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.UserArtistBlock
+	out := []*domain.UserArtistBlock{}
 	for rows.Next() {
 		b := &domain.UserArtistBlock{}
 		if err := rows.Scan(&b.ID, &b.BlockerUserID, &b.BlockedPartnerID, &b.Reason, &b.CreatedAt); err != nil {

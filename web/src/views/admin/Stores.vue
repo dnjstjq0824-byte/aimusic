@@ -77,7 +77,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    stores.value = await adminApi.listStores(status.value, 50, 0);
+    stores.value = (await adminApi.listStores(status.value, 50, 0)) ?? [];
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {

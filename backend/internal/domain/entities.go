@@ -98,6 +98,9 @@ const (
 	SettleApproved  = "APPROVED"
 	SettlePaid      = "PAID"
 	SettleForfeited = "FORFEITED"
+	// SettleHeld suspends a PENDING settlement while confirmed fraud is
+	// reviewed (P2-2 #12). Release returns it to PENDING.
+	SettleHeld = "HELD"
 )
 
 // Settlement withholding income types (partner_settlements.income_type).
@@ -314,6 +317,17 @@ type TrackRightsDeclaration struct {
 	DeclaredAt                      time.Time  `json:"declaredAt"`
 }
 
+// TrackCertificate mirrors track_certificates: the public "상업적 이용권
+// 보유 인증" credential for one READY track (P2-6 #24).
+type TrackCertificate struct {
+	ID         string    `json:"id"`
+	TrackID    string    `json:"trackId"`
+	CertNumber string    `json:"certNumber"`
+	IssuedBy   *string   `json:"issuedBy,omitempty"`
+	IssuedAt   time.Time `json:"issuedAt"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
 // TranscodingJob mirrors transcoding_jobs.
 type TranscodingJob struct {
 	ID             string     `json:"id"`
@@ -333,20 +347,20 @@ type TranscodingJob struct {
 // GenerationJob mirrors generation_jobs (WI-03). Statuses reuse the
 // transcoding job constants (QUEUED/RUNNING/SUCCEEDED/FAILED).
 type GenerationJob struct {
-	ID              string     `json:"id"`
-	PartnerID       string     `json:"partnerId"`
-	Prompt          string     `json:"prompt"`
-	Lyrics          *string    `json:"lyrics,omitempty"`
-	Model           string     `json:"model"`
-	LicenseRef      string     `json:"licenseRef,omitempty"`
-	ParamsJSON      string     `json:"paramsJson"`
-	Status          string     `json:"status"`
-	OutputObjectKey *string    `json:"outputObjectKey,omitempty"`
-	DurationMs      *int       `json:"durationMs,omitempty"`
-	Error           *string    `json:"error,omitempty"`
-	Attempts        int        `json:"attempts"`
-	CreatedAt       time.Time  `json:"createdAt"`
-	UpdatedAt       time.Time  `json:"updatedAt"`
+	ID              string    `json:"id"`
+	PartnerID       string    `json:"partnerId"`
+	Prompt          string    `json:"prompt"`
+	Lyrics          *string   `json:"lyrics,omitempty"`
+	Model           string    `json:"model"`
+	LicenseRef      string    `json:"licenseRef,omitempty"`
+	ParamsJSON      string    `json:"paramsJson"`
+	Status          string    `json:"status"`
+	OutputObjectKey *string   `json:"outputObjectKey,omitempty"`
+	DurationMs      *int      `json:"durationMs,omitempty"`
+	Error           *string   `json:"error,omitempty"`
+	Attempts        int       `json:"attempts"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 // Store business/device statuses (WI-05).
@@ -375,17 +389,17 @@ type StoreBusiness struct {
 
 // StoreDevice mirrors store_devices: a certified player terminal.
 type StoreDevice struct {
-	ID                string     `json:"id"`
-	BusinessID        string     `json:"businessId"`
-	DeviceName        string     `json:"deviceName"`
-	PairingCode       *string    `json:"pairingCode,omitempty"`
-	PairingExpiresAt  *time.Time `json:"pairingExpiresAt,omitempty"`
-	DeviceTokenHash   *string    `json:"-"`
-	Status            string     `json:"status"`
-	Volume            int        `json:"volume"`
-	LastSeenAt        *time.Time `json:"lastSeenAt,omitempty"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         time.Time  `json:"updatedAt"`
+	ID               string     `json:"id"`
+	BusinessID       string     `json:"businessId"`
+	DeviceName       string     `json:"deviceName"`
+	PairingCode      *string    `json:"pairingCode,omitempty"`
+	PairingExpiresAt *time.Time `json:"pairingExpiresAt,omitempty"`
+	DeviceTokenHash  *string    `json:"-"`
+	Status           string     `json:"status"`
+	Volume           int        `json:"volume"`
+	LastSeenAt       *time.Time `json:"lastSeenAt,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 // StoreSchedule mirrors store_schedules: weekday 0=Sunday.
@@ -435,14 +449,14 @@ type CopyrightDispute struct {
 
 // AuditEvent mirrors audit_events (append-only admin action trail).
 type AuditEvent struct {
-	ID          string     `json:"id"`
-	ActorUserID *string    `json:"actorUserId,omitempty"`
-	Action      string     `json:"action"`
-	EntityType  string     `json:"entityType,omitempty"`
-	EntityID    string     `json:"entityId,omitempty"`
-	Metadata    string     `json:"metadata,omitempty"`
-	IP          string     `json:"ip,omitempty"`
-	CreatedAt   time.Time  `json:"createdAt"`
+	ID          string    `json:"id"`
+	ActorUserID *string   `json:"actorUserId,omitempty"`
+	Action      string    `json:"action"`
+	EntityType  string    `json:"entityType,omitempty"`
+	EntityID    string    `json:"entityId,omitempty"`
+	Metadata    string    `json:"metadata,omitempty"`
+	IP          string    `json:"ip,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 // Playlist mirrors playlists.
@@ -491,35 +505,49 @@ type StreamingLog struct {
 }
 
 // PartnerSettlement mirrors partner_settlements.
+//
+// Canon (방향결정서 §5-1): 유통 순매출 70:30 (파트너 70). GrossAmountKRW
+// is the partner's 70% share of attributed revenue (pool share + direct),
+// never a per-play payout. StorePoolKRW/DirectKRW are the admin-attested
+// revenue inputs; StorePlaySecs/TotalStorePlaySecs are the time-pro-rata
+// basis (qualified 30s+ store plays, APPROVED businesses/ACTIVE devices).
+// PlayCount keeps the qualifying store play count for the same window.
 type PartnerSettlement struct {
-	ID               string    `json:"id"`
-	PartnerID        string    `json:"partnerId"`
-	PeriodStart      time.Time `json:"periodStart"`
-	PeriodEnd        time.Time `json:"periodEnd"`
-	GrossAmountKRW   int64     `json:"grossAmountKrw"`
-	WithholdingKRW   int64     `json:"withholdingKrw"`
-	NetAmountKRW     int64     `json:"netAmountKrw"`
-	PlayCount        int64     `json:"playCount"`
-	Status           string     `json:"status"`
-	ForfeitureReason *string    `json:"forfeitureReason,omitempty"`
-	IncomeType       string     `json:"incomeType"`
-	PaidAt           *time.Time `json:"paidAt,omitempty"`
-	PayoutReference  *string    `json:"payoutReference,omitempty"`
-	CreatedAt        time.Time  `json:"createdAt"`
-	UpdatedAt        time.Time  `json:"updatedAt"`
+	ID                 string     `json:"id"`
+	PartnerID          string     `json:"partnerId"`
+	PeriodStart        time.Time  `json:"periodStart"`
+	PeriodEnd          time.Time  `json:"periodEnd"`
+	GrossAmountKRW     int64      `json:"grossAmountKrw"`
+	WithholdingKRW     int64      `json:"withholdingKrw"`
+	NetAmountKRW       int64      `json:"netAmountKrw"`
+	PlayCount          int64      `json:"playCount"`
+	StorePoolKRW       int64      `json:"storePoolKrw"`
+	DirectKRW          int64      `json:"directKrw"`
+	StorePlaySecs      int64      `json:"storePlaySecs"`
+	TotalStorePlaySecs int64      `json:"totalStorePlaySecs"`
+	Status             string     `json:"status"`
+	HoldReason         *string    `json:"holdReason,omitempty"`
+	HeldAt             *time.Time `json:"heldAt,omitempty"`
+	HeldBy             *string    `json:"heldBy,omitempty"`
+	ForfeitureReason   *string    `json:"forfeitureReason,omitempty"`
+	IncomeType         string     `json:"incomeType"`
+	PaidAt             *time.Time `json:"paidAt,omitempty"`
+	PayoutReference    *string    `json:"payoutReference,omitempty"`
+	CreatedAt          time.Time  `json:"createdAt"`
+	UpdatedAt          time.Time  `json:"updatedAt"`
 }
 
 // Notification kinds (notifications.kind).
 const (
-	NotifyDisputeTakedown     = "DISPUTE_TAKEDOWN"
-	NotifyDisputeCounter      = "DISPUTE_COUNTER"
-	NotifyDisputeResolved     = "DISPUTE_RESOLVED"
-	NotifySettlementCalc      = "SETTLEMENT_CALCULATED"
-	NotifySettlementApproved  = "SETTLEMENT_APPROVED"
-	NotifySettlementPaid      = "SETTLEMENT_PAID"
-	NotifySubVerified         = "SUBSCRIPTION_VERIFIED"
-	NotifySubRejected         = "SUBSCRIPTION_REJECTED"
-	NotifyNotice              = "NOTICE"
+	NotifyDisputeTakedown    = "DISPUTE_TAKEDOWN"
+	NotifyDisputeCounter     = "DISPUTE_COUNTER"
+	NotifyDisputeResolved    = "DISPUTE_RESOLVED"
+	NotifySettlementCalc     = "SETTLEMENT_CALCULATED"
+	NotifySettlementApproved = "SETTLEMENT_APPROVED"
+	NotifySettlementPaid     = "SETTLEMENT_PAID"
+	NotifySubVerified        = "SUBSCRIPTION_VERIFIED"
+	NotifySubRejected        = "SUBSCRIPTION_REJECTED"
+	NotifyNotice             = "NOTICE"
 )
 
 // Notification mirrors the notifications table.
@@ -545,6 +573,8 @@ const (
 	AuditSettleCalculate    = "SETTLEMENT_CALCULATE"
 	AuditSettleApprove      = "SETTLEMENT_APPROVE"
 	AuditSettleMarkPaid     = "SETTLEMENT_MARK_PAID"
+	AuditSettleHold         = "SETTLEMENT_HOLD"
+	AuditSettleRelease      = "SETTLEMENT_RELEASE"
 	AuditUserSetActive      = "USER_SET_ACTIVE"
 	AuditUserSetRole        = "USER_SET_ROLE"
 	AuditCurationCreate     = "CURATION_CREATE"

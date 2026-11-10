@@ -95,9 +95,13 @@ erDiagram
     uuid partner_id FK
     date period_start
     date period_end "unique(partner,period)"
-    bigint gross_amount_krw
-    bigint withholding_krw "3.3%"
+    bigint gross_amount_krw "partner 70%"
+    bigint withholding_krw "3.3%|8.8%"
     bigint net_amount_krw
+    bigint store_pool_krw "attested pool"
+    bigint direct_krw "attributed"
+    bigint store_play_secs "basis"
+    bigint total_store_play_secs "basis total"
     text status "PENDING|APPROVED|PAID|FORFEITED"
   }
 ```
@@ -223,13 +227,15 @@ indexes `(played_at)`, `(track_id)`, `(partner_id,played_at)`.
 ### 16. `partner_settlements`
 `id, partner_id FK CASCADE, period_start DATE, period_end DATE,`
 `gross/withholding/net/play_count BIGINT DEFAULT 0 CHECK>=0,`
+`store_pool_krw/direct_krw/store_play_secs/total_store_play_secs BIGINT DEFAULT 0 CHECK>=0` (70:30 canon inputs + basis, migration 000013),
 `status CHECK(PENDING|APPROVED|PAID|FORFEITED) DEFAULT PENDING, forfeiture_reason?,`
 `paid_at?, payout_reference?` (batch 4; `mark-paid` sets both, APPROVED→PAID once).
 Violation forfeits write status `FORFEITED` with `forfeiture_reason='FORFEITED_VIOLATION'`.
 `income_type DEFAULT 'BUSINESS_33' (B9; OTHER_88 = 8.8%),`
 `created_at, updated_at, UNIQUE(partner_id,period_start,period_end), CHECK(start<=end)`.
 `Upsert` per partner+period; `Approve` refuses `FORFEITED`.
-Math: `gross=plays*rate`, `withholding=gross*33/1000` (or `*88/1000`), `net=gross-withholding`,
+Math (70:30): `share=pool*partnerSecs/totalSecs`, `gross=(share+direct)*70/100`,
+`withholding=gross*33/1000` (or `*88/1000`), `net=gross-withholding`,
 violated (`SUSPENDED|TERMINATED` or upheld>0) → `FORFEITED/FORFEITED_VIOLATION/net=0`.
 
 ### 17. `user_blocks` (3-strike)

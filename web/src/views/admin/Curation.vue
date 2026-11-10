@@ -78,7 +78,8 @@
         </div>
         <h2 class="text-sm font-bold text-white">파트너 월별 음원 정산 배치 실행</h2>
         <p class="text-xs text-neutral-400 mt-0.5">
-          기간 내 유효 스트리밍(30초 이상) 데이터를 집계하여 원천징수(3.3%)를 차감한 정산 금액을 계산합니다.
+          유통 순매출 70:30 (파트너 70). 매장 구독료 풀은 30초 이상 매장 재생 시간 비례로 나누고,
+          직접 판매·라이선스는 해당 파트너에 직접 귀속한 뒤 원천징수를 차감합니다. 일반 스트리밍 재생은 정산금을 만들지 않습니다.
         </p>
       </div>
 
@@ -102,10 +103,18 @@
           required
         />
         <UiInput
-          v-model.number="stRatePerPlay"
-          label="1회 스트리밍 단가 (KRW)"
+          v-model.number="stStorePool"
+          label="매장 구독료 풀 (KRW, 기간 합산)"
           type="number"
-          placeholder="10"
+          :min="0"
+          placeholder="0"
+        />
+        <UiInput
+          v-model.number="stDirect"
+          label="직접 귀속 매출 (KRW, 이 파트너)"
+          type="number"
+          :min="0"
+          placeholder="0"
         />
         <UiSelect
           v-model="stIncomeType"
@@ -130,7 +139,11 @@
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-surface-border">
           <div>
-            <span class="text-neutral-400 text-[10px] block">유효 스트리밍 수</span>
+            <span class="text-neutral-400 text-[10px] block">매장 재생 시간 배분 기준</span>
+            <span class="font-bold text-white">{{ lastSettlement.storePlaySecs.toLocaleString() }}초 / 전체 {{ lastSettlement.totalStorePlaySecs.toLocaleString() }}초</span>
+          </div>
+          <div>
+            <span class="text-neutral-400 text-[10px] block">확정 재생 수 (매장 30초+)</span>
             <span class="font-bold text-white">{{ lastSettlement.playCount.toLocaleString() }}회</span>
           </div>
           <div>
@@ -202,7 +215,8 @@ const tdBusy = ref(false);
 const stPartnerId = ref('');
 const stPeriodStart = ref(prevMonthStart());
 const stPeriodEnd = ref(prevMonthEnd());
-const stRatePerPlay = ref(10);
+const stStorePool = ref(0);
+const stDirect = ref(0);
 const stIncomeType = ref('BUSINESS_33');
 const lastSettlement = ref<PartnerSettlement | null>(null);
 const calculating = ref(false);
@@ -277,7 +291,8 @@ async function runSettlement() {
       stPartnerId.value.trim(),
       stPeriodStart.value,
       stPeriodEnd.value,
-      stRatePerPlay.value || 10,
+      stStorePool.value || 0,
+      stDirect.value || 0,
       stIncomeType.value,
     );
     toast.success('월별 정산 계산 배치가 성공적으로 완료되었습니다.');

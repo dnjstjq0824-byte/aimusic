@@ -54,7 +54,7 @@ func (r *PlaylistRepo) ListByOwner(ctx context.Context, ownerID string) ([]*doma
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.Playlist
+	out := []*domain.Playlist{}
 	for rows.Next() {
 		p, err := scanPlaylist(rows)
 		if err != nil {
@@ -74,7 +74,7 @@ func (r *PlaylistRepo) ListOfficialCuration(ctx context.Context) ([]*domain.Play
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.Playlist
+	out := []*domain.Playlist{}
 	for rows.Next() {
 		p, err := scanPlaylist(rows)
 		if err != nil {
@@ -125,7 +125,7 @@ func (r *PlaylistRepo) ListTracks(ctx context.Context, playlistID string) ([]*do
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.PlaylistTrack
+	out := []*domain.PlaylistTrack{}
 	for rows.Next() {
 		t := &domain.PlaylistTrack{}
 		if err := rows.Scan(&t.ID, &t.PlaylistID, &t.TrackID, &t.Position, &t.AddedAt); err != nil {
@@ -315,14 +315,18 @@ type SettlementRepo struct{ db *sql.DB }
 
 func scanSettlement(row interface{ Scan(...any) error }) (*domain.PartnerSettlement, error) {
 	s := &domain.PartnerSettlement{}
-	var reason, payoutRef sql.NullString
-	var paidAt sql.NullTime
+	var reason, payoutRef, holdReason, heldBy sql.NullString
+	var paidAt, heldAt sql.NullTime
 	err := row.Scan(&s.ID, &s.PartnerID, &s.PeriodStart, &s.PeriodEnd, &s.GrossAmountKRW,
-		&s.WithholdingKRW, &s.NetAmountKRW, &s.PlayCount, &s.Status, &reason, &s.IncomeType,
-		&paidAt, &payoutRef, &s.CreatedAt, &s.UpdatedAt)
+		&s.WithholdingKRW, &s.NetAmountKRW, &s.PlayCount, &s.StorePoolKRW, &s.DirectKRW,
+		&s.StorePlaySecs, &s.TotalStorePlaySecs, &s.Status, &holdReason, &heldAt, &heldBy,
+		&reason, &s.IncomeType, &paidAt, &payoutRef, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	s.HoldReason = strPtr(holdReason)
+	s.HeldAt = timePtr(heldAt)
+	s.HeldBy = strPtr(heldBy)
 	s.ForfeitureReason = strPtr(reason)
 	s.PaidAt = timePtr(paidAt)
 	s.PayoutReference = strPtr(payoutRef)
@@ -330,26 +334,33 @@ func scanSettlement(row interface{ Scan(...any) error }) (*domain.PartnerSettlem
 }
 
 const settlementColumns = `id::text, partner_id::text, period_start, period_end, gross_amount_krw,
-	withholding_krw, net_amount_krw, play_count, status, forfeiture_reason, income_type,
-	paid_at, payout_reference, created_at, updated_at`
+	withholding_krw, net_amount_krw, play_count, store_pool_krw, direct_krw,
+	store_play_secs, total_store_play_secs, status, hold_reason, held_at, held_by::text,
+	forfeiture_reason, income_type, paid_at, payout_reference, created_at, updated_at`
 
 // Upsert writes a settlement row per partner+period.
 func (r *SettlementRepo) Upsert(ctx context.Context, s *domain.PartnerSettlement) (*domain.PartnerSettlement, error) {
 	return scanSettlement(r.db.QueryRowContext(ctx, `
 		INSERT INTO partner_settlements (partner_id, period_start, period_end, gross_amount_krw,
-			withholding_krw, net_amount_krw, play_count, status, forfeiture_reason, income_type)
-		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			withholding_krw, net_amount_krw, play_count, store_pool_krw, direct_krw,
+			store_play_secs, total_store_play_secs, status, forfeiture_reason, income_type)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		ON CONFLICT (partner_id, period_start, period_end) DO UPDATE SET
 			gross_amount_krw = EXCLUDED.gross_amount_krw,
 			withholding_krw = EXCLUDED.withholding_krw,
 			net_amount_krw = EXCLUDED.net_amount_krw,
 			play_count = EXCLUDED.play_count,
+			store_pool_krw = EXCLUDED.store_pool_krw,
+			direct_krw = EXCLUDED.direct_krw,
+			store_play_secs = EXCLUDED.store_play_secs,
+			total_store_play_secs = EXCLUDED.total_store_play_secs,
 			status = EXCLUDED.status,
 			forfeiture_reason = EXCLUDED.forfeiture_reason,
 			income_type = EXCLUDED.income_type
 		RETURNING `+settlementColumns,
 		s.PartnerID, s.PeriodStart, s.PeriodEnd, s.GrossAmountKRW,
-		s.WithholdingKRW, s.NetAmountKRW, s.PlayCount, s.Status, nullStr(s.ForfeitureReason), s.IncomeType))
+		s.WithholdingKRW, s.NetAmountKRW, s.PlayCount, s.StorePoolKRW, s.DirectKRW,
+		s.StorePlaySecs, s.TotalStorePlaySecs, s.Status, nullStr(s.ForfeitureReason), s.IncomeType))
 }
 
 // GetByPartnerPeriod returns one settlement row.
@@ -372,7 +383,7 @@ func (r *SettlementRepo) ListByPartner(ctx context.Context, partnerID string) ([
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.PartnerSettlement
+	out := []*domain.PartnerSettlement{}
 	for rows.Next() {
 		s, err := scanSettlement(rows)
 		if err != nil {
@@ -389,6 +400,44 @@ func (r *SettlementRepo) UpdateStatus(ctx context.Context, id, status string, fo
 		`UPDATE partner_settlements SET status = $2, forfeiture_reason = $3 WHERE id = $1::uuid`,
 		id, status, nullStr(forfeitReason))
 	return err
+}
+
+// Hold suspends a PENDING settlement exactly once, recording reason + actor.
+// The status predicate makes double-holds safe (sql.ErrNoRows).
+func (r *SettlementRepo) Hold(ctx context.Context, id, reason, actorID string) error {
+	tag, err := r.db.ExecContext(ctx,
+		`UPDATE partner_settlements
+		SET status = 'HELD', hold_reason = $2, held_at = NOW(), held_by = $3::uuid
+		WHERE id = $1::uuid AND status = 'PENDING'`,
+		id, reason, actorID)
+	if err != nil {
+		return err
+	}
+	if n, err := tag.RowsAffected(); err != nil || n == 0 {
+		if err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// Release returns a HELD settlement to PENDING. Hold history (reason, actor,
+// time) stays on the row as the audit trail.
+func (r *SettlementRepo) Release(ctx context.Context, id string) error {
+	tag, err := r.db.ExecContext(ctx,
+		`UPDATE partner_settlements SET status = 'PENDING'
+		WHERE id = $1::uuid AND status = 'HELD'`, id)
+	if err != nil {
+		return err
+	}
+	if n, err := tag.RowsAffected(); err != nil || n == 0 {
+		if err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // MarkPaid transitions APPROVED -> PAID exactly once and records the payout

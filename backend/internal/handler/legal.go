@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/repository"
 )
 
@@ -72,8 +71,5 @@ func (h *LegalHandler) ListPendingConsents(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
-	if terms == nil {
-		terms = []*domain.LegalTerm{}
-	}
-	ok(c, terms)
+	okList(c, terms)
 }

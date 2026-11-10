@@ -21,6 +21,8 @@ import (
 type Storage interface {
 	PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	// Get fetches a whole object (at most maxBytes+1 probed; error when over).
+	Get(ctx context.Context, bucket, key string, maxBytes int64) ([]byte, error)
 	Delete(ctx context.Context, bucket, key string) error
 	// ListPrefix returns every key under prefix (directory-style listing).
 	ListPrefix(ctx context.Context, bucket, prefix string) ([]string, error)
@@ -98,6 +100,36 @@ func (s *S3Compat) PresignPut(ctx context.Context, bucket, key string, ttl time.
 // PresignGet returns a presigned URL for downloading key via HTTP GET.
 func (s *S3Compat) PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
 	return s.presign("GET", bucket, key, ttl)
+}
+
+// Get fetches a whole object via a presigned URL, refusing bodies over
+// maxBytes so a corrupt key cannot OOM the API.
+func (s *S3Compat) Get(ctx context.Context, bucket, key string, maxBytes int64) ([]byte, error) {
+	signed, err := s.presign("GET", bucket, key, 5*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, signed, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		io.Copy(io.Discard, resp.Body)
+		return nil, fmt.Errorf("get %s/%s: unexpected status %d", bucket, key, resp.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > maxBytes {
+		return nil, fmt.Errorf("get %s/%s: object exceeds %d bytes", bucket, key, maxBytes)
+	}
+	return body, nil
 }
 
 // Delete removes an object; missing keys are treated as success.

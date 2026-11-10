@@ -350,6 +350,15 @@ func ok(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// okList answers a collection endpoint, normalizing a nil slice to [] so
+// empty lists never serialize as data:null for API clients.
+func okList[T any](c *gin.Context, items []T) {
+	if items == nil {
+		items = []T{}
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
 func created(c *gin.Context, data any) {
 	c.JSON(http.StatusCreated, gin.H{"data": data})
 }

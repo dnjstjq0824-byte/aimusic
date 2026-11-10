@@ -295,7 +295,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    stores.value = await partnerApi.listStores();
+    stores.value = (await partnerApi.listStores()) ?? [];
     myPlaylists.value = await playlistApi.listMine().catch(() => []);
   } catch (err: unknown) {
     error.value = errMessageOf(err);
@@ -426,7 +426,7 @@ async function openLogs(store: StoreBusiness, d: StoreDevice): Promise<void> {
   logs.value = [];
   logsOpen.value = true;
   try {
-    logs.value = await partnerApi.storeDeviceLogs(store.id, d.id, 50);
+    logs.value = (await partnerApi.storeDeviceLogs(store.id, d.id, 50)) ?? [];
   } catch (err: unknown) {
     detailErrors[store.id] = errMessageOf(err);
     logsOpen.value = false;
