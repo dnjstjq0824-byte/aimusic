@@ -95,12 +95,39 @@ export default {
       const headers = new Headers(res.headers);
       headers.set('Access-Control-Allow-Origin', '*');
       headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-      // VOD artifacts are immutable once packaged: cache segments hard,
-      // playlists for an hour (grants themselves expire in minutes).
+      // VOD segments are immutable once packaged: cache hard.
       if (file.endsWith('.ts')) {
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
       } else if (file.endsWith('.m3u8')) {
-        headers.set('Cache-Control', 'public, max-age=3600');
+        // HLS clients (hls.js, Safari, just_audio) resolve segment URIs
+        // relative to the playlist WITHOUT forwarding its query string,
+        // so every segment would 403 here. Embed the already-verified
+        // grant into each media URI instead of patching every player.
+        // Private: one grant must never be served to another client.
+        if (res.status === 200 && !headers.get('content-encoding')) {
+          const grant = `exp=${encodeURIComponent(exp)}&jti=${encodeURIComponent(jti)}&sig=${encodeURIComponent(sig)}`;
+          const text = await res.text();
+          const rewritten = text
+            .split('\n')
+            .map((line) => {
+              const t = line.trim();
+              if (t === '' || t.startsWith('#')) return line;
+              if (/^https?:\/\//i.test(t)) return line;
+              const hash = t.indexOf('#');
+              const path = hash === -1 ? t : t.slice(0, hash);
+              const frag = hash === -1 ? '' : t.slice(hash);
+              return `${path}${path.includes('?') ? '&' : '?'}${grant}${frag}`;
+            })
+            .join('\n');
+          headers.set('Cache-Control', 'private, max-age=60');
+          headers.delete('content-length');
+          return new Response(rewritten, {
+            status: res.status,
+            statusText: res.statusText,
+            headers,
+          });
+        }
+        headers.set('Cache-Control', 'private, max-age=60');
       }
       return new Response(res.body, {
         status: res.status,
@@ -143,7 +170,7 @@ export default {
     headers.set(
       'Content-Security-Policy',
       "default-src 'self'; " +
-        'script-src \'self\'; ' +
+        "script-src 'self' https://static.cloudflareinsights.com; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
         'font-src \'self\' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; ' +
         'img-src \'self\' data: blob:; ' +
