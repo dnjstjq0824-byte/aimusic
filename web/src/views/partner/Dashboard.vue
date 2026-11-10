@@ -213,8 +213,8 @@ onMounted(async () => {
       partnerApi.listMyTracks(50, 0),
       partnerApi.listSubscriptions(),
     ]);
-    tracks.value = t;
-    subs.value = s;
+    tracks.value = t ?? [];
+    subs.value = s ?? [];
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {

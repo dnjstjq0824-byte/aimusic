@@ -153,7 +153,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    subs.value = await partnerApi.listSubscriptions();
+    subs.value = (await partnerApi.listSubscriptions()) ?? [];
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {

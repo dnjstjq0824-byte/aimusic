@@ -201,7 +201,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    jobs.value = await partnerApi.listGenerations();
+    jobs.value = (await partnerApi.listGenerations()) ?? [];
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {
