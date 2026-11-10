@@ -1,0 +1,126 @@
+{
+ "results": [
+  {
+   "name": "setup tokens+consent",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "UI login redirects home",
+   "pass": true,
+   "detail": "http://localhost:15201/"
+  },
+  {
+   "name": "A-V2-1 header library -> /my-library",
+   "pass": true,
+   "detail": "http://localhost:15201/my-library"
+  },
+  {
+   "name": "EV-01 hero library CTA lands /my-library",
+   "pass": true,
+   "detail": "http://localhost:15201/my-library"
+  },
+  {
+   "name": "A-V2-2 #Cyberpunk shows 3 demo tracks",
+   "pass": true,
+   "detail": "cards~0"
+  },
+  {
+   "name": "A-V2-3 logged-out play redirects to login (no success toast)",
+   "pass": true,
+   "detail": "http://localhost:15201/login?redirect=/playlists"
+  },
+  {
+   "name": "A-V2-3 logged-in mix actually plays",
+   "pass": true,
+   "detail": "toast=true playing=true"
+  },
+  {
+   "name": "A-V2-4 logout stops playback (idle bar)",
+   "pass": true,
+   "detail": "wasPlaying=true"
+  },
+  {
+   "name": "A-V2-5 legal TOS breaks+headings",
+   "pass": true,
+   "detail": "literalN=false heads=2"
+  },
+  {
+   "name": "A-V2-5 legal PRIVACY breaks+headings",
+   "pass": true,
+   "detail": "literalN=false heads=2"
+  },
+  {
+   "name": "A-V2-5 legal COPYRIGHT_POLICY breaks+headings",
+   "pass": true,
+   "detail": "literalN=false heads=2"
+  },
+  {
+   "name": "A-V2-5 legal PARTNER_CONTRACT breaks+headings",
+   "pass": true,
+   "detail": "literalN=false heads=2"
+  },
+  {
+   "name": "A-V2-6 subscription empty renders (no offline-queue claim)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-08 create modal opens at 390",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-09 demo cards lack cert badge",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-12 empty search guidance toast",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-P04 single 2FA action + status",
+   "pass": true,
+   "detail": "start=true off=false"
+  },
+  {
+   "name": "EV-P03 detail renders BPM/ID",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-11 checkout user message (no var name)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-P05 dashboard plan label from data",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-P02 calendar button present",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "EV-P08 no backend var name on console",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "mobile 390 captures",
+   "pass": true,
+   "detail": ""
+  }
+ ],
+ "errs": [
+  "HTTP404: http://localhost:15201/api/v1/playback/state/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "CONSOLE: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "HTTP401: http://localhost:15201/api/v1/playback/state/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "CONSOLE: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+  "PAGEERROR: Cannot read properties of null (reading 'length') @     at http://localhost:15201/src/views/partner/Dashboard.vue:213:44 <-     at renderFnWithContext (http://localhost:15201/node_modules/.vite/deps/chunk-G2AWSISE.js?v=dd2c03a0:3016:13)"
+ ]
+}

@@ -1,0 +1,226 @@
+[
+ {
+  "w": 1920,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1920,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1920,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1920,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1440,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1440,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1440,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1440,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1280,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1280,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1280,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1280,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1024,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1024,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1024,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 1024,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 768,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 768,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 768,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 768,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 640,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 640,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 640,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 640,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "visible"
+ },
+ {
+  "w": 390,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 390,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 390,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 390,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 360,
+  "name": "home",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 360,
+  "name": "explore",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 360,
+  "name": "pricing",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ },
+ {
+  "w": 360,
+  "name": "login",
+  "overflow": 0,
+  "hamburger": true,
+  "signup": "hidden"
+ }
+]
