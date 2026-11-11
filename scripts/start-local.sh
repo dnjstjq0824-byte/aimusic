@@ -263,6 +263,56 @@ if [ "$BATCH12_EXISTS" != "1" ]; then
 else
   echo "[start-local] batch12 schema already present; skipping 000012_generation_guards.up.sql"
 fi
+BATCH13_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='partner_settlements' AND column_name='store_pool_krw';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH13_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000013_settlement_7030.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000013_settlement_7030.up.sql
+  echo "[start-local] batch13 settlement 70:30 schema applied"
+else
+  echo "[start-local] batch13 schema already present; skipping 000013_settlement_7030.up.sql"
+fi
+BATCH14_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='partner_settlements' AND column_name='hold_reason';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH14_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000014_settlement_hold.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000014_settlement_hold.up.sql
+  echo "[start-local] batch14 settlement hold schema applied"
+else
+  echo "[start-local] batch14 schema already present; skipping 000014_settlement_hold.up.sql"
+fi
+BATCH15_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.track_certificates') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH15_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000015_track_certificates.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000015_track_certificates.up.sql
+  echo "[start-local] batch15 track certificates schema applied"
+else
+  echo "[start-local] batch15 schema already present; skipping 000015_track_certificates.up.sql"
+fi
+BATCH16_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.download_logs') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH16_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000016_download_logs.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000016_download_logs.up.sql
+  echo "[start-local] batch16 download logs schema applied"
+else
+  echo "[start-local] batch16 schema already present; skipping 000016_download_logs.up.sql"
+fi
+BATCH17_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='ai_credit_parts';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH17_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000017_ownership_gate.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000017_ownership_gate.up.sql
+  echo "[start-local] batch17 ownership gate schema applied"
+else
+  echo "[start-local] batch17 schema already present; skipping 000017_ownership_gate.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

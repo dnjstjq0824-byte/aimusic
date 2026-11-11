@@ -862,6 +862,9 @@ section "T09 dispute TAKEDOWN_TEMP + skip + counter + restore/permanent"
 # Resolve track ids for both ffmpeg and fallback paths.
 if [ "$HAVE_FFMPEG" -eq 1 ] && [ -n "${HAPPY_TRACK_ID:-}" ]; then
   DISPUTE_TRACK_A="$HAPPY_TRACK_ID"
+  code="$(api POST "/playlists" "$USER_TOKEN" '{"title":"E2E Dispute Mix","isPublic":false}')"
+  assert_status "T09 dispute playlist create" "201" "$code"
+  PLAYLIST_ID="$(jget "data.id")"
 else
   DISPUTE_TRACK_A="$(seed_ready_track "$PA_PARTNER_ID" "E2E Dispute A")"
   HAPPY_TRACK_ID="$DISPUTE_TRACK_A"

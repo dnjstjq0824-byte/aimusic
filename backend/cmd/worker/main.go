@@ -427,6 +427,7 @@ func (w *worker) recheckLicense(ctx context.Context, track *domain.Track, policy
 		SubscriptionID:        rights.SubscriptionID,
 		GeneratedAt:           rights.GeneratedAt,
 		SourceModel:           rights.SourceModel,
+		HumanContributions:    rights.HumanContributionTypes,
 		CollectiveTrustStatus: rights.CollectiveTrustStatus,
 		Gate1PolicyPassed:     true,
 		Gate2DatePassed:       true,

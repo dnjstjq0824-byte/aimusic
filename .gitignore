@@ -35,6 +35,8 @@ mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/build/
+mobile/android/build/
+mobile/android/app/build/
 mobile/android/local.properties
 mobile/android/app/debug/
 mobile/android/app/profile/
