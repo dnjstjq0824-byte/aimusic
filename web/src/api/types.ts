@@ -80,6 +80,7 @@ export interface Track {
   aiProvider: string;
   aiGenerated: boolean;
   aiGenerationType?: AIDisclosure | string;
+  aiCreditParts?: string[];
   aiModelVersion?: string | null;
   aiPrompt?: string | null;
   isPromptPublic?: boolean;

@@ -17,6 +17,7 @@ const (
 	ProviderStable     = "STABLE_AUDIO"
 	ProviderSoundraw   = "SOUNDRAW"
 	ProviderMubert     = "MUBERT"
+	ProviderElevenLabs = "ELEVENLABS"
 	ProviderCustomOpen = "CUSTOM_OPEN_MODEL"
 )
 
@@ -24,7 +25,7 @@ const (
 func ValidProvider(p string) bool {
 	switch p {
 	case ProviderSuno, ProviderUdio, ProviderAiva, ProviderStable,
-		ProviderSoundraw, ProviderMubert, ProviderCustomOpen:
+		ProviderSoundraw, ProviderMubert, ProviderElevenLabs, ProviderCustomOpen:
 		return true
 	}
 	return false
@@ -264,6 +265,7 @@ type Track struct {
 	Genre                *string   `json:"genre,omitempty"`
 	MoodTags             []string  `json:"moodTags,omitempty"`
 	AIGenerationType     string    `json:"aiGenerationType"`
+	AICreditParts        []string  `json:"aiCreditParts,omitempty"`
 	AIModelVersion       *string   `json:"aiModelVersion,omitempty"`
 	AIPrompt             *string   `json:"aiPrompt,omitempty"`
 	IsPromptPublic       bool      `json:"isPromptPublic"`

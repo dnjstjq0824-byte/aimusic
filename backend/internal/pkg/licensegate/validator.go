@@ -149,9 +149,41 @@ func ValidateSourceModel(sourceModel string) error {
 	return nil
 }
 
+// ValidAICreditParts are the DDEX-style AI-generation scope declarations:
+// which parts of the audio are AI-generated (all three = full AI audio).
+var ValidAICreditParts = []string{"LYRICS", "VOCALS", "INSTRUMENTAL"}
+
+// NormalizeAICreditParts upper-cases, dedupes, and validates AI-credit
+// parts. Empty input yields nil without error (credits are optional).
+func NormalizeAICreditParts(parts []string) ([]string, error) {
+	if len(parts) == 0 {
+		return nil, nil
+	}
+	out := make([]string, 0, len(parts))
+	seen := map[string]bool{}
+	for _, p := range parts {
+		up := strings.ToUpper(strings.TrimSpace(p))
+		valid := false
+		for _, v := range ValidAICreditParts {
+			if up == v {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return nil, fmt.Errorf("%w: aiCreditParts %q", domain.ErrInvalidInput, p)
+		}
+		if !seen[up] {
+			seen[up] = true
+			out = append(out, up)
+		}
+	}
+	return out, nil
+}
+
 // PolicyVersion pins the certification semantics a track snapshot was taken
 // under. Bump when gate rules change so old snapshots stay interpretable.
-const PolicyVersion = "2026-02-01"
+const PolicyVersion = "2026-11-11"
 
 // CertSnapshot is the track-level commercial-certification record: the exact
 // inputs and gate outcomes frozen at decision time, independent of later
@@ -163,6 +195,7 @@ type CertSnapshot struct {
 	SubscriptionID        *string    `json:"subscriptionId,omitempty"`
 	GeneratedAt           *time.Time `json:"generatedAt,omitempty"`
 	SourceModel           *string    `json:"sourceModel,omitempty"`
+	HumanContributions    []string   `json:"humanContributions,omitempty"`
 	CollectiveTrustStatus string     `json:"collectiveTrustStatus,omitempty"`
 	Gate1PolicyPassed     bool       `json:"gate1PolicyPassed"`
 	Gate2DatePassed       bool       `json:"gate2DatePassed"`

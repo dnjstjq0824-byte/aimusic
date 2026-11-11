@@ -150,6 +150,10 @@
                 {{ track.aiGenerationType === 'AI_ASSISTED_HUMAN' ? 'AI+인간 공동 창작 (Human-in-the-loop)' : '순수 AI 생성물 (Full AI)' }}
               </span>
             </div>
+            <div v-if="aiCreditKo" class="p-3 rounded-xl bg-surface-0 border border-surface-border sm:col-span-2">
+              <span class="text-neutral-500 text-[10px] uppercase font-bold block">AI 생성 범위 (AI 크레딧)</span>
+              <span class="font-semibold text-white text-sm">{{ aiCreditKo }}</span>
+            </div>
           </div>
 
           <!-- Prompt -->
@@ -346,6 +350,16 @@ const STATUS_KO: Record<string, string> = {
 const statusKo = computed(() => {
   if (!track.value) return '';
   return STATUS_KO[track.value.status] ?? '처리 중';
+});
+
+const AI_CREDIT_KO: Record<string, string> = { LYRICS: '가사', VOCALS: '보컬', INSTRUMENTAL: '반주' };
+
+const aiCreditKo = computed(() => {
+  const parts = track.value?.aiCreditParts ?? [];
+  if (parts.length === 0) return '';
+  const named = parts.map((p) => AI_CREDIT_KO[p] ?? p);
+  const scope = parts.length >= 3 ? '전체 AI 생성' : '부분 AI 생성';
+  return `${scope} (${named.join('·')})`;
 });
 
 function toPeaks(raw: unknown): number[] {

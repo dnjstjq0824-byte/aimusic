@@ -6,6 +6,20 @@ import type { AIDisclosure, AIProviderPolicy, PartnerAISubscription, PrecheckOut
 
 export type GateStatus = 'idle' | 'checking' | 'pass' | 'fail';
 
+export const AI_CREDIT_PART_OPTIONS = [
+  { code: 'LYRICS', label: '가사' },
+  { code: 'VOCALS', label: '보컬' },
+  { code: 'INSTRUMENTAL', label: '반주' },
+] as const;
+
+export const HUMAN_CONTRIBUTION_OPTIONS = [
+  { code: 'LYRICS', label: '작사' },
+  { code: 'MELODY_INPUT', label: '멜로디 입력' },
+  { code: 'ARRANGEMENT', label: '편곡' },
+  { code: 'PERFORMANCE', label: '실연' },
+  { code: 'MIX_SELECTION', label: '믹스·선별' },
+] as const;
+
 // Gate1-2 = provider commercial eligibility + generation-date/subscription checks
 // (server-side licensegate). Gate3 = file-level checks at finalize/transcode.
 export const usePartnerUploadStore = defineStore('partnerUpload', () => {
@@ -41,6 +55,22 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   const isInstrumental = ref(false);
   const lyrics = ref('');
   const humanContributionDesc = ref('');
+  const humanContributionTypes = ref<string[]>([]);
+  const aiCreditParts = ref<string[]>([]);
+
+  function toggleListValue(list: { value: string[] }, code: string): void {
+    const i = list.value.indexOf(code);
+    if (i >= 0) list.value.splice(i, 1);
+    else list.value.push(code);
+  }
+
+  function toggleAiCreditPart(code: string): void {
+    toggleListValue(aiCreditParts, code);
+  }
+
+  function toggleHumanContribution(code: string): void {
+    toggleListValue(humanContributionTypes, code);
+  }
   const collectiveTrust = ref('NONE');
   const collectiveName = ref('');
   const declaresOwnership = ref(false);
@@ -242,6 +272,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
         genre: genre.value.trim() || undefined,
         moodTags,
         aiGenerationType: disclosure.value,
+        aiCreditParts: aiCreditParts.value.length > 0 ? [...aiCreditParts.value] : undefined,
         aiModelVersion: sourceModel.value.trim() || undefined,
         aiPrompt: aiPrompt.value.trim() || undefined,
         isPromptPublic: isPromptPublic.value,
@@ -258,6 +289,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
           confirmedIndemnification: agreesCommercialTerms.value,
           planTierUsed: effectiveTier,
           providerTrackUrl: providerTrackUrl.value.trim() || undefined,
+          humanContributionTypes: humanContributionTypes.value.length > 0 ? [...humanContributionTypes.value] : undefined,
           humanContributionDesc: humanContributionDesc.value.trim() || undefined,
           sourceModel: sourceModel.value || undefined,
           subscriptionId: subscriptionId.value || undefined,
@@ -305,6 +337,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     isInstrumental.value = false;
     lyrics.value = '';
     humanContributionDesc.value = '';
+    humanContributionTypes.value = [];
+    aiCreditParts.value = [];
     collectiveTrust.value = 'NONE';
     collectiveName.value = '';
     declaresOwnership.value = false;
@@ -321,7 +355,8 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     gate12, gate12Code, gate12Message, grant,
     gate3, gate3Message, uploading, uploadProgress, stagedKey,
     title, albumId, genre, moodTagsInput, disclosure, sourceModel,
-    aiPrompt, isPromptPublic, isInstrumental, lyrics, humanContributionDesc,
+    aiPrompt, isPromptPublic, isInstrumental, lyrics, humanContributionDesc, humanContributionTypes, aiCreditParts,
+    toggleAiCreditPart, toggleHumanContribution,
     collectiveTrust, collectiveName,
     declaresOwnership, declaresNoVoiceClone, declaresTrainingConsent, agreesCommercialTerms,
     finalized, finalizing, finalizeError,

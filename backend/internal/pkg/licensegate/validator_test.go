@@ -82,6 +82,24 @@ func TestValidateCommercialEligibility(t *testing.T) {
 		RejectionMessageKo:        "AIVA Standard는 Sync 전용입니다.",
 	}
 	blocked := &Policy{Provider: "MUBERT", AllowsStandaloneStreaming: false, RejectionMessageKo: "차단"}
+	elevenPolicy := &Policy{
+		Provider:                  "ELEVENLABS",
+		AllowsStandaloneStreaming: true,
+		AllowedPlanTiers:          []string{"Creator", "Pro", "Scale", "Business", "Enterprise"},
+		BlockedPlanTiers:          []string{"Free", "Starter", "Trial"},
+	}
+	soundrawBlocked := &Policy{
+		Provider:                  "SOUNDRAW",
+		AllowsStandaloneStreaming: false,
+		AllowedPlanTiers:          []string{},
+		RejectionMessageKo:        "작곡 저작권이 Soundraw에 귀속되어 생성자 소유권 요건을 충족하지 않습니다.",
+	}
+	mubertBlocked := &Policy{
+		Provider:                  "MUBERT",
+		AllowsStandaloneStreaming: false,
+		AllowedPlanTiers:          []string{},
+		RejectionMessageKo:        "MUBERT 생성 음원은 단독 스트리밍 배포가 금지된 라이선스로 생성자 소유권 요건을 충족하지 않습니다.",
+	}
 	udioCutoff := time.Date(2025, 10, 30, 0, 0, 0, 0, time.UTC)
 	udioPolicy := &Policy{
 		Provider:                  "UDIO",
@@ -171,6 +189,32 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			store: &stubStore{policy: allowed, sub: verifiedSub()},
 			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "suno", PlanTierUsed: "Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
 		},
+		{
+			name:  "elevenlabs creator passes",
+			store: &stubStore{policy: elevenPolicy, sub: verifiedSub()},
+			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "ELEVENLABS", PlanTierUsed: "Creator", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+		},
+		{
+			name:     "elevenlabs starter blocked",
+			store:    &stubStore{policy: elevenPolicy, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "ELEVENLABS", PlanTierUsed: "Starter", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "ERR_NON_COMMERCIAL_TIER",
+			wantCode: domain.CodeNonCommercialTier,
+		},
+		{
+			name:     "soundraw ownership blocked all tiers",
+			store:    &stubStore{policy: soundrawBlocked, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SOUNDRAW", PlanTierUsed: "Artist Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "소유권 요건",
+			wantCode: domain.CodeSyncOnlyLicense,
+		},
+		{
+			name:     "mubert ownership blocked all tiers",
+			store:    &stubStore{policy: mubertBlocked, sub: verifiedSub()},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "MUBERT", PlanTierUsed: "Business", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "소유권 요건",
+			wantCode: domain.CodeSyncOnlyLicense,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -227,14 +271,15 @@ func TestBuildCertSnapshotRoundTrip(t *testing.T) {
 	sub := "sub-123"
 	model := "suno-v4"
 	raw, err := BuildCertSnapshot(CertSnapshot{
-		Provider:            "SUNO",
-		PlanTierUsed:        &tier,
-		SubscriptionID:      &sub,
-		GeneratedAt:         &gen,
-		SourceModel:         &model,
+		Provider:              "SUNO",
+		PlanTierUsed:          &tier,
+		SubscriptionID:        &sub,
+		GeneratedAt:           &gen,
+		SourceModel:           &model,
+		HumanContributions:    []string{"LYRICS", "ARRANGEMENT"},
 		CollectiveTrustStatus: domain.CollectiveNone,
-		Gate1PolicyPassed:   true,
-		Gate2DatePassed:     true,
+		Gate1PolicyPassed:     true,
+		Gate2DatePassed:       true,
 	})
 	if err != nil {
 		t.Fatalf("BuildCertSnapshot: %v", err)
@@ -255,6 +300,9 @@ func TestBuildCertSnapshotRoundTrip(t *testing.T) {
 	if got.SourceModel == nil || *got.SourceModel != "suno-v4" {
 		t.Errorf("round trip lost source model: %+v", got)
 	}
+	if len(got.HumanContributions) != 2 || got.HumanContributions[0] != "LYRICS" || got.HumanContributions[1] != "ARRANGEMENT" {
+		t.Errorf("round trip lost human contributions: %+v", got)
+	}
 	if got.GeneratedAt == nil || !got.GeneratedAt.Equal(gen) {
 		t.Errorf("round trip lost generatedAt: %+v", got)
 	}
@@ -272,5 +320,35 @@ func TestBuildCertSnapshotRequiresProvider(t *testing.T) {
 	}
 	if _, err := ParseCertSnapshot("not-json"); err == nil {
 		t.Error("malformed snapshot must fail")
+	}
+}
+
+func TestNormalizeAICreditParts(t *testing.T) {
+	got, err := NormalizeAICreditParts([]string{"lyrics", " VOCALS ", "lyrics", "INSTRUMENTAL"})
+	if err != nil {
+		t.Fatalf("valid parts rejected: %v", err)
+	}
+	want := []string{"LYRICS", "VOCALS", "INSTRUMENTAL"}
+	if len(got) != len(want) {
+		t.Fatalf("normalized = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("normalized = %v, want %v", got, want)
+		}
+	}
+	if _, err := NormalizeAICreditParts([]string{"LYRICS", "FULL_SONG"}); err == nil {
+		t.Error("unknown credit part must fail")
+	} else if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("want ErrInvalidInput, got %v", err)
+	}
+	if _, err := NormalizeAICreditParts([]string{""}); err == nil {
+		t.Error("empty credit part must fail")
+	}
+	if got, err := NormalizeAICreditParts(nil); err != nil || got != nil {
+		t.Errorf("nil parts = %v, %v; want nil, nil", got, err)
+	}
+	if got, err := NormalizeAICreditParts([]string{}); err != nil || got != nil {
+		t.Errorf("empty parts = %v, %v; want nil, nil", got, err)
 	}
 }

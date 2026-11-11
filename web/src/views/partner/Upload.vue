@@ -218,6 +218,36 @@
           <option value="AI_ASSISTED_HUMAN">AI + 인간 공동 창작 (Human-in-the-loop)</option>
         </UiSelect>
 
+        <div class="sm:col-span-2 rounded-xl border border-surface-border bg-surface-0 p-3">
+          <div class="text-xs font-medium text-neutral-300 mb-1">AI 생성 범위 선언 (AI 크레딧, 해당 항목 전부 선택)</div>
+          <p class="text-[11px] text-neutral-500 mb-2">유통사(DDEX) 공개 기준과 동일한 구분입니다. 3개 전부 선택 시 전체 AI 생성으로 표시됩니다.</p>
+          <div class="flex flex-wrap gap-x-5 gap-y-2">
+            <UiCheckbox
+              v-for="opt in AI_CREDIT_PART_OPTIONS"
+              :key="opt.code"
+              :model-value="store.aiCreditParts.includes(opt.code)"
+              @update:model-value="store.toggleAiCreditPart(opt.code)"
+            >
+              {{ opt.label }}
+            </UiCheckbox>
+          </div>
+        </div>
+
+        <div class="sm:col-span-2 rounded-xl border border-surface-border bg-surface-0 p-3">
+          <div class="text-xs font-medium text-neutral-300 mb-1">인간 창작 기여 항목 (해당 항목 전부 선택)</div>
+          <p class="text-[11px] text-neutral-500 mb-2">저작권 등록·분쟁 대응의 증빙 기초가 되며 인증 스냅샷에 기록됩니다.</p>
+          <div class="flex flex-wrap gap-x-5 gap-y-2">
+            <UiCheckbox
+              v-for="opt in HUMAN_CONTRIBUTION_OPTIONS"
+              :key="opt.code"
+              :model-value="store.humanContributionTypes.includes(opt.code)"
+              @update:model-value="store.toggleHumanContribution(opt.code)"
+            >
+              {{ opt.label }}
+            </UiCheckbox>
+          </div>
+        </div>
+
         <div class="sm:col-span-2">
           <UiInput
             v-model="store.aiPrompt"
@@ -269,7 +299,7 @@
         </div>
 
         <UiCheckbox v-model="store.declaresOwnership" required>
-          <strong>[상업용 라이선스 보유 확약]</strong> 본 음원은 단독 스트리밍 유통이 명시된 유료 상업용 플랜 유효 기간 내에 생성되었음을 보증합니다.
+          <strong>[소유권 보유 확약]</strong> 본인은 해당 음원의 적법한 권리자(양수인)이며, 단독 스트리밍 유통이 허용된 유료 플랜의 유효 구독 기간 내에 본인이 생성·다운로드한 음원임을 보증합니다.
         </UiCheckbox>
 
         <UiCheckbox v-model="store.declaresTrainingConsent" required>
@@ -304,7 +334,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { usePartnerUploadStore } from '@/stores/partnerUploadStore';
+import {
+  AI_CREDIT_PART_OPTIONS,
+  HUMAN_CONTRIBUTION_OPTIONS,
+  usePartnerUploadStore,
+} from '@/stores/partnerUploadStore';
 import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
 import UiButton from '@/components/ui/UiButton.vue';

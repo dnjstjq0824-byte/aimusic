@@ -12,6 +12,17 @@
 
     <UiErrorBanner :message="error" title="정책 매트릭스를 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
 
+    <UiCard class="text-xs text-neutral-300 space-y-1.5">
+      <div class="font-bold text-white text-sm">미등록·차단 플랫폼 사유 (소유권 원칙)</div>
+      <ul class="list-disc pl-5 space-y-1 leading-relaxed">
+        <li>Soundraw·Mubert: 작곡권·배포권이 플랫폼에 귀속 — 전면 차단.</li>
+        <li>Boomy·Loudly·Soundful: 저작권 플랫폼 보유, 라이선스에 불과 — 불등록.</li>
+        <li>Beatoven·Ecrett: Sync 전용, 단독 배포 금지 — 불등록.</li>
+        <li>Splash: 양도 문구 없음 — 불등록(양도 입증 시 재심).</li>
+        <li>신규 제공자는 약관 원문에서 양도·이전·보유 중 하나가 확인될 때만 등록.</li>
+      </ul>
+    </UiCard>
+
     <div v-if="loading" class="space-y-2">
       <UiSkeleton height="h-12" width="w-full" />
       <UiSkeleton height="h-12" width="w-full" />
@@ -133,6 +144,7 @@ import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
 import type { AIProviderPolicy } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiCard from '@/components/ui/UiCard.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';

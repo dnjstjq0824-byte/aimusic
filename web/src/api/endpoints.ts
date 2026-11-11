@@ -178,6 +178,7 @@ export const partnerApi = {
     genre?: string;
     moodTags?: string[];
     aiGenerationType?: AIDisclosure | string;
+    aiCreditParts?: string[];
     aiModelVersion?: string;
     aiPrompt?: string;
     isPromptPublic?: boolean;

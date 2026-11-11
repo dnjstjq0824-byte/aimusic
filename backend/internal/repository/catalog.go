@@ -80,11 +80,11 @@ type TrackRepo struct{ db DBTX }
 func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
 	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey sql.NullString
-	var moodsJoined string
+	var moodsJoined, creditsJoined string
 	var duration, bitrate sql.NullInt64
 	var bpm sql.NullFloat64
 	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title,
-		&genre, &moodsJoined, &t.AIGenerationType, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
+		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
 		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
 		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
 		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt)
@@ -94,6 +94,7 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t.AlbumID = strPtr(album)
 	t.Genre = strPtr(genre)
 	t.MoodTags = splitKeywords(moodsJoined)
+	t.AICreditParts = splitKeywords(creditsJoined)
 	t.AIModelVersion = strPtr(modelVer)
 	t.AIPrompt = strPtr(prompt)
 	t.Lyrics = strPtr(lyrics)
@@ -112,6 +113,7 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 
 const trackColumns = `id::text, album_id::text, partner_id::text, title,
 	genre, COALESCE(array_to_string(mood_tags, chr(31)), ''), ai_generation_type,
+	COALESCE(array_to_string(ai_credit_parts, chr(31)), ''),
 	ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
 	duration_ms, original_object_key, audio_fingerprint_hash, hls_prefix, waveform_json,
 	ai_provider, ai_generated, ai_disclosure_text,
@@ -126,14 +128,14 @@ func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track,
 		genType = "FULL_AI"
 	}
 	return scanTrack(r.db.QueryRowContext(ctx, `
-		INSERT INTO tracks (album_id, partner_id, title, genre, mood_tags, ai_generation_type,
+		INSERT INTO tracks (album_id, partner_id, title, genre, mood_tags, ai_generation_type, ai_credit_parts,
 			ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
 			duration_ms, original_object_key, ai_provider, ai_generated, ai_disclosure_text, bitrate_kbps, status)
-		VALUES ($1::uuid, $2::uuid, $3, $4, string_to_array($5, chr(31)), $6,
-			$7, $8, $9, $10, $11,
-			$12, $13, $14, $15, $16, $17, $18)
+		VALUES ($1::uuid, $2::uuid, $3, $4, string_to_array($5, chr(31)), $6, string_to_array($7, chr(31)),
+			$8, $9, $10, $11, $12,
+			$13, $14, $15, $16, $17, $18, $19)
 		RETURNING `+trackColumns,
-		nullStr(t.AlbumID), t.PartnerID, t.Title, nullStr(t.Genre), joinKeywords(t.MoodTags), genType,
+		nullStr(t.AlbumID), t.PartnerID, t.Title, nullStr(t.Genre), joinKeywords(t.MoodTags), genType, joinKeywords(t.AICreditParts),
 		nullStr(t.AIModelVersion), nullStr(t.AIPrompt), t.IsPromptPublic, t.IsInstrumental, nullStr(t.Lyrics),
 		nullInt(t.DurationMs), t.OriginalObjectKey, t.AIProvider, t.AIGenerated, nullStr(t.AIDisclosureText), nullInt(t.BitrateKbps), t.Status))
 }

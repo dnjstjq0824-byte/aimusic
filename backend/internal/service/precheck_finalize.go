@@ -106,6 +106,7 @@ type FinalizeInput struct {
 	Genre            *string
 	MoodTags         []string
 	AIGenerationType string
+	AICreditParts    []string
 	AIModelVersion   *string
 	AIPrompt         *string
 	IsPromptPublic   bool
@@ -155,6 +156,10 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 	// cannot bypass the upload wizard checkboxes.
 	if !in.Rights.DeclaresOwnership || !in.Rights.DeclaresNoVoiceClone || !in.Rights.DeclaresTrainingConsent {
 		return nil, fmt.Errorf("%w: 권리 보유·보이스클로닝 부존재·소급음원 부존재 서약이 모두 필요합니다", domain.ErrInvalidInput)
+	}
+	creditParts, err := licensegate.NormalizeAICreditParts(in.AICreditParts)
+	if err != nil {
+		return nil, err
 	}
 	// KOMCA/collecting-society trusted tracks are refused until a society
 	// settlement path exists (LAUNCH_COMPLIANCE C3).
@@ -208,6 +213,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		Genre:             in.Genre,
 		MoodTags:          in.MoodTags,
 		AIGenerationType:  in.AIGenerationType,
+		AICreditParts:     creditParts,
 		AIModelVersion:    in.AIModelVersion,
 		AIPrompt:          in.AIPrompt,
 		IsPromptPublic:    in.IsPromptPublic,
@@ -236,6 +242,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		SubscriptionID:        in.Rights.SubscriptionID,
 		GeneratedAt:           &generatedAt,
 		SourceModel:           in.Rights.SourceModel,
+		HumanContributions:    in.Rights.HumanContributionTypes,
 		CollectiveTrustStatus: trust,
 		Gate1PolicyPassed:     true,
 		Gate2DatePassed:       true,

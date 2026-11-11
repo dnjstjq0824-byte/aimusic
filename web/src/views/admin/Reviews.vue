@@ -14,6 +14,15 @@
 
     <UiErrorBanner :message="error" title="심사 대기열을 불러오지 못했습니다" retry-label="다시 시도" @retry="loadAll" />
 
+    <UiCard class="text-xs text-neutral-300 space-y-1.5">
+      <div class="font-bold text-white text-sm">Gate 4 심사 기준 (소유권 원칙)</div>
+      <ul class="list-disc pl-5 space-y-1 leading-relaxed">
+        <li>구독자인 생성자 본인이 소유권(양도·이전·보유)을 가진 음원만 승인. 라이선스만 부여되는 플랫폼은 반려.</li>
+        <li>Stable Audio 직접 가중치 구동분은 해당 라이선스(Community/Enterprise) 확인 후 승인.</li>
+        <li>Udio는 2025-10-30 이전 유료 생성분(기득권)만 승인. 이후분은 자동 거부됨.</li>
+      </ul>
+    </UiCard>
+
     <!-- Tabs -->
     <UiTabs v-model="activeTab" :tabs="tabOptions" />
 

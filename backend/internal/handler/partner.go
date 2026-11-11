@@ -134,6 +134,7 @@ type finalizeRequest struct {
 	Genre            *string  `json:"genre"`
 	MoodTags         []string `json:"moodTags"`
 	AIGenerationType string   `json:"aiGenerationType"`
+	AICreditParts    []string `json:"aiCreditParts"`
 	AIModelVersion   *string  `json:"aiModelVersion"`
 	AIPrompt         *string  `json:"aiPrompt"`
 	IsPromptPublic   bool     `json:"isPromptPublic"`
@@ -182,7 +183,7 @@ func (h *PartnerHandler) Finalize(c *gin.Context) {
 		AudioSHA256: req.AudioSHA256, GeneratedAt: generatedAt,
 		SubscriptionID: req.SubscriptionID, AlbumID: req.AlbumID,
 		Genre: req.Genre, MoodTags: req.MoodTags,
-		AIGenerationType: req.AIGenerationType, AIModelVersion: req.AIModelVersion,
+		AIGenerationType: req.AIGenerationType, AICreditParts: req.AICreditParts, AIModelVersion: req.AIModelVersion,
 		AIPrompt: req.AIPrompt, IsPromptPublic: req.IsPromptPublic,
 		IsInstrumental: req.IsInstrumental, Lyrics: req.Lyrics,
 		DurationMs: req.DurationMs, BitrateKbps: req.BitrateKbps, Disclosure: req.Disclosure,

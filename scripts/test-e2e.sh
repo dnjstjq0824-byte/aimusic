@@ -9,6 +9,7 @@
 #   T04  pre-check 403 out-of-window date -> ERR_RETROACTIVE_GENERATION_DATE (+expired -> ERR_NON_COMMERCIAL_TIER)
 #   T05  pre-check 403 SYNC-only license  -> ERR_SYNC_ONLY_LICENSE (SOUNDRAW/MUBERT seed FALSE)
 #   T05b pre-check 403 post-cutoff UDIO   -> ERR_NON_COMMERCIAL_TIER (B2 2025-10-30)
+#   T05c ownership gate: ELEVENLABS Creator 200, Starter 403, SOUNDRAW Artist 403 (SYNC_ONLY)
 #   T06  duplicate SHA-256 block          -> 409 ERR_DUPLICATE_AUDIO_FILE
 #        + finalize sha-mismatch bypass    -> 403 ERR_FORBIDDEN
 #        + finalize missing warranty       -> 400 ERR_INVALID_INPUT
@@ -473,6 +474,26 @@ assert_contains "cutoff gate code" "ERR_NON_COMMERCIAL_TIER" "$(cat "$BODY")"
 assert_contains "cutoff message" "not eligible for distribution" "$(cat "$BODY")"
 cutoff_db="$(psql_q "SELECT max_generated_at::date::text FROM ai_provider_policies WHERE provider='UDIO';" | tr -d ' \r\n')"
 assert_eq "UDIO max_generated_at=2025-10-30 via psql" "2025-10-30" "$cutoff_db"
+
+section "T05c ownership gate: ELEVENLABS allow + SOUNDRAW full block"
+code="$(api POST "/partner/subscriptions" "$PA_TOKEN" '{"provider":"ELEVENLABS","planName":"Creator"}')"
+assert_status "partnerA create ELEVENLABS Creator" "201" "$code"
+EL_SUB_ID="$(jget "data.id")"
+code="$(api POST "/admin/review/subscription" "$ADMIN_TOKEN" "{\"subscriptionId\":\"$EL_SUB_ID\",\"approve\":true,\"expiresAt\":\"$EXPIRES_FUTURE\"}")"
+assert_status "admin verify ELEVENLABS Creator" "200" "$code"
+assert_contains "elevenlabs sub VERIFIED" "VERIFIED" "$(cat "$BODY")"
+SHA_EL="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"ELEVENLABS\",\"planTierUsed\":\"Creator\",\"audioSha256\":\"$SHA_EL\",\"fileName\":\"eleven.wav\",\"generatedAt\":\"$GEN_OK\",\"subscriptionId\":\"$EL_SUB_ID\",\"requiresActiveSub\":true}")"
+assert_status "pre-check ELEVENLABS Creator -> 200" "200" "$code"
+SHA_EL_S="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"ELEVENLABS\",\"planTierUsed\":\"Starter\",\"audioSha256\":\"$SHA_EL_S\",\"fileName\":\"eleven-starter.wav\",\"generatedAt\":\"$GEN_OK\",\"subscriptionId\":\"$EL_SUB_ID\",\"requiresActiveSub\":true}")"
+assert_status "pre-check ELEVENLABS Starter -> 403" "403" "$code"
+assert_contains "starter gate code" "ERR_NON_COMMERCIAL_TIER" "$(cat "$BODY")"
+SHA_SR_A="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"SOUNDRAW\",\"planTierUsed\":\"Artist Pro\",\"audioSha256\":\"$SHA_SR_A\",\"fileName\":\"soundraw-artist.mp3\",\"generatedAt\":\"$GEN_OK\",\"requiresActiveSub\":false}")"
+assert_status "pre-check SOUNDRAW Artist -> 403" "403" "$code"
+assert_contains "soundraw ownership code" "ERR_SYNC_ONLY_LICENSE" "$(cat "$BODY")"
+assert_contains "soundraw ownership message" "소유권" "$(cat "$BODY")"
 
 # ---- fixture helpers (ffmpeg sine fixtures; WAV bypasses bitrate gate, MP3 enforces it) ----
 FIX_DIR="$TMP_DIR/fixtures"
