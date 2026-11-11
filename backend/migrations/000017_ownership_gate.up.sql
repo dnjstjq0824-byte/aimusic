@@ -1,6 +1,15 @@
 -- 000017: ownership-gate policy matrix (PO 2026-11-11).
 -- ELEVENLABS allow; STABLE_AUDIO tier refresh; SOUNDRAW/MUBERT full block
 -- (no ownership transfer); terms recheck stamp; track AI-credit parts column.
+ALTER TABLE ai_provider_policies DROP CONSTRAINT IF EXISTS ai_provider_policies_provider_check;
+ALTER TABLE ai_provider_policies ADD CONSTRAINT ai_provider_policies_provider_check
+  CHECK (provider IN ('SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'ELEVENLABS', 'CUSTOM_OPEN_MODEL'));
+ALTER TABLE partner_ai_subscriptions DROP CONSTRAINT IF EXISTS partner_ai_subscriptions_provider_check;
+ALTER TABLE partner_ai_subscriptions ADD CONSTRAINT partner_ai_subscriptions_provider_check
+  CHECK (provider IN ('SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'ELEVENLABS', 'CUSTOM_OPEN_MODEL'));
+ALTER TABLE tracks DROP CONSTRAINT IF EXISTS tracks_ai_provider_check;
+ALTER TABLE tracks ADD CONSTRAINT tracks_ai_provider_check
+  CHECK (ai_provider IN ('SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'SOUNDRAW', 'MUBERT', 'ELEVENLABS', 'CUSTOM_OPEN_MODEL'));
 INSERT INTO ai_provider_policies (
   provider, allows_standalone_streaming, allowed_plan_tiers, blocked_plan_tiers, sync_only_plan_tiers,
   min_bitrate_kbps, blocked_metadata_keywords, rejection_message_ko, commercial_terms_url, terms_checked_at
