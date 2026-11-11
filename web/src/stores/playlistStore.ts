@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { tokenStore } from '@/api/client';
 import { playlistApi, trackApi } from '@/api/endpoints';
 import type { Playlist, PlaylistTrack, Track } from '@/api/types';
 
@@ -11,6 +12,14 @@ export const usePlaylistStore = defineStore('playlist', () => {
   const error = ref<string | null>(null);
 
   async function fetchMine(): Promise<void> {
+    // Public pages mount this store for guests: never fire the authed call
+    // without a session (it only produces a 401 + console noise).
+    if (!tokenStore.getAccess()) {
+      playlists.value = [];
+      error.value = null;
+      loading.value = false;
+      return;
+    }
     loading.value = true;
     error.value = null;
     try {

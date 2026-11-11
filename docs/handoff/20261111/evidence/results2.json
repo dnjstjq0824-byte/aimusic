@@ -1,0 +1,199 @@
+[
+ {
+  "ctx": "listener",
+  "name": "playlist-detail",
+  "url": "https://avibemusic.com/playlists/4123059a-bf15-4f68-8124-113864def7c4",
+  "width": 1920,
+  "finalUrl": "https://avibemusic.com/playlists/4123059a-bf15-4f68-8124-113864def7c4",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "listener-playlist-detail-1920x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "home-m",
+  "url": "https://avibemusic.com/",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists"
+  ],
+  "failedRequests": [],
+  "shot": "guest-home-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "home-t",
+  "url": "https://avibemusic.com/",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists"
+  ],
+  "failedRequests": [],
+  "shot": "guest-home-t-768x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "explore-m",
+  "url": "https://avibemusic.com/explore",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/explore",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists"
+  ],
+  "failedRequests": [],
+  "shot": "guest-explore-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "explore-t",
+  "url": "https://avibemusic.com/explore",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/explore",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists"
+  ],
+  "failedRequests": [],
+  "shot": "guest-explore-t-768x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "playlists-m",
+  "url": "https://avibemusic.com/playlists",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/playlists",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-playlists-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "playlists-t",
+  "url": "https://avibemusic.com/playlists",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/playlists",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-playlists-t-768x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "login-m",
+  "url": "https://avibemusic.com/login",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/login",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-login-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "login-t",
+  "url": "https://avibemusic.com/login",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/login",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-login-t-768x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "pricing-m",
+  "url": "https://avibemusic.com/pricing",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/pricing",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-pricing-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "pricing-t",
+  "url": "https://avibemusic.com/pricing",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/pricing",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": [],
+  "shot": "guest-pricing-t-768x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "track-detail-m",
+  "url": "https://avibemusic.com/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "width": 390,
+  "finalUrl": "https://avibemusic.com/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()",
+   "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists",
+   "404 https://avibemusic.com/api/v1/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903/certificate"
+  ],
+  "failedRequests": [],
+  "shot": "guest-track-detail-m-390x.png"
+ },
+ {
+  "ctx": "guest",
+  "name": "track-detail-t",
+  "url": "https://avibemusic.com/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "width": 768,
+  "finalUrl": "https://avibemusic.com/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903",
+  "title": "AVIBE — Beyond Your Music",
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 ()",
+   "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "pageErrors": [],
+  "badResponses": [
+   "401 https://avibemusic.com/api/v1/playlists",
+   "404 https://avibemusic.com/api/v1/tracks/25b2821f-c40d-46b8-9dc1-f16d3a48e903/certificate"
+  ],
+  "failedRequests": [],
+  "shot": "guest-track-detail-t-768x.png"
+ }
+]
