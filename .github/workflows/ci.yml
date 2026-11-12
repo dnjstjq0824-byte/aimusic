@@ -81,9 +81,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - name: accept SDK licenses
-        run: yes | sdkmanager --licenses > /dev/null
+        # No setup-android action: it installs the obsolete `tools` package and
+        # fails on current cmdline-tools. The runner ships a preinstalled SDK.
+        run: |
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager || true)"
+          [ -n "$SDKMANAGER" ] || { echo "no sdkmanager found under $ANDROID_SDK_ROOT"; exit 1; }
+          yes | "$SDKMANAGER" --licenses > /dev/null
       - name: throwaway release key (CI only; prod key is PO-held)
         run: |
           keytool -genkeypair -keystore /tmp/ci-release.jks -alias cirelease \
@@ -120,6 +125,10 @@ jobs:
           # regression) without calling Toss; the suite never confirms payments.
           sed -i '/^TOSS_SECRET_KEY=/d' .env
           echo 'TOSS_SECRET_KEY=e2e-ci-dummy-key' >> .env
+          # .env.example ships a placeholder AES key that is not valid base64,
+          # which crash-loops api/worker in config.Load; generate a real key.
+          sed -i '/^AES256_KEY_BASE64=/d' .env
+          echo "AES256_KEY_BASE64=$(openssl rand -base64 32)" >> .env
           ./scripts/start-local.sh || true
           for i in $(seq 1 40); do
             curl -sf http://localhost:8080/healthz && break || sleep 5
