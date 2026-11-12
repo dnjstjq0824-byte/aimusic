@@ -36,6 +36,11 @@
 #         violated -> FORFEITED + FORFEITED_VIOLATION + net 0; approve from FORFEITED fails)
 #   T12  batch2 APIs: password reset (request/confirm/login-rotation/single-use),
 #        oauth providers/start guards, billing plans/orders guards (C6 consent), admin overview
+#   T13  audit regressions (2026-11-12 WI-D3): public track has no
+#        originalObjectKey (B-05), SQ grants never mint master URLs (B-04 edge;
+#        Worker-side 403 is covered by scripts/worker-grant.test.mjs), repurchase
+#        while ACTIVE -> 409 (B-08; 503 without Toss keys), cancel without mode
+#        -> 400 (U-04), store heartbeat x3 -> 1 row (B-01)
 #
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
@@ -1176,7 +1181,8 @@ if [ "$code" = "503" ]; then
   assert_contains "orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
 elif [ "$code" = "201" ]; then
   assert_contains "order merchant id" "AVIBE-" "$(cat "$BODY")"
-  assert_contains "order consent version" "2026-11-10-v1" "$(cat "$BODY")"
+  # RefundTermsVersion bumped by the 2026-11-12 refund-policy work (B-02/B-03).
+  assert_contains "order consent version" "2026-11-12-v2" "$(cat "$BODY")"
 else
   fail "billing orders want 503/201 got $code"
 fi
@@ -1267,6 +1273,73 @@ for field in '"users"' '"tracks"' '"reviews"' '"disputesOpen"' '"plays"' '"queue
 done
 code="$(api GET "/admin/overview" "$USER_TOKEN" "")"
 assert_status "overview listener -> 403" "403" "$code"
+
+section "T13 audit regressions (B-05/B-04/B-08/U-04/B-01)"
+# T12's terms bump re-gates every fixture: re-consent partner + admin here
+# (USER re-consented in T12).
+consent_all_required "$PA_TOKEN" >/dev/null
+consent_all_required "$ADMIN_TOKEN" >/dev/null
+# B-05: public track responses carry no storage internals.
+code="$(api GET "/tracks/$HAPPY_TRACK_ID" "" "")"
+assert_status "T13 public track detail -> 200" "200" "$code"
+if grep -q "originalObjectKey" "$BODY" 2>/dev/null; then
+  fail "T13 public detail leaks originalObjectKey"
+else
+  pass "T13 public detail has no originalObjectKey"
+fi
+code="$(api GET "/tracks?limit=50" "" "")"
+assert_status "T13 public track list -> 200" "200" "$code"
+if grep -q "originalObjectKey" "$BODY" 2>/dev/null; then
+  fail "T13 public list leaks originalObjectKey"
+else
+  pass "T13 public list has no originalObjectKey"
+fi
+# B-04 edge: a pass-less grant is SQ-only (Worker 403s SQ-on-master; unit-covered).
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$USER_TOKEN" "")"
+assert_status "T13 free stream grant -> 200" "200" "$code"
+assert_eq "T13 free grant quality SQ" "SQ" "$(jget "data.quality")"
+T13_SQ_URL="$(jget "data.url")"
+if [[ "$T13_SQ_URL" == *"stream_0.m3u8"* && "$T13_SQ_URL" != *"master.m3u8"* ]]; then
+  pass "T13 SQ grant points at 128k variant only"
+else
+  fail "T13 SQ grant wrong playlist: $(printf '%s' "$T13_SQ_URL" | head -c 200)"
+fi
+# B-08: buying while an ACTIVE pass exists -> 409 (503 when billing disabled).
+T13_PLAN_ID="$(psql_q "SELECT id::text FROM billing_plans WHERE code='LISTENER_PLUS_MONTHLY';" | tr -d ' \r\n')"
+psql_q "INSERT INTO billing_subscriptions (user_id,plan_id,status,current_period_start,current_period_end) VALUES ('$USER_ID'::uuid,'$T13_PLAN_ID'::uuid,'ACTIVE',NOW(),NOW()+interval '30 days') ON CONFLICT (user_id) WHERE status='ACTIVE' DO UPDATE SET status='ACTIVE', current_period_end=NOW()+interval '30 days';" >/dev/null
+code="$(api POST "/billing/orders" "$USER_TOKEN" "{\"planCode\":\"LISTENER_PLUS_MONTHLY\",\"refundConsentAt\":\"$GEN_NOW\"}")"
+if [ "$code" = "409" ]; then
+  assert_contains "T13 repurchase blocked code" "ERR_ACTIVE_PASS_EXISTS" "$(cat "$BODY")"
+elif [ "$code" = "503" ]; then
+  assert_contains "T13 orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
+else
+  fail "T13 repurchase want 409/503 got $code"
+fi
+psql_q "DELETE FROM billing_subscriptions WHERE user_id='$USER_ID'::uuid;" >/dev/null
+# U-04: cancel without mode -> 400 (validation precedes lookup).
+code="$(api POST "/billing/subscriptions/cancel" "$USER_TOKEN" "{}")"
+assert_status "T13 cancel missing mode -> 400" "400" "$code"
+assert_contains "T13 cancel mode code" "ERR_INVALID_INPUT" "$(cat "$BODY")"
+# B-01: one store play stays one row across cumulative heartbeats.
+T13_BIZNO="$(python3 -c "import random; w=[1,3,7,1,3,7,1,3]; d=[1,2]+[random.randint(0,9) for _ in range(7)]; s=sum(d[i]*w[i] for i in range(8)); p=d[8]*5; s+=p//10+p%10; d.append((10-s%10)%10); print(''.join(map(str,d)))")"
+code="$(api POST "/partner/stores" "$PA_TOKEN" "{\"businessNumber\":\"$T13_BIZNO\",\"storeName\":\"E2E T13 Store\"}")"
+assert_status "T13 register store -> 201" "201" "$code"
+T13_BIZ="$(jget "data.id")"
+code="$(api POST "/admin/stores/$T13_BIZ/verify" "$ADMIN_TOKEN" '{"approve":true}')"
+assert_status "T13 verify store -> 200" "200" "$code"
+code="$(api POST "/partner/stores/$T13_BIZ/devices" "$PA_TOKEN" '{"deviceName":"e2e-player-13"}')"
+assert_status "T13 create device -> 201" "201" "$code"
+T13_DEVID="$(jget "data.id")"
+T13_PAIR="$(jget "data.pairingCode")"
+code="$(api POST "/store/device/claim" "" "{\"pairingCode\":\"$T13_PAIR\"}")"
+assert_status "T13 claim device -> 200" "200" "$code"
+T13_DTOK="$(jget "data.token")"
+for dur in 3 8 13; do
+  code="$(api POST "/store/device/heartbeat" "$T13_DTOK" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"durationSecs\":$dur}")"
+  assert_status "T13 store heartbeat ${dur}s -> 200" "200" "$code"
+done
+T13_ROWS="$(psql_q "SELECT COUNT(*) FROM store_play_logs WHERE device_id='$T13_DEVID'::uuid AND track_id='$HAPPY_TRACK_ID'::uuid;" | tr -d ' \r\n')"
+assert_eq "T13 cumulative heartbeats stay 1 row" "1" "$T13_ROWS"
 
 section "Summary"
 qdepth_final="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"

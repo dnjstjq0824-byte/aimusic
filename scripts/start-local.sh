@@ -313,6 +313,16 @@ if [ "$BATCH17_EXISTS" != "1" ]; then
 else
   echo "[start-local] batch17 schema already present; skipping 000017_ownership_gate.up.sql"
 fi
+BATCH18_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='billing_subscriptions' AND column_name='cancel_requested_at';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH18_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000018_refund_policy.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000018_refund_policy.up.sql
+  echo "[start-local] batch18 refund policy schema applied"
+else
+  echo "[start-local] batch18 schema already present; skipping 000018_refund_policy.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

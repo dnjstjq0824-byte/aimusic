@@ -73,3 +73,28 @@ jobs:
         run: |
           bash -n scripts/test-e2e.sh
           bash -n scripts/start-local.sh
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: install e2e tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools ffmpeg
+      - name: start stack
+        run: |
+          [ -f .env ] || cp .env.example .env
+          # Dummy PG key: enables the billing order path (repurchase-409
+          # regression) without calling Toss; the suite never confirms payments.
+          sed -i '/^TOSS_SECRET_KEY=/d' .env
+          echo 'TOSS_SECRET_KEY=e2e-ci-dummy-key' >> .env
+          ./scripts/start-local.sh || true
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:8080/healthz && break || sleep 5
+          done
+          curl -sf http://localhost:8080/healthz
+      - name: run e2e
+        run: ./scripts/test-e2e.sh
+      - name: stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.local.yml logs --tail=200
