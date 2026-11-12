@@ -118,7 +118,8 @@ services:
       - avibe
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    # O-06: pinned to the proven-running version (was :latest).
+    image: cloudflare/cloudflared:2026.10.7
     container_name: avibe-prod-cloudflared
     restart: unless-stopped
     command: ["--config", "/etc/cloudflared/config.yml", "tunnel", "run"]
