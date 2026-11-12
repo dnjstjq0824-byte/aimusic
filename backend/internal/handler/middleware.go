@@ -397,6 +397,8 @@ func errCodeOfDomain(err error) string {
 		return "ERR_AGE_CONFIRM_REQUIRED"
 	case errors.Is(err, domain.ErrConsentRequired):
 		return "ERR_CONSENT_REQUIRED"
+	case errors.Is(err, domain.ErrActivePassExists):
+		return "ERR_ACTIVE_PASS_EXISTS"
 	default:
 		return ""
 	}
@@ -436,6 +438,8 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusForbidden, "ERR_AGE_CONFIRM_REQUIRED", "age confirmation required")
 	case errors.Is(err, domain.ErrConsentRequired):
 		abort(c, http.StatusForbidden, "ERR_CONSENT_REQUIRED", "terms consent required")
+	case errors.Is(err, domain.ErrActivePassExists):
+		abort(c, http.StatusConflict, "ERR_ACTIVE_PASS_EXISTS", "an active pass already exists")
 	default:
 		slog.Error("internal_error",
 			"request_id", CurrentRequestID(c),

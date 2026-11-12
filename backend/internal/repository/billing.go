@@ -61,12 +61,18 @@ func (r *BillingRepo) GetPlanByID(ctx context.Context, id string) (*domain.Billi
 func scanOrder(row interface{ Scan(...any) error }) (*domain.BillingOrder, error) {
 	o := &domain.BillingOrder{}
 	var key, termsVer sql.NullString
-	var approved, consentAt sql.NullTime
+	var approved, consentAt, refundedAt sql.NullTime
+	var refunded sql.NullInt64
 	err := row.Scan(&o.ID, &o.UserID, &o.PlanID, &o.OrderID, &o.AmountKRW, &o.Status,
-		&key, &approved, &consentAt, &termsVer, &o.CreatedAt, &o.UpdatedAt)
+		&key, &approved, &consentAt, &termsVer, &refunded, &refundedAt, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	if refunded.Valid {
+		v := int(refunded.Int64)
+		o.RefundedAmountKRW = &v
+	}
+	o.RefundedAt = timePtr(refundedAt)
 	o.TossPaymentKey = strPtr(key)
 	o.ApprovedAt = timePtr(approved)
 	o.RefundConsentAt = timePtr(consentAt)
@@ -75,7 +81,8 @@ func scanOrder(row interface{ Scan(...any) error }) (*domain.BillingOrder, error
 }
 
 const orderColumns = `id::text, user_id::text, plan_id::text, order_id, amount_krw, status,
-	toss_payment_key, approved_at, refund_consent_at, refund_terms_version, created_at, updated_at`
+	toss_payment_key, approved_at, refund_consent_at, refund_terms_version,
+	refunded_amount_krw, refunded_at, created_at, updated_at`
 
 // CreateOrder inserts a PENDING merchant order with refund-consent evidence.
 func (r *BillingRepo) CreateOrder(ctx context.Context, userID, planID, orderID string, amountKRW int, consentAt time.Time, termsVersion string) (*domain.BillingOrder, error) {
@@ -152,17 +159,19 @@ func (r *BillingRepo) SetOrderStatus(ctx context.Context, orderID, status string
 func scanBillingSubscription(row interface{ Scan(...any) error }) (*domain.BillingSubscription, error) {
 	s := &domain.BillingSubscription{}
 	var order sql.NullString
+	var cancelReq sql.NullTime
 	err := row.Scan(&s.ID, &s.UserID, &s.PlanID, &order, &s.Status,
-		&s.CurrentPeriodStart, &s.CurrentPeriodEnd, &s.CreatedAt, &s.UpdatedAt)
+		&s.CurrentPeriodStart, &s.CurrentPeriodEnd, &cancelReq, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	s.OrderID = strPtr(order)
+	s.CancelRequestedAt = timePtr(cancelReq)
 	return s, nil
 }
 
 const billingSubscriptionColumns = `id::text, user_id::text, plan_id::text, order_id::text, status,
-	current_period_start, current_period_end, created_at, updated_at`
+	current_period_start, current_period_end, cancel_requested_at, created_at, updated_at`
 
 // ActivateSubscription replaces the user's ACTIVE subscription with a fresh period.
 func (r *BillingRepo) ActivateSubscription(ctx context.Context, userID, planID, orderID string, periodStart, periodEnd time.Time) (*domain.BillingSubscription, error) {
@@ -213,10 +222,14 @@ func (r *BillingRepo) CancelActiveSubscription(ctx context.Context, userID strin
 // ClaimWebhookEvent inserts a webhook journal row; ok=false means a duplicate
 // delivery that must be acknowledged without re-applying.
 func (r *BillingRepo) ClaimWebhookEvent(ctx context.Context, provider, eventID, payload string) (ok bool, err error) {
+	// An event that was received but never finished processing (processed =
+	// FALSE) is claimable again, so a Toss retry after a failure is applied
+	// instead of being acknowledged as a duplicate (B-02).
 	res, err := r.db.ExecContext(ctx, `
 		INSERT INTO billing_webhook_events (provider, event_id, payload)
 		VALUES ($1, $2, $3::jsonb)
-		ON CONFLICT (provider, event_id) DO NOTHING`, provider, eventID, payload)
+		ON CONFLICT (provider, event_id) DO UPDATE SET payload = EXCLUDED.payload
+		WHERE billing_webhook_events.processed = FALSE`, provider, eventID, payload)
 	if err != nil {
 		return false, err
 	}
@@ -232,5 +245,59 @@ func (r *BillingRepo) MarkWebhookProcessed(ctx context.Context, provider, eventI
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE billing_webhook_events SET processed = TRUE
 		WHERE provider = $1 AND event_id = $2`, provider, eventID)
+	return err
+}
+
+// FirstUsageSince returns the earliest pass usage (a counted stream or a
+// download) at or after since, or nil when the pass is unused.
+func (r *BillingRepo) FirstUsageSince(ctx context.Context, userID string, since time.Time) (*time.Time, error) {
+	var first sql.NullTime
+	err := r.db.QueryRowContext(ctx, `
+		SELECT LEAST(
+			(SELECT MIN(played_at) FROM streaming_logs
+			 WHERE user_id = $1::uuid AND counted_as_play AND played_at >= $2),
+			(SELECT MIN(created_at) FROM download_logs
+			 WHERE user_id = $1::uuid AND created_at >= $2))`, userID, since).Scan(&first)
+	if err != nil {
+		return nil, err
+	}
+	return timePtr(first), nil
+}
+
+// RequestCancelAtPeriodEnd records 일반해지 on the active pass.
+func (r *BillingRepo) RequestCancelAtPeriodEnd(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE billing_subscriptions SET cancel_requested_at = COALESCE(cancel_requested_at, NOW())
+		WHERE user_id = $1::uuid AND status = 'ACTIVE'`, userID)
+	return err
+}
+
+// ClaimRefund atomically reserves a PAID order for one refund; false means
+// another request already claimed or refunded it.
+func (r *BillingRepo) ClaimRefund(ctx context.Context, merchantOrderID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE billing_orders SET refunded_at = NOW()
+		WHERE order_id = $1 AND status = 'PAID' AND refunded_at IS NULL`, merchantOrderID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
+}
+
+// ReleaseRefundClaim undoes ClaimRefund after a failed PG cancel.
+func (r *BillingRepo) ReleaseRefundClaim(ctx context.Context, merchantOrderID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE billing_orders SET refunded_at = NULL
+		WHERE order_id = $1 AND status = 'PAID'`, merchantOrderID)
+	return err
+}
+
+// RecordRefund finalizes a claimed refund.
+func (r *BillingRepo) RecordRefund(ctx context.Context, merchantOrderID, status string, amountKRW int) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE billing_orders SET status = $2, refunded_amount_krw = $3,
+			refunded_at = COALESCE(refunded_at, NOW())
+		WHERE order_id = $1`, merchantOrderID, status, amountKRW)
 	return err
 }

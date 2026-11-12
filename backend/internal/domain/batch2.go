@@ -20,6 +20,8 @@ const (
 	BillingFailed    = "FAILED"
 	BillingCancelled = "CANCELLED"
 	BillingRefunded  = "REFUNDED"
+	// BillingPartiallyRefunded marks a prorated (중도해지) refund.
+	BillingPartiallyRefunded = "PARTIALLY_REFUNDED"
 )
 
 // Billing subscription statuses (billing_subscriptions.status).
@@ -64,22 +66,27 @@ type BillingOrder struct {
 	ApprovedAt         *time.Time `json:"approvedAt,omitempty"`
 	RefundConsentAt    *time.Time `json:"refundConsentAt,omitempty"`
 	RefundTermsVersion *string    `json:"refundTermsVersion,omitempty"`
+	RefundedAmountKRW  *int       `json:"refundedAmountKrw,omitempty"`
+	RefundedAt         *time.Time `json:"refundedAt,omitempty"`
 	CreatedAt          time.Time  `json:"createdAt"`
 	UpdatedAt          time.Time  `json:"updatedAt"`
 }
 
 // BillingSubscription mirrors billing_subscriptions.
 type BillingSubscription struct {
-	ID                 string       `json:"id"`
-	UserID             string       `json:"userId"`
-	PlanID             string       `json:"planId"`
-	OrderID            *string      `json:"orderId,omitempty"`
-	Status             string       `json:"status"`
-	CurrentPeriodStart time.Time    `json:"currentPeriodStart"`
-	CurrentPeriodEnd   time.Time    `json:"currentPeriodEnd"`
-	Plan               *BillingPlan `json:"plan,omitempty"`
-	CreatedAt          time.Time    `json:"createdAt"`
-	UpdatedAt          time.Time    `json:"updatedAt"`
+	ID                 string    `json:"id"`
+	UserID             string    `json:"userId"`
+	PlanID             string    `json:"planId"`
+	OrderID            *string   `json:"orderId,omitempty"`
+	Status             string    `json:"status"`
+	CurrentPeriodStart time.Time `json:"currentPeriodStart"`
+	CurrentPeriodEnd   time.Time `json:"currentPeriodEnd"`
+	// CancelRequestedAt is set by 일반해지 (END_OF_PERIOD): access continues
+	// until CurrentPeriodEnd.
+	CancelRequestedAt *time.Time   `json:"cancelRequestedAt,omitempty"`
+	Plan              *BillingPlan `json:"plan,omitempty"`
+	CreatedAt         time.Time    `json:"createdAt"`
+	UpdatedAt         time.Time    `json:"updatedAt"`
 }
 
 // PasswordResetToken mirrors password_reset_tokens (hash only; the raw token

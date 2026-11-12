@@ -30,6 +30,11 @@ type billingStore interface {
 	GetActiveSubscription(ctx context.Context, userID string) (*domain.BillingSubscription, error)
 	CancelActiveSubscription(ctx context.Context, userID string) error
 	ClaimWebhookEvent(ctx context.Context, provider, eventID, payload string) (bool, error)
+	FirstUsageSince(ctx context.Context, userID string, since time.Time) (*time.Time, error)
+	RequestCancelAtPeriodEnd(ctx context.Context, userID string) error
+	ClaimRefund(ctx context.Context, merchantOrderID string) (bool, error)
+	ReleaseRefundClaim(ctx context.Context, merchantOrderID string) error
+	RecordRefund(ctx context.Context, merchantOrderID, status string, amountKRW int) error
 	MarkWebhookProcessed(ctx context.Context, provider, eventID string) error
 }
 
@@ -68,7 +73,7 @@ func merchantOrderID(now time.Time) (string, error) {
 
 // RefundTermsVersion is the checkout refund/withdrawal notice revision the
 // buyer consents to (C6). Bump when the notice text changes.
-const RefundTermsVersion = "2026-11-10-v1"
+const RefundTermsVersion = "2026-11-12-v2"
 
 // CreateOrder opens a PENDING merchant order for a plan. The buyer must have
 // consented to the refund/withdrawal notice on the checkout screen (C6): the
@@ -82,6 +87,11 @@ func (s *BillingService) CreateOrder(ctx context.Context, userID, planCode strin
 	}
 	if consentAt.IsZero() || s.now().Sub(consentAt) < 0 || s.now().Sub(consentAt) > 24*time.Hour {
 		return nil, nil, fmt.Errorf("%w: 청약철회·환불 기준 동의가 필요합니다", domain.ErrInvalidInput)
+	}
+	if active, err := s.billing.GetActiveSubscription(ctx, userID); err == nil && active != nil {
+		return nil, nil, domain.ErrActivePassExists
+	} else if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, nil, err
 	}
 	plan, err := s.billing.GetPlanByCode(ctx, strings.TrimSpace(planCode))
 	if err != nil {
@@ -211,13 +221,16 @@ func (s *BillingService) HandleWebhook(ctx context.Context, raw []byte) error {
 			return err
 		}
 	case "CANCELED":
-		if err := s.billing.SetOrderStatus(ctx, order.OrderID, domain.BillingCancelled); err != nil {
-			return err
+		if order.Status != domain.BillingRefunded && order.Status != domain.BillingPartiallyRefunded {
+			if err := s.billing.SetOrderStatus(ctx, order.OrderID, domain.BillingCancelled); err != nil {
+				return err
+			}
 		}
 		_ = s.billing.CancelActiveSubscription(ctx, order.UserID)
 	case "PARTIAL_CANCELED":
-		// Partial refunds keep the pass; the order stays PAID and the event
-		// is journaled for finance review.
+		// Our own prorated refunds already ended the pass and set
+		// PARTIALLY_REFUNDED; this event never revives it. Console-issued
+		// partial cancels are journaled for finance review.
 	default:
 		// Unknown/future statuses are journaled but not applied.
 	}
@@ -237,65 +250,242 @@ func (s *BillingService) MySubscription(ctx context.Context, userID string) (*do
 	return s.withPlan(ctx, sub)
 }
 
-// CancelSubscription ends the user's ACTIVE pass (single-term passes do not
-// auto-renew; this records intent and blocks further use immediately).
-func (s *BillingService) CancelSubscription(ctx context.Context, userID string) error {
+// Cancellation modes (2026-11-12 refund policy, same structure as Korean
+// music streaming): the customer must pick one explicitly.
+const (
+	// CancelEndOfPeriod (일반해지): keep the pass until it expires, no refund.
+	CancelEndOfPeriod = "END_OF_PERIOD"
+	// CancelImmediate (청약철회 or 중도해지): end now, refund per RefundQuote.
+	CancelImmediate = "IMMEDIATE"
+)
+
+// Refund quote types.
+const (
+	// RefundWithdrawal (청약철회): within 7 days of payment and unused, full refund.
+	RefundWithdrawal = "WITHDRAWAL"
+	// RefundProrated (중도해지): payment minus the used days, no penalty fee.
+	RefundProrated = "PRORATED"
+)
+
+// WithdrawalWindow is the 청약철회 window after payment.
+const WithdrawalWindow = 7 * 24 * time.Hour
+
+// RefundQuote is the server-computed refund for ending the active pass now.
+type RefundQuote struct {
+	Type            string     `json:"type"`
+	AmountKRW       int        `json:"amountKrw"`
+	RefundKRW       int        `json:"refundKrw"`
+	UsedDays        int        `json:"usedDays"`
+	TotalDays       int        `json:"totalDays"`
+	PaidAt          time.Time  `json:"paidAt"`
+	PeriodEnd       time.Time  `json:"periodEnd"`
+	HasUsage        bool       `json:"hasUsage"`
+	CancelRequested bool       `json:"cancelRequested"`
+	FirstUsageAt    *time.Time `json:"firstUsageAt,omitempty"`
+}
+
+// ComputeRefund applies the refund policy. used/total are whole days
+// (used rounded up, at least 1); the deduction rounds up to the won.
+func ComputeRefund(amount int, paidAt, periodStart, periodEnd, now time.Time, hasUsage bool) RefundQuote {
+	day := 24 * time.Hour
+	total := int(periodEnd.Sub(periodStart).Round(day) / day)
+	if total < 1 {
+		total = 1
+	}
+	elapsed := now.Sub(periodStart)
+	if elapsed < 0 {
+		elapsed = 0
+	}
+	used := int(elapsed / day)
+	if elapsed%day > 0 || used == 0 {
+		used++
+	}
+	if used > total {
+		used = total
+	}
+	q := RefundQuote{AmountKRW: amount, UsedDays: used, TotalDays: total, PaidAt: paidAt, PeriodEnd: periodEnd, HasUsage: hasUsage}
+	if !hasUsage && now.Sub(paidAt) < WithdrawalWindow {
+		q.Type, q.RefundKRW = RefundWithdrawal, amount
+		return q
+	}
+	deduct := (amount*used + total - 1) / total
+	refund := amount - deduct
+	if refund < 0 {
+		refund = 0
+	}
+	q.Type, q.RefundKRW = RefundProrated, refund
+	return q
+}
+
+// activePass loads the caller's active pass and its paid order.
+func (s *BillingService) activePass(ctx context.Context, userID string) (*domain.BillingSubscription, *domain.BillingOrder, error) {
 	if userID == "" {
-		return fmt.Errorf("%w: user", domain.ErrInvalidInput)
+		return nil, nil, fmt.Errorf("%w: user", domain.ErrInvalidInput)
 	}
-	return s.billing.CancelActiveSubscription(ctx, userID)
+	sub, err := s.billing.GetActiveSubscription(ctx, userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, nil, fmt.Errorf("%w: 이용 중인 이용권이 없습니다", domain.ErrInvalidInput)
+		}
+		return nil, nil, err
+	}
+	if sub.OrderID == nil || *sub.OrderID == "" {
+		return nil, nil, fmt.Errorf("%w: pass has no order", domain.ErrInvalidInput)
+	}
+	order, err := s.billing.GetOrder(ctx, *sub.OrderID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: pass order missing", domain.ErrInvalidInput)
+	}
+	return sub, order, nil
 }
 
-// Refund voids the order behind the user's ACTIVE pass (empty orderRef
-// resolves through the subscription) or a named merchant order.
-func (s *BillingService) Refund(ctx context.Context, userID, orderRef, reason string) (*domain.BillingOrder, error) {
-	merchantOrderID := strings.TrimSpace(orderRef)
-	if merchantOrderID == "" {
-		sub, err := s.billing.GetActiveSubscription(ctx, userID)
-		if err != nil {
-			return nil, fmt.Errorf("%w: no active pass to refund", domain.ErrInvalidInput)
-		}
-		if sub.OrderID == nil || *sub.OrderID == "" {
-			return nil, fmt.Errorf("%w: pass has no order", domain.ErrInvalidInput)
-		}
-		orderRow, err := s.billing.GetOrder(ctx, *sub.OrderID)
-		if err != nil {
-			return nil, fmt.Errorf("%w: pass order missing", domain.ErrInvalidInput)
-		}
-		merchantOrderID = orderRow.OrderID
+// QuoteRefund returns what ending the active pass now would refund.
+func (s *BillingService) QuoteRefund(ctx context.Context, userID string) (*RefundQuote, error) {
+	sub, order, err := s.activePass(ctx, userID)
+	if err != nil {
+		return nil, err
 	}
-	return s.refundMerchantOrder(ctx, userID, merchantOrderID, reason)
+	return s.quote(ctx, sub, order)
 }
 
-// refundMerchantOrder voids a PAID order at Toss in full, marks it REFUNDED,
-// and ends the pass immediately. Already-cancelled-at-PG orders converge to
-// REFUNDED so double submits and confirm/webhook races stay idempotent.
-func (s *BillingService) refundMerchantOrder(ctx context.Context, userID, merchantOrderID, reason string) (*domain.BillingOrder, error) {
+func (s *BillingService) quote(ctx context.Context, sub *domain.BillingSubscription, order *domain.BillingOrder) (*RefundQuote, error) {
+	paidAt := sub.CurrentPeriodStart
+	if order.ApprovedAt != nil {
+		paidAt = *order.ApprovedAt
+	}
+	first, err := s.billing.FirstUsageSince(ctx, sub.UserID, sub.CurrentPeriodStart)
+	if err != nil {
+		return nil, err
+	}
+	q := ComputeRefund(order.AmountKRW, paidAt, sub.CurrentPeriodStart, sub.CurrentPeriodEnd, s.now(), first != nil)
+	q.FirstUsageAt = first
+	q.CancelRequested = sub.CancelRequestedAt != nil
+	return &q, nil
+}
+
+// CancelResult reports what a cancellation did.
+type CancelResult struct {
+	Mode         string                      `json:"mode"`
+	Quote        *RefundQuote                `json:"quote,omitempty"`
+	Order        *domain.BillingOrder        `json:"order,omitempty"`
+	Subscription *domain.BillingSubscription `json:"subscription,omitempty"`
+}
+
+// Cancel ends the caller's pass in the chosen mode. END_OF_PERIOD records
+// the request and keeps access until expiry; IMMEDIATE refunds per the
+// quote (full within the withdrawal window, otherwise prorated) and ends
+// the pass now. The refund is claimed on the order row first, so a double
+// submit can never refund twice.
+func (s *BillingService) Cancel(ctx context.Context, userID, mode, reason string) (*CancelResult, error) {
+	switch mode {
+	case CancelEndOfPeriod:
+		sub, _, err := s.activePass(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.billing.RequestCancelAtPeriodEnd(ctx, userID); err != nil {
+			return nil, err
+		}
+		if sub.CancelRequestedAt == nil {
+			now := s.now()
+			sub.CancelRequestedAt = &now
+		}
+		return &CancelResult{Mode: mode, Subscription: sub}, nil
+	case CancelImmediate:
+		return s.cancelImmediate(ctx, userID, reason)
+	default:
+		return nil, fmt.Errorf("%w: mode must be END_OF_PERIOD or IMMEDIATE", domain.ErrInvalidInput)
+	}
+}
+
+func (s *BillingService) cancelImmediate(ctx context.Context, userID, reason string) (*CancelResult, error) {
 	if !s.enabled {
 		return nil, domain.ErrPaymentUnavailable
 	}
-	if userID == "" || strings.TrimSpace(merchantOrderID) == "" {
-		return nil, fmt.Errorf("%w: user/order", domain.ErrInvalidInput)
-	}
-	order, err := s.billing.GetOrderByMerchantID(ctx, merchantOrderID)
+	sub, order, err := s.activePass(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("%w: unknown order", domain.ErrInvalidInput)
+		return nil, err
 	}
 	if order.UserID != userID {
 		return nil, domain.ErrForbidden
 	}
-	if order.Status != domain.BillingPaid || order.TossPaymentKey == nil || *order.TossPaymentKey == "" {
-		return nil, fmt.Errorf("%w: order is not refundable", domain.ErrInvalidInput)
+	q, err := s.quote(ctx, sub, order)
+	if err != nil {
+		return nil, err
 	}
-	if _, err := s.toss.CancelPayment(ctx, *order.TossPaymentKey, reason); err != nil {
-		var te *toss.TossError
-		if !(errors.As(err, &te) && te.Code == "ALREADY_CANCELED_TRANSACTION") {
+	if q.RefundKRW > 0 {
+		if order.Status != domain.BillingPaid || order.TossPaymentKey == nil || *order.TossPaymentKey == "" {
+			return nil, fmt.Errorf("%w: order is not refundable", domain.ErrInvalidInput)
+		}
+		claimed, err := s.billing.ClaimRefund(ctx, order.OrderID)
+		if err != nil {
+			return nil, err
+		}
+		if !claimed {
+			return nil, fmt.Errorf("%w: 이미 환불 처리 중이거나 완료된 주문입니다", domain.ErrInvalidInput)
+		}
+		cancelAmount := q.RefundKRW
+		if cancelAmount == order.AmountKRW {
+			cancelAmount = 0 // full cancel
+		}
+		if _, err := s.toss.CancelPaymentAmount(ctx, *order.TossPaymentKey, reason, cancelAmount); err != nil {
+			var te *toss.TossError
+			if !(errors.As(err, &te) && te.Code == "ALREADY_CANCELED_TRANSACTION") {
+				_ = s.billing.ReleaseRefundClaim(ctx, order.OrderID)
+				return nil, err
+			}
+		}
+		status := domain.BillingRefunded
+		if q.RefundKRW < order.AmountKRW {
+			status = domain.BillingPartiallyRefunded
+		}
+		if err := s.billing.RecordRefund(ctx, order.OrderID, status, q.RefundKRW); err != nil {
 			return nil, err
 		}
 	}
-	if err := s.billing.SetOrderStatus(ctx, order.OrderID, domain.BillingRefunded); err != nil {
+	if err := s.billing.CancelActiveSubscription(ctx, userID); err != nil {
 		return nil, err
 	}
-	_ = s.billing.CancelActiveSubscription(ctx, userID)
-	return s.billing.GetOrderByMerchantID(ctx, merchantOrderID)
+	updated, err := s.billing.GetOrderByMerchantID(ctx, order.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	return &CancelResult{Mode: CancelImmediate, Quote: q, Order: updated}, nil
+}
+
+// CancelSubscription is the legacy no-mode cancel. Cancelling now needs an
+// explicit mode, so it maps to END_OF_PERIOD (no refund, keep access).
+func (s *BillingService) CancelSubscription(ctx context.Context, userID string) error {
+	_, err := s.Cancel(ctx, userID, CancelEndOfPeriod, "")
+	return err
+}
+
+// Refund ends the active pass immediately under the refund policy. A named
+// order must be the active pass's order; there is no unconditional full
+// refund path any more.
+func (s *BillingService) Refund(ctx context.Context, userID, orderRef, reason string) (*domain.BillingOrder, error) {
+	if !s.enabled {
+		return nil, domain.ErrPaymentUnavailable
+	}
+	if ref := strings.TrimSpace(orderRef); ref != "" {
+		named, err := s.billing.GetOrderByMerchantID(ctx, ref)
+		if err != nil {
+			return nil, fmt.Errorf("%w: unknown order", domain.ErrInvalidInput)
+		}
+		if named.UserID != userID {
+			return nil, domain.ErrForbidden
+		}
+		_, active, err := s.activePass(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		if active.OrderID != named.OrderID {
+			return nil, fmt.Errorf("%w: only the active pass can be refunded", domain.ErrInvalidInput)
+		}
+	}
+	res, err := s.Cancel(ctx, userID, CancelImmediate, reason)
+	if err != nil {
+		return nil, err
+	}
+	return res.Order, nil
 }

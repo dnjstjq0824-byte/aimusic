@@ -188,6 +188,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	billingAuthed.POST("/orders", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.CreateOrder)
 	billingAuthed.POST("/payments/confirm", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.ConfirmPayment)
 	billingAuthed.GET("/subscriptions/me", billingH.MySubscription)
+	billingAuthed.GET("/subscriptions/me/refund-quote", billingH.RefundQuote)
 	billingAuthed.POST("/subscriptions/cancel", billingH.CancelSubscription)
 	billingAuthed.POST("/payments/refund", billingH.Refund)
 

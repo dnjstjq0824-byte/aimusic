@@ -18,7 +18,9 @@ type fakeBillingStore struct {
 	plans  map[string]*domain.BillingPlan
 	orders map[string]*domain.BillingOrder
 	subs   map[string]*domain.BillingSubscription
+	// events maps event ID -> processed.
 	events map[string]bool
+	usage  *time.Time
 }
 
 func (f *fakeBillingStore) ListActivePlans(_ context.Context) ([]*domain.BillingPlan, error) {
@@ -124,14 +126,60 @@ func (f *fakeBillingStore) ClaimWebhookEvent(_ context.Context, _, eventID, _ st
 	if f.events == nil {
 		f.events = map[string]bool{}
 	}
-	if f.events[eventID] {
+	if processed, seen := f.events[eventID]; seen && processed {
 		return false, nil
 	}
-	f.events[eventID] = true
+	f.events[eventID] = false
 	return true, nil
 }
 
-func (f *fakeBillingStore) MarkWebhookProcessed(_ context.Context, _, _ string) error { return nil }
+func (f *fakeBillingStore) MarkWebhookProcessed(_ context.Context, _, eventID string) error {
+	if f.events == nil {
+		f.events = map[string]bool{}
+	}
+	f.events[eventID] = true
+	return nil
+}
+
+func (f *fakeBillingStore) FirstUsageSince(_ context.Context, _ string, since time.Time) (*time.Time, error) {
+	if f.usage != nil && !f.usage.Before(since) {
+		return f.usage, nil
+	}
+	return nil, nil
+}
+
+func (f *fakeBillingStore) RequestCancelAtPeriodEnd(_ context.Context, userID string) error {
+	if s, ok := f.subs[userID]; ok && s.Status == domain.BillSubActive && s.CancelRequestedAt == nil {
+		now := time.Now()
+		s.CancelRequestedAt = &now
+	}
+	return nil
+}
+
+func (f *fakeBillingStore) ClaimRefund(_ context.Context, orderID string) (bool, error) {
+	o, ok := f.orders[orderID]
+	if !ok || o.Status != domain.BillingPaid || o.RefundedAt != nil {
+		return false, nil
+	}
+	now := time.Now()
+	o.RefundedAt = &now
+	return true, nil
+}
+
+func (f *fakeBillingStore) ReleaseRefundClaim(_ context.Context, orderID string) error {
+	if o, ok := f.orders[orderID]; ok && o.Status == domain.BillingPaid {
+		o.RefundedAt = nil
+	}
+	return nil
+}
+
+func (f *fakeBillingStore) RecordRefund(_ context.Context, orderID, status string, amount int) error {
+	if o, ok := f.orders[orderID]; ok {
+		o.Status = status
+		o.RefundedAmountKRW = &amount
+	}
+	return nil
+}
 
 // stubToss emulates confirm + payment query with scripted statuses.
 func stubToss(t *testing.T, confirmStatus string, queryStatus map[string]string, hits *int) *httptest.Server {
@@ -384,8 +432,12 @@ func refundTestSetup(t *testing.T, cancelCode string) (*BillingService, *fakeBil
 	store.orders = map[string]*domain.BillingOrder{
 		"m-r1": {ID: "row-r1", UserID: "u-r1", PlanID: "plan-1", OrderID: "m-r1", AmountKRW: 5900, Status: domain.BillingPaid, TossPaymentKey: &pk},
 	}
+	rowID := "row-r1"
+	start := time.Now().Add(-time.Hour)
+	store.orders["m-r1"].ApprovedAt = &start
 	store.subs = map[string]*domain.BillingSubscription{
-		"u-r1": {ID: "sub-r1", UserID: "u-r1", PlanID: "plan-1", Status: domain.BillSubActive},
+		"u-r1": {ID: "sub-r1", UserID: "u-r1", PlanID: "plan-1", OrderID: &rowID, Status: domain.BillSubActive,
+			CurrentPeriodStart: start, CurrentPeriodEnd: start.AddDate(0, 1, 0)},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
