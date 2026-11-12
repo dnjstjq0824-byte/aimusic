@@ -140,7 +140,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 
 	tracks := v1.Group("/tracks")
 	tracks.GET("", trackH.ListTracks)
-	tracks.GET("/:id", trackH.GetTrack)
+	tracks.GET("/:id", JWTOptional(d.Services.Auth), trackH.GetTrack)
 	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
 	certs := v1.Group("/certificates")
 	certs.GET("/:number", certH.VerifyCertificate)

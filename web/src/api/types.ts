@@ -75,7 +75,7 @@ export interface Track {
   genre?: string | null;
   moodTags?: string[];
   durationMs?: number | null;
-  originalObjectKey: string;
+  originalObjectKey?: string;
   hlsPrefix?: string | null;
   aiProvider: string;
   aiGenerated: boolean;

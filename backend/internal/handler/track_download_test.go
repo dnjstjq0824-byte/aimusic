@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"avibe-platform/backend/internal/domain"
 )
@@ -45,5 +48,30 @@ func TestDownloadDisclosureText(t *testing.T) {
 	got = downloadDisclosureText(track, "")
 	if got != "AI-generated music via SUNO. Verify: https://avibemusic.com/tracks/tid-1" {
 		t.Fatalf("default base = %q", got)
+	}
+}
+
+func TestCanSeeFullTrack(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := &TrackHandler{}
+	track := &domain.Track{ID: "t1", PartnerID: "p1", Status: domain.TrackLicenseGatePending}
+
+	anon, _ := gin.CreateTestContext(httptest.NewRecorder())
+	if h.canSeeFullTrack(anon, track) {
+		t.Fatal("anonymous caller must not see the full track")
+	}
+
+	listener, _ := gin.CreateTestContext(httptest.NewRecorder())
+	listener.Set(ctxUserIDKey, "u1")
+	listener.Set(ctxRoleKey, domain.RoleUser)
+	if h.canSeeFullTrack(listener, track) {
+		t.Fatal("listener without partner profile must not see the full track")
+	}
+
+	admin, _ := gin.CreateTestContext(httptest.NewRecorder())
+	admin.Set(ctxUserIDKey, "a1")
+	admin.Set(ctxRoleKey, domain.RoleAdmin)
+	if !h.canSeeFullTrack(admin, track) {
+		t.Fatal("admin must see the full track")
 	}
 }

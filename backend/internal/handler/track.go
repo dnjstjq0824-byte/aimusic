@@ -115,20 +115,51 @@ func (h *TrackHandler) ListTracks(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
+	items := make([]*domain.Track, 0, len(page.Items))
+	for _, t := range page.Items {
+		items = append(items, t.PublicView())
+	}
 	ok(c, gin.H{
-		"items": page.Items, "total": page.Total,
+		"items": items, "total": page.Total,
 		"limit": page.Limit, "offset": page.Offset,
 	})
 }
 
-// GetTrack returns one track.
+// GetTrack returns one track. Anonymous callers and listeners only see
+// READY tracks through the public view (B-05); the owning partner and
+// admins see every status with full fields. Requires JWTOptional.
 func (h *TrackHandler) GetTrack(c *gin.Context) {
 	track, err := h.Repos.Tracks.GetByID(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	ok(c, track)
+	if h.canSeeFullTrack(c, track) {
+		ok(c, track)
+		return
+	}
+	if track.Status != domain.TrackReady {
+		AbortError(c, domain.ErrNotFound)
+		return
+	}
+	ok(c, track.PublicView())
+}
+
+// canSeeFullTrack reports whether the caller is an admin or the partner
+// that owns the track.
+func (h *TrackHandler) canSeeFullTrack(c *gin.Context, track *domain.Track) bool {
+	userID := CurrentUserID(c)
+	if userID == "" {
+		return false
+	}
+	if CurrentRole(c) == domain.RoleAdmin {
+		return true
+	}
+	if h.Repos == nil || h.Repos.Partners == nil {
+		return false
+	}
+	p, err := h.Repos.Partners.GetByUserID(c.Request.Context(), userID)
+	return err == nil && p.ID == track.PartnerID
 }
 
 // Stream issues a short-lived signed HLS URL for READY tracks (or
