@@ -78,9 +78,19 @@ export default {
       const expUnix = Number.parseInt(exp, 10);
       const fresh = Number.isFinite(expUnix) && Date.now() / 1000 <= expUnix;
       let valid = false;
-      if (trackId && extOk && fresh && jti && sig && fileAllowed(q, file)) {
-        const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}|${q}`);
-        valid = timingSafeEqualHex(expected, sig.toLowerCase());
+      if (trackId && extOk && fresh && jti && sig) {
+        if (q) {
+          if (fileAllowed(q, file)) {
+            const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}|${q}`);
+            valid = timingSafeEqualHex(expected, sig.toLowerCase());
+          }
+        } else if (env.ALLOW_LEGACY_GRANTS === 'true') {
+          // Rollout bridge only: grants minted by a backend that predates the
+          // q tier. Set ALLOW_LEGACY_GRANTS while backend and Worker deploy,
+          // then remove it (legacy grants carry no tier, see B-04).
+          const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}`);
+          valid = timingSafeEqualHex(expected, sig.toLowerCase());
+        }
       }
       if (!valid) {
         return Response.json(
