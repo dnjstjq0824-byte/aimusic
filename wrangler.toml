@@ -19,4 +19,4 @@ API_ORIGIN = "https://api.avibemusic.com"
 S3_ORIGIN = "https://hls.avibemusic.com"
 # Rollout bridge for the SQ/HQ grant change (B-04): accept pre-tier grants
 # only until the new backend is live, then set to "false" and redeploy.
-ALLOW_LEGACY_GRANTS = "true"
+ALLOW_LEGACY_GRANTS = "false"

@@ -59,7 +59,7 @@ find /opt/avibe/backups -name "avibe-*.sql.gz" -mtime +14 -delete
 EOS
 chmod 700 /opt/avibe/backup-db.sh
 /opt/avibe/backup-db.sh
-( crontab -l 2>/dev/null | grep -v backup-db.sh; echo "30 18 * * * /opt/avibe/backup-db.sh >> /opt/avibe/backups/backup.log 2>&1" ) | crontab -
+( crontab -l 2>/dev/null | grep -v backup-db.sh || true; echo "30 18 * * * /opt/avibe/backup-db.sh >> /opt/avibe/backups/backup.log 2>&1" ) | crontab -
 ls -lt /opt/avibe/backups | head -3'
 
 say "3. Ship backend source (previous kept as backend.prev-$TS)"
