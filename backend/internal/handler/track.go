@@ -212,7 +212,7 @@ func (h *TrackHandler) Stream(c *gin.Context) {
 	playlistURL := base + "/" + strings.TrimPrefix(*track.HLSPrefix, "/") + "/" + playlist
 	jti := uuid.NewString()
 	exp := time.Now().Add(time.Duration(h.Config.HLS.URLTTLSecs) * time.Second)
-	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, h.Config.HLS.SigningKey)
+	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, quality, h.Config.HLS.SigningKey)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"url": signed, "expiresAt": exp.Format(time.RFC3339), "jti": jti, "quality": quality,
 	}})

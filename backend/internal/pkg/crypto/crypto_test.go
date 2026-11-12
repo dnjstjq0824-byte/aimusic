@@ -77,16 +77,31 @@ func TestDecryptRejectsTampered(t *testing.T) {
 
 func TestPlaybackTokenSignVerify(t *testing.T) {
 	exp := time.Now().Add(time.Minute).Unix()
-	sig := SignPlaybackToken("track-1", "jti-1", exp, "secret")
-	if !VerifyPlaybackToken("track-1", "jti-1", exp, sig, "secret") {
+	sig := SignPlaybackToken("track-1", "jti-1", exp, PlaybackSQ, "secret")
+	if !VerifyPlaybackToken("track-1", "jti-1", exp, PlaybackSQ, sig, "secret") {
 		t.Fatal("valid token rejected")
 	}
-	if VerifyPlaybackToken("track-1", "jti-1", exp, sig, "wrong") {
+	if VerifyPlaybackToken("track-1", "jti-1", exp, PlaybackSQ, sig, "wrong") {
 		t.Fatal("wrong-key token accepted")
 	}
 	past := time.Now().Add(-time.Minute).Unix()
-	old := SignPlaybackToken("track-1", "jti-1", past, "secret")
-	if VerifyPlaybackToken("track-1", "jti-1", past, old, "secret") {
+	old := SignPlaybackToken("track-1", "jti-1", past, PlaybackSQ, "secret")
+	if VerifyPlaybackToken("track-1", "jti-1", past, PlaybackSQ, old, "secret") {
 		t.Fatal("expired token accepted")
+	}
+}
+
+func TestPlaybackTokenBindsQuality(t *testing.T) {
+	exp := time.Now().Add(time.Minute).Unix()
+	sq := SignPlaybackToken("track-1", "jti-1", exp, PlaybackSQ, "secret")
+	if VerifyPlaybackToken("track-1", "jti-1", exp, PlaybackHQ, sq, "secret") {
+		t.Fatal("an SQ signature must not verify as HQ")
+	}
+	if VerifyPlaybackToken("track-1", "jti-1", exp, "", sq, "secret") {
+		t.Fatal("missing quality must not verify")
+	}
+	u := BuildSignedPlaybackURL("https://cdn.example/hls/t/stream_0.m3u8", "track-1", "jti-1", time.Unix(exp, 0), PlaybackSQ, "secret")
+	if !strings.Contains(u, "q=SQ") || !strings.Contains(u, "sig="+sq) {
+		t.Fatalf("url = %s", u)
 	}
 }

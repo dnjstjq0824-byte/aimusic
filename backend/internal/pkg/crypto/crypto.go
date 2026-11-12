@@ -66,30 +66,41 @@ func (c *Cipher) Decrypt(enc string) ([]byte, error) {
 	return plain, nil
 }
 
-// SignPlaybackToken returns the HMAC-SHA256 hex signature for a playback token.
-func SignPlaybackToken(trackID, jti string, expUnix int64, key string) string {
+// Playback grant quality tiers. The tier is part of the signed message, so
+// a standard-quality grant cannot be replayed against the 256k variant
+// (B-04). The edge Worker (worker.js) enforces which files each tier may
+// fetch: SQ = stream_0 playlist + seg_0_* segments + peaks.json, HQ = all.
+const (
+	PlaybackSQ = "SQ"
+	PlaybackHQ = "HQ"
+)
+
+// SignPlaybackToken returns the HMAC-SHA256 hex signature over
+// "trackId|jti|exp|quality".
+func SignPlaybackToken(trackID, jti string, expUnix int64, quality, key string) string {
 	mac := hmac.New(sha256.New, []byte(key))
-	msg := trackID + "|" + jti + "|" + strconv.FormatInt(expUnix, 10)
+	msg := trackID + "|" + jti + "|" + strconv.FormatInt(expUnix, 10) + "|" + quality
 	mac.Write([]byte(msg))
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// VerifyPlaybackToken checks signature and expiry of a playback token.
-func VerifyPlaybackToken(trackID, jti string, expUnix int64, sig, key string) bool {
-	if key == "" || sig == "" {
+// VerifyPlaybackToken checks signature, tier and expiry of a playback token.
+func VerifyPlaybackToken(trackID, jti string, expUnix int64, quality, sig, key string) bool {
+	if key == "" || sig == "" || (quality != PlaybackSQ && quality != PlaybackHQ) {
 		return false
 	}
 	if time.Now().Unix() > expUnix {
 		return false
 	}
-	expected := SignPlaybackToken(trackID, jti, expUnix, key)
+	expected := SignPlaybackToken(trackID, jti, expUnix, quality, key)
 	return subtle.ConstantTimeCompare([]byte(expected), []byte(sig)) == 1
 }
 
-// BuildSignedPlaybackURL appends exp, jti, and sig query parameters to a base HLS URL.
-func BuildSignedPlaybackURL(baseURL, trackID, jti string, exp time.Time, key string) string {
+// BuildSignedPlaybackURL appends exp, jti, q (quality tier) and sig query
+// parameters to a base HLS URL.
+func BuildSignedPlaybackURL(baseURL, trackID, jti string, exp time.Time, quality, key string) string {
 	expUnix := exp.Unix()
-	sig := SignPlaybackToken(trackID, jti, expUnix, key)
+	sig := SignPlaybackToken(trackID, jti, expUnix, quality, key)
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return baseURL
@@ -97,6 +108,7 @@ func BuildSignedPlaybackURL(baseURL, trackID, jti string, exp time.Time, key str
 	q := u.Query()
 	q.Set("exp", strconv.FormatInt(expUnix, 10))
 	q.Set("jti", jti)
+	q.Set("q", quality)
 	q.Set("sig", sig)
 	u.RawQuery = q.Encode()
 	return u.String()
