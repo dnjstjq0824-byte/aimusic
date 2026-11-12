@@ -18,7 +18,7 @@
         <div>
           <h4 class="font-bold text-white uppercase tracking-wider text-[11px] mb-3">스트리밍 &amp; 탐색</h4>
           <ul class="space-y-2 text-xs">
-            <li><RouterLink to="/" class="hover:text-white transition-colors">실시간 Top 음원</RouterLink></li>
+            <li><RouterLink to="/explore?sort=popular" class="hover:text-white transition-colors">인기 음원</RouterLink></li>
             <li><RouterLink to="/explore" class="hover:text-white transition-colors">AI 모델별 탐색 (Suno, Udio, AIVA)</RouterLink></li>
             <li><RouterLink to="/explore?mood=Focus" class="hover:text-white transition-colors">집중 &amp; 작업용 사운드</RouterLink></li>
             <li><RouterLink to="/explore?mood=Chill" class="hover:text-white transition-colors">칠 &amp; 로우파이 라운지</RouterLink></li>

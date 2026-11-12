@@ -25,12 +25,13 @@
         <!-- Search Keyword -->
         <UiInput
           v-model="searchQuery"
+          label="검색"
           placeholder="곡 제목, 아티스트, 키워드 검색…"
           @enter="submitSearch"
         />
 
         <!-- AI Provider -->
-        <UiSelect v-model="filterProvider" @change="onSearch">
+        <UiSelect v-model="filterProvider" label="AI 플랫폼" @change="onSearch">
           <option value="">모든 AI 플랫폼</option>
           <option value="SUNO">Suno (Pro / Premier)</option>
           <option value="UDIO">Udio (Standard / Pro)</option>
@@ -42,7 +43,7 @@
         </UiSelect>
 
         <!-- Mood & Genre -->
-        <UiSelect v-model="filterMood" @change="onSearch">
+        <UiSelect v-model="filterMood" label="무드" @change="onSearch">
           <option value="">모든 무드 / 분위기</option>
           <option value="Focus">Focus &amp; Work (집중/업무)</option>
           <option value="Chill">Chill &amp; Lo-Fi (휴식/라운지)</option>
@@ -198,7 +199,7 @@ const total = ref(0);
 const searchQuery = ref('');
 const filterProvider = ref('');
 const filterMood = ref((route.query.mood as string) || '');
-const sortBy = ref('recent');
+const sortBy = ref(['recent', 'oldest', 'popular', 'title'].includes(route.query.sort as string) ? (route.query.sort as string) : 'recent');
 
 const reportTarget = ref<Track | null>(null);
 const playlistTargetTrack = ref<Track | null>(null);

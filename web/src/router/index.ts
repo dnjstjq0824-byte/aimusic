@@ -137,6 +137,50 @@ export const router = createRouter({
   },
 });
 
+// F-04: per-route tab titles (bookmarks, history, screen readers).
+const ROUTE_TITLES: Record<string, string> = {
+  home: '홈',
+  explore: '음원 탐색',
+  'my-library': '내 라이브러리',
+  playlists: '플레이리스트',
+  login: '로그인',
+  'reset-password': '비밀번호 찾기',
+  pricing: '요금제',
+  checkout: '결제',
+  'checkout-confirm': '결제 완료',
+  'track-detail': '음원 상세',
+  'playlist-detail': '플레이리스트',
+  'dispute-center': '권리보호센터',
+  'account-security': '계정 보안',
+  'legal-root': '약관',
+  'legal-terms': '약관',
+  'certificate-verify': '인증서 확인',
+  'partner-dashboard': '파트너 대시보드',
+  'partner-upload': '음원 업로드',
+  'partner-subscriptions': 'AI 구독 증빙',
+  'partner-stores': '매장 관리',
+  'partner-generations': '음원 생성',
+  'admin-overview': '관리자 개요',
+  'admin-reviews': '심사',
+  'admin-policies': '라이선스 정책',
+  'admin-disputes': '분쟁 처리',
+  'admin-curation': '큐레이션',
+  'admin-audit': '감사 로그',
+  'admin-users': '사용자 관리',
+  'admin-stores': '매장 승인',
+  'admin-distribution': '유통',
+  'admin-settlements': '정산',
+  'store-player': '매장 플레이어',
+  'server-error': '오류',
+  'not-found': '페이지를 찾을 수 없음',
+};
+
+router.afterEach((to) => {
+  if (typeof document === 'undefined') return;
+  const title = ROUTE_TITLES[String(to.name ?? '')];
+  document.title = title ? title + ' · AVIBE' : 'AVIBE — Beyond Your Music';
+});
+
 /** In-app redirects only: must be a same-origin absolute path, never `//host` or a scheme. */
 export function safeRedirect(raw: unknown): string {
   if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) {

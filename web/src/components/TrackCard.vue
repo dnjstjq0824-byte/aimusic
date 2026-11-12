@@ -32,7 +32,6 @@
       <div class="mt-3 flex items-center justify-between border-t border-surface-border pt-2 text-[11px] text-neutral-400">
         <span>재생 {{ track.playCount.toLocaleString() }}회</span>
         <span v-if="track.durationMs">{{ fmtDuration(track.durationMs) }}</span>
-        <span v-if="track.bitrateKbps">{{ track.bitrateKbps }}kbps</span>
       </div>
     </div>
 
