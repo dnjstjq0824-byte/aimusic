@@ -100,6 +100,45 @@ Worker-only knobs: `DISPUTE_SLA_INTERVAL_SECONDS` (900),
 
 ## 8. Backups
 
-- Postgres: managed PITR (target RPO ≤5 min); test restore monthly.
-- R2: versioning on staging + HLS buckets; takedown purges are deliberate deletes.
-- Secrets: manager (not `.env` files); rotate JWT/HLS/OAuth/Toss on personnel change — rotation revokes sessions via `token_version` bump per user or re-issue.
+- Postgres: VPS-local dumps, not managed PITR. `/opt/avibe/backup-db.sh`
+  (`pg_dump` + gzip → `/opt/avibe/backups/avibe-<UTC>.sql.gz`, 14-day
+  retention) runs daily at 03:30 KST via root crontab
+  (`30 18 * * *`). RPO ≤24h. Every deploy takes one more dump first (G-2).
+- Restore (rehearsed 2026-11-12, WI-D2): dump → scratch DB → compare →
+  drop. Prod is never written during rehearsal:
+  ```sh
+  LATEST=$(ls -t /opt/avibe/backups/avibe-*.sql.gz | head -1)
+  docker exec -i avibe-prod-postgres psql -U avibe -d avibe -c 'CREATE DATABASE avibe_restore_test;'
+  gunzip -c "$LATEST" | docker exec -i avibe-prod-postgres psql -U avibe -d avibe_restore_test -v ON_ERROR_STOP=1 -q
+  # compare: table count + row counts + max(schema_migrations) vs prod, then:
+  docker exec -i avibe-prod-postgres psql -U avibe -d avibe -c 'DROP DATABASE avibe_restore_test;'
+  ```
+  Rehearsal evidence: 36/36 tables, users/tracks/playlists/streaming_logs/
+  settlements row counts identical, migrations max `000018` on both sides.
+- Real restore (prod down): stop api/worker, `DROP DATABASE avibe` +
+  `CREATE DATABASE avibe`, pipe the newest good dump into `avibe`,
+  `migrate up`, start api/worker, check `/readyz`. Practice on the
+  scratch flow above first.
+- R2: private buckets, no versioning. Takedown purges are deliberate
+  deletes. Pre-cutover LocalStack volume stays on the VPS until PO
+  approves deletion (G-R2).
+- Secrets live in `/opt/avibe/.env` (mode 600), not a manager. Rotate
+  JWT/HLS/OAuth/Toss/R2 on personnel change — rotation revokes sessions
+  via `token_version` bump per user or re-issue.
+
+## 9. Uptime monitor (WI-D2, O-04)
+
+Free-plan external monitor (UptimeRobot or equivalent), two HTTPS monitors:
+
+| Monitor | URL | Healthy |
+|---|---|---|
+| api-readyz | `https://api.avibemusic.com/readyz` | 200 + `"status":"ok"` |
+| home | `https://avibemusic.com/` | 200 |
+
+- Interval 5 min, alert contact = PO email (PO-owned account).
+- Setup (PO, ~5 min): sign up with the alert email → Add Monitor × 2
+  (Monitor Type HTTPS, URLs above, interval 5 min) → alert contact =
+  that email → use the monitor's test/suspend toggle once to confirm
+  an alert email arrives → tell the engine session "alert tested".
+- An alert means: open this runbook §6 Incidents; `/readyz` body names
+  the failing check (`db`/`redis`/`queueDepth`).
