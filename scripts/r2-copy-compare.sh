@@ -18,6 +18,14 @@ set +a
 : "${R2_PUBLIC_HLS_BUCKET:?R2_PUBLIC_HLS_BUCKET missing in .env}"
 SRC_STAGING="${S3_STAGING_BUCKET:-local-staging}"
 SRC_HLS="${S3_PUBLIC_HLS_BUCKET:-local-hls}"
+# Tolerate a Windows-edited .env: trailing CR breaks endpoint/auth values.
+R2_ENDPOINT="${R2_ENDPOINT%$'\r'}"
+R2_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID%$'\r'}"
+R2_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY%$'\r'}"
+R2_STAGING_BUCKET="${R2_STAGING_BUCKET%$'\r'}"
+R2_PUBLIC_HLS_BUCKET="${R2_PUBLIC_HLS_BUCKET%$'\r'}"
+SRC_STAGING="${SRC_STAGING%$'\r'}"
+SRC_HLS="${SRC_HLS%$'\r'}"
 
 NET=avibe-prod_avibe
 IMG=amazon/aws-cli:2.0.9
