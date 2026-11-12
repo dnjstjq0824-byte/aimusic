@@ -17,6 +17,9 @@ TS=$(date -u +%Y%m%d-%H%M%S)
 
 say() { printf '\n== %s\n' "$*"; }
 
+RESUME5=0
+[[ "${1:-}" == "--resume-at-5" ]] && RESUME5=1
+
 if [[ "${1:-}" == "--rollback" ]]; then
   say "Rollback: restore previous backend dir, .env, tunnel config, then rebuild"
   "${SSH[@]}" 'set -e; cd /opt/avibe
@@ -38,6 +41,7 @@ git diff --quiet || { echo "working tree has uncommitted changes"; exit 1; }
 npx wrangler whoami 2>/dev/null | grep -q "$CF_ACCOUNT" || { echo "run: npx wrangler login  (avibemusic.com account)"; exit 1; }
 "${SSH[@]}" 'docker ps --format "{{.Names}}" | grep -q avibe-prod-api'
 
+if [[ $RESUME5 == 0 ]]; then
 say "1. Worker + web (bridge ON: accepts old and new grants)"
 npx wrangler deploy
 
@@ -70,10 +74,12 @@ say "4. Env + tunnel config (backups *.bak-rollout-$TS)"
 git -c core.autocrlf=false show HEAD:deploy/cloudflared-config.yml | "${SSH[@]}" 'cat > /opt/avibe/cloudflared/config.yml'
 "${SSH[@]}" 'docker run --rm -v /opt/avibe/cloudflared:/etc/cloudflared:ro cloudflare/cloudflared:latest --config /etc/cloudflared/config.yml tunnel ingress validate'
 
+fi
+
 say "5. Build, migrate (000018), restart"
 "${SSH[@]}" 'set -e; cd /opt/avibe
   docker compose -f docker-compose.prod.yml build api
-  docker compose -f docker-compose.prod.yml run --rm migrate up
+  docker compose -f docker-compose.prod.yml run --rm migrate
   docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate api worker
   docker restart avibe-prod-cloudflared
   sleep 10
