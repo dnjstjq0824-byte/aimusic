@@ -11,24 +11,24 @@ import (
 // access/portability). Secrets (password hash, TOTP secret, encrypted payout
 // account) are never included.
 type UserDataExport struct {
-	Profile         *domain.User                `json:"profile"`
-	Consents        []*domain.UserTermConsent   `json:"consents"`
-	Playlists       []*ExportPlaylist           `json:"playlists"`
-	PlaybackStates  []*domain.UserPlaybackState `json:"playbackStates"`
-	StreamingLogs   []*domain.StreamingLog      `json:"streamingLogs"`
-	DisputesFiled   []*domain.CopyrightDispute  `json:"disputesFiled"`
-	Blocks          []*domain.UserBlock         `json:"blocks"`
-	ArtistBlocks    []*domain.UserArtistBlock   `json:"artistBlocks"`
-	Orders          []*domain.BillingOrder      `json:"orders"`
-	Subscription    *domain.BillingSubscription `json:"subscription,omitempty"`
-	PartnerProfile  *domain.PartnerProfile      `json:"partnerProfile,omitempty"`
-	PartnerTracks   []*domain.Track             `json:"partnerTracks,omitempty"`
-	ExportedAt      string                      `json:"exportedAt"`
+	Profile        *domain.User                `json:"profile"`
+	Consents       []*domain.UserTermConsent   `json:"consents"`
+	Playlists      []*ExportPlaylist           `json:"playlists"`
+	PlaybackStates []*domain.UserPlaybackState `json:"playbackStates"`
+	StreamingLogs  []*domain.StreamingLog      `json:"streamingLogs"`
+	DisputesFiled  []*domain.CopyrightDispute  `json:"disputesFiled"`
+	Blocks         []*domain.UserBlock         `json:"blocks"`
+	ArtistBlocks   []*domain.UserArtistBlock   `json:"artistBlocks"`
+	Orders         []*domain.BillingOrder      `json:"orders"`
+	Subscription   *domain.BillingSubscription `json:"subscription,omitempty"`
+	PartnerProfile *domain.PartnerProfile      `json:"partnerProfile,omitempty"`
+	PartnerTracks  []*domain.Track             `json:"partnerTracks,omitempty"`
+	ExportedAt     string                      `json:"exportedAt"`
 }
 
 // ExportPlaylist pairs a playlist with its track IDs.
 type ExportPlaylist struct {
-	Playlist *domain.Playlist       `json:"playlist"`
+	Playlist *domain.Playlist        `json:"playlist"`
 	Tracks   []*domain.PlaylistTrack `json:"tracks"`
 }
 

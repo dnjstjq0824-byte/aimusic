@@ -15,9 +15,9 @@ var (
 // PhaseCorrelatorConfig defines thresholds for phase correlation and mono compatibility.
 type PhaseCorrelatorConfig struct {
 	MinAcceptableCorrelation float64 `json:"min_acceptable_correlation"` // Recommended >= 0.20
-	SubBassThresholdHz       float64 `json:"sub_bass_threshold_hz"`       // Default 200Hz
-	HighThresholdHz          float64 `json:"high_threshold_hz"`           // Default 4000Hz
-	MaxMonoEnergyLossDb      float64 `json:"max_mono_energy_loss_db"`     // Default 3.0 dB
+	SubBassThresholdHz       float64 `json:"sub_bass_threshold_hz"`      // Default 200Hz
+	HighThresholdHz          float64 `json:"high_threshold_hz"`          // Default 4000Hz
+	MaxMonoEnergyLossDb      float64 `json:"max_mono_energy_loss_db"`    // Default 3.0 dB
 }
 
 // DefaultPhaseCorrelatorConfig returns standard broadcast and vinyl mastering phase criteria.
@@ -32,14 +32,14 @@ func DefaultPhaseCorrelatorConfig() PhaseCorrelatorConfig {
 
 // PhaseCorrelationResult encapsulates global, band-split correlation, and mono fold-down risk.
 type PhaseCorrelationResult struct {
-	GlobalCorrelation   float64 `json:"global_correlation"`    // -1.0 (anti-phase) to +1.0 (dual mono)
-	BassCorrelation     float64 `json:"bass_correlation"`      // Sub-bass phase (<200Hz)
-	MidCorrelation      float64 `json:"mid_correlation"`       // Vocal & instrument body (200Hz-4kHz)
-	HighCorrelation     float64 `json:"high_correlation"`      // High air & cymbals (>4kHz)
-	MonoEnergyLossDb    float64 `json:"mono_energy_loss_db"`   // dB drop when summed to mono (L+R)/2
-	MonoCompatible      bool    `json:"mono_compatible"`       // True if passes mono fold-down without severe loss
-	HasSevereAntiPhase  bool    `json:"has_severe_anti_phase"` // True if correlation < 0 (high cancellation danger)
-	WarningSummary      string  `json:"warning_summary,omitempty"`
+	GlobalCorrelation  float64 `json:"global_correlation"`    // -1.0 (anti-phase) to +1.0 (dual mono)
+	BassCorrelation    float64 `json:"bass_correlation"`      // Sub-bass phase (<200Hz)
+	MidCorrelation     float64 `json:"mid_correlation"`       // Vocal & instrument body (200Hz-4kHz)
+	HighCorrelation    float64 `json:"high_correlation"`      // High air & cymbals (>4kHz)
+	MonoEnergyLossDb   float64 `json:"mono_energy_loss_db"`   // dB drop when summed to mono (L+R)/2
+	MonoCompatible     bool    `json:"mono_compatible"`       // True if passes mono fold-down without severe loss
+	HasSevereAntiPhase bool    `json:"has_severe_anti_phase"` // True if correlation < 0 (high cancellation danger)
+	WarningSummary     string  `json:"warning_summary,omitempty"`
 }
 
 // PhaseCorrelator measures stereo phase relationships and predicts mono compatibility.
@@ -145,14 +145,14 @@ func (pc *PhaseCorrelator) Analyze(input *PCMBuffer) (*PhaseCorrelationResult, e
 	}
 
 	return &PhaseCorrelationResult{
-		GlobalCorrelation:   math.Round(globalCorr*1000) / 1000,
-		BassCorrelation:     math.Round(bassCorr*1000) / 1000,
-		MidCorrelation:      math.Round(midCorr*1000) / 1000,
-		HighCorrelation:     math.Round(highCorr*1000) / 1000,
-		MonoEnergyLossDb:    math.Round(monoLossDb*100) / 100,
-		MonoCompatible:      monoCompatible,
-		HasSevereAntiPhase:  hasSevereAntiPhase,
-		WarningSummary:      warningSummary,
+		GlobalCorrelation:  math.Round(globalCorr*1000) / 1000,
+		BassCorrelation:    math.Round(bassCorr*1000) / 1000,
+		MidCorrelation:     math.Round(midCorr*1000) / 1000,
+		HighCorrelation:    math.Round(highCorr*1000) / 1000,
+		MonoEnergyLossDb:   math.Round(monoLossDb*100) / 100,
+		MonoCompatible:     monoCompatible,
+		HasSevereAntiPhase: hasSevereAntiPhase,
+		WarningSummary:     warningSummary,
 	}, nil
 }
 

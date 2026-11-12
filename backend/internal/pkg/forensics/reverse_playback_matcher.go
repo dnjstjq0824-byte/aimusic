@@ -11,13 +11,13 @@ import (
 
 // ReversePlaybackMatchResult encapsulates reverse evasion detection telemetry.
 type ReversePlaybackMatchResult struct {
-	Matched               bool    `json:"matched"`
-	IsReversedPlayback    bool    `json:"is_reversed_playback"`
-	ForwardSimilarity     float64 `json:"forward_similarity"`     // Direct similarity (0.0 to 1.0)
-	InvertedSimilarity    float64 `json:"inverted_similarity"`    // Time-reversed query similarity
-	EvasionAttemptDetected bool   `json:"evasion_attempt_detected"`
-	ConfidencePct         float64 `json:"confidence_pct"`
-	Summary               string  `json:"summary"`
+	Matched                bool    `json:"matched"`
+	IsReversedPlayback     bool    `json:"is_reversed_playback"`
+	ForwardSimilarity      float64 `json:"forward_similarity"`  // Direct similarity (0.0 to 1.0)
+	InvertedSimilarity     float64 `json:"inverted_similarity"` // Time-reversed query similarity
+	EvasionAttemptDetected bool    `json:"evasion_attempt_detected"`
+	ConfidencePct          float64 `json:"confidence_pct"`
+	Summary                string  `json:"summary"`
 }
 
 // ReversePlaybackMatcher tests both forward and time-inverted audio to defeat reverse evasion.

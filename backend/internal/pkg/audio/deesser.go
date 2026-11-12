@@ -9,13 +9,13 @@ import (
 
 // DeEsserConfig configures the dynamic sibilance controller.
 type DeEsserConfig struct {
-	CenterFreqHz    float64 `json:"center_freq_hz"`    // Sibilance center frequency, default: 7000 Hz
-	BandwidthHz     float64 `json:"bandwidth_hz"`      // Filter detection bandwidth, default: 2000 Hz (6kHz..8kHz)
-	ThresholdDbFS   float64 `json:"threshold_dbfs"`    // Trigger threshold, default: -20.0 dBFS
-	MaxReductionDb  float64 `json:"max_reduction_db"`  // Maximum dynamic attenuation cap, default: 8.0 dB
-	Ratio           float64 `json:"ratio"`             // Compression slope ratio, default: 4.0
-	AttackMs        float64 `json:"attack_ms"`         // Detector attack time, default: 1.0 ms
-	ReleaseMs       float64 `json:"release_ms"`        // Detector release time, default: 35.0 ms
+	CenterFreqHz   float64 `json:"center_freq_hz"`   // Sibilance center frequency, default: 7000 Hz
+	BandwidthHz    float64 `json:"bandwidth_hz"`     // Filter detection bandwidth, default: 2000 Hz (6kHz..8kHz)
+	ThresholdDbFS  float64 `json:"threshold_dbfs"`   // Trigger threshold, default: -20.0 dBFS
+	MaxReductionDb float64 `json:"max_reduction_db"` // Maximum dynamic attenuation cap, default: 8.0 dB
+	Ratio          float64 `json:"ratio"`            // Compression slope ratio, default: 4.0
+	AttackMs       float64 `json:"attack_ms"`        // Detector attack time, default: 1.0 ms
+	ReleaseMs      float64 `json:"release_ms"`       // Detector release time, default: 35.0 ms
 }
 
 // DefaultDeEsserConfig provides broadcast-grade vocal de-essing parameters.
@@ -37,7 +37,7 @@ type DeEsserResult struct {
 	MaxReductionAppliedDb float64    `json:"max_reduction_applied_db"` // Maximum dB reduction observed
 	SibilancePeakBeforeDb float64    `json:"sibilance_peak_before_db"`
 	SibilancePeakAfterDb  float64    `json:"sibilance_peak_after_db"`
-	TargetSuppressionMet  bool       `json:"target_suppression_met"`    // True if >= 4.0 dB reduction achieved
+	TargetSuppressionMet  bool       `json:"target_suppression_met"` // True if >= 4.0 dB reduction achieved
 	SibilantEventsCount   int        `json:"sibilant_events_count"`
 }
 

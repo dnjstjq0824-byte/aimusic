@@ -11,11 +11,11 @@ import (
 
 // SplicePoint represents a detected editing or splicing boundary.
 type SplicePoint struct {
-	TimestampMs     float64 `json:"timestamp_ms"`
-	SampleIndex     int     `json:"sample_index"`
+	TimestampMs      float64 `json:"timestamp_ms"`
+	SampleIndex      int     `json:"sample_index"`
 	NoiseFloorDiffDb float64 `json:"noise_floor_diff_db"`
-	PhaseDisruption float64 `json:"phase_disruption"`
-	ConfidencePct   float64 `json:"confidence_pct"` // 0.0 to 100.0%
+	PhaseDisruption  float64 `json:"phase_disruption"`
+	ConfidencePct    float64 `json:"confidence_pct"` // 0.0 to 100.0%
 }
 
 // SplicingAnalysisResult encapsulates detected splicing boundaries and authenticity score.

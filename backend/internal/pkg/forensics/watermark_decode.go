@@ -17,11 +17,11 @@ var (
 
 // ExtractedWatermark represents the decoded provenance metadata.
 type ExtractedWatermark struct {
-	PlatformMagic string `json:"platform_magic"` // "AVIBE"
-	TrackHashHex  string `json:"track_hash_hex"`
-	LicenseID     uint32 `json:"license_id"`
-	RawBytes      []byte `json:"raw_bytes"`
-	BitErrorCount int    `json:"bit_errors_corrected"`
+	PlatformMagic string  `json:"platform_magic"` // "AVIBE"
+	TrackHashHex  string  `json:"track_hash_hex"`
+	LicenseID     uint32  `json:"license_id"`
+	RawBytes      []byte  `json:"raw_bytes"`
+	BitErrorCount int     `json:"bit_errors_corrected"`
 	ConfidencePct float64 `json:"confidence_pct"`
 }
 

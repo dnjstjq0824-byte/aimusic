@@ -11,11 +11,11 @@ import (
 
 // TempoMatchResult encapsulates time-stretch invariant matching metrics.
 type TempoMatchResult struct {
-	Matched          bool    `json:"matched"`
-	BestSpeedFactor  float64 `json:"best_speed_factor"` // e.g. 0.80 to 1.20
-	SimilarityScore  float64 `json:"similarity_score"`  // 0.0 to 1.0 (or 0-100%)
-	ConfidencePct    float64 `json:"confidence_pct"`
-	Summary          string  `json:"summary"`
+	Matched         bool    `json:"matched"`
+	BestSpeedFactor float64 `json:"best_speed_factor"` // e.g. 0.80 to 1.20
+	SimilarityScore float64 `json:"similarity_score"`  // 0.0 to 1.0 (or 0-100%)
+	ConfidencePct   float64 `json:"confidence_pct"`
+	Summary         string  `json:"summary"`
 }
 
 // TempoInvariantMatcher performs scale-invariant fingerprint matching across speed variations (-20% to +20%).

@@ -15,25 +15,25 @@ import (
 type OggCodecType string
 
 const (
-	OggCodecOpus   OggCodecType = "Opus"
-	OggCodecVorbis OggCodecType = "Vorbis"
-	OggCodecFLAC   OggCodecType = "FLAC"
+	OggCodecOpus    OggCodecType = "Opus"
+	OggCodecVorbis  OggCodecType = "Vorbis"
+	OggCodecFLAC    OggCodecType = "FLAC"
 	OggCodecUnknown OggCodecType = "Unknown"
 )
 
 // Standard VorbisComment field keys.
 const (
-	VorbisTagTitle       = "TITLE"
-	VorbisTagArtist      = "ARTIST"
-	VorbisTagAlbum       = "ALBUM"
-	VorbisTagTrackNumber = "TRACKNUMBER"
-	VorbisTagDate        = "DATE"
-	VorbisTagGenre       = "GENRE"
-	VorbisTagCopyright   = "COPYRIGHT"
-	VorbisTagDescription = "DESCRIPTION"
-	VorbisTagLicense     = "LICENSE"
-	VorbisTagOrganization= "ORGANIZATION"
-	VorbisTagPerformer   = "PERFORMER"
+	VorbisTagTitle        = "TITLE"
+	VorbisTagArtist       = "ARTIST"
+	VorbisTagAlbum        = "ALBUM"
+	VorbisTagTrackNumber  = "TRACKNUMBER"
+	VorbisTagDate         = "DATE"
+	VorbisTagGenre        = "GENRE"
+	VorbisTagCopyright    = "COPYRIGHT"
+	VorbisTagDescription  = "DESCRIPTION"
+	VorbisTagLicense      = "LICENSE"
+	VorbisTagOrganization = "ORGANIZATION"
+	VorbisTagPerformer    = "PERFORMER"
 
 	// Article 31 AI Transparency Statutory Tags
 	VorbisTagAIArticle31Disclosure = "AI_ARTICLE_31_DISCLOSURE"
@@ -47,12 +47,12 @@ const (
 
 // Ogg and VorbisComment error definitions.
 var (
-	ErrNilVorbisComment    = errors.New("vorbis comment object cannot be nil")
-	ErrInvalidOggStream    = errors.New("invalid or truncated ogg bitstream")
-	ErrMissingBOSPage      = errors.New("missing mandatory beginning-of-stream (bos) ogg page")
-	ErrInvalidOggCRC       = errors.New("ogg page checksum verification failed")
-	ErrUnsupportedCodec    = errors.New("unsupported ogg audio codec for vorbis comment injection")
-	ErrTruncatedComment    = errors.New("truncated or malformed vorbis comment packet")
+	ErrNilVorbisComment = errors.New("vorbis comment object cannot be nil")
+	ErrInvalidOggStream = errors.New("invalid or truncated ogg bitstream")
+	ErrMissingBOSPage   = errors.New("missing mandatory beginning-of-stream (bos) ogg page")
+	ErrInvalidOggCRC    = errors.New("ogg page checksum verification failed")
+	ErrUnsupportedCodec = errors.New("unsupported ogg audio codec for vorbis comment injection")
+	ErrTruncatedComment = errors.New("truncated or malformed vorbis comment packet")
 )
 
 // Ogg CRC-32 table generated with polynomial 0x04C11DB7 (RFC 3533).
@@ -83,8 +83,8 @@ func ComputeOggCRC(data []byte) uint32 {
 
 // VorbisComment encapsulates Xiph.Org VorbisComment tag metadata.
 type VorbisComment struct {
-	Vendor       string
-	Comments     map[string][]string // Case-insensitive canonical map (stored in uppercase)
+	Vendor   string
+	Comments map[string][]string // Case-insensitive canonical map (stored in uppercase)
 
 	// Structured field accessors
 	Title        string
@@ -719,7 +719,7 @@ func BuildCanonicalTestOgg(codec OggCodecType, durationSec float64, sampleRate, 
 		_ = binary.Write(buf, binary.LittleEndian, uint16(312)) // pre-skip
 		_ = binary.Write(buf, binary.LittleEndian, uint32(sampleRate))
 		_ = binary.Write(buf, binary.LittleEndian, int16(0)) // gain 0
-		buf.WriteByte(0) // channel mapping family 0 (mono/stereo)
+		buf.WriteByte(0)                                     // channel mapping family 0 (mono/stereo)
 		idPacket = buf.Bytes()
 
 	case OggCodecVorbis:
@@ -733,8 +733,8 @@ func BuildCanonicalTestOgg(codec OggCodecType, durationSec float64, sampleRate, 
 		_ = binary.Write(buf, binary.LittleEndian, uint32(0))      // bitrate max
 		_ = binary.Write(buf, binary.LittleEndian, uint32(192000)) // bitrate nominal
 		_ = binary.Write(buf, binary.LittleEndian, uint32(0))      // bitrate min
-		buf.WriteByte(0xB8) // blocksize 0 = 2^8, blocksize 1 = 2^11
-		buf.WriteByte(0x01) // framing flag 1
+		buf.WriteByte(0xB8)                                        // blocksize 0 = 2^8, blocksize 1 = 2^11
+		buf.WriteByte(0x01)                                        // framing flag 1
 		idPacket = buf.Bytes()
 
 	default:

@@ -28,13 +28,13 @@ const (
 
 // KeyCandidate stores rank-ordered key candidate with correlation score.
 type KeyCandidate struct {
-	Key         string    `json:"key"`          // e.g. "C Major", "A Minor"
-	Root        string    `json:"root"`         // e.g. "C", "A"
-	Scale       ScaleType `json:"scale"`        // Major or Minor
-	Camelot     string    `json:"camelot"`      // e.g. "8B", "8A"
-	OpenKey     string    `json:"open_key"`     // e.g. "1d", "1m"
-	Correlation float64   `json:"correlation"`  // Pearson r (-1.0 to 1.0)
-	Confidence  float64   `json:"confidence"`   // Normalized confidence (0.0 to 1.0)
+	Key         string    `json:"key"`         // e.g. "C Major", "A Minor"
+	Root        string    `json:"root"`        // e.g. "C", "A"
+	Scale       ScaleType `json:"scale"`       // Major or Minor
+	Camelot     string    `json:"camelot"`     // e.g. "8B", "8A"
+	OpenKey     string    `json:"open_key"`    // e.g. "1d", "1m"
+	Correlation float64   `json:"correlation"` // Pearson r (-1.0 to 1.0)
+	Confidence  float64   `json:"confidence"`  // Normalized confidence (0.0 to 1.0)
 }
 
 // KeyResult contains the complete musical key detection, Camelot wheel, and harmonic mixing information.
@@ -123,18 +123,18 @@ type keyMeta struct {
 }
 
 var keyMetadataTable = [12][2]keyMeta{
-	0:  {{"8B", "1d"}, {"5A", "10m"}}, // C Major, C Minor
-	1:  {{"3B", "8d"}, {"12A", "5m"}}, // C# Major, C# Minor
+	0:  {{"8B", "1d"}, {"5A", "10m"}},  // C Major, C Minor
+	1:  {{"3B", "8d"}, {"12A", "5m"}},  // C# Major, C# Minor
 	2:  {{"10B", "3d"}, {"7A", "12m"}}, // D Major, D Minor
-	3:  {{"5B", "10d"}, {"2A", "7m"}}, // D# Major, D# Minor
-	4:  {{"12B", "5d"}, {"9A", "2m"}}, // E Major, E Minor
-	5:  {{"7B", "12d"}, {"4A", "9m"}}, // F Major, F Minor
-	6:  {{"2B", "7d"}, {"11A", "4m"}}, // F# Major, F# Minor
-	7:  {{"9B", "2d"}, {"6A", "11m"}}, // G Major, G Minor
-	8:  {{"4B", "9d"}, {"1A", "6m"}},  // G# Major, G# Minor
-	9:  {{"11B", "4d"}, {"8A", "1m"}}, // A Major, A Minor
-	10: {{"6B", "11d"}, {"3A", "8m"}}, // A# Major, A# Minor
-	11: {{"1B", "6d"}, {"10A", "3m"}}, // B Major, B Minor
+	3:  {{"5B", "10d"}, {"2A", "7m"}},  // D# Major, D# Minor
+	4:  {{"12B", "5d"}, {"9A", "2m"}},  // E Major, E Minor
+	5:  {{"7B", "12d"}, {"4A", "9m"}},  // F Major, F Minor
+	6:  {{"2B", "7d"}, {"11A", "4m"}},  // F# Major, F# Minor
+	7:  {{"9B", "2d"}, {"6A", "11m"}},  // G Major, G Minor
+	8:  {{"4B", "9d"}, {"1A", "6m"}},   // G# Major, G# Minor
+	9:  {{"11B", "4d"}, {"8A", "1m"}},  // A Major, A Minor
+	10: {{"6B", "11d"}, {"3A", "8m"}},  // A# Major, A# Minor
+	11: {{"1B", "6d"}, {"10A", "3m"}},  // B Major, B Minor
 }
 
 // GetCamelotKey returns the Camelot wheel code and OpenKey code for given root and scale.
@@ -177,11 +177,11 @@ func GetCompatibleCamelotKeys(camelot string) []string {
 	energyBoostNum := ((num + 1) % 12) + 1
 
 	return []string{
-		fmt.Sprintf("%d%s", num, letter),             // Exact Match (Same Key)
-		fmt.Sprintf("%d%s", num, oppositeLetter),     // Relative Major/Minor
-		fmt.Sprintf("%d%s", subdominantNum, letter),   // Subdominant (-1 hour)
-		fmt.Sprintf("%d%s", dominantNum, letter),      // Dominant (+1 hour)
-		fmt.Sprintf("%d%s", energyBoostNum, letter),   // Energy Boost (+2 hours)
+		fmt.Sprintf("%d%s", num, letter),            // Exact Match (Same Key)
+		fmt.Sprintf("%d%s", num, oppositeLetter),    // Relative Major/Minor
+		fmt.Sprintf("%d%s", subdominantNum, letter), // Subdominant (-1 hour)
+		fmt.Sprintf("%d%s", dominantNum, letter),    // Dominant (+1 hour)
+		fmt.Sprintf("%d%s", energyBoostNum, letter), // Energy Boost (+2 hours)
 	}
 }
 

@@ -31,7 +31,7 @@ type HammingSearchResult struct {
 // InvertedSubFPIndex maps 32-bit sub-fingerprints (or their upper/lower 16-bit keys)
 // to track IDs and time offsets for $O(1)$ candidate retrieval.
 type InvertedSubFPIndex struct {
-	mu         sync.RWMutex
+	mu sync.RWMutex
 	// Direct bucket lookup using 16-bit segment hashing (Pigeonhole principle for Hamming search)
 	// Any 32-bit integer with Hamming distance <= 1 from a query must match exactly in either the top 16 bits or bottom 16 bits!
 	topBuckets    map[uint16][]trackOffset

@@ -9,31 +9,31 @@ import (
 
 // ClippingEvent represents a localized clipping incident.
 type ClippingEvent struct {
-	Channel       int     `json:"channel"`
-	StartSample   int     `json:"start_sample"`
-	EndSample     int     `json:"end_sample"`
-	StartTimeMs   float64 `json:"start_time_ms"`
-	EndTimeMs     float64 `json:"end_time_ms"`
-	DurationMs    float64 `json:"duration_ms"`
-	PeakValue     float64 `json:"peak_value"`
-	ConsecutiveN  int     `json:"consecutive_samples"`
+	Channel      int     `json:"channel"`
+	StartSample  int     `json:"start_sample"`
+	EndSample    int     `json:"end_sample"`
+	StartTimeMs  float64 `json:"start_time_ms"`
+	EndTimeMs    float64 `json:"end_time_ms"`
+	DurationMs   float64 `json:"duration_ms"`
+	PeakValue    float64 `json:"peak_value"`
+	ConsecutiveN int     `json:"consecutive_samples"`
 }
 
 // ClippingHeatmapBin represents a localized time slice with clipping frequency.
 type ClippingHeatmapBin struct {
-	BinIndex   int     `json:"bin_index"`
+	BinIndex    int     `json:"bin_index"`
 	StartTimeMs float64 `json:"start_time_ms"`
 	EndTimeMs   float64 `json:"end_time_ms"`
-	ClipCount  int     `json:"clip_count"`
-	MaxPeak    float64 `json:"max_peak"`
+	ClipCount   int     `json:"clip_count"`
+	MaxPeak     float64 `json:"max_peak"`
 }
 
 // ClippingConfig configures clipping detection parameters.
 type ClippingConfig struct {
-	ThresholdLinear  float64 `json:"threshold_linear"`   // Default 0.999 (-0.01 dBFS)
-	MinConsecutive   int     `json:"min_consecutive"`    // Minimum consecutive clipped samples to register event (default: 1)
-	HeatmapBinMs     float64 `json:"heatmap_bin_ms"`     // Bin resolution in ms (default: 1000ms)
-	AlertThreshold   int     `json:"alert_threshold"`    // Threshold for QualityWarning (default: 5)
+	ThresholdLinear float64 `json:"threshold_linear"` // Default 0.999 (-0.01 dBFS)
+	MinConsecutive  int     `json:"min_consecutive"`  // Minimum consecutive clipped samples to register event (default: 1)
+	HeatmapBinMs    float64 `json:"heatmap_bin_ms"`   // Bin resolution in ms (default: 1000ms)
+	AlertThreshold  int     `json:"alert_threshold"`  // Threshold for QualityWarning (default: 5)
 }
 
 // DefaultClippingConfig provides standard broadcast-grade clipping parameters.

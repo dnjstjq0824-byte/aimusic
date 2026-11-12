@@ -7,10 +7,10 @@ import (
 
 // WSOLAConfig holds configuration parameters for the WSOLA time-stretching engine.
 type WSOLAConfig struct {
-	WindowSizeSamples int     // Overlap-add window size in samples (e.g. 1024 or 2048)
-	SynthesisHop      int     // Synthesis hop size (typically WindowSizeSamples / 2)
-	SearchWindow      int     // Maximum search range for cross-correlation peak (e.g. SynthesisHop / 2)
-	ResampleQuality   int     // Sinc interpolation lobe count for pitch shifting (e.g. 8 or 16)
+	WindowSizeSamples int // Overlap-add window size in samples (e.g. 1024 or 2048)
+	SynthesisHop      int // Synthesis hop size (typically WindowSizeSamples / 2)
+	SearchWindow      int // Maximum search range for cross-correlation peak (e.g. SynthesisHop / 2)
+	ResampleQuality   int // Sinc interpolation lobe count for pitch shifting (e.g. 8 or 16)
 }
 
 // DefaultWSOLAConfig returns production-standard configuration.

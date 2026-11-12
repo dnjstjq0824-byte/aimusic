@@ -13,12 +13,12 @@ import (
 type ChannelLayout string
 
 const (
-	LayoutMono         ChannelLayout = "1.0_MONO"
-	LayoutStereo       ChannelLayout = "2.0_STEREO"
-	LayoutQuad         ChannelLayout = "4.0_QUAD"        // L, R, Ls, Rs
-	Layout5Point1      ChannelLayout = "5.1_SURROUND"    // L, R, C, LFE, Ls, Rs
-	Layout7Point1      ChannelLayout = "7.1_SURROUND"    // L, R, C, LFE, Ls, Rs, Rls, Rrs
-	LayoutUnsupported  ChannelLayout = "UNSUPPORTED"
+	LayoutMono        ChannelLayout = "1.0_MONO"
+	LayoutStereo      ChannelLayout = "2.0_STEREO"
+	LayoutQuad        ChannelLayout = "4.0_QUAD"     // L, R, Ls, Rs
+	Layout5Point1     ChannelLayout = "5.1_SURROUND" // L, R, C, LFE, Ls, Rs
+	Layout7Point1     ChannelLayout = "7.1_SURROUND" // L, R, C, LFE, Ls, Rs, Rls, Rrs
+	LayoutUnsupported ChannelLayout = "UNSUPPORTED"
 )
 
 // DownmixMode defines the downmix matrix algorithm.
@@ -37,12 +37,12 @@ const (
 
 // DownmixConfig configures the downmixing parameters.
 type DownmixConfig struct {
-	Mode               DownmixMode `json:"mode"`
-	CenterAttenuation  float64     `json:"center_attenuation"`  // Linear factor, default: 0.7071 (-3 dB)
-	SurroundAttenuation float64    `json:"surround_attenuation"`// Linear factor, default: 0.7071 (-3 dB)
-	IncludeLFE         bool        `json:"include_lfe"`         // Standard ITU-R omits LFE, set true to mix at -10dB
-	LFEGain            float64     `json:"lfe_gain"`            // Default: 0.3162 (-10 dB)
-	NormalizeHeadroom  bool        `json:"normalize_headroom"`  // True: scales output by peak sum to guarantee 0dBFS max
+	Mode                DownmixMode `json:"mode"`
+	CenterAttenuation   float64     `json:"center_attenuation"`   // Linear factor, default: 0.7071 (-3 dB)
+	SurroundAttenuation float64     `json:"surround_attenuation"` // Linear factor, default: 0.7071 (-3 dB)
+	IncludeLFE          bool        `json:"include_lfe"`          // Standard ITU-R omits LFE, set true to mix at -10dB
+	LFEGain             float64     `json:"lfe_gain"`             // Default: 0.3162 (-10 dB)
+	NormalizeHeadroom   bool        `json:"normalize_headroom"`   // True: scales output by peak sum to guarantee 0dBFS max
 }
 
 // DefaultDownmixConfig returns ITU-R BS.775 compliant Lo/Ro downmix settings.
@@ -59,16 +59,16 @@ func DefaultDownmixConfig() DownmixConfig {
 
 // DownmixResult contains the downmixed stereo samples and transformation telemetry.
 type DownmixResult struct {
-	SourceLayout      ChannelLayout `json:"source_layout"`
-	TargetLayout      ChannelLayout `json:"target_layout"`
-	Mode              DownmixMode   `json:"mode"`
-	SampleRate        int           `json:"sample_rate"`
-	NumSamples        int           `json:"num_samples"`
-	PeakBeforeDbFS    float64       `json:"peak_before_dbfs"`
-	PeakAfterDbFS     float64       `json:"peak_after_dbfs"`
-	AppliedGainDb     float64       `json:"applied_gain_db"`
-	PhaseCorrelation  float64       `json:"phase_correlation"` // -1.0 (anti-phase) to +1.0 (in-phase mono)
-	StereoSamples     [][]float64   `json:"-"`                 // [2][numSamples]
+	SourceLayout     ChannelLayout `json:"source_layout"`
+	TargetLayout     ChannelLayout `json:"target_layout"`
+	Mode             DownmixMode   `json:"mode"`
+	SampleRate       int           `json:"sample_rate"`
+	NumSamples       int           `json:"num_samples"`
+	PeakBeforeDbFS   float64       `json:"peak_before_dbfs"`
+	PeakAfterDbFS    float64       `json:"peak_after_dbfs"`
+	AppliedGainDb    float64       `json:"applied_gain_db"`
+	PhaseCorrelation float64       `json:"phase_correlation"` // -1.0 (anti-phase) to +1.0 (in-phase mono)
+	StereoSamples    [][]float64   `json:"-"`                 // [2][numSamples]
 }
 
 // MultichannelDownmixer executes multichannel matrix downmixing.

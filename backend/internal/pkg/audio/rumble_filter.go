@@ -21,13 +21,13 @@ func DefaultRumbleFilterConfig() RumbleFilterConfig {
 
 // RumbleFilterResult contains filtered PCM buffer and subsonic attenuation metrics.
 type RumbleFilterResult struct {
-	ProcessedBuffer     *PCMBuffer `json:"-"`
-	CutoffHz            float64    `json:"cutoff_hz"`
-	RumbleBeforeDbFS    float64    `json:"rumble_before_dbfs"`
-	RumbleAfterDbFS     float64    `json:"rumble_after_dbfs"`
-	RumbleAttenuationDb float64    `json:"rumble_attenuation_db"` // dB reduction in subsonic <25Hz band
-	SubsonicEnergyRemoved bool     `json:"subsonic_energy_removed"`
-	MusicalBassPassDb   float64    `json:"musical_bass_pass_db"`   // Attenuation at 60Hz (should be < 0.5dB)
+	ProcessedBuffer       *PCMBuffer `json:"-"`
+	CutoffHz              float64    `json:"cutoff_hz"`
+	RumbleBeforeDbFS      float64    `json:"rumble_before_dbfs"`
+	RumbleAfterDbFS       float64    `json:"rumble_after_dbfs"`
+	RumbleAttenuationDb   float64    `json:"rumble_attenuation_db"` // dB reduction in subsonic <25Hz band
+	SubsonicEnergyRemoved bool       `json:"subsonic_energy_removed"`
+	MusicalBassPassDb     float64    `json:"musical_bass_pass_db"` // Attenuation at 60Hz (should be < 0.5dB)
 }
 
 // SubBassRumbleFilter executes 18dB/octave (3rd-order) high-pass filtering.

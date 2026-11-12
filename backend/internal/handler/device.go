@@ -66,8 +66,8 @@ func (h *DeviceHandler) DeviceQueue(c *gin.Context) {
 }
 
 type deviceHeartbeatRequest struct {
-	TrackID       string `json:"trackId" binding:"required"`
-	DurationSecs  int    `json:"durationSecs"`
+	TrackID      string `json:"trackId" binding:"required"`
+	DurationSecs int    `json:"durationSecs"`
 }
 
 // DeviceHeartbeat records a play from the certified player.

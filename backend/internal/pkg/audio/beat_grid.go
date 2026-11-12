@@ -34,23 +34,23 @@ type BeatMarker struct {
 
 // AudioSlice represents an exported loop segment sliced on zero-crossing boundaries.
 type AudioSlice struct {
-	SliceID       string      `json:"slice_id"`
-	StartSample   int         `json:"start_sample"`
-	EndSample     int         `json:"end_sample"`
-	StartTimeMs   float64     `json:"start_time_ms"`
-	EndTimeMs     float64     `json:"end_time_ms"`
-	DurationMs    float64     `json:"duration_ms"`
-	StartMarker   BeatMarker  `json:"start_marker"`
-	EndMarker     BeatMarker  `json:"end_marker"`
-	Buffer        *PCMBuffer  `json:"-"`
+	SliceID     string     `json:"slice_id"`
+	StartSample int        `json:"start_sample"`
+	EndSample   int        `json:"end_sample"`
+	StartTimeMs float64    `json:"start_time_ms"`
+	EndTimeMs   float64    `json:"end_time_ms"`
+	DurationMs  float64    `json:"duration_ms"`
+	StartMarker BeatMarker `json:"start_marker"`
+	EndMarker   BeatMarker `json:"end_marker"`
+	Buffer      *PCMBuffer `json:"-"`
 }
 
 // BeatGridConfig configures beat grid and quantization parameters.
 type BeatGridConfig struct {
-	BPM             float64      `json:"bpm"`
-	TimeSigBeats    int          `json:"time_sig_beats"` // Beats per measure (default: 4 for 4/4)
-	Division        BeatDivision `json:"division"`       // Subdivision resolution (default: "1/16")
-	AlignZeroCross  bool         `json:"align_zero_cross"`
+	BPM            float64      `json:"bpm"`
+	TimeSigBeats   int          `json:"time_sig_beats"` // Beats per measure (default: 4 for 4/4)
+	Division       BeatDivision `json:"division"`       // Subdivision resolution (default: "1/16")
+	AlignZeroCross bool         `json:"align_zero_cross"`
 }
 
 // DefaultBeatGridConfig returns standard 4/4 1/16th beat grid parameters.
@@ -65,12 +65,12 @@ func DefaultBeatGridConfig(bpm float64) BeatGridConfig {
 
 // BeatGridResult encapsulates generated markers and loop slices.
 type BeatGridResult struct {
-	BPM             float64      `json:"bpm"`
-	TotalBars       int          `json:"total_bars"`
-	TotalBeats      int          `json:"total_beats"`
-	Division        BeatDivision `json:"division"`
-	Markers         []BeatMarker `json:"markers"`
-	Slices          []AudioSlice `json:"slices"`
+	BPM        float64      `json:"bpm"`
+	TotalBars  int          `json:"total_bars"`
+	TotalBeats int          `json:"total_beats"`
+	Division   BeatDivision `json:"division"`
+	Markers    []BeatMarker `json:"markers"`
+	Slices     []AudioSlice `json:"slices"`
 }
 
 // BeatGridQuantizer generates musical beat grids and slices audio loops.

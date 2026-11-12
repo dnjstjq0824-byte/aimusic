@@ -13,16 +13,16 @@ import (
 type AudioOrigin string
 
 const (
-	OriginHumanPerformed     AudioOrigin = "HUMAN_PERFORMED"
-	OriginAISynthesized      AudioOrigin = "AI_SYNTHESIZED"
+	OriginHumanPerformed      AudioOrigin = "HUMAN_PERFORMED"
+	OriginAISynthesized       AudioOrigin = "AI_SYNTHESIZED"
 	OriginHybridCollaborative AudioOrigin = "HYBRID_COLLABORATIVE"
 )
 
 // ClassificationResult encapsulates the multi-feature AI origin prediction.
 type ClassificationResult struct {
 	PredictedOrigin         AudioOrigin        `json:"predicted_origin"`
-	AIProbability           float64            `json:"ai_probability"`           // 0.00 to 1.00
-	Confidence              float64            `json:"confidence"`               // 0.00 to 1.00
+	AIProbability           float64            `json:"ai_probability"` // 0.00 to 1.00
+	Confidence              float64            `json:"confidence"`     // 0.00 to 1.00
 	FeatureBreakdown        map[string]float64 `json:"feature_breakdown"`
 	PassesFalsePositiveGate bool               `json:"passes_false_positive_gate"` // True if human audio has AI probability < 0.05 (<0.5% false positive threshold)
 	DiagnosticSummary       string             `json:"diagnostic_summary"`
@@ -109,10 +109,10 @@ func (ac *AIOriginClassifier) Classify(input *audio.PCMBuffer) (*ClassificationR
 	}
 
 	features := map[string]float64{
-		"suno_artifact_score":     sunoRes.ConfidenceScore,
+		"suno_artifact_score":      sunoRes.ConfidenceScore,
 		"udio_phase_discontinuity": phaseScore,
-		"ultrasonic_shelf_loss":   math.Round(sunoRes.HighFreqAttenuationDb*10) / 10,
-		"boundary_phase_variance": udioRes.PhaseDiscontinuityScore,
+		"ultrasonic_shelf_loss":    math.Round(sunoRes.HighFreqAttenuationDb*10) / 10,
+		"boundary_phase_variance":  udioRes.PhaseDiscontinuityScore,
 	}
 
 	// DoD: Human audio must have AI probability < 0.05 to ensure false positive rate < 0.5%

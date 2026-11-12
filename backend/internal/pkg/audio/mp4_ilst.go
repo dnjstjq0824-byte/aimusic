@@ -39,23 +39,23 @@ const (
 
 // Freeform iTunes metadata keys for AI Transparency.
 const (
-	AppleMeanDomain             = "com.apple.iTunes"
-	TagAIArticle31Disclosure    = "AI_ARTICLE_31_DISCLOSURE"
-	TagAIModelName              = "AI_MODEL"
-	TagAIPrompt                 = "AI_PROMPT"
-	TagAISeed                   = "AI_SEED"
-	TagAIGenerator              = "AI_GENERATOR"
-	TagAIIsSynthetic            = "AI_IS_SYNTHETIC"
-	TagAICreationTimestamp      = "AI_TIMESTAMP"
+	AppleMeanDomain          = "com.apple.iTunes"
+	TagAIArticle31Disclosure = "AI_ARTICLE_31_DISCLOSURE"
+	TagAIModelName           = "AI_MODEL"
+	TagAIPrompt              = "AI_PROMPT"
+	TagAISeed                = "AI_SEED"
+	TagAIGenerator           = "AI_GENERATOR"
+	TagAIIsSynthetic         = "AI_IS_SYNTHETIC"
+	TagAICreationTimestamp   = "AI_TIMESTAMP"
 )
 
 // Error definitions for MP4 metadata processing.
 var (
-	ErrNilMP4Metadata   = errors.New("mp4 metadata object cannot be nil")
-	ErrInvalidMP4Data   = errors.New("invalid or truncated mp4 byte stream")
-	ErrMissingMoovBox   = errors.New("missing mandatory moov container box in mp4 stream")
-	ErrMissingIlstBox   = errors.New("missing ilst metadata box in mp4 stream")
-	ErrUnsupportedAtom  = errors.New("unsupported or malformed ilst item atom")
+	ErrNilMP4Metadata  = errors.New("mp4 metadata object cannot be nil")
+	ErrInvalidMP4Data  = errors.New("invalid or truncated mp4 byte stream")
+	ErrMissingMoovBox  = errors.New("missing mandatory moov container box in mp4 stream")
+	ErrMissingIlstBox  = errors.New("missing ilst metadata box in mp4 stream")
+	ErrUnsupportedAtom = errors.New("unsupported or malformed ilst item atom")
 )
 
 // MP4Metadata holds comprehensive metadata for QuickTime / Apple Music playback,
@@ -97,13 +97,13 @@ func DefaultArticle31Disclosure() string {
 
 // MP4BoxNode represents an arbitrary node in an ISOBMFF box hierarchy.
 type MP4BoxNode struct {
-	Type     string
-	Size     uint32
-	Payload  []byte
-	Children []*MP4BoxNode
+	Type      string
+	Size      uint32
+	Payload   []byte
+	Children  []*MP4BoxNode
 	IsFullBox bool
-	Version  uint8
-	Flags    uint32
+	Version   uint8
+	Flags     uint32
 }
 
 // isContainerBox returns true if the box type represents a container of child boxes.
@@ -573,12 +573,12 @@ func InjectMP4IlstMetadata(mp4Data []byte, meta *MP4Metadata) ([]byte, error) {
 		// 4 bytes handler_type ("mdir"), 4 bytes manufacturer ("appl"),
 		// 8 bytes reserved (0), 1 byte null terminator for name.
 		hdlrBuf := new(bytes.Buffer)
-		hdlrBuf.Write([]byte{0, 0, 0, 0})        // version 0, flags 0
-		hdlrBuf.Write([]byte{0, 0, 0, 0})        // pre_defined
-		hdlrBuf.WriteString("mdir")              // handler_type = mdir
-		hdlrBuf.WriteString("appl")              // manufacturer = appl
+		hdlrBuf.Write([]byte{0, 0, 0, 0})             // version 0, flags 0
+		hdlrBuf.Write([]byte{0, 0, 0, 0})             // pre_defined
+		hdlrBuf.WriteString("mdir")                   // handler_type = mdir
+		hdlrBuf.WriteString("appl")                   // manufacturer = appl
 		hdlrBuf.Write([]byte{0, 0, 0, 0, 0, 0, 0, 0}) // reserved
-		hdlrBuf.WriteByte(0)                     // name = ""
+		hdlrBuf.WriteByte(0)                          // name = ""
 		hdlrNode = &MP4BoxNode{
 			Type:    AtomTypeHDLR,
 			Payload: hdlrBuf.Bytes(),
@@ -790,11 +790,11 @@ func BuildCanonicalTestMP4(durationSec float64, sampleRate, channels int) ([]byt
 
 	// 1. ftyp box
 	ftypPayload := new(bytes.Buffer)
-	ftypPayload.WriteString("M4A ")                 // major brand
+	ftypPayload.WriteString("M4A ")                            // major brand
 	_ = binary.Write(ftypPayload, binary.BigEndian, uint32(0)) // minor version
-	ftypPayload.WriteString("M4A ")                 // compatible brand 1
-	ftypPayload.WriteString("mp42")                 // compatible brand 2
-	ftypPayload.WriteString("isom")                 // compatible brand 3
+	ftypPayload.WriteString("M4A ")                            // compatible brand 1
+	ftypPayload.WriteString("mp42")                            // compatible brand 2
+	ftypPayload.WriteString("isom")                            // compatible brand 3
 	ftypBox := CreateBox(BoxTypeFTYP, ftypPayload.Bytes())
 
 	// 2. Audio track specifications
@@ -815,35 +815,35 @@ func BuildCanonicalTestMP4(durationSec float64, sampleRate, channels int) ([]byt
 
 	// Construct moov box components
 	mvhdBuf := new(bytes.Buffer)
-	mvhdBuf.Write([]byte{0, 0, 0, 0}) // version 0, flags 0
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0)) // creation time
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0)) // modification time
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(sampleRate)) // timescale
+	mvhdBuf.Write([]byte{0, 0, 0, 0})                                           // version 0, flags 0
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))                      // creation time
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))                      // modification time
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(sampleRate))             // timescale
 	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(numFrames*frameSamples)) // duration
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0x00010000)) // rate 1.0
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint16(0x0100))     // volume 1.0
-	mvhdBuf.Write(make([]byte, 10)) // reserved
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0x00010000))             // rate 1.0
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint16(0x0100))                 // volume 1.0
+	mvhdBuf.Write(make([]byte, 10))                                             // reserved
 	mvhdBuf.Write([]byte{
 		0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
 	}) // unity matrix
-	mvhdBuf.Write(make([]byte, 24)) // pre_defined
+	mvhdBuf.Write(make([]byte, 24))                        // pre_defined
 	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(2)) // next_track_id
 	mvhdBox := CreateBox(BoxTypeMVHD, mvhdBuf.Bytes())
 
 	tkhdBuf := new(bytes.Buffer)
-	tkhdBuf.Write([]byte{0, 0, 0, 7}) // track enabled, in movie, in preview
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0)) // creation time
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0)) // modification time
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(1)) // track ID 1
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0)) // reserved
+	tkhdBuf.Write([]byte{0, 0, 0, 7})                                           // track enabled, in movie, in preview
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))                      // creation time
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))                      // modification time
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(1))                      // track ID 1
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))                      // reserved
 	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(numFrames*frameSamples)) // duration
-	tkhdBuf.Write(make([]byte, 8)) // reserved
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0)) // layer
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0)) // alternate group
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0x0100)) // volume 1.0
-	tkhdBuf.Write(make([]byte, 2)) // reserved
+	tkhdBuf.Write(make([]byte, 8))                                              // reserved
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))                      // layer
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))                      // alternate group
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0x0100))                 // volume 1.0
+	tkhdBuf.Write(make([]byte, 2))                                              // reserved
 	tkhdBuf.Write([]byte{
 		0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0,
@@ -883,7 +883,7 @@ func BuildCanonicalTestMP4(durationSec float64, sampleRate, channels int) ([]byt
 
 	// Sample description box with mp4a
 	esdsBuf := new(bytes.Buffer)
-	esdsBuf.Write([]byte{0, 0, 0, 0}) // version 0, flags 0
+	esdsBuf.Write([]byte{0, 0, 0, 0})                   // version 0, flags 0
 	esdsBuf.Write([]byte{0x03, 0x19, 0x00, 0x01, 0x00}) // ES_DescrTag
 	esdsBuf.Write([]byte{0x04, 0x11, 0x40, 0x15, 0x00, 0x00, 0x00, 0x00, 0x02, 0xee, 0x00, 0x00, 0x02, 0xee, 0x00})
 	esdsBuf.Write([]byte{0x05, 0x02, 0x11, 0x90}) // AudioSpecificConfig (AAC-LC, 48kHz, 2ch)
@@ -891,7 +891,7 @@ func BuildCanonicalTestMP4(durationSec float64, sampleRate, channels int) ([]byt
 	esdsBox := CreateBox(BoxTypeESDS, esdsBuf.Bytes())
 
 	mp4aBuf := new(bytes.Buffer)
-	mp4aBuf.Write(make([]byte, 6)) // reserved
+	mp4aBuf.Write(make([]byte, 6))                         // reserved
 	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(1)) // data_reference_index
 	_ = binary.Write(mp4aBuf, binary.BigEndian, uint32(0)) // reserved
 	_ = binary.Write(mp4aBuf, binary.BigEndian, uint32(0)) // reserved

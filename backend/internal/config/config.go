@@ -224,9 +224,9 @@ func Load() (*Config, error) {
 		FromName: getenv("MAIL_FROM_NAME", "AVIBE"),
 	}
 	cfg.Generation = GenerationConfig{
-		BackendURL:         strings.TrimRight(strings.TrimSpace(os.Getenv("GENERATION_BACKEND_URL")), "/"),
-		TimeoutSeconds:     getenvInt("GENERATION_TIMEOUT_SECONDS", 600),
-		DailyCapPerPartner: getenvInt("GENERATION_DAILY_CAP", 5),
+		BackendURL:          strings.TrimRight(strings.TrimSpace(os.Getenv("GENERATION_BACKEND_URL")), "/"),
+		TimeoutSeconds:      getenvInt("GENERATION_TIMEOUT_SECONDS", 600),
+		DailyCapPerPartner:  getenvInt("GENERATION_DAILY_CAP", 5),
 		BannedKeywordsExtra: getenvList("GENERATION_BANNED_KEYWORDS"),
 	}
 	return cfg, nil

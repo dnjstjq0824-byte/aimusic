@@ -16,14 +16,14 @@ import (
 
 // Store pairing/counting rules (WI-05 #19/#20/#21).
 const (
-	StorePairingCodeLen   = 8
-	StorePairingTTL       = 15 * time.Minute
-	StoreTokenBytes       = 32
-	StoreCountSeconds     = 30
-	MaxStoreLicenses      = 100
-	MaxStoreNameChars     = 60
-	MaxDeviceNameChars    = 40
-	storePairingAlphabet  = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+	StorePairingCodeLen  = 8
+	StorePairingTTL      = 15 * time.Minute
+	StoreTokenBytes      = 32
+	StoreCountSeconds    = 30
+	MaxStoreLicenses     = 100
+	MaxStoreNameChars    = 60
+	MaxDeviceNameChars   = 40
+	storePairingAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 )
 
 // storeStore is the store persistence surface.
@@ -321,9 +321,9 @@ func (s *StoreService) ListSchedules(ctx context.Context, partnerID, businessID 
 
 // QueueTrack is one playable queue entry.
 type QueueTrack struct {
-	TrackID   string `json:"trackId"`
-	Title     string `json:"title"`
-	DurationMs *int  `json:"durationMs,omitempty"`
+	TrackID    string `json:"trackId"`
+	Title      string `json:"title"`
+	DurationMs *int   `json:"durationMs,omitempty"`
 }
 
 // DeviceQueueResult is the schedule-aware auto queue.

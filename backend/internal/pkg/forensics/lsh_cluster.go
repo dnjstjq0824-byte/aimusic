@@ -9,7 +9,7 @@ import (
 
 // LSHConfig configures the band and row parameters for Locality-Sensitive Hashing.
 type LSHConfig struct {
-	NumBands int `json:"num_bands"` // Number of bands B (default: 4)
+	NumBands    int `json:"num_bands"`     // Number of bands B (default: 4)
 	RowsPerBand int `json:"rows_per_band"` // Rows per band R (default: 8, where B * R = 32 bits)
 }
 
@@ -23,10 +23,10 @@ func DefaultLSHConfig() LSHConfig {
 
 // LSHCluster manages inverted bucket tables across independent hash bands.
 type LSHCluster struct {
-	cfg     LSHConfig
-	mu      sync.RWMutex
+	cfg LSHConfig
+	mu  sync.RWMutex
 	// buckets[bandIndex][bucketHash] -> list of trackIDs
-	buckets []map[uint32]map[string]struct{}
+	buckets     []map[uint32]map[string]struct{}
 	totalTracks int
 }
 
@@ -110,10 +110,10 @@ func (c *LSHCluster) QueryCandidates(querySubFPs []uint32) []string {
 
 // ClusterStats reports index size and bucket distribution metrics.
 type ClusterStats struct {
-	NumBands        int `json:"num_bands"`
-	RowsPerBand     int `json:"rows_per_band"`
-	TotalTracks     int `json:"total_tracks"`
-	TotalBuckets    int `json:"total_buckets"`
+	NumBands     int `json:"num_bands"`
+	RowsPerBand  int `json:"rows_per_band"`
+	TotalTracks  int `json:"total_tracks"`
+	TotalBuckets int `json:"total_buckets"`
 }
 
 // Stats returns cluster occupancy telemetry.

@@ -74,7 +74,7 @@ func (s *AuthService) checkTOTP(ctx context.Context, u *domain.User, code string
 
 // TOTPEnrollment is the staged secret shown once during enrollment.
 type TOTPEnrollment struct {
-	Secret         string `json:"secret"`
+	Secret          string `json:"secret"`
 	ProvisioningURI string `json:"provisioningUri"`
 }
 
@@ -92,7 +92,7 @@ func (s *AuthService) EnrollTOTP(ctx context.Context, userID string) (*TOTPEnrol
 		return nil, err
 	}
 	return &TOTPEnrollment{
-		Secret:         secret,
+		Secret:          secret,
 		ProvisioningURI: apcrypto.TOTPProvisioningURI("AVIBE", u.Email, secret),
 	}, nil
 }

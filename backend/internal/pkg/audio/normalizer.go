@@ -31,8 +31,8 @@ const (
 
 // Normalizer validation errors.
 var (
-	ErrInvalidCeiling   = errors.New("invalid ceiling: ceiling must be <= 0.0 dBTP")
-	ErrNilNormalizer    = errors.New("normalizer instance is nil")
+	ErrInvalidCeiling    = errors.New("invalid ceiling: ceiling must be <= 0.0 dBTP")
+	ErrNilNormalizer     = errors.New("normalizer instance is nil")
 	ErrUnmeasurableAudio = errors.New("cannot normalize audio: loudness is below measurable threshold")
 )
 

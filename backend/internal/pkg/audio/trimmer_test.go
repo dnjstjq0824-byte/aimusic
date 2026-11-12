@@ -29,7 +29,7 @@ func TestSilenceTrimmer_LeadInAndLeadOutTrimming(t *testing.T) {
 
 	cfg := SilenceTrimmerConfig{
 		ThresholdDB:       -60.0,
-		LeadInMarginMs:    50.0, // 0.05s
+		LeadInMarginMs:    50.0,  // 0.05s
 		LeadOutMarginMs:   100.0, // 0.10s
 		FadeInMs:          20.0,
 		FadeOutMs:         50.0,
@@ -238,9 +238,9 @@ func TestSilenceTrimmer_100HeterogeneousAudioStreams(t *testing.T) {
 		ch := channelsList[rng.Intn(len(channelsList))]
 		curve := curves[rng.Intn(len(curves))]
 
-		leadInSec := 0.2 + rng.Float64()*1.5   // 0.2s to 1.7s silence
-		activeSec := 0.5 + rng.Float64()*2.0   // 0.5s to 2.5s active
-		leadOutSec := 0.2 + rng.Float64()*1.5  // 0.2s to 1.7s silence
+		leadInSec := 0.2 + rng.Float64()*1.5  // 0.2s to 1.7s silence
+		activeSec := 0.5 + rng.Float64()*2.0  // 0.5s to 2.5s active
+		leadOutSec := 0.2 + rng.Float64()*1.5 // 0.2s to 1.7s silence
 
 		leadInSamples := int(leadInSec * float64(sr))
 		activeSamples := int(activeSec * float64(sr))

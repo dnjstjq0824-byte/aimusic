@@ -16,12 +16,12 @@ const (
 
 // STFTConfig configures parameters for STFT analysis, inversion, and Mel filterbank.
 type STFTConfig struct {
-	FFTSize     int        // Length of FFT (must be power of two, e.g. 512, 1024, 2048)
-	HopSize     int        // Analysis hop in samples (e.g. FFTSize / 4 or FFTSize / 2)
-	Window      WindowType // Window function (default: WindowHann)
-	NumMelBins  int        // Number of Mel frequency bands (e.g. 80 or 128)
-	MinFreqHz   float64    // Minimum frequency for Mel filterbank (default: 0.0 Hz)
-	MaxFreqHz   float64    // Maximum frequency for Mel filterbank (0.0 means Nyquist)
+	FFTSize    int        // Length of FFT (must be power of two, e.g. 512, 1024, 2048)
+	HopSize    int        // Analysis hop in samples (e.g. FFTSize / 4 or FFTSize / 2)
+	Window     WindowType // Window function (default: WindowHann)
+	NumMelBins int        // Number of Mel frequency bands (e.g. 80 or 128)
+	MinFreqHz  float64    // Minimum frequency for Mel filterbank (default: 0.0 Hz)
+	MaxFreqHz  float64    // Maximum frequency for Mel filterbank (0.0 means Nyquist)
 }
 
 // DefaultSTFTConfig returns standard 1024-point STFT with 80 Mel bins.

@@ -41,9 +41,9 @@ type WaveformVectorResult struct {
 	NumPoints   int               `json:"num_points"`
 	GlobalPeak  float64           `json:"global_peak"`
 	GlobalRMS   float64           `json:"global_rms"`
-	Peaks       []float64         `json:"peaks"`             // 1000 normalized absolute peaks [0.00..1.00]
-	Points      []PeakVectorPoint `json:"points,omitempty"`  // Detailed min/max/rms points
-	PackedB64   string            `json:"packed_b64"`        // Ultra-compact binary base64 string (< 2KB)
+	Peaks       []float64         `json:"peaks"`            // 1000 normalized absolute peaks [0.00..1.00]
+	Points      []PeakVectorPoint `json:"points,omitempty"` // Detailed min/max/rms points
+	PackedB64   string            `json:"packed_b64"`       // Ultra-compact binary base64 string (< 2KB)
 }
 
 // PeakVectorExtractor decimates raw audio PCM into waveform vectors.

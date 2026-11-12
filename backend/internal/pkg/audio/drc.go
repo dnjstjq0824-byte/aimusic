@@ -176,7 +176,7 @@ func (e *DRCEngine) ComputeStaticGainReduction(inputDB float64) float64 {
 			outputDB = T + (inputDB-T)/R
 		} else {
 			diff := inputDB - T + halfW
-			outputDB = inputDB + ((1.0/R - 1.0) * (diff * diff)) / (2.0 * W)
+			outputDB = inputDB + ((1.0/R-1.0)*(diff*diff))/(2.0*W)
 		}
 	}
 
@@ -363,10 +363,10 @@ func (e *DRCEngine) Process(pcm *PCMBuffer) (*DRCResult, error) {
 	}
 
 	outPCM := &PCMBuffer{
-		SampleRate:  pcm.SampleRate,
-		Channels:    pcm.Channels,
-		NumSamples:  numSamplesPerChannel,
-		Samples:     outputSamples,
+		SampleRate: pcm.SampleRate,
+		Channels:   pcm.Channels,
+		NumSamples: numSamplesPerChannel,
+		Samples:    outputSamples,
 	}
 
 	return &DRCResult{

@@ -190,7 +190,9 @@ func (f fakeStoreTracks) GetByID(_ context.Context, id string) (*domain.Track, e
 	return t, nil
 }
 
-type fakeStorePartners struct{ m map[string]*domain.PartnerProfile }
+type fakeStorePartners struct {
+	m map[string]*domain.PartnerProfile
+}
 
 func (f fakeStorePartners) GetByID(_ context.Context, id string) (*domain.PartnerProfile, error) {
 	p, ok := f.m[id]

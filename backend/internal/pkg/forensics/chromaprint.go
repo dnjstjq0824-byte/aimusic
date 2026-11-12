@@ -22,12 +22,12 @@ var (
 
 // ChromaprintResult contains the extracted acoustic sub-fingerprints, compressed fingerprint string, and telemetry.
 type ChromaprintResult struct {
-	TrackID          string    `json:"track_id,omitempty"`
-	DurationSec      float64   `json:"duration_sec"`
-	FingerprintB64   string    `json:"fingerprint"` // Compressed Base64 AcoustID format
-	SubFingerprints  []uint32  `json:"sub_fingerprints,omitempty"`
-	SubFingerprintN  int       `json:"sub_fingerprint_count"`
-	ExtractionTimeMs float64   `json:"extraction_time_ms"`
+	TrackID          string   `json:"track_id,omitempty"`
+	DurationSec      float64  `json:"duration_sec"`
+	FingerprintB64   string   `json:"fingerprint"` // Compressed Base64 AcoustID format
+	SubFingerprints  []uint32 `json:"sub_fingerprints,omitempty"`
+	SubFingerprintN  int      `json:"sub_fingerprint_count"`
+	ExtractionTimeMs float64  `json:"extraction_time_ms"`
 }
 
 // ChromaprintExtractor extracts 32-bit sub-fingerprints using semitone spectrogram Haar wavelets.

@@ -36,10 +36,10 @@ type PhaseAlignmentResult struct {
 
 // MultiTrackAlignmentResult contains alignment metrics for multi-track stems.
 type MultiTrackAlignmentResult struct {
-	ReferenceTrackIndex int
-	TrackResults        []*PhaseAlignmentResult
-	SummedUnaligned     *PCMBuffer
-	SummedAligned       *PCMBuffer
+	ReferenceTrackIndex  int
+	TrackResults         []*PhaseAlignmentResult
+	SummedUnaligned      *PCMBuffer
+	SummedAligned        *PCMBuffer
 	TotalCoherenceGainDB float64
 }
 

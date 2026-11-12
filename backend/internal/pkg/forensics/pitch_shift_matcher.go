@@ -11,11 +11,11 @@ import (
 
 // PitchShiftMatchResult holds the result of pitch-invariant fingerprint comparison.
 type PitchShiftMatchResult struct {
-	Matched          bool    `json:"matched"`
+	Matched           bool    `json:"matched"`
 	BestShiftSemitone int     `json:"best_shift_semitone"` // -5 to +5 semitones
-	SimilarityScore  float64 `json:"similarity_score"`    // 0.0 to 1.0 (or 0-100%)
-	ConfidencePct    float64 `json:"confidence_pct"`
-	Summary          string  `json:"summary"`
+	SimilarityScore   float64 `json:"similarity_score"`    // 0.0 to 1.0 (or 0-100%)
+	ConfidencePct     float64 `json:"confidence_pct"`
+	Summary           string  `json:"summary"`
 }
 
 // PitchShiftMatcher compares audio fingerprints across pitch transposition shifts (-5 to +5 semitones).

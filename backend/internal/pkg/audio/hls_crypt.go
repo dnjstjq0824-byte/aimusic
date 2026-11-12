@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	ErrInvalidKeySize    = errors.New("AES-128 key must be exactly 16 bytes")
-	ErrInvalidIVSize     = errors.New("AES-128 IV must be exactly 16 bytes")
+	ErrInvalidKeySize     = errors.New("AES-128 key must be exactly 16 bytes")
+	ErrInvalidIVSize      = errors.New("AES-128 IV must be exactly 16 bytes")
 	ErrCiphertextNotBlock = errors.New("ciphertext length must be a multiple of the AES block size (16 bytes)")
-	ErrInvalidPKCS7Pad   = errors.New("invalid PKCS#7 padding in decrypted block")
-	ErrKeyNotFound       = errors.New("cryptographic key not found in keystore")
+	ErrInvalidPKCS7Pad    = errors.New("invalid PKCS#7 padding in decrypted block")
+	ErrKeyNotFound        = errors.New("cryptographic key not found in keystore")
 )
 
 const (
@@ -117,12 +117,12 @@ func DecryptHLSSegment(ciphertext, key, iv []byte) ([]byte, error) {
 
 // HLSKeyMetadata describes an active HLS encryption key in the rotation sequence.
 type HLSKeyMetadata struct {
-	KeyID      string    `json:"key_id"`
-	KeyURI     string    `json:"key_uri"`
-	KeyBytes   []byte    `json:"-"`
-	IVHex      string    `json:"iv_hex,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
-	ExpiresAt  time.Time `json:"expires_at"`
+	KeyID     string    `json:"key_id"`
+	KeyURI    string    `json:"key_uri"`
+	KeyBytes  []byte    `json:"-"`
+	IVHex     string    `json:"iv_hex,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 // FormatEXTXKey generates standard RFC 8216 #EXT-X-KEY playlist directive.

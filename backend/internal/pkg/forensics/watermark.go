@@ -17,18 +17,18 @@ var (
 )
 
 const (
-	WatermarkCarrierHz  = 19500.0 // Center frequency (18.5 kHz .. 20.5 kHz band)
+	WatermarkCarrierHz   = 19500.0 // Center frequency (18.5 kHz .. 20.5 kHz band)
 	WatermarkBandwidthHz = 2000.0
-	WatermarkChipRate   = 50      // Samples per chip
-	WatermarkAmplitude  = 0.003   // -50.4 dBFS (inaudible beneath audio content)
-	PlatformMagic       = 0x4156494245 // "AVIBE" in hex (5 bytes)
+	WatermarkChipRate    = 50           // Samples per chip
+	WatermarkAmplitude   = 0.003        // -50.4 dBFS (inaudible beneath audio content)
+	PlatformMagic        = 0x4156494245 // "AVIBE" in hex (5 bytes)
 )
 
 // WatermarkPayload holds structured copyright and licensing identifiers.
 type WatermarkPayload struct {
 	PlatformID uint64 `json:"platform_id"` // "AVIBE" magic
 	TrackHash  uint32 `json:"track_hash"`  // 4-byte truncated SHA-256 of track UUID
-	LicenseID  uint32 `json:"license_id"`   // 4-byte license ID
+	LicenseID  uint32 `json:"license_id"`  // 4-byte license ID
 }
 
 // EncodePayload formats the 13-byte raw watermark bit sequence with parity check.

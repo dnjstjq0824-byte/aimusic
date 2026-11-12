@@ -21,7 +21,7 @@ func createTestWAV(channels, sampleRate, bitsPerSample int, isFloat bool, sample
 	// 2. fmt chunk
 	buf.WriteString("fmt ")
 	binary.Write(&buf, binary.LittleEndian, uint32(16)) // subchunk size
-	audioFormat := uint16(1)                           // PCM
+	audioFormat := uint16(1)                            // PCM
 	if isFloat {
 		audioFormat = 3 // IEEE float
 	}
@@ -114,14 +114,14 @@ func createTestFLAC(channels, sampleRate, bitsPerSample int, totalSamples int64)
 func createTestOggOpus(channels, sampleRate int) []byte {
 	var buf bytes.Buffer
 	buf.WriteString("OggS")
-	buf.WriteByte(0x00) // version
-	buf.WriteByte(0x02) // header type: BOS (Beginning of Stream)
-	binary.Write(&buf, binary.LittleEndian, uint64(0)) // granule position
+	buf.WriteByte(0x00)                                         // version
+	buf.WriteByte(0x02)                                         // header type: BOS (Beginning of Stream)
+	binary.Write(&buf, binary.LittleEndian, uint64(0))          // granule position
 	binary.Write(&buf, binary.LittleEndian, uint32(0x12345678)) // bitstream serial
-	binary.Write(&buf, binary.LittleEndian, uint32(0)) // sequence number
-	binary.Write(&buf, binary.LittleEndian, uint32(0)) // checksum
-	buf.WriteByte(1) // 1 segment
-	buf.WriteByte(19) // segment size = 19 bytes for OpusHead
+	binary.Write(&buf, binary.LittleEndian, uint32(0))          // sequence number
+	binary.Write(&buf, binary.LittleEndian, uint32(0))          // checksum
+	buf.WriteByte(1)                                            // 1 segment
+	buf.WriteByte(19)                                           // segment size = 19 bytes for OpusHead
 
 	// OpusHead packet:
 	buf.WriteString("OpusHead")
@@ -130,7 +130,7 @@ func createTestOggOpus(channels, sampleRate int) []byte {
 	binary.Write(&buf, binary.LittleEndian, uint16(312)) // pre-skip
 	binary.Write(&buf, binary.LittleEndian, uint32(sampleRate))
 	binary.Write(&buf, binary.LittleEndian, uint16(0)) // output gain
-	buf.WriteByte(0) // channel mapping family
+	buf.WriteByte(0)                                   // channel mapping family
 
 	return buf.Bytes()
 }

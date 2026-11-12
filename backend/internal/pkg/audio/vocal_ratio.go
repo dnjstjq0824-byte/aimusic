@@ -14,11 +14,11 @@ import (
 type VocalDominance string
 
 const (
-	DominancePureInstrumental VocalDominance = "PURE_INSTRUMENTAL"   // VIR < -15 dB or no vocal activity detected
-	DominanceInstrumental     VocalDominance = "INSTRUMENTAL_LEAN"   // -15 dB <= VIR < -5 dB
-	DominanceBalancedMix      VocalDominance = "BALANCED_MIX"        // -5 dB <= VIR <= +3 dB (Standard pop/commercial mix)
-	DominanceVocalForward     VocalDominance = "VOCAL_FORWARD"       // +3 dB < VIR <= +10 dB (Acoustic/ballad/spoken)
-	DominanceAcappella        VocalDominance = "ACAPPELLA_DOMINANT"  // VIR > +10 dB
+	DominancePureInstrumental VocalDominance = "PURE_INSTRUMENTAL"  // VIR < -15 dB or no vocal activity detected
+	DominanceInstrumental     VocalDominance = "INSTRUMENTAL_LEAN"  // -15 dB <= VIR < -5 dB
+	DominanceBalancedMix      VocalDominance = "BALANCED_MIX"       // -5 dB <= VIR <= +3 dB (Standard pop/commercial mix)
+	DominanceVocalForward     VocalDominance = "VOCAL_FORWARD"      // +3 dB < VIR <= +10 dB (Acoustic/ballad/spoken)
+	DominanceAcappella        VocalDominance = "ACAPPELLA_DOMINANT" // VIR > +10 dB
 )
 
 // VocalBandAnalysis holds energy measurements within specific frequency ranges.
@@ -32,16 +32,16 @@ type VocalBandAnalysis struct {
 
 // VocalRatioResult contains full VIR metrics and lyric intelligibility telemetry.
 type VocalRatioResult struct {
-	SampleRate           int            `json:"sample_rate"`
-	Channels             int            `json:"channels"`
-	DurationSec          float64        `json:"duration_sec"`
-	VIRDb                float64        `json:"vir_db"`                 // Vocal-to-Instrumental Ratio in dB
-	VocalEnergyLinear    float64        `json:"vocal_energy_linear"`    // Normalized vocal band energy
-	InstEnergyLinear     float64        `json:"inst_energy_linear"`     // Normalized non-vocal + stereo side energy
-	IntelligibilityScore float64        `json:"intelligibility_score"`  // 0.0 (unintelligible / no vocal) to 1.0 (crystal clear)
-	Dominance            VocalDominance `json:"dominance"`
-	HasLeadVocal         bool           `json:"has_lead_vocal"`
-	CenterPannedRatio    float64        `json:"center_panned_ratio"`    // Ratio of mid-to-total energy in vocal band
+	SampleRate           int               `json:"sample_rate"`
+	Channels             int               `json:"channels"`
+	DurationSec          float64           `json:"duration_sec"`
+	VIRDb                float64           `json:"vir_db"`                // Vocal-to-Instrumental Ratio in dB
+	VocalEnergyLinear    float64           `json:"vocal_energy_linear"`   // Normalized vocal band energy
+	InstEnergyLinear     float64           `json:"inst_energy_linear"`    // Normalized non-vocal + stereo side energy
+	IntelligibilityScore float64           `json:"intelligibility_score"` // 0.0 (unintelligible / no vocal) to 1.0 (crystal clear)
+	Dominance            VocalDominance    `json:"dominance"`
+	HasLeadVocal         bool              `json:"has_lead_vocal"`
+	CenterPannedRatio    float64           `json:"center_panned_ratio"` // Ratio of mid-to-total energy in vocal band
 	Bands                VocalBandAnalysis `json:"bands"`
 }
 
@@ -269,7 +269,7 @@ func (v *VocalRatioAnalyzer) Analyze(samples [][]float64) (*VocalRatioResult, er
 	} else if vocalEnergy <= 1e-12 {
 		virDb = -60.0
 	} else {
-		virDb = 10.0 * math.Log10(vocalEnergy / instrumentalEnergy)
+		virDb = 10.0 * math.Log10(vocalEnergy/instrumentalEnergy)
 	}
 
 	// Lead vocal presence check:

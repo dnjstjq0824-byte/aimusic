@@ -34,7 +34,7 @@ func DefaultNoiseFloorConfig() NoiseFloorConfig {
 // NoiseFloorResult contains estimated floor levels, hum metrics, and pass/fail gate status.
 type NoiseFloorResult struct {
 	NoiseFloorDbFS     float64 `json:"noise_floor_dbfs"`
-	PassesQualityGate  bool    `json:"passes_quality_gate"`  // True if NoiseFloorDbFS <= QualityLimitDbFS (-70dBFS)
+	PassesQualityGate  bool    `json:"passes_quality_gate"` // True if NoiseFloorDbFS <= QualityLimitDbFS (-70dBFS)
 	Hum50HzDbFS        float64 `json:"hum_50hz_dbfs"`
 	Hum60HzDbFS        float64 `json:"hum_60hz_dbfs"`
 	Has50HzHum         bool    `json:"has_50hz_hum"`
