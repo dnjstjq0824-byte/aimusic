@@ -49,14 +49,28 @@ android {
 
     buildTypes {
         release {
-            // Uses the release keystore when key.properties exists,
-            // otherwise falls back to debug keys for local --release runs.
-            signingConfig = if ((keystoreProperties["storeFile"] as String?).isNullOrEmpty()) {
-                signingConfigs.getByName("debug")
-            } else {
-                signingConfigs.getByName("release")
-            }
+            // F-07: release builds always use the release keystore. A missing
+            // key fails the build (guard below) instead of silently signing
+            // with debug keys.
+            signingConfig = signingConfigs.getByName("release")
         }
+    }
+}
+
+// F-07: fail release assembly/bundle early when the release key is missing.
+// Checked against the task graph so debug builds and IDE syncs are unaffected.
+gradle.taskGraph.whenReady {
+    val releaseBuild = allTasks.any {
+        (it.name.startsWith("assemble") || it.name.startsWith("bundle")) &&
+            it.name.contains("Release")
+    }
+    if (releaseBuild && (keystoreProperties["storeFile"] as String?).isNullOrEmpty()) {
+        throw GradleException(
+            "Release signing key missing: create android/key.properties " +
+            "(storeFile/keyAlias/keyPassword/storePassword); " +
+            "see docs/PROD_RUNBOOK.md \"Android signing\". " +
+            "Refusing to sign a release build with debug keys."
+        )
     }
 }
 

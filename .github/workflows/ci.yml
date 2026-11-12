@@ -64,6 +64,38 @@ jobs:
       - name: analyze
         run: flutter analyze
         working-directory: mobile
+      - name: unit test
+        run: flutter test
+        working-directory: mobile
+
+  mobile-release-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.8
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: accept SDK licenses
+        run: yes | sdkmanager --licenses > /dev/null
+      - name: throwaway release key (CI only; prod key is PO-held)
+        run: |
+          keytool -genkeypair -keystore /tmp/ci-release.jks -alias cirelease \
+            -keyalg RSA -keysize 2048 -validity 7 \
+            -storepass cirelease -keypass cirelease \
+            -dname 'CN=CI, OU=AVIBE, O=AVIBE, L=Seoul, C=KR'
+          printf 'storeFile=/tmp/ci-release.jks\nstorePassword=cirelease\nkeyAlias=cirelease\nkeyPassword=cirelease\n' > mobile/android/key.properties
+      - name: release build with prod API host
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://api.avibemusic.com
+        working-directory: mobile
+      - name: release host gate
+        run: bash scripts/check-mobile-release.sh mobile/build/app/outputs/flutter-apk/app-release.apk api.avibemusic.com
 
   scripts:
     runs-on: ubuntu-latest

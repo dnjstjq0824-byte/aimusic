@@ -142,3 +142,20 @@ Free-plan external monitor (UptimeRobot or equivalent), two HTTPS monitors:
   an alert email arrives → tell the engine session "alert tested".
 - An alert means: open this runbook §6 Incidents; `/readyz` body names
   the failing check (`db`/`redis`/`queueDepth`).
+
+## 10. Android signing (WI-D6, F-07)
+
+- Release builds require `mobile/android/key.properties` (git-ignored):
+  `storeFile`/`keyAlias`/`keyPassword`/`storePassword`. Without it the
+  Gradle guard fails `assembleRelease`/`bundleRelease` instead of
+  silently signing with debug keys.
+- The production keystore is PO-held: generate once, back it up offline,
+  never commit it. Losing it means a new app identity on the store.
+- Every release build must pass `--dart-define=API_BASE_URL=https://...`.
+  A release pointing at loopback crashes on launch by design
+  (`Env.assertReleaseConfig`, fail-fast, unit-tested matcher).
+- Gate script (also a CI job): after the release build, run
+  `scripts/check-mobile-release.sh <apk> <expected-host>`. It fails when
+  Dart sources hardcode the host or when the APK lacks it (forgotten
+  `--dart-define`). CI builds with a throwaway keystore; only the host
+  check matters there.

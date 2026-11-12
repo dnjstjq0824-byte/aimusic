@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/api_client.dart';
+import 'core/env.dart';
 import 'core/providers.dart';
 import 'features/auth/age_gate.dart';
 import 'core/theme.dart';
@@ -20,6 +21,7 @@ import 'features/search/search_screen.dart';
 import 'features/store/store_screen.dart';
 
 void main() {
+  Env.assertReleaseConfig();
   runApp(const ProviderScope(child: AvibeApp()));
 }
 
