@@ -21,6 +21,11 @@ import (
 type Storage interface {
 	PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	// PresignPutPublic / PresignGetPublic sign URLs handed to browsers or
+	// third parties. They use the public endpoint (S3_PUBLIC_ENDPOINT) while
+	// every server-side call stays on the internal S3_ENDPOINT.
+	PresignPutPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	PresignGetPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	// Get fetches a whole object (at most maxBytes+1 probed; error when over).
 	Get(ctx context.Context, bucket, key string, maxBytes int64) ([]byte, error)
 	Delete(ctx context.Context, bucket, key string) error
@@ -39,23 +44,27 @@ type Buckets struct {
 // S3Compat is an S3-compatible implementation (LocalStack local, R2 in staging/prod)
 // using AWS Signature Version 4 query-string authentication.
 type S3Compat struct {
-	endpoint  string
-	region    string
-	accessKey string
-	secretKey string
-	useSSL    bool
-	client    *http.Client
+	endpoint string
+	// publicEndpoint signs URLs that leave the server (browser uploads,
+	// distributor links). Defaults to endpoint.
+	publicEndpoint string
+	region         string
+	accessKey      string
+	secretKey      string
+	useSSL         bool
+	client         *http.Client
 }
 
 // New builds an S3Compat client.
 func New(endpoint, region, accessKey, secretKey string, useSSL bool) *S3Compat {
 	return &S3Compat{
-		endpoint:  strings.TrimRight(strings.TrimSpace(endpoint), "/"),
-		region:    region,
-		accessKey: accessKey,
-		secretKey: secretKey,
-		useSSL:    useSSL,
-		client:    &http.Client{Timeout: 30 * time.Second},
+		endpoint:       strings.TrimRight(strings.TrimSpace(endpoint), "/"),
+		publicEndpoint: strings.TrimRight(strings.TrimSpace(endpoint), "/"),
+		region:         region,
+		accessKey:      accessKey,
+		secretKey:      secretKey,
+		useSSL:         useSSL,
+		client:         &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -86,11 +95,34 @@ func NewFromEnv() (Storage, Buckets, error) {
 		Staging:   firstNonEmpty(os.Getenv("S3_STAGING_BUCKET"), "local-staging"),
 		PublicHLS: firstNonEmpty(os.Getenv("S3_PUBLIC_HLS_BUCKET"), "local-hls"),
 	}
-	return New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "us-east-1"), ak, sk, os.Getenv("S3_USE_SSL") == "true"), buckets, nil
+	s3 := New(endpoint, firstNonEmpty(os.Getenv("S3_REGION"), "us-east-1"), ak, sk, os.Getenv("S3_USE_SSL") == "true")
+	s3.SetPublicEndpoint(os.Getenv("S3_PUBLIC_ENDPOINT"))
+	return s3, buckets, nil
 }
 
 // Endpoint returns the configured S3 endpoint.
 func (s *S3Compat) Endpoint() string { return s.endpoint }
+
+// SetPublicEndpoint overrides the endpoint used for URLs handed outside the
+// server. Empty keeps the internal endpoint.
+func (s *S3Compat) SetPublicEndpoint(endpoint string) {
+	if e := strings.TrimRight(strings.TrimSpace(endpoint), "/"); e != "" {
+		s.publicEndpoint = e
+	}
+}
+
+// PublicEndpoint returns the endpoint used for externally handed URLs.
+func (s *S3Compat) PublicEndpoint() string { return s.publicEndpoint }
+
+// PresignPutPublic signs an upload URL on the public endpoint.
+func (s *S3Compat) PresignPutPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	return s.presignAt(s.publicEndpoint, "PUT", bucket, key, ttl, nil)
+}
+
+// PresignGetPublic signs a download URL on the public endpoint.
+func (s *S3Compat) PresignGetPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	return s.presignAt(s.publicEndpoint, "GET", bucket, key, ttl, nil)
+}
 
 // PresignPut returns a presigned URL for uploading key via HTTP PUT.
 func (s *S3Compat) PresignPut(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
@@ -240,6 +272,11 @@ func (s *S3Compat) presign(method, bucket, key string, ttl time.Duration) (strin
 
 // presignQuery signs extra query parameters (e.g. ListObjectsV2) into the URL.
 func (s *S3Compat) presignQuery(method, bucket, key string, ttl time.Duration, extra url.Values) (string, error) {
+	return s.presignAt(s.endpoint, method, bucket, key, ttl, extra)
+}
+
+// presignAt signs a request against the given endpoint.
+func (s *S3Compat) presignAt(endpoint, method, bucket, key string, ttl time.Duration, extra url.Values) (string, error) {
 	if bucket == "" {
 		return "", fmt.Errorf("bucket and key are required")
 	}
@@ -252,7 +289,7 @@ func (s *S3Compat) presignQuery(method, bucket, key string, ttl time.Duration, e
 	if ttl > 7*24*time.Hour {
 		ttl = 7 * 24 * time.Hour
 	}
-	u, err := url.Parse(s.endpoint)
+	u, err := url.Parse(endpoint)
 	if err != nil {
 		return "", fmt.Errorf("invalid endpoint: %w", err)
 	}
@@ -285,7 +322,7 @@ func (s *S3Compat) presignQuery(method, bucket, key string, ttl time.Duration, e
 	stringToSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + credentialScope + "\n" + hashedCanonical
 	signingKey := deriveSigningKey(s.secretKey, dateStamp, s.region, "s3")
 	signature := hmacHex(signingKey, stringToSign)
-	return s.endpoint + canonicalURI + "?" + canonicalQuery + "&X-Amz-Signature=" + signature, nil
+	return strings.TrimRight(endpoint, "/") + canonicalURI + "?" + canonicalQuery + "&X-Amz-Signature=" + signature, nil
 }
 
 func deriveSigningKey(secret, dateStamp, region, service string) []byte {

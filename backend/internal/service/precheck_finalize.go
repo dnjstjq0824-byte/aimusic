@@ -64,7 +64,7 @@ func (s *PrecheckService) PreCheck(ctx context.Context, in PrecheckInput) (*Prec
 	if _, _, _, ok := licensegate.ParseStagingKey(key); !ok {
 		return nil, fmt.Errorf("%w: fileName", domain.ErrInvalidInput)
 	}
-	url, err := s.storage.PresignPut(ctx, s.stagingBucket, key, 15*time.Minute)
+	url, err := s.storage.PresignPutPublic(ctx, s.stagingBucket, key, 15*time.Minute)
 	if err != nil {
 		return nil, err
 	}

@@ -86,10 +86,23 @@ export default {
       // Strip the signature before hitting origin (R2 is private to Workers).
       const clean = new URL(url.pathname, 'http://origin');
       const target = s3Origin + clean.pathname;
+      // Forward only cache/range headers; never the client's cookies or
+      // auth. When the origin sits behind Cloudflare Access, the Worker
+      // authenticates with a service token (secrets S3_ACCESS_CLIENT_ID /
+      // S3_ACCESS_CLIENT_SECRET); without them it calls the origin bare.
+      const originHeaders = new Headers();
+      for (const name of ['range', 'if-none-match', 'if-modified-since', 'accept-encoding']) {
+        const v = request.headers.get(name);
+        if (v) originHeaders.set(name, v);
+      }
+      if (env.S3_ACCESS_CLIENT_ID && env.S3_ACCESS_CLIENT_SECRET) {
+        originHeaders.set('CF-Access-Client-Id', env.S3_ACCESS_CLIENT_ID);
+        originHeaders.set('CF-Access-Client-Secret', env.S3_ACCESS_CLIENT_SECRET);
+      }
       const init = {
         method: request.method,
-        headers: request.headers,
-        redirect: 'follow',
+        headers: originHeaders,
+        redirect: 'manual',
       };
       const res = await fetch(target, init);
       const headers = new Headers(res.headers);

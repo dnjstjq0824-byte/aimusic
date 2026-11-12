@@ -55,7 +55,7 @@ func (f fakeDSPAlbums) GetByID(_ context.Context, id string) (*domain.Album, err
 
 type fakeDSPPresigner struct{}
 
-func (fakeDSPPresigner) PresignGet(_ context.Context, bucket, key string, _ time.Duration) (string, error) {
+func (fakeDSPPresigner) PresignGetPublic(_ context.Context, bucket, key string, _ time.Duration) (string, error) {
 	return "https://cdn.test/" + bucket + "/" + key, nil
 }
 
