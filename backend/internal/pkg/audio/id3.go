@@ -69,16 +69,16 @@ type AudioMetadata struct {
 	Year             string            `json:"year"`
 	ISRC             string            `json:"isrc"`
 	Comment          string            `json:"comment"`
-	CustomFields     map[string]string `json:"custom_fields"`     // Key-value pairs stored in user text frames
-	AIProvider       string            `json:"ai_provider"`       // e.g. "avibe-v2"
-	AIModelVersion   string            `json:"ai_model_version"`  // e.g. "v3.0"
-	AIGenerationType string            `json:"ai_generation_type"`// e.g. "AI_ASSISTED_HUMAN"
+	CustomFields     map[string]string `json:"custom_fields"`      // Key-value pairs stored in user text frames
+	AIProvider       string            `json:"ai_provider"`        // e.g. "avibe-v2"
+	AIModelVersion   string            `json:"ai_model_version"`   // e.g. "v3.0"
+	AIGenerationType string            `json:"ai_generation_type"` // e.g. "AI_ASSISTED_HUMAN"
 	AIPrompt         string            `json:"ai_prompt"`
-	LicenseTier      string            `json:"license_tier"`      // e.g. "COMMERCIAL_SYNC"
+	LicenseTier      string            `json:"license_tier"` // e.g. "COMMERCIAL_SYNC"
 	ClearanceID      string            `json:"clearance_id"`
-	WatermarkOwner   string            `json:"watermark_owner"`   // PRIV owner identifier
-	WatermarkData    []byte            `json:"watermark_data"`    // Binary cryptographic watermark payload
-	CoverArtMime     string            `json:"cover_art_mime"`    // e.g. "image/jpeg"
+	WatermarkOwner   string            `json:"watermark_owner"` // PRIV owner identifier
+	WatermarkData    []byte            `json:"watermark_data"`  // Binary cryptographic watermark payload
+	CoverArtMime     string            `json:"cover_art_mime"`  // e.g. "image/jpeg"
 	CoverArtData     []byte            `json:"cover_art_data"`
 }
 

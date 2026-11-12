@@ -27,27 +27,27 @@ var (
 
 // Standard Apple FairPlay Streaming TLLV Tags (Apple FPS Server SDK Specification).
 const (
-	TLLVTagSessionKeyR1  uint64 = 0x3d1a10b8c66e10f2
-	TLLVTagContentKey    uint64 = 0x58b3816bf96144e0
-	TLLVTagAssetID       uint64 = 0x76b485d21a28a39f
-	TLLVTagReturnStatus  uint64 = 0x18705f42277d4c2b
-	TLLVTagR2Nonce       uint64 = 0x4f128c9b2075678a
-	TLLVTagKeyDuration   uint64 = 0x58b38165e3170a19
+	TLLVTagSessionKeyR1 uint64 = 0x3d1a10b8c66e10f2
+	TLLVTagContentKey   uint64 = 0x58b3816bf96144e0
+	TLLVTagAssetID      uint64 = 0x76b485d21a28a39f
+	TLLVTagReturnStatus uint64 = 0x18705f42277d4c2b
+	TLLVTagR2Nonce      uint64 = 0x4f128c9b2075678a
+	TLLVTagKeyDuration  uint64 = 0x58b38165e3170a19
 )
 
 // FairPlayConfig holds credentials required for Apple FairPlay KSM operation.
 type FairPlayConfig struct {
-	ASKHex      string // 16-byte Application Secret Key in hex
-	CertBytes   []byte // Application Certificate (DER format)
-	RentalSecs  uint32 // Rental duration in seconds (0 = unlimited)
-	LeaseSecs   uint32 // Playback lease duration in seconds (0 = unlimited)
+	ASKHex     string // 16-byte Application Secret Key in hex
+	CertBytes  []byte // Application Certificate (DER format)
+	RentalSecs uint32 // Rental duration in seconds (0 = unlimited)
+	LeaseSecs  uint32 // Playback lease duration in seconds (0 = unlimited)
 }
 
 // FairPlayKSM represents the Key Security Module for Apple FairPlay Streaming.
 type FairPlayKSM struct {
-	cfg        FairPlayConfig
-	askBytes   []byte
-	keyStore   map[string][]byte // Asset ID -> 16-byte Content Key
+	cfg      FairPlayConfig
+	askBytes []byte
+	keyStore map[string][]byte // Asset ID -> 16-byte Content Key
 }
 
 // NewFairPlayKSM instantiates a FairPlay Key Security Module.
@@ -110,10 +110,10 @@ func FormatEXTXKeyFairPlay(skdURI string) string {
 
 // TLLVPacket represents a Tag-Length-Length-Value container in Apple FPS payload.
 type TLLVPacket struct {
-	Tag        uint64
-	TotalLen   uint32
-	ValueLen   uint32
-	Value      []byte
+	Tag      uint64
+	TotalLen uint32
+	ValueLen uint32
+	Value    []byte
 }
 
 // EncodeTLLV serializes a TLLV record per Apple FairPlay binary layout:

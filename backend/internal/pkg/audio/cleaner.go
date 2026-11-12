@@ -9,9 +9,9 @@ import (
 
 // Cleaner validation errors.
 var (
-	ErrNilCleanBuffer       = errors.New("pcm buffer is nil for audio cleaner")
+	ErrNilCleanBuffer        = errors.New("pcm buffer is nil for audio cleaner")
 	ErrEmptyAudioCleanBuffer = errors.New("pcm buffer contains no samples to clean")
-	ErrInvalidCutoffHz      = errors.New("cutoff frequency must be positive and below nyquist")
+	ErrInvalidCutoffHz       = errors.New("cutoff frequency must be positive and below nyquist")
 )
 
 // DCBlockerConfig specifies parameters for removing stationary and slowly drifting direct current bias.

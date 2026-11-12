@@ -150,9 +150,9 @@ func (d *BPMDetector) Analyze(pcm *PCMBuffer) (*BPMResult, error) {
 
 	// 4 Sub-Bands: Sub-bass, Low-mid, Mid, High
 	subBands := []subBandDefinition{
-		{minFreq: 20.0, maxFreq: 180.0, weight: 2.0},    // Kick drum & 808 fundamental
-		{minFreq: 180.0, maxFreq: 800.0, weight: 1.5},   // Snare body & bass harmonics
-		{minFreq: 800.0, maxFreq: 3500.0, weight: 1.0},  // Snare snap, percussion, vocals
+		{minFreq: 20.0, maxFreq: 180.0, weight: 2.0},     // Kick drum & 808 fundamental
+		{minFreq: 180.0, maxFreq: 800.0, weight: 1.5},    // Snare body & bass harmonics
+		{minFreq: 800.0, maxFreq: 3500.0, weight: 1.0},   // Snare snap, percussion, vocals
 		{minFreq: 3500.0, maxFreq: 12000.0, weight: 0.7}, // Hi-hats, shakers, cymbals
 	}
 

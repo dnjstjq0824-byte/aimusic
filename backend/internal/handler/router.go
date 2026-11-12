@@ -140,7 +140,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 
 	tracks := v1.Group("/tracks")
 	tracks.GET("", trackH.ListTracks)
-	tracks.GET("/:id", trackH.GetTrack)
+	tracks.GET("/:id", JWTOptional(d.Services.Auth), trackH.GetTrack)
 	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
 	certs := v1.Group("/certificates")
 	certs.GET("/:number", certH.VerifyCertificate)
@@ -188,11 +188,12 @@ func SetupRouter(d *Deps) *gin.Engine {
 	billingAuthed.POST("/orders", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.CreateOrder)
 	billingAuthed.POST("/payments/confirm", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.ConfirmPayment)
 	billingAuthed.GET("/subscriptions/me", billingH.MySubscription)
+	billingAuthed.GET("/subscriptions/me/refund-quote", billingH.RefundQuote)
 	billingAuthed.POST("/subscriptions/cancel", billingH.CancelSubscription)
 	billingAuthed.POST("/payments/refund", billingH.Refund)
 
 	admin := v1.Group("/admin")
-	admin.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleAdmin))
+	admin.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleAdmin), RequireAdminTOTP(d.Repos.Users, d.Config.Security.AdminTOTPRequired))
 	admin.GET("/overview", adminH.Overview)
 	admin.GET("/pending", adminH.Pending)
 	admin.GET("/audit-events", adminH.ListAuditEvents)

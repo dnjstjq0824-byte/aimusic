@@ -48,13 +48,13 @@ type AudioIntegrityManifest struct {
 
 // MultiChecksumBuilder calculates 5 concurrent hashes in a single streaming pass.
 type MultiChecksumBuilder struct {
-	sha256Hash hash.Hash
-	sha512Hash hash.Hash
-	md5Hash    hash.Hash
-	crc32Hash  hash.Hash32
+	sha256Hash  hash.Hash
+	sha512Hash  hash.Hash
+	md5Hash     hash.Hash
+	crc32Hash   hash.Hash32
 	adler32Hash hash.Hash32
 	multiWriter io.Writer
-	bytesCount int64
+	bytesCount  int64
 }
 
 // NewMultiChecksumBuilder instantiates a multi-hash streaming builder.

@@ -26,25 +26,25 @@ func DefaultTransitionConfig() TransitionConfig {
 
 // TransitionResult holds output buffer and telemetry metrics for track boundary transition.
 type TransitionResult struct {
-	ProcessedBuffer               *PCMBuffer
-	HeadFadeSamples               int
-	TailFadeSamples               int
-	HeadZeroCrossingSample        int
-	TailZeroCrossingSample        int
-	InitialHeadDiscontinuityDBFS  float64
-	FinalHeadEdgeAmplitude        float64
-	InitialTailDiscontinuityDBFS  float64
-	FinalTailEdgeAmplitude        float64
-	ClickTransientSuppressed      bool
+	ProcessedBuffer              *PCMBuffer
+	HeadFadeSamples              int
+	TailFadeSamples              int
+	HeadZeroCrossingSample       int
+	TailZeroCrossingSample       int
+	InitialHeadDiscontinuityDBFS float64
+	FinalHeadEdgeAmplitude       float64
+	InitialTailDiscontinuityDBFS float64
+	FinalTailEdgeAmplitude       float64
+	ClickTransientSuppressed     bool
 }
 
 // CrossfadeResult holds blended gapless audio buffer and energy preservation metrics.
 type CrossfadeResult struct {
-	BlendedBuffer                 *PCMBuffer
-	CrossfadeSamples              int
-	CrossfadeDurationSeconds      float64
-	MidpointEnergyVarianceDB      float64 // Deviation from 0 dB energy conservation
-	EnergyConservationCompliant   bool
+	BlendedBuffer               *PCMBuffer
+	CrossfadeSamples            int
+	CrossfadeDurationSeconds    float64
+	MidpointEnergyVarianceDB    float64 // Deviation from 0 dB energy conservation
+	EnergyConservationCompliant bool
 }
 
 // TransitionProcessor provides 0.3s track boundary smoothing and gapless crossfades.

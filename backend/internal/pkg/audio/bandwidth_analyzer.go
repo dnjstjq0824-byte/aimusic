@@ -251,14 +251,14 @@ func (ba *BandwidthAnalyzer) Analyze(pcm *PCMBuffer) (*BandwidthAnalysisResult, 
 				rightDensity := rightEnergy / float64(rightBins)
 
 				// Check that right window and post-stopband are significantly attenuated
-				slopeDb := 10.0 * math.Log10(leftDensity / (rightDensity + 1e-14))
+				slopeDb := 10.0 * math.Log10(leftDensity/(rightDensity+1e-14))
 
 				// Verify that stopband does not revive into loud musical content
 				postDensity := 0.0
 				if postStopbandBins > 0 {
 					postDensity = postStopbandEnergy / float64(postStopbandBins)
 				}
-				stopbandDropDb := 10.0 * math.Log10(leftDensity / (postDensity + 1e-14))
+				stopbandDropDb := 10.0 * math.Log10(leftDensity/(postDensity+1e-14))
 
 				if slopeDb > maxDropDb && stopbandDropDb >= ba.config.CutoffThresholdDb {
 					maxDropDb = slopeDb

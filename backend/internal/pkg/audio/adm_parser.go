@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrNotRIFFOrRF64   = errors.New("input is not a valid RIFF or RF64 wave file")
-	ErrMissingFmtChunk = errors.New("missing mandatory fmt chunk in BWF header")
+	ErrNotRIFFOrRF64     = errors.New("input is not a valid RIFF or RF64 wave file")
+	ErrMissingFmtChunk   = errors.New("missing mandatory fmt chunk in BWF header")
 	ErrMissingAxmlOrChna = errors.New("input does not contain ADM axml or chna metadata chunks")
 )
 
@@ -38,31 +38,31 @@ type ADMObjectPosition struct {
 
 // ADMAudioObject describes a parsed bed or dynamic object audio track.
 type ADMAudioObject struct {
-	ObjectID         string
-	ObjectName       string
-	TrackIndex       int
-	IsBed            bool     // True if part of fixed speaker bed (DirectSpeakers), False if dynamic object
-	SpeakerLabel     string   // e.g. "FrontLeft", "TopSideLeft", "LFE" (for beds)
-	Position         ADMObjectPosition
-	GainLinear       float64
-	Diffuse          float64
-	TypeLabel        string   // "DirectSpeakers" or "Objects"
+	ObjectID     string
+	ObjectName   string
+	TrackIndex   int
+	IsBed        bool   // True if part of fixed speaker bed (DirectSpeakers), False if dynamic object
+	SpeakerLabel string // e.g. "FrontLeft", "TopSideLeft", "LFE" (for beds)
+	Position     ADMObjectPosition
+	GainLinear   float64
+	Diffuse      float64
+	TypeLabel    string // "DirectSpeakers" or "Objects"
 }
 
 // ADMMetadata contains the complete parsed ADM BWF structural model and tags.
 type ADMMetadata struct {
-	FormatName           string
-	TotalTracks          int
-	SampleRate           int
-	BitDepth             int
-	BedLayout            string // e.g. "2.0", "5.1", "7.1.2", "7.1.4", "9.1.6"
-	BedChannelCount      int
-	DynamicObjectCount   int
-	Objects              []ADMAudioObject
-	ChannelAllocations   []ADMChannelAllocation
+	FormatName            string
+	TotalTracks           int
+	SampleRate            int
+	BitDepth              int
+	BedLayout             string // e.g. "2.0", "5.1", "7.1.2", "7.1.4", "9.1.6"
+	BedChannelCount       int
+	DynamicObjectCount    int
+	Objects               []ADMAudioObject
+	ChannelAllocations    []ADMChannelAllocation
 	SpatialAtmosCompliant bool
-	IsBinauralRenderable bool
-	ComplianceTags       []string
+	IsBinauralRenderable  bool
+	ComplianceTags        []string
 }
 
 // ADMBWFParser extracts ITU-R BS.2076 ADM and Dolby Atmos metadata from BWF streams.
@@ -205,11 +205,11 @@ func parseChnaChunk(data []byte) []ADMChannelAllocation {
 
 // XML Data Structures for ITU-R BS.2076 Audio Definition Model
 type xmlADMRoot struct {
-	XMLName        xml.Name         `xml:"audioFormatExtended"`
-	Programmes     []xmlProgramme   `xml:"audioProgramme"`
-	Objects        []xmlObject      `xml:"audioObject"`
-	PackFormats    []xmlPackFormat  `xml:"audioPackFormat"`
-	ChannelFormats []xmlChannelFmt  `xml:"audioChannelFormat"`
+	XMLName        xml.Name        `xml:"audioFormatExtended"`
+	Programmes     []xmlProgramme  `xml:"audioProgramme"`
+	Objects        []xmlObject     `xml:"audioObject"`
+	PackFormats    []xmlPackFormat `xml:"audioPackFormat"`
+	ChannelFormats []xmlChannelFmt `xml:"audioChannelFormat"`
 }
 
 type xmlProgramme struct {
@@ -225,25 +225,25 @@ type xmlObject struct {
 }
 
 type xmlPackFormat struct {
-	ID               string   `xml:"audioPackFormatID,attr"`
-	Name             string   `xml:"audioPackFormatName,attr"`
-	TypeLabel        string   `xml:"typeLabel,attr"`
-	TypeDefinition   string   `xml:"typeDefinition,attr"`
+	ID                string   `xml:"audioPackFormatID,attr"`
+	Name              string   `xml:"audioPackFormatName,attr"`
+	TypeLabel         string   `xml:"typeLabel,attr"`
+	TypeDefinition    string   `xml:"typeDefinition,attr"`
 	ChannelFormatRefs []string `xml:"audioChannelFormatIDRef"`
 }
 
 type xmlChannelFmt struct {
-	ID             string          `xml:"audioChannelFormatID,attr"`
-	Name           string          `xml:"audioChannelFormatName,attr"`
-	TypeLabel      string          `xml:"typeLabel,attr"`
-	Blocks         []xmlBlockFormat `xml:"audioBlockFormat"`
+	ID        string           `xml:"audioChannelFormatID,attr"`
+	Name      string           `xml:"audioChannelFormatName,attr"`
+	TypeLabel string           `xml:"typeLabel,attr"`
+	Blocks    []xmlBlockFormat `xml:"audioBlockFormat"`
 }
 
 type xmlBlockFormat struct {
-	Gain      float64        `xml:"gain"`
-	Diffuse   float64        `xml:"diffuse"`
-	Positions []xmlPosition  `xml:"position"`
-	Speakers  []string       `xml:"speakerLabel"`
+	Gain      float64       `xml:"gain"`
+	Diffuse   float64       `xml:"diffuse"`
+	Positions []xmlPosition `xml:"position"`
+	Speakers  []string      `xml:"speakerLabel"`
 }
 
 type xmlPosition struct {

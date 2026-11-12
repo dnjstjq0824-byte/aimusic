@@ -172,6 +172,28 @@ func RequireConsents(legal *repository.LegalRepo) gin.HandlerFunc {
 	}
 }
 
+// RequireAdminTOTP blocks admins that have not enrolled a second factor
+// (S-03). TOTP enrollment lives under /auth/totp/*, which stays open, so an
+// admin can always enroll and come back. Must run after JWTAuth.
+func RequireAdminTOTP(users *repository.UserRepo, required bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !required {
+			c.Next()
+			return
+		}
+		u, err := users.GetByID(c.Request.Context(), CurrentUserID(c))
+		if err != nil {
+			AbortError(c, err)
+			return
+		}
+		if !u.TOTPEnabled {
+			AbortError(c, domain.ErrTOTPEnrollRequired)
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireRole allows only the listed roles.
 func RequireRole(roles ...string) gin.HandlerFunc {
 	allowed := map[string]bool{}
@@ -397,6 +419,10 @@ func errCodeOfDomain(err error) string {
 		return "ERR_AGE_CONFIRM_REQUIRED"
 	case errors.Is(err, domain.ErrConsentRequired):
 		return "ERR_CONSENT_REQUIRED"
+	case errors.Is(err, domain.ErrActivePassExists):
+		return "ERR_ACTIVE_PASS_EXISTS"
+	case errors.Is(err, domain.ErrTOTPEnrollRequired):
+		return "ERR_TOTP_ENROLL_REQUIRED"
 	default:
 		return ""
 	}
@@ -436,6 +462,10 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusForbidden, "ERR_AGE_CONFIRM_REQUIRED", "age confirmation required")
 	case errors.Is(err, domain.ErrConsentRequired):
 		abort(c, http.StatusForbidden, "ERR_CONSENT_REQUIRED", "terms consent required")
+	case errors.Is(err, domain.ErrActivePassExists):
+		abort(c, http.StatusConflict, "ERR_ACTIVE_PASS_EXISTS", "an active pass already exists")
+	case errors.Is(err, domain.ErrTOTPEnrollRequired):
+		abort(c, http.StatusForbidden, "ERR_TOTP_ENROLL_REQUIRED", "admin accounts must enroll a second factor")
 	default:
 		slog.Error("internal_error",
 			"request_id", CurrentRequestID(c),

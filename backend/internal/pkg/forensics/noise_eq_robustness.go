@@ -11,12 +11,12 @@ import (
 
 // NoiseEQRobustnessResult encapsulates forensic robustness metrics under noise and EQ tampering.
 type NoiseEQRobustnessResult struct {
-	Matched           bool    `json:"matched"`
-	EstimatedSNRDb    float64 `json:"estimated_snr_db"`
-	EQTamperingType   string  `json:"eq_tampering_type"` // e.g. "none", "lowpass_cutoff", "highpass_cutoff", "bandpass"
-	RobustSimilarity  float64 `json:"robust_similarity"`  // 0.0 to 1.0 (or 0-100%)
-	ConfidencePct     float64 `json:"confidence_pct"`
-	Summary           string  `json:"summary"`
+	Matched          bool    `json:"matched"`
+	EstimatedSNRDb   float64 `json:"estimated_snr_db"`
+	EQTamperingType  string  `json:"eq_tampering_type"` // e.g. "none", "lowpass_cutoff", "highpass_cutoff", "bandpass"
+	RobustSimilarity float64 `json:"robust_similarity"` // 0.0 to 1.0 (or 0-100%)
+	ConfidencePct    float64 `json:"confidence_pct"`
+	Summary          string  `json:"summary"`
 }
 
 // NoiseEQRobustnessVerifier matches audio despite 15dB additive noise or severe EQ curve alteration.

@@ -23,10 +23,10 @@ type SampleMatchSegment struct {
 
 // PlagiarismReport encapsulates detection results and Gate 4 compliance flags.
 type PlagiarismReport struct {
-	PlagiarismDetected    bool                 `json:"plagiarism_detected"`     // True if contiguous match >= 3.0s
+	PlagiarismDetected    bool                 `json:"plagiarism_detected"` // True if contiguous match >= 3.0s
 	MaxContiguousMatchSec float64              `json:"max_contiguous_match_sec"`
 	InfringingSegments    []SampleMatchSegment `json:"infringing_segments"`
-	RecommendedAction     string               `json:"recommended_action"`      // "FLAG_REVIEW_GATE_4" or "PASS"
+	RecommendedAction     string               `json:"recommended_action"` // "FLAG_REVIEW_GATE_4" or "PASS"
 	DiagnosticSummary     string               `json:"diagnostic_summary"`
 	ScoringDuration       time.Duration        `json:"scoring_duration"`
 }
@@ -41,9 +41,9 @@ type PlagiarismScorer struct {
 // NewPlagiarismScorer creates a plagiarism scorer.
 func NewPlagiarismScorer() *PlagiarismScorer {
 	return &PlagiarismScorer{
-		maxBitErrors:     4,     // Max bit difference per sub-fingerprint
-		fpsRate:          21.5,  // Standard Chromaprint subfingerprints per second
-		flagThresholdSec: 3.0,   // 3.0 seconds contiguous match threshold
+		maxBitErrors:     4,    // Max bit difference per sub-fingerprint
+		fpsRate:          21.5, // Standard Chromaprint subfingerprints per second
+		flagThresholdSec: 3.0,  // 3.0 seconds contiguous match threshold
 	}
 }
 

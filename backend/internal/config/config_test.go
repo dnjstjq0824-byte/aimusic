@@ -46,3 +46,23 @@ func TestValidateNonProdSkips(t *testing.T) {
 		}
 	}
 }
+
+func TestAdminTOTPRequiredDefaults(t *testing.T) {
+	t.Setenv("ADMIN_TOTP_REQUIRED", "")
+	t.Setenv("APP_ENV", "local")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Security.AdminTOTPRequired {
+		t.Fatal("local must not require admin TOTP by default")
+	}
+	t.Setenv("APP_ENV", "prod")
+	if cfg, _ = Load(); !cfg.Security.AdminTOTPRequired {
+		t.Fatal("prod must require admin TOTP by default")
+	}
+	t.Setenv("ADMIN_TOTP_REQUIRED", "false")
+	if cfg, _ = Load(); cfg.Security.AdminTOTPRequired {
+		t.Fatal("explicit false must win")
+	}
+}

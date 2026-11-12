@@ -23,10 +23,10 @@ const (
 
 // ProtectedArtistVoiceprint stores reference vocal biometrics for a protected artist.
 type ProtectedArtistVoiceprint struct {
-	ArtistID      string    `json:"artist_id"`
-	ArtistName    string    `json:"artist_name"`
-	DVector       []float64 `json:"d_vector"` // Normalized 64-dim vector
-	RegisteredAt  time.Time `json:"registered_at"`
+	ArtistID     string    `json:"artist_id"`
+	ArtistName   string    `json:"artist_name"`
+	DVector      []float64 `json:"d_vector"` // Normalized 64-dim vector
+	RegisteredAt time.Time `json:"registered_at"`
 }
 
 // VoiceCloneMatchResult summarizes the outcome of voice clone screening.

@@ -19,7 +19,9 @@ func (f fakeDSPTracks) GetByID(_ context.Context, id string) (*domain.Track, err
 	return t, nil
 }
 
-type fakeDSPRights struct{ m map[string]*domain.TrackRightsDeclaration }
+type fakeDSPRights struct {
+	m map[string]*domain.TrackRightsDeclaration
+}
 
 func (f fakeDSPRights) GetByTrack(_ context.Context, trackID string) (*domain.TrackRightsDeclaration, error) {
 	r, ok := f.m[trackID]
@@ -29,7 +31,9 @@ func (f fakeDSPRights) GetByTrack(_ context.Context, trackID string) (*domain.Tr
 	return r, nil
 }
 
-type fakeDSPPartners struct{ m map[string]*domain.PartnerProfile }
+type fakeDSPPartners struct {
+	m map[string]*domain.PartnerProfile
+}
 
 func (f fakeDSPPartners) GetByID(_ context.Context, id string) (*domain.PartnerProfile, error) {
 	p, ok := f.m[id]
@@ -51,7 +55,7 @@ func (f fakeDSPAlbums) GetByID(_ context.Context, id string) (*domain.Album, err
 
 type fakeDSPPresigner struct{}
 
-func (fakeDSPPresigner) PresignGet(_ context.Context, bucket, key string, _ time.Duration) (string, error) {
+func (fakeDSPPresigner) PresignGetPublic(_ context.Context, bucket, key string, _ time.Duration) (string, error) {
 	return "https://cdn.test/" + bucket + "/" + key, nil
 }
 
@@ -69,8 +73,8 @@ func dspReadyTrack() *domain.Track {
 	return &domain.Track{
 		ID: "track-1", AlbumID: &album, PartnerID: "partner-1",
 		Title: "Neon Skyline", Genre: strRef("Electronic"),
-		MoodTags:         []string{"bright", "driving"},
-		AIGenerationType: "FULL_AI",
+		MoodTags:          []string{"bright", "driving"},
+		AIGenerationType:  "FULL_AI",
 		OriginalObjectKey: "staging/partner-1/abc/song.wav",
 		AIProvider:        domain.ProviderSuno, AIGenerated: true,
 		ISRC: &isrc, BPM: &bpm, MusicalKey: &key,

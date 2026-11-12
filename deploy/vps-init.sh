@@ -34,7 +34,10 @@ AES256_KEY_BASE64=${AES256_KEY_BASE64}
 
 MINIO_ROOT_USER=avibe-minio
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-S3_ENDPOINT=https://hls.avibemusic.com
+# Server-side S3 calls stay on the private network; only URLs handed to
+# browsers (presigned uploads, distributor links) use the public host (S-01).
+S3_ENDPOINT=http://localstack:4566
+S3_PUBLIC_ENDPOINT=https://hls.avibemusic.com
 S3_REGION=us-east-1
 S3_ACCESS_KEY=avibe-minio
 S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
@@ -46,7 +49,7 @@ CDN_BASE_URL=https://avibemusic.com/local-hls
 CORS_ALLOWED_ORIGINS=https://avibemusic.com
 TRUSTED_PROXIES=172.30.0.0/16
 FRONTEND_BASE_URL=https://avibemusic.com
-OAUTH_REDIRECT_BASE_URL=https://avibemusic.com
+OAUTH_REDIRECT_BASE_URL=https://avibemusic.com/api/v1/auth/oauth
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587

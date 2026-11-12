@@ -236,3 +236,35 @@ func TestDeletePrefixEmptyIsSuccessListFailureIsError(t *testing.T) {
 		t.Fatalf("list failure accepted")
 	}
 }
+
+func TestPublicPresignUsesPublicEndpoint(t *testing.T) {
+	s := New("http://localstack:4566", "us-east-1", "ak", "sk", false)
+	s.SetPublicEndpoint("https://hls.example.com/")
+	ctx := context.Background()
+	internal, err := s.PresignPut(ctx, "local-staging", "staging/p/sha/a.wav", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(internal, "http://localstack:4566/local-staging/") {
+		t.Fatalf("internal presign host = %s", internal)
+	}
+	pub, err := s.PresignPutPublic(ctx, "local-staging", "staging/p/sha/a.wav", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(pub, "https://hls.example.com/local-staging/staging/p/sha/a.wav?") {
+		t.Fatalf("public presign host = %s", pub)
+	}
+	get, err := s.PresignGetPublic(ctx, "local-staging", "staging/p/sha/a.wav", time.Minute)
+	if err != nil || !strings.HasPrefix(get, "https://hls.example.com/") {
+		t.Fatalf("public get = %s, %v", get, err)
+	}
+}
+
+func TestPublicEndpointDefaultsToInternal(t *testing.T) {
+	s := New("http://localhost:4566", "us-east-1", "ak", "sk", false)
+	s.SetPublicEndpoint("  ")
+	if s.PublicEndpoint() != "http://localhost:4566" {
+		t.Fatalf("public endpoint = %q", s.PublicEndpoint())
+	}
+}

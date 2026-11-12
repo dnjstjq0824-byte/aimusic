@@ -11,9 +11,9 @@ import (
 
 // SunoAnalysisResult encapsulates forensic indicators of Suno v3 / v3.5 audio generation.
 type SunoAnalysisResult struct {
-	IsSunoGenerated       bool    `json:"is_suno_generated"`        // Flagged if confidence > 0.80
-	ConfidenceScore       float64 `json:"confidence_score"`         // 0.0 to 1.0
-	CutoffDetected        bool    `json:"cutoff_detected"`          // True if steep ~16.5kHz shelf observed
+	IsSunoGenerated       bool    `json:"is_suno_generated"` // Flagged if confidence > 0.80
+	ConfidenceScore       float64 `json:"confidence_score"`  // 0.0 to 1.0
+	CutoffDetected        bool    `json:"cutoff_detected"`   // True if steep ~16.5kHz shelf observed
 	CutoffFrequencyHz     float64 `json:"cutoff_frequency_hz"`
 	HighFreqAttenuationDb float64 `json:"high_freq_attenuation_db"` // dB loss between 15kHz and 18kHz
 	CombFilterPeriodicR   float64 `json:"comb_filter_periodic_r"`   // Autocorrelation peak of spectral ripple (0..1)
@@ -101,7 +101,7 @@ func (sd *SunoDetector) Analyze(input *audio.PCMBuffer) (*SunoAnalysisResult, er
 
 	attenuationDb := 0.0
 	if pwrPost16k > 1e-12 && pwrPre16k > 1e-12 {
-		attenuationDb = 10.0 * math.Log10(pwrPre16k / pwrPost16k)
+		attenuationDb = 10.0 * math.Log10(pwrPre16k/pwrPost16k)
 	} else if pwrPre16k > 1e-12 {
 		attenuationDb = 60.0 // Near zero energy above 16.5kHz
 	}
@@ -129,7 +129,7 @@ func (sd *SunoDetector) Analyze(input *audio.PCMBuffer) (*SunoAnalysisResult, er
 	maxLag := int(500.0 / binHz) // up to ~500 Hz ripple spacing
 	minLag := int(100.0 / binHz) // down to ~100 Hz ripple spacing
 	if maxLag >= sliceLen/2 {
-		maxLag = sliceLen / 2 - 1
+		maxLag = sliceLen/2 - 1
 	}
 
 	var var0 float64

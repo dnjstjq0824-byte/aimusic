@@ -66,8 +66,8 @@ func (h *DeviceHandler) DeviceQueue(c *gin.Context) {
 }
 
 type deviceHeartbeatRequest struct {
-	TrackID       string `json:"trackId" binding:"required"`
-	DurationSecs  int    `json:"durationSecs"`
+	TrackID      string `json:"trackId" binding:"required"`
+	DurationSecs int    `json:"durationSecs"`
 }
 
 // DeviceHeartbeat records a play from the certified player.
@@ -109,7 +109,7 @@ func (h *DeviceHandler) DeviceStream(c *gin.Context) {
 	playlistURL := base + "/" + strings.TrimPrefix(*track.HLSPrefix, "/") + "/master.m3u8"
 	jti := uuid.NewString()
 	exp := time.Now().Add(time.Duration(h.Config.HLS.URLTTLSecs) * time.Second)
-	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, h.Config.HLS.SigningKey)
+	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, apcrypto.PlaybackHQ, h.Config.HLS.SigningKey)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"url": signed, "expiresAt": exp.Format(time.RFC3339), "jti": jti, "quality": "HQ",
 	}})

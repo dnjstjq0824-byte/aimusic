@@ -190,7 +190,7 @@ func TestSTFT_FrequencyBinAccuracy(t *testing.T) {
 		t.Fatalf("Forward STFT failed: %v", err)
 	}
 
-	binResolution := float64(sr) / float64(fftSize) // 48000 / 2048 = 23.4375 Hz
+	binResolution := float64(sr) / float64(fftSize)            // 48000 / 2048 = 23.4375 Hz
 	expectedBin := int(math.Round(targetFreq / binResolution)) // 1200 / 23.4375 = 51.2 -> 51
 
 	// Check middle frame peak bin

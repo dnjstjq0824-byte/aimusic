@@ -10,10 +10,10 @@ import (
 
 // ExciterConfig configures spectral exciter parameters.
 type ExciterConfig struct {
-	CutoffHz       float64 `json:"cutoff_hz"`        // Crossover frequency to extract highs, default: 12000 Hz
-	Drive          float64 `json:"drive"`            // Harmonic drive intensity (1.0 to 5.0), default: 2.0
-	AirMixDb       float64 `json:"air_mix_db"`       // Blend level of generated harmonics in dB, default: -12.0 dB
-	EvenOddRatio   float64 `json:"even_odd_ratio"`   // 0.0 = pure odd, 1.0 = pure even, default: 0.5 (balanced)
+	CutoffHz     float64 `json:"cutoff_hz"`      // Crossover frequency to extract highs, default: 12000 Hz
+	Drive        float64 `json:"drive"`          // Harmonic drive intensity (1.0 to 5.0), default: 2.0
+	AirMixDb     float64 `json:"air_mix_db"`     // Blend level of generated harmonics in dB, default: -12.0 dB
+	EvenOddRatio float64 `json:"even_odd_ratio"` // 0.0 = pure odd, 1.0 = pure even, default: 0.5 (balanced)
 }
 
 // DefaultExciterConfig returns standard mastering-grade air band exciter parameters.

@@ -23,15 +23,15 @@ func DefaultSpectralFlatnessConfig() SpectralFlatnessConfig {
 
 // SpectralFlatnessResult contains overall and band-split spectral flatness metrics.
 type SpectralFlatnessResult struct {
-	GlobalSFM              float64 `json:"global_sfm"`               // 0.0 (pure tone) to 1.0 (white noise)
-	GlobalSFMDb            float64 `json:"global_sfm_db"`            // 10 * log10(SFM)
-	TonalityScore          float64 `json:"tonality_score"`           // 0..100 (100 = pure harmonic tone)
-	NoisinessScore         float64 `json:"noisiness_score"`          // 0..100 (100 = pure noise)
-	InstrumentRichness     float64 `json:"instrument_richness"`      // 0..100 (rich harmonic overtone distribution)
-	BassSFM                float64 `json:"bass_sfm"`                 // 20Hz - 250Hz
-	MidSFM                 float64 `json:"mid_sfm"`                  // 250Hz - 4kHz
-	HighSFM                float64 `json:"high_sfm"`                 // 4kHz - 20kHz
-	FrameCount             int     `json:"frame_count"`
+	GlobalSFM          float64 `json:"global_sfm"`          // 0.0 (pure tone) to 1.0 (white noise)
+	GlobalSFMDb        float64 `json:"global_sfm_db"`       // 10 * log10(SFM)
+	TonalityScore      float64 `json:"tonality_score"`      // 0..100 (100 = pure harmonic tone)
+	NoisinessScore     float64 `json:"noisiness_score"`     // 0..100 (100 = pure noise)
+	InstrumentRichness float64 `json:"instrument_richness"` // 0..100 (rich harmonic overtone distribution)
+	BassSFM            float64 `json:"bass_sfm"`            // 20Hz - 250Hz
+	MidSFM             float64 `json:"mid_sfm"`             // 250Hz - 4kHz
+	HighSFM            float64 `json:"high_sfm"`            // 4kHz - 20kHz
+	FrameCount         int     `json:"frame_count"`
 }
 
 // SpectralFlatnessAnalyzer measures harmonic entropy and spectral flatness.

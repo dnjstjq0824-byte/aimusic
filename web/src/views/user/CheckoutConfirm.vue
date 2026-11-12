@@ -31,8 +31,7 @@
           </div>
         </dl>
         <p class="border-t border-surface-border pt-3 text-[11px] leading-relaxed text-neutral-400">
-          환불 기준: 결제 후 7일 이내 미사용 시 전액 환불됩니다. 스트리밍 이용 개시 후에는
-          청약철회가 제한될 수 있습니다. 이용권은 자동 연장되지 않습니다.
+          환불 기준: {{ REFUND_POLICY_SUMMARY }} 해지·환불은 내 라이브러리에서 신청할 수 있습니다.
         </p>
       </UiCard>
       <div class="flex justify-end gap-2">
@@ -58,6 +57,7 @@
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { billingApi } from '@/api/endpoints';
+import { REFUND_POLICY_SUMMARY } from '@/api/refundPolicy';
 import { errMessageOf } from '@/api/client';
 import type { BillingSubscription } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';

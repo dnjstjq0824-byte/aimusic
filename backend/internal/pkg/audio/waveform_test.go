@@ -221,7 +221,7 @@ func TestWaveform_BinaryPackingRoundTrip(t *testing.T) {
 	// Maximum 8-bit quantization error is 1/255 = 0.00392
 	for i := range peaks {
 		diff := math.Abs(peaks[i] - unpacked[i])
-		if diff > (1.0 / 255.0 + 1e-6) {
+		if diff > (1.0/255.0 + 1e-6) {
 			t.Errorf("peaks[%d] quantization error too high: orig=%f unpacked=%f diff=%f", i, peaks[i], unpacked[i], diff)
 		}
 	}
@@ -362,7 +362,7 @@ func TestWaveform100HeterogeneousStreams(t *testing.T) {
 		sr := sampleRates[rng.Intn(len(sampleRates))]
 		channels := channelsList[rng.Intn(len(channelsList))]
 		buckets := bucketCounts[rng.Intn(len(bucketCounts))]
-		numSamples := sr / 10 + rng.Intn(sr*2) // 0.1s to 2.1s
+		numSamples := sr/10 + rng.Intn(sr*2) // 0.1s to 2.1s
 		freq := 100.0 + rng.Float64()*3000.0
 		amp := 0.05 + rng.Float64()*0.90
 		waveformType := rng.Intn(4)

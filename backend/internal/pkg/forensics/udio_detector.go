@@ -11,10 +11,10 @@ import (
 
 // UdioAnalysisResult encapsulates forensic indicators of Udio audio generation.
 type UdioAnalysisResult struct {
-	IsUdioGenerated         bool    `json:"is_udio_generated"`           // Flagged if confidence > 0.70
-	ConfidenceScore         float64 `json:"confidence_score"`            // 0.0 to 1.0
-	PhaseDiscontinuityScore float64 `json:"phase_discontinuity_score"`  // Non-physical phase fluctuation variance
-	BoundaryEntropy         float64 `json:"boundary_entropy"`            // Spectral entropy along 1kHz-3.5kHz band
+	IsUdioGenerated         bool    `json:"is_udio_generated"`         // Flagged if confidence > 0.70
+	ConfidenceScore         float64 `json:"confidence_score"`          // 0.0 to 1.0
+	PhaseDiscontinuityScore float64 `json:"phase_discontinuity_score"` // Non-physical phase fluctuation variance
+	BoundaryEntropy         float64 `json:"boundary_entropy"`          // Spectral entropy along 1kHz-3.5kHz band
 	DiagnosticSummary       string  `json:"diagnostic_summary"`
 }
 

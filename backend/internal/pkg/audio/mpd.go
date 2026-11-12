@@ -15,17 +15,17 @@ import (
 
 // Standard DASH XML namespace URIs.
 const (
-	DASHNamespaceMPD           = "urn:mpeg:dash:schema:mpd:2011"
-	DASHNamespaceXSI           = "http://www.w3.org/2001/XMLSchema-instance"
-	DASHSchemaLocation         = "urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd"
-	DASHProfileLive            = "urn:mpeg:dash:profile:isoff-live:2011"
-	DASHProfileDASHIF          = "urn:com:dashif:dash264"
+	DASHNamespaceMPD            = "urn:mpeg:dash:schema:mpd:2011"
+	DASHNamespaceXSI            = "http://www.w3.org/2001/XMLSchema-instance"
+	DASHSchemaLocation          = "urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd"
+	DASHProfileLive             = "urn:mpeg:dash:profile:isoff-live:2011"
+	DASHProfileDASHIF           = "urn:com:dashif:dash264"
 	DASHChannelConfigScheme2011 = "urn:mpeg:dash:23003:3:audio_channel_configuration:2011"
-	DASHRoleScheme2011         = "urn:mpeg:dash:role:2011"
-	DASHProtectionCENC         = "urn:mpeg:dash:mp4protection:2011"
-	DASHProtectionWidevine     = "urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"
-	DASHProtectionPlayReady    = "urn:uuid:9a04f079-9840-4286-ab92-e65be0885f95"
-	DASHAIDisclosureScheme     = "urn:aimusic:ai-disclosure:2026"
+	DASHRoleScheme2011          = "urn:mpeg:dash:role:2011"
+	DASHProtectionCENC          = "urn:mpeg:dash:mp4protection:2011"
+	DASHProtectionWidevine      = "urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"
+	DASHProtectionPlayReady     = "urn:uuid:9a04f079-9840-4286-ab92-e65be0885f95"
+	DASHAIDisclosureScheme      = "urn:aimusic:ai-disclosure:2026"
 )
 
 // Common DASH validation errors.
@@ -39,17 +39,17 @@ var (
 
 // MPD represents the root XML element of an MPEG-DASH manifest.
 type MPD struct {
-	XMLName                   xml.Name        `xml:"MPD"`
-	Xmlns                     string          `xml:"xmlns,attr"`
-	XmlnsXsi                  string          `xml:"xmlns:xsi,attr,omitempty"`
-	SchemaLocation            string          `xml:"xsi:schemaLocation,attr,omitempty"`
-	Profiles                  string          `xml:"profiles,attr"`
-	Type                      string          `xml:"type,attr"`
-	MediaPresentationDuration string          `xml:"mediaPresentationDuration,attr"`
-	MinBufferTime             string          `xml:"minBufferTime,attr"`
-	MaxSegmentDuration        string          `xml:"maxSegmentDuration,attr,omitempty"`
-	BaseURL                   string          `xml:"BaseURL,omitempty"`
-	Period                    []DASHPeriod    `xml:"Period"`
+	XMLName                   xml.Name     `xml:"MPD"`
+	Xmlns                     string       `xml:"xmlns,attr"`
+	XmlnsXsi                  string       `xml:"xmlns:xsi,attr,omitempty"`
+	SchemaLocation            string       `xml:"xsi:schemaLocation,attr,omitempty"`
+	Profiles                  string       `xml:"profiles,attr"`
+	Type                      string       `xml:"type,attr"`
+	MediaPresentationDuration string       `xml:"mediaPresentationDuration,attr"`
+	MinBufferTime             string       `xml:"minBufferTime,attr"`
+	MaxSegmentDuration        string       `xml:"maxSegmentDuration,attr,omitempty"`
+	BaseURL                   string       `xml:"BaseURL,omitempty"`
+	Period                    []DASHPeriod `xml:"Period"`
 }
 
 // DASHPeriod represents a contiguous presentation time interval.
@@ -62,18 +62,18 @@ type DASHPeriod struct {
 
 // DASHAdaptationSet contains a set of interchangeable audio representations.
 type DASHAdaptationSet struct {
-	ID                        int                    `xml:"id,attr"`
-	ContentType               string                 `xml:"contentType,attr"`
-	MimeType                  string                 `xml:"mimeType,attr"`
-	Codecs                    string                 `xml:"codecs,attr"`
-	AudioSamplingRate         int                    `xml:"audioSamplingRate,attr"`
-	Lang                      string                 `xml:"lang,attr,omitempty"`
+	ID                        int                     `xml:"id,attr"`
+	ContentType               string                  `xml:"contentType,attr"`
+	MimeType                  string                  `xml:"mimeType,attr"`
+	Codecs                    string                  `xml:"codecs,attr"`
+	AudioSamplingRate         int                     `xml:"audioSamplingRate,attr"`
+	Lang                      string                  `xml:"lang,attr,omitempty"`
 	AudioChannelConfiguration *DASHAudioChannelConfig `xml:"AudioChannelConfiguration,omitempty"`
-	Role                      *DASHRole              `xml:"Role,omitempty"`
+	Role                      *DASHRole               `xml:"Role,omitempty"`
 	ContentProtections        []DASHContentProtection `xml:"ContentProtection,omitempty"`
 	EssentialProperties       []DASHEssentialProperty `xml:"EssentialProperty,omitempty"`
-	SegmentTemplate           *DASHSegmentTemplate   `xml:"SegmentTemplate,omitempty"`
-	Representations           []DASHRepresentation   `xml:"Representation"`
+	SegmentTemplate           *DASHSegmentTemplate    `xml:"SegmentTemplate,omitempty"`
+	Representations           []DASHRepresentation    `xml:"Representation"`
 }
 
 // DASHAudioChannelConfig defines the spatial channel layout (e.g. 2 for stereo).

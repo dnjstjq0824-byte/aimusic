@@ -148,74 +148,74 @@ func BuildCMAFHeader(cfg *CMAFTrackConfig) ([]byte, error) {
 
 	// 1. ftyp box (File Type Box)
 	ftypPayload := new(bytes.Buffer)
-	ftypPayload.WriteString("cmfc")                              // major_brand
-	_ = binary.Write(ftypPayload, binary.BigEndian, uint32(0))   // minor_version
-	ftypPayload.WriteString("cmfc")                              // compatible_brand: cmfc
-	ftypPayload.WriteString("iso6")                              // compatible_brand: iso6
-	ftypPayload.WriteString("mp41")                              // compatible_brand: mp41
+	ftypPayload.WriteString("cmfc")                            // major_brand
+	_ = binary.Write(ftypPayload, binary.BigEndian, uint32(0)) // minor_version
+	ftypPayload.WriteString("cmfc")                            // compatible_brand: cmfc
+	ftypPayload.WriteString("iso6")                            // compatible_brand: iso6
+	ftypPayload.WriteString("mp41")                            // compatible_brand: mp41
 	ftypBox := CreateBox(BoxTypeFTYP, ftypPayload.Bytes())
 
 	// 2. mvhd box (Movie Header Box)
 	mvhdBuf := new(bytes.Buffer)
-	mvhdBuf.WriteByte(0)                                              // version 0
-	mvhdBuf.Write([]byte{0, 0, 0})                                    // flags
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))            // creation_time
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))            // modification_time
-	_ = binary.Write(mvhdBuf, binary.BigEndian, timescale)            // timescale
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))            // duration (0 for fragmented)
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0x00010000))   // rate 1.0
-	_ = binary.Write(mvhdBuf, binary.BigEndian, uint16(0x0100))       // volume 1.0
-	mvhdBuf.Write(make([]byte, 10))                                   // reserved
+	mvhdBuf.WriteByte(0)                                            // version 0
+	mvhdBuf.Write([]byte{0, 0, 0})                                  // flags
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))          // creation_time
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))          // modification_time
+	_ = binary.Write(mvhdBuf, binary.BigEndian, timescale)          // timescale
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0))          // duration (0 for fragmented)
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(0x00010000)) // rate 1.0
+	_ = binary.Write(mvhdBuf, binary.BigEndian, uint16(0x0100))     // volume 1.0
+	mvhdBuf.Write(make([]byte, 10))                                 // reserved
 	// Matrix structure: unity identity matrix
 	matrix := []uint32{0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000}
 	for _, m := range matrix {
 		_ = binary.Write(mvhdBuf, binary.BigEndian, m)
 	}
-	mvhdBuf.Write(make([]byte, 24))                                   // pre_defined
+	mvhdBuf.Write(make([]byte, 24))                                    // pre_defined
 	_ = binary.Write(mvhdBuf, binary.BigEndian, uint32(cfg.TrackID+1)) // next_track_id
 	mvhdBox := CreateBox(BoxTypeMVHD, mvhdBuf.Bytes())
 
 	// 3. tkhd box (Track Header Box)
 	tkhdBuf := new(bytes.Buffer)
-	tkhdBuf.WriteByte(0)                                         // version 0
-	tkhdBuf.Write([]byte{0, 0, 3})                               // flags: enabled (0x01) + in_movie (0x02)
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // creation_time
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // modification_time
-	_ = binary.Write(tkhdBuf, binary.BigEndian, cfg.TrackID)     // track_id
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // reserved
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // duration
-	tkhdBuf.Write(make([]byte, 8))                               // reserved
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))       // layer
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))       // alternate_group
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0x0100))  // volume 1.0 (audio)
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))       // reserved
+	tkhdBuf.WriteByte(0)                                        // version 0
+	tkhdBuf.Write([]byte{0, 0, 3})                              // flags: enabled (0x01) + in_movie (0x02)
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))      // creation_time
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))      // modification_time
+	_ = binary.Write(tkhdBuf, binary.BigEndian, cfg.TrackID)    // track_id
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))      // reserved
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))      // duration
+	tkhdBuf.Write(make([]byte, 8))                              // reserved
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))      // layer
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))      // alternate_group
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0x0100)) // volume 1.0 (audio)
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint16(0))      // reserved
 	for _, m := range matrix {
 		_ = binary.Write(tkhdBuf, binary.BigEndian, m)
 	}
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // width 0 (audio)
-	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0))       // height 0 (audio)
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0)) // width 0 (audio)
+	_ = binary.Write(tkhdBuf, binary.BigEndian, uint32(0)) // height 0 (audio)
 	tkhdBox := CreateBox(BoxTypeTKHD, tkhdBuf.Bytes())
 
 	// 4. mdhd box (Media Header Box)
 	mdhdBuf := new(bytes.Buffer)
-	mdhdBuf.WriteByte(0)                                         // version 0
-	mdhdBuf.Write([]byte{0, 0, 0})                               // flags
-	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))       // creation_time
-	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))       // modification_time
-	_ = binary.Write(mdhdBuf, binary.BigEndian, timescale)       // timescale
-	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))       // duration
-	_ = binary.Write(mdhdBuf, binary.BigEndian, uint16(0x55c4))  // language: "und" (undefined)
-	_ = binary.Write(mdhdBuf, binary.BigEndian, uint16(0))       // pre_defined
+	mdhdBuf.WriteByte(0)                                        // version 0
+	mdhdBuf.Write([]byte{0, 0, 0})                              // flags
+	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))      // creation_time
+	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))      // modification_time
+	_ = binary.Write(mdhdBuf, binary.BigEndian, timescale)      // timescale
+	_ = binary.Write(mdhdBuf, binary.BigEndian, uint32(0))      // duration
+	_ = binary.Write(mdhdBuf, binary.BigEndian, uint16(0x55c4)) // language: "und" (undefined)
+	_ = binary.Write(mdhdBuf, binary.BigEndian, uint16(0))      // pre_defined
 	mdhdBox := CreateBox(BoxTypeMDHD, mdhdBuf.Bytes())
 
 	// 5. hdlr box (Handler Reference Box: "soun")
 	hdlrBuf := new(bytes.Buffer)
-	hdlrBuf.WriteByte(0)                                         // version
-	hdlrBuf.Write([]byte{0, 0, 0})                               // flags
-	_ = binary.Write(hdlrBuf, binary.BigEndian, uint32(0))       // pre_defined
-	hdlrBuf.WriteString("soun")                                  // handler_type
-	hdlrBuf.Write(make([]byte, 12))                              // reserved
-	hdlrBuf.WriteString("SoundHandler\x00")                       // name
+	hdlrBuf.WriteByte(0)                                   // version
+	hdlrBuf.Write([]byte{0, 0, 0})                         // flags
+	_ = binary.Write(hdlrBuf, binary.BigEndian, uint32(0)) // pre_defined
+	hdlrBuf.WriteString("soun")                            // handler_type
+	hdlrBuf.Write(make([]byte, 12))                        // reserved
+	hdlrBuf.WriteString("SoundHandler\x00")                // name
 	hdlrBox := CreateBox(BoxTypeHDLR, hdlrBuf.Bytes())
 
 	// 6. smhd box (Sound Media Header Box)
@@ -238,13 +238,13 @@ func BuildCMAFHeader(cfg *CMAFTrackConfig) ([]byte, error) {
 
 	// 8. stsd box -> mp4a (Sample Description Box)
 	mp4aBuf := new(bytes.Buffer)
-	mp4aBuf.Write(make([]byte, 6))                                     // reserved
-	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(1))              // data_reference_index
-	mp4aBuf.Write(make([]byte, 8))                                     // reserved
-	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(cfg.Channels))   // channel_count
-	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(16))             // sample_size
-	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(0))              // pre_defined
-	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(0))              // reserved
+	mp4aBuf.Write(make([]byte, 6))                                          // reserved
+	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(1))                  // data_reference_index
+	mp4aBuf.Write(make([]byte, 8))                                          // reserved
+	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(cfg.Channels))       // channel_count
+	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(16))                 // sample_size
+	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(0))                  // pre_defined
+	_ = binary.Write(mp4aBuf, binary.BigEndian, uint16(0))                  // reserved
 	_ = binary.Write(mp4aBuf, binary.BigEndian, uint32(cfg.SampleRate<<16)) // sample_rate in 16.16 fp
 
 	// esds box for Elementary Stream Descriptor
@@ -311,11 +311,11 @@ func BuildCMAFHeader(cfg *CMAFTrackConfig) ([]byte, error) {
 	trexBuf := new(bytes.Buffer)
 	trexBuf.WriteByte(0)
 	trexBuf.Write([]byte{0, 0, 0})
-	_ = binary.Write(trexBuf, binary.BigEndian, cfg.TrackID)         // track_id
-	_ = binary.Write(trexBuf, binary.BigEndian, uint32(1))           // default_sample_description_index
-	_ = binary.Write(trexBuf, binary.BigEndian, uint32(1024))        // default_sample_duration (1024 ticks for AAC)
-	_ = binary.Write(trexBuf, binary.BigEndian, uint32(0))           // default_sample_size
-	_ = binary.Write(trexBuf, binary.BigEndian, uint32(0x02000000))  // default_sample_flags (non-sync)
+	_ = binary.Write(trexBuf, binary.BigEndian, cfg.TrackID)        // track_id
+	_ = binary.Write(trexBuf, binary.BigEndian, uint32(1))          // default_sample_description_index
+	_ = binary.Write(trexBuf, binary.BigEndian, uint32(1024))       // default_sample_duration (1024 ticks for AAC)
+	_ = binary.Write(trexBuf, binary.BigEndian, uint32(0))          // default_sample_size
+	_ = binary.Write(trexBuf, binary.BigEndian, uint32(0x02000000)) // default_sample_flags (non-sync)
 	trexBox := CreateBox(BoxTypeTREX, trexBuf.Bytes())
 	mvexBox := CreateBox(BoxTypeMVEX, trexBox)
 
@@ -345,31 +345,31 @@ func BuildCMAFSegment(seg *CMAFSegmentSpec) ([]byte, error) {
 
 	// 1. styp box (Segment Type Box)
 	stypPayload := new(bytes.Buffer)
-	stypPayload.WriteString("cmfs")                              // major_brand
-	_ = binary.Write(stypPayload, binary.BigEndian, uint32(0))   // minor_version
-	stypPayload.WriteString("cmfs")                              // compatible_brand: cmfs
-	stypPayload.WriteString("iso6")                              // compatible_brand: iso6
-	stypPayload.WriteString("msdh")                              // compatible_brand: msdh
+	stypPayload.WriteString("cmfs")                            // major_brand
+	_ = binary.Write(stypPayload, binary.BigEndian, uint32(0)) // minor_version
+	stypPayload.WriteString("cmfs")                            // compatible_brand: cmfs
+	stypPayload.WriteString("iso6")                            // compatible_brand: iso6
+	stypPayload.WriteString("msdh")                            // compatible_brand: msdh
 	stypBox := CreateBox(BoxTypeSTYP, stypPayload.Bytes())
 
 	// 2. mfhd box (Movie Fragment Header)
 	mfhdBuf := new(bytes.Buffer)
-	mfhdBuf.WriteByte(0)                                          // version
-	mfhdBuf.Write([]byte{0, 0, 0})                                // flags
+	mfhdBuf.WriteByte(0)                                            // version
+	mfhdBuf.Write([]byte{0, 0, 0})                                  // flags
 	_ = binary.Write(mfhdBuf, binary.BigEndian, seg.SequenceNumber) // sequence_number
 	mfhdBox := CreateBox(BoxTypeMFHD, mfhdBuf.Bytes())
 
 	// 3. tfhd box (Track Fragment Header)
 	tfhdBuf := new(bytes.Buffer)
-	tfhdBuf.WriteByte(0)                                      // version
-	tfhdBuf.Write([]byte{0x02, 0x00, 0x00})                   // flags: default-base-is-moof (0x020000)
+	tfhdBuf.WriteByte(0)                                     // version
+	tfhdBuf.Write([]byte{0x02, 0x00, 0x00})                  // flags: default-base-is-moof (0x020000)
 	_ = binary.Write(tfhdBuf, binary.BigEndian, seg.TrackID) // track_id
 	tfhdBox := CreateBox(BoxTypeTFHD, tfhdBuf.Bytes())
 
 	// 4. tfdt box (Track Fragment Base Media Decode Time)
 	tfdtBuf := new(bytes.Buffer)
-	tfdtBuf.WriteByte(1)                                             // version 1 (64-bit decode time)
-	tfdtBuf.Write([]byte{0, 0, 0})                                   // flags
+	tfdtBuf.WriteByte(1)                                            // version 1 (64-bit decode time)
+	tfdtBuf.Write([]byte{0, 0, 0})                                  // flags
 	_ = binary.Write(tfdtBuf, binary.BigEndian, seg.BaseDecodeTime) // baseMediaDecodeTime
 	tfdtBox := CreateBox(BoxTypeTFDT, tfdtBuf.Bytes())
 
@@ -395,10 +395,10 @@ func BuildCMAFSegment(seg *CMAFSegmentSpec) ([]byte, error) {
 	dataOffset := int32(moofBoxSize + 8)
 
 	trunBuf := new(bytes.Buffer)
-	trunBuf.WriteByte(0)                                          // version
-	trunBuf.Write([]byte{0x00, 0x03, 0x01})                       // flags 0x000301
-	_ = binary.Write(trunBuf, binary.BigEndian, sampleCount)       // sample_count
-	_ = binary.Write(trunBuf, binary.BigEndian, dataOffset)        // data_offset
+	trunBuf.WriteByte(0)                                     // version
+	trunBuf.Write([]byte{0x00, 0x03, 0x01})                  // flags 0x000301
+	_ = binary.Write(trunBuf, binary.BigEndian, sampleCount) // sample_count
+	_ = binary.Write(trunBuf, binary.BigEndian, dataOffset)  // data_offset
 
 	for _, f := range seg.Frames {
 		_ = binary.Write(trunBuf, binary.BigEndian, f.DurationTick)

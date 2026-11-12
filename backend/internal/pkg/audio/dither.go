@@ -13,10 +13,10 @@ import (
 type DitherType string
 
 const (
-	DitherNone        DitherType = "NONE"          // Simple rounding without dither (harmonic distortion baseline)
-	DitherRPDF        DitherType = "RPDF"          // Rectangular probability density function (1 uniform random variable)
-	DitherTPDF        DitherType = "TPDF"          // Triangular probability density function (sum of 2 independent uniforms)
-	DitherNoiseShaped DitherType = "NOISE_SHAPED"  // TPDF with 2nd-order psychoacoustic error feedback noise shaping
+	DitherNone        DitherType = "NONE"         // Simple rounding without dither (harmonic distortion baseline)
+	DitherRPDF        DitherType = "RPDF"         // Rectangular probability density function (1 uniform random variable)
+	DitherTPDF        DitherType = "TPDF"         // Triangular probability density function (sum of 2 independent uniforms)
+	DitherNoiseShaped DitherType = "NOISE_SHAPED" // TPDF with 2nd-order psychoacoustic error feedback noise shaping
 )
 
 // Dither validation errors.

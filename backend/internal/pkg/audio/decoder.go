@@ -33,16 +33,16 @@ var (
 
 // AudioStreamInfo contains canonical unpacked stream properties across all formats.
 type AudioStreamInfo struct {
-	Format       AudioFormat
-	Codec        string
-	SampleRate   int
-	Channels     int
-	BitsPerSample int
-	BitrateKbps  int
-	TotalSamples int64
-	DurationSec  float64
-	HeaderOffset int64
-	DataSize     int64
+	Format          AudioFormat
+	Codec           string
+	SampleRate      int
+	Channels        int
+	BitsPerSample   int
+	BitrateKbps     int
+	TotalSamples    int64
+	DurationSec     float64
+	HeaderOffset    int64
+	DataSize        int64
 	IsFloatingPoint bool
 }
 

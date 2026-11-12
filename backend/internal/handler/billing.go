@@ -96,13 +96,36 @@ func (h *BillingHandler) MySubscription(c *gin.Context) {
 	ok(c, gin.H{"subscription": sub})
 }
 
-// CancelSubscription ends the caller's ACTIVE pass.
-func (h *BillingHandler) CancelSubscription(c *gin.Context) {
-	if err := h.Billing.CancelSubscription(c.Request.Context(), CurrentUserID(c)); err != nil {
+type cancelRequest struct {
+	// Mode is END_OF_PERIOD (일반해지) or IMMEDIATE (청약철회/중도해지).
+	Mode   string `json:"mode" binding:"required"`
+	Reason string `json:"reason"`
+}
+
+// RefundQuote returns what ending the caller's pass now would refund.
+func (h *BillingHandler) RefundQuote(c *gin.Context) {
+	q, err := h.Billing.QuoteRefund(c.Request.Context(), CurrentUserID(c))
+	if err != nil {
 		AbortError(c, err)
 		return
 	}
-	ok(c, gin.H{"cancelled": true})
+	ok(c, q)
+}
+
+// CancelSubscription ends the caller's pass in the mode they chose. The
+// mode is required: the customer must pick 일반해지 or 즉시 해지 (refund).
+func (h *BillingHandler) CancelSubscription(c *gin.Context) {
+	var req cancelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "mode is required: END_OF_PERIOD or IMMEDIATE")
+		return
+	}
+	res, err := h.Billing.Cancel(c.Request.Context(), CurrentUserID(c), req.Mode, req.Reason)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, res)
 }
 
 type refundRequest struct {

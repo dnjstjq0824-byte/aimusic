@@ -26,6 +26,8 @@ export const ERR_MESSAGES: Record<string, string> = {
   ERR_DUPLICATE_AUDIO_FILE: '이미 등록된 음원 파일(SHA-256 중복)입니다.',
   ERR_PROVIDER_NOT_ALLOWED: '허용 목록에 없는 제공자입니다. 허용 제휴 제공자를 선택해 주세요.',
   ERR_PAYMENT_UNAVAILABLE: '결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.',
+  ERR_ACTIVE_PASS_EXISTS: '이미 이용 중인 이용권이 있습니다. 만료 후 구매하거나, 내 라이브러리에서 즉시 해지한 뒤 구매해 주세요.',
+  ERR_TOTP_ENROLL_REQUIRED: '관리자 계정은 2단계 인증 등록이 필요합니다. 보안 설정에서 등록해 주세요.',
   ERR_INTERNAL: '서버 오류가 발생했습니다.',
 };
 
@@ -130,6 +132,13 @@ export function createApiClient(): AxiosInstance {
           tokenStore.clear();
           if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
         }
+      }
+      // S-03: admins without a second factor are sent to enroll it.
+      const code = (err.response?.data as ApiErrorBody | undefined)?.error?.code;
+      if (code === 'ERR_TOTP_ENROLL_REQUIRED' && typeof window !== 'undefined' &&
+          !window.location.pathname.startsWith('/account/security')) {
+        const back = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.assign('/account/security?enroll=admin&redirect=' + back);
       }
       return Promise.reject(err);
     },

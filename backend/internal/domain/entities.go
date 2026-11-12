@@ -272,7 +272,7 @@ type Track struct {
 	IsInstrumental       bool      `json:"isInstrumental"`
 	Lyrics               *string   `json:"lyrics,omitempty"`
 	DurationMs           *int      `json:"durationMs,omitempty"`
-	OriginalObjectKey    string    `json:"originalObjectKey"`
+	OriginalObjectKey    string    `json:"originalObjectKey,omitempty"`
 	AudioFingerprintHash *string   `json:"audioFingerprintHash,omitempty"`
 	HLSPrefix            *string   `json:"hlsPrefix,omitempty"`
 	WaveformJSON         *string   `json:"waveformJson,omitempty"`
@@ -288,6 +288,24 @@ type Track struct {
 	PlayCount            int64     `json:"playCount"`
 	CreatedAt            time.Time `json:"createdAt"`
 	UpdatedAt            time.Time `json:"updatedAt"`
+}
+
+// PublicView returns a copy safe for anonymous and listener responses (B-05):
+// the master storage key, fingerprint, HLS prefix and review notes are
+// internal, and a prompt the partner kept private is withheld.
+func (t *Track) PublicView() *Track {
+	if t == nil {
+		return nil
+	}
+	c := *t
+	c.OriginalObjectKey = ""
+	c.AudioFingerprintHash = nil
+	c.HLSPrefix = nil
+	c.RejectionReasonKo = nil
+	if !c.IsPromptPublic {
+		c.AIPrompt = nil
+	}
+	return &c
 }
 
 // TrackRightsDeclaration mirrors track_rights_declarations.

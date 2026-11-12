@@ -2,8 +2,9 @@
 // /api/* to the external Go backend and /local-hls/* to the S3 audio storage.
 //
 // HLS is signature-gated: every playlist/segment request must carry the
-// exp+jti+sig query issued by GET /tracks/:id/stream (HMAC-SHA256 hex over
-// "trackId|jti|exp", same construction as backend SignPlaybackToken).
+// exp+jti+q+sig query issued by GET /tracks/:id/stream (HMAC-SHA256 hex over
+// "trackId|jti|exp|q", same construction as backend SignPlaybackToken).
+// q is the quality tier: SQ grants only the 128k variant (stream_0), HQ all.
 // The R2 bucket itself MUST be private; this Worker is the only reader.
 // Secrets: wrangler secret put HLS_SIGNING_KEY  (== backend HLS_SIGNING_KEY)
 const TEXT_ENCODER = new TextEncoder();
@@ -13,6 +14,16 @@ function timingSafeEqualHex(a, b) {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+// SQ grants: the 128k variant playlist, its segments, and waveform peaks.
+const SQ_FILE = /^(stream_0\.m3u8|seg_0_\d+\.ts|peaks\.json)$/;
+
+// fileAllowed reports whether a grant of tier q may fetch file (B-04).
+export function fileAllowed(q, file) {
+  if (q === 'HQ') return true;
+  if (q === 'SQ') return SQ_FILE.test(file);
+  return false;
 }
 
 async function hmacHex(key, message) {
@@ -62,13 +73,24 @@ export default {
       }
       const exp = url.searchParams.get('exp') || '';
       const jti = url.searchParams.get('jti') || '';
+      const q = url.searchParams.get('q') || '';
       const sig = url.searchParams.get('sig') || '';
       const expUnix = Number.parseInt(exp, 10);
       const fresh = Number.isFinite(expUnix) && Date.now() / 1000 <= expUnix;
       let valid = false;
       if (trackId && extOk && fresh && jti && sig) {
-        const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}`);
-        valid = timingSafeEqualHex(expected, sig.toLowerCase());
+        if (q) {
+          if (fileAllowed(q, file)) {
+            const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}|${q}`);
+            valid = timingSafeEqualHex(expected, sig.toLowerCase());
+          }
+        } else if (env.ALLOW_LEGACY_GRANTS === 'true') {
+          // Rollout bridge only: grants minted by a backend that predates the
+          // q tier. Set ALLOW_LEGACY_GRANTS while backend and Worker deploy,
+          // then remove it (legacy grants carry no tier, see B-04).
+          const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}`);
+          valid = timingSafeEqualHex(expected, sig.toLowerCase());
+        }
       }
       if (!valid) {
         return Response.json(
@@ -86,10 +108,23 @@ export default {
       // Strip the signature before hitting origin (R2 is private to Workers).
       const clean = new URL(url.pathname, 'http://origin');
       const target = s3Origin + clean.pathname;
+      // Forward only cache/range headers; never the client's cookies or
+      // auth. When the origin sits behind Cloudflare Access, the Worker
+      // authenticates with a service token (secrets S3_ACCESS_CLIENT_ID /
+      // S3_ACCESS_CLIENT_SECRET); without them it calls the origin bare.
+      const originHeaders = new Headers();
+      for (const name of ['range', 'if-none-match', 'if-modified-since', 'accept-encoding']) {
+        const v = request.headers.get(name);
+        if (v) originHeaders.set(name, v);
+      }
+      if (env.S3_ACCESS_CLIENT_ID && env.S3_ACCESS_CLIENT_SECRET) {
+        originHeaders.set('CF-Access-Client-Id', env.S3_ACCESS_CLIENT_ID);
+        originHeaders.set('CF-Access-Client-Secret', env.S3_ACCESS_CLIENT_SECRET);
+      }
       const init = {
         method: request.method,
-        headers: request.headers,
-        redirect: 'follow',
+        headers: originHeaders,
+        redirect: 'manual',
       };
       const res = await fetch(target, init);
       const headers = new Headers(res.headers);
@@ -105,7 +140,7 @@ export default {
         // grant into each media URI instead of patching every player.
         // Private: one grant must never be served to another client.
         if (res.status === 200 && !headers.get('content-encoding')) {
-          const grant = `exp=${encodeURIComponent(exp)}&jti=${encodeURIComponent(jti)}&sig=${encodeURIComponent(sig)}`;
+          const grant = `exp=${encodeURIComponent(exp)}&jti=${encodeURIComponent(jti)}&q=${encodeURIComponent(q)}&sig=${encodeURIComponent(sig)}`;
           const text = await res.text();
           const rewritten = text
             .split('\n')

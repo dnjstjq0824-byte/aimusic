@@ -12,7 +12,7 @@
     >
       상업적 이용권 보유 인증
     </UiBadge>
-    <UiBadge v-else variant="warning" size="xs">
+    <UiBadge v-else :variant="statusVariant" size="xs">
       {{ statusLabel }}
     </UiBadge>
   </span>
@@ -43,6 +43,12 @@ const disclosureLabel = computed(() => {
 });
 
 const statusLabel = computed(() => STATUS_KO[props.track.status] ?? '처리 중');
+const statusVariant = computed(() => {
+  const st = props.track.status;
+  if (st === 'READY') return 'success';
+  if (st === 'TAKEN_DOWN' || st === 'REJECTED' || st === 'LICENSE_GATE_REJECTED') return 'danger';
+  return 'warning';
+});
 
 // Demo/launch tracks carry "(Launch Demo)" in the title and must never show
 // the certification badge. The track API exposes no per-track cert field, so

@@ -74,7 +74,7 @@
     <UiCard class="space-y-4">
       <div>
         <div class="inline-flex items-center gap-1.5 text-xs text-brand-400 font-bold uppercase tracking-wider mb-1">
-          <span>Settlement Engine (재생당 ₩10 · 3.3% 원천징수)</span>
+          <span>Settlement Engine (매장 풀 재생 시간 비례 · 직접 판매 귀속 · 원천징수)</span>
         </div>
         <h2 class="text-sm font-bold text-white">파트너 월별 음원 정산 배치 실행</h2>
         <p class="text-xs text-neutral-400 mt-0.5">

@@ -244,13 +244,13 @@ func (e *WebMEncoder) encodeAudioFrame(pcm *PCMBuffer, start, end, targetSize in
 // buildOpusHead generates RFC 7845 compliant 19-byte OpusHead structure.
 func buildOpusHead(channels, sampleRate int) []byte {
 	var buf bytes.Buffer
-	buf.WriteString("OpusHead")                     // Magic (8 bytes)
-	buf.WriteByte(1)                                // Version (1 byte)
-	buf.WriteByte(byte(channels))                   // Channels (1 byte)
-	binary.Write(&buf, binary.LittleEndian, uint16(312)) // Pre-skip (2 bytes)
+	buf.WriteString("OpusHead")                                 // Magic (8 bytes)
+	buf.WriteByte(1)                                            // Version (1 byte)
+	buf.WriteByte(byte(channels))                               // Channels (1 byte)
+	binary.Write(&buf, binary.LittleEndian, uint16(312))        // Pre-skip (2 bytes)
 	binary.Write(&buf, binary.LittleEndian, uint32(sampleRate)) // Sample rate (4 bytes)
-	binary.Write(&buf, binary.LittleEndian, int16(0))   // Output gain (2 bytes)
-	buf.WriteByte(0)                                // Mapping family 0 (mono/stereo) (1 byte)
+	binary.Write(&buf, binary.LittleEndian, int16(0))           // Output gain (2 bytes)
+	buf.WriteByte(0)                                            // Mapping family 0 (mono/stereo) (1 byte)
 	return buf.Bytes()
 }
 
@@ -259,14 +259,14 @@ func buildVorbisHeader(channels, sampleRate, bitrateKbps int) []byte {
 	var buf bytes.Buffer
 	buf.WriteByte(1) // Packet type: identification
 	buf.WriteString("vorbis")
-	binary.Write(&buf, binary.LittleEndian, uint32(0))          // Vorbis version
-	buf.WriteByte(byte(channels))                               // Channels
-	binary.Write(&buf, binary.LittleEndian, uint32(sampleRate)) // Sample rate
+	binary.Write(&buf, binary.LittleEndian, uint32(0))               // Vorbis version
+	buf.WriteByte(byte(channels))                                    // Channels
+	binary.Write(&buf, binary.LittleEndian, uint32(sampleRate))      // Sample rate
 	binary.Write(&buf, binary.LittleEndian, int32(bitrateKbps*1000)) // Max bitrate
 	binary.Write(&buf, binary.LittleEndian, int32(bitrateKbps*1000)) // Nominal bitrate
 	binary.Write(&buf, binary.LittleEndian, int32(bitrateKbps*1000)) // Min bitrate
-	buf.WriteByte(0xB8)                                         // Blocksize 0/1
-	buf.WriteByte(1)                                            // Framing bit
+	buf.WriteByte(0xB8)                                              // Blocksize 0/1
+	buf.WriteByte(1)                                                 // Framing bit
 	return buf.Bytes()
 }
 
@@ -274,44 +274,44 @@ func buildVorbisHeader(channels, sampleRate, bitrateKbps int) []byte {
 
 func writeEBMLHeader(w *bytes.Buffer) {
 	var body bytes.Buffer
-	writeEBMLUint(&body, 0x4286, 1)      // EBMLVersion
-	writeEBMLUint(&body, 0x42F7, 1)      // EBMLReadVersion
-	writeEBMLUint(&body, 0x42F2, 4)      // EBMLMaxIDLength
-	writeEBMLUint(&body, 0x42F3, 8)      // EBMLMaxSizeLength
+	writeEBMLUint(&body, 0x4286, 1)        // EBMLVersion
+	writeEBMLUint(&body, 0x42F7, 1)        // EBMLReadVersion
+	writeEBMLUint(&body, 0x42F2, 4)        // EBMLMaxIDLength
+	writeEBMLUint(&body, 0x42F3, 8)        // EBMLMaxSizeLength
 	writeEBMLString(&body, 0x4282, "webm") // DocType
-	writeEBMLUint(&body, 0x4287, 4)      // DocTypeVersion
-	writeEBMLUint(&body, 0x4285, 2)      // DocTypeReadVersion
+	writeEBMLUint(&body, 0x4287, 4)        // DocTypeVersion
+	writeEBMLUint(&body, 0x4285, 2)        // DocTypeReadVersion
 
 	writeEBMLElement(w, 0x1A45DFA3, body.Bytes()) // EBML Header ID
 }
 
 func writeSegmentInfo(w *bytes.Buffer, durationMs float64) {
 	var body bytes.Buffer
-	writeEBMLUint(&body, 0x2AD7B1, 1000000)                   // TimestampScale (1 ms in ns)
-	writeEBMLFloat64(&body, 0x4489, durationMs)               // Duration
+	writeEBMLUint(&body, 0x2AD7B1, 1000000)                    // TimestampScale (1 ms in ns)
+	writeEBMLFloat64(&body, 0x4489, durationMs)                // Duration
 	writeEBMLString(&body, 0x4D80, "AVIBE Pure Go WebM Muxer") // MuxingApp
-	writeEBMLString(&body, 0x5741, "AVIBE Audio Engine")      // WritingApp
+	writeEBMLString(&body, 0x5741, "AVIBE Audio Engine")       // WritingApp
 
 	writeEBMLElement(w, 0x1549A966, body.Bytes()) // Info Element ID
 }
 
 func writeTracksElement(w *bytes.Buffer, codecID string, channels int, sampleRate float64, codecPrivate []byte) {
 	var trackEntry bytes.Buffer
-	writeEBMLUint(&trackEntry, 0xD7, 1)          // TrackNumber
-	writeEBMLUint(&trackEntry, 0x73C5, 1)        // TrackUID
-	writeEBMLUint(&trackEntry, 0x83, 2)          // TrackType (2 = Audio)
-	writeEBMLString(&trackEntry, 0x86, codecID)  // CodecID
+	writeEBMLUint(&trackEntry, 0xD7, 1)         // TrackNumber
+	writeEBMLUint(&trackEntry, 0x73C5, 1)       // TrackUID
+	writeEBMLUint(&trackEntry, 0x83, 2)         // TrackType (2 = Audio)
+	writeEBMLString(&trackEntry, 0x86, codecID) // CodecID
 	if len(codecPrivate) > 0 {
 		writeEBMLElement(&trackEntry, 0x63A2, codecPrivate) // CodecPrivate
 	}
 
 	// Audio settings
 	var audioSettings bytes.Buffer
-	writeEBMLFloat64(&audioSettings, 0xB5, sampleRate) // SamplingFrequency
+	writeEBMLFloat64(&audioSettings, 0xB5, sampleRate)    // SamplingFrequency
 	writeEBMLUint(&audioSettings, 0x9F, uint64(channels)) // Channels
 	writeEBMLUint(&audioSettings, 0x6264, 16)             // BitDepth
 
-	writeEBMLElement(&trackEntry, 0xE1, audioSettings.Bytes()) // Audio Element ID
+	writeEBMLElement(&trackEntry, 0xE1, audioSettings.Bytes())                   // Audio Element ID
 	writeEBMLElement(w, 0x1654AE6B, encodeEBMLElement(0xAE, trackEntry.Bytes())) // Tracks -> TrackEntry
 }
 

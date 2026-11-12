@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	ErrQueueClosed  = errors.New("transcode queue is closed")
-	ErrJobTimeout   = errors.New("transcode job execution timed out")
-	ErrInvalidJob   = errors.New("invalid transcode job specification")
+	ErrQueueClosed = errors.New("transcode queue is closed")
+	ErrJobTimeout  = errors.New("transcode job execution timed out")
+	ErrInvalidJob  = errors.New("invalid transcode job specification")
 )
 
 // JobPriority defines the execution priority level.
@@ -28,11 +28,11 @@ const (
 
 // TranscodeProfile defines an encoding target profile.
 type TranscodeProfile struct {
-	Name       string `json:"name"`        // e.g. "opus_96k", "opus_160k", "opus_256k", "aac_128k", "aac_320k"
-	Codec      string `json:"codec"`       // "opus", "aac", "alac", "flac"
-	BitrateKbps int   `json:"bitrate_kbps"`
-	SampleRate int    `json:"sample_rate"` // e.g. 48000
-	Channels   int    `json:"channels"`    // e.g. 2
+	Name        string `json:"name"`  // e.g. "opus_96k", "opus_160k", "opus_256k", "aac_128k", "aac_320k"
+	Codec       string `json:"codec"` // "opus", "aac", "alac", "flac"
+	BitrateKbps int    `json:"bitrate_kbps"`
+	SampleRate  int    `json:"sample_rate"` // e.g. 48000
+	Channels    int    `json:"channels"`    // e.g. 2
 }
 
 // DefaultTranscodeProfiles returns standard 5-target parallel distribution profiles.
@@ -78,13 +78,13 @@ type JobResult struct {
 
 // ParallelQueue distributes transcoding jobs across concurrent worker pools.
 type ParallelQueue struct {
-	mu          sync.RWMutex
-	jobs        chan *TranscodeJob
-	workers     int
-	closed      bool
-	workerPool  sync.WaitGroup
-	ctx         context.Context
-	cancel      context.CancelFunc
+	mu         sync.RWMutex
+	jobs       chan *TranscodeJob
+	workers    int
+	closed     bool
+	workerPool sync.WaitGroup
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 // NewParallelQueue creates a parallel queue with specified worker capacity.

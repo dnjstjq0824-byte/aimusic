@@ -350,7 +350,7 @@ func TestPhaseAligner_100HeterogeneousMultiTracks(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		sr := sampleRates[rng.Intn(len(sampleRates))]
-		channels := rng.Intn(2) + 1 // 1 or 2 channels
+		channels := rng.Intn(2) + 1     // 1 or 2 channels
 		length := rng.Intn(2400) + 2400 // 50ms to 200ms
 
 		refBase := generateTestSignal(sr, length)

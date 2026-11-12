@@ -8,6 +8,7 @@
       <span>← 목록으로 돌아가기</span>
     </RouterLink>
 
+    <h1 v-if="error" class="sr-only">음원을 불러오지 못했습니다</h1>
     <UiErrorBanner
       :message="error"
       title="음원을 불러오지 못했습니다"
@@ -110,16 +111,19 @@
         <UiCard>
           <div class="mb-3 flex items-center justify-between">
             <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">오디오 파형 (Audio Waveform)</h3>
-            <span class="text-[11px] font-mono text-neutral-500">
-              {{ track.bitrateKbps ? `${track.bitrateKbps}kbps` : '192kbps+' }} · HLS Adaptive
-            </span>
+            <span class="text-xs font-mono text-neutral-400">스트리밍 SQ 128k · HQ 256k(이용권)</span>
           </div>
 
-          <div v-if="waveformPeaks.length > 0" class="flex h-16 items-end gap-[3px] py-2 bg-surface-0/60 rounded-xl p-3 border border-surface-border">
+          <div
+            v-if="waveformPeaks.length > 0"
+            class="flex h-16 items-end gap-0.5 sm:gap-[3px] py-2 bg-surface-0/60 rounded-xl p-3 border border-surface-border"
+            role="img"
+            aria-label="오디오 파형"
+          >
             <div
               v-for="(peak, idx) in waveformPeaks"
               :key="idx"
-              class="waveform-bar flex-1 rounded-t bg-gradient-to-t from-brand-600 to-amber-400 hover:brightness-125 cursor-pointer"
+              class="waveform-bar min-w-[2px] flex-1 rounded-t bg-gradient-to-t from-brand-600 to-amber-400"
               :style="{ height: `${Math.max(10, Math.round(peak * 100))}%` }"
             />
           </div>
@@ -183,9 +187,15 @@
               <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
-            <h3 class="text-xs font-bold text-white uppercase tracking-wider">상업적 이용권 보유 인증</h3>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">
+              {{ cert ? '상업적 이용권 보유 인증' : '권리 확인 상태' }}
+            </h3>
           </div>
-          <div class="rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-3 text-xs text-emerald-300 space-y-1.5">
+          <div v-if="!cert" class="rounded-xl border border-surface-border bg-surface-2 p-3 text-xs leading-relaxed text-neutral-300">
+            곡별 인증서 발급 전입니다. 이 음원은 플랫폼 확인 절차(Gate 1-4)를 거쳐 재생 가능 상태로 등록되었습니다.
+            이 표시는 파트너 신고와 자동 검사에 근거하며 권리 관계를 보증하지 않습니다.
+          </div>
+          <div v-else class="rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-3 text-xs text-emerald-300 space-y-1.5">
             <div class="font-bold flex items-center gap-1.5">
               <UiBadge variant="success" size="xs">Gate 1-4 확인 절차 통과</UiBadge>
             </div>
@@ -234,7 +244,7 @@
         <UiCard class="space-y-3">
           <h3 class="text-xs font-bold text-white uppercase tracking-wider">권리자 보호 및 UGC 안전</h3>
           <p class="text-xs text-neutral-400 leading-relaxed">
-            타인의 목소리를 무단 합성(보이스 클로닝)했거나 기존 저작물을 표절한 경우 즉시 임시조치(Notice &amp; Takedown)를 요청할 수 있습니다.
+            타인의 목소리를 무단 합성(보이스 클로닝)했거나 기존 저작물을 표절한 경우 임시조치(Notice &amp; Takedown)를 요청할 수 있습니다. 신고는 검토 후 처리됩니다.
           </p>
 
           <div class="space-y-2 pt-1">
@@ -376,7 +386,20 @@ function toPeaks(raw: unknown): number[] {
   return [];
 }
 
-const waveformPeaks = computed<number[]>(() => toPeaks(track.value?.waveformJson));
+// At most WAVEFORM_BARS bars (bucket max) so every bar keeps a visible
+// width on a 320-390px phone (U-01).
+const WAVEFORM_BARS = 48;
+function downsample(peaks: number[], n: number): number[] {
+  if (peaks.length <= n) return peaks;
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const from = Math.floor((i * peaks.length) / n);
+    const to = Math.max(from + 1, Math.floor(((i + 1) * peaks.length) / n));
+    out.push(Math.max(...peaks.slice(from, to)));
+  }
+  return out;
+}
+const waveformPeaks = computed<number[]>(() => downsample(toPeaks(track.value?.waveformJson), WAVEFORM_BARS));
 
 // EV-P03: BPM to integer or 1 decimal (never float32 artifacts).
 function fmtBpm(bpm?: number | null): string {

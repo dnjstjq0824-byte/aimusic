@@ -31,10 +31,12 @@
           <div class="mt-1">
             유효기간: {{ fmtDate(subscription.currentPeriodStart) }} ~ {{ fmtDate(subscription.currentPeriodEnd) }}
           </div>
+          <div v-if="subscription.cancelRequestedAt" class="mt-1 font-semibold text-amber-300">
+            해지 예정: {{ fmtDate(subscription.currentPeriodEnd) }}에 종료됩니다.
+          </div>
         </div>
         <div class="flex flex-col gap-2 sm:items-end">
-          <UiButton variant="outline" size="sm" @click="cancelSubOpen = true">이용권 해지</UiButton>
-          <UiButton variant="outline" size="sm" @click="refundOpen = true">결제 환불 요청</UiButton>
+          <UiButton variant="outline" size="sm" @click="openCancel">이용권 해지</UiButton>
         </div>
       </div>
       <div v-else class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -174,27 +176,59 @@
       @confirm="confirmDeletePlaylist"
     />
 
-    <!-- Cancel Subscription Confirm -->
-    <UiConfirmDialog
+    <!-- Cancel pass: the customer must choose 일반해지 or 즉시 해지 (2026-11-12 refund policy) -->
+    <UiModal
       v-model="cancelSubOpen"
       title="이용권 해지"
-      description="이용권을 지금 해지하면 남은 기간 혜택이 즉시 종료됩니다."
-      confirm-label="해지하기"
-      danger
-      :loading="cancellingSub"
-      @confirm="confirmCancelSubscription"
-    />
-
-    <!-- Refund Active Pass Confirm -->
-    <UiConfirmDialog
-      v-model="refundOpen"
-      title="결제 환불 요청"
-      description="현재 이용권의 결제를 PG에서 전액 취소하고 이용권을 즉시 종료합니다. 환불은 결제 수단으로 3~5영업일 내 반환됩니다."
-      confirm-label="환불 요청하기"
-      danger
-      :loading="refunding"
-      @confirm="confirmRefund"
-    />
+      description="해지 방식을 선택해 주세요. 선택하기 전에는 해지되지 않습니다."
+      @close="cancelSubOpen = false"
+    >
+      <div v-if="quoteLoading" class="space-y-2">
+        <UiSkeleton height="h-14" />
+        <UiSkeleton height="h-14" />
+      </div>
+      <div v-else-if="quote && subscription" class="space-y-3" role="radiogroup" aria-label="해지 방식">
+        <label
+          class="flex cursor-pointer gap-3 rounded-xl border p-4 text-sm"
+          :class="cancelMode === 'END_OF_PERIOD' ? 'border-brand-400 bg-brand-500/10' : 'border-surface-border'"
+        >
+          <input v-model="cancelMode" type="radio" value="END_OF_PERIOD" class="mt-1" :disabled="quote.cancelRequested" />
+          <span>
+            <span class="block font-bold text-white">일반해지</span>
+            <span class="block text-neutral-300">
+              {{ fmtDate(subscription.currentPeriodEnd) }}까지 이용하고 종료합니다. 환불은 없습니다.
+            </span>
+            <span v-if="quote.cancelRequested" class="block text-amber-300">이미 일반해지를 신청했습니다.</span>
+          </span>
+        </label>
+        <label
+          class="flex cursor-pointer gap-3 rounded-xl border p-4 text-sm"
+          :class="cancelMode === 'IMMEDIATE' ? 'border-brand-400 bg-brand-500/10' : 'border-surface-border'"
+        >
+          <input v-model="cancelMode" type="radio" value="IMMEDIATE" class="mt-1" />
+          <span>
+            <span class="block font-bold text-white">즉시 해지(환불)</span>
+            <span class="block text-neutral-300">{{ immediateText }}</span>
+            <span class="block text-neutral-400">이용권은 지금 바로 종료됩니다. 환불은 결제 수단에 따라 3~5영업일 안에 반환됩니다.</span>
+          </span>
+        </label>
+      </div>
+      <p v-else class="text-sm text-neutral-300">환불 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UiButton variant="secondary" size="md" @click="cancelSubOpen = false">닫기</UiButton>
+          <UiButton
+            variant="danger"
+            size="md"
+            :disabled="!cancelMode || !quote"
+            :loading="cancellingSub"
+            @click="confirmCancelSubscription"
+          >
+            {{ cancelMode === 'IMMEDIATE' ? '즉시 해지하기' : '해지 신청하기' }}
+          </UiButton>
+        </div>
+      </template>
+    </UiModal>
 
     <!-- Withdraw Account Confirm -->
     <UiConfirmDialog
@@ -211,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -228,7 +262,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
-import type { BillingSubscription, Playlist } from '@/api/types';
+import type { BillingSubscription, CancelMode, Playlist, RefundQuote } from '@/api/types';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 
 const playlists = usePlaylistStore();
@@ -247,8 +281,34 @@ const subscription = ref<BillingSubscription | null>(null);
 const subLoading = ref(true);
 const cancelSubOpen = ref(false);
 const cancellingSub = ref(false);
-const refundOpen = ref(false);
-const refunding = ref(false);
+const quote = ref<RefundQuote | null>(null);
+const quoteLoading = ref(false);
+// No default: the customer must pick one (KFTC 2024 Melon case).
+const cancelMode = ref<CancelMode | null>(null);
+
+const won = (n: number): string => n.toLocaleString('ko-KR') + '원';
+const immediateText = computed(() => {
+  const q = quote.value;
+  if (!q) return '';
+  if (q.type === 'WITHDRAWAL') return '결제 후 7일 이내 미이용으로 전액 ' + won(q.refundKrw) + '을 환불합니다.';
+  if (q.refundKrw === 0) return '이용 ' + q.usedDays + '일분을 빼면 환불 금액이 없습니다. 이용권만 즉시 종료됩니다.';
+  const deduct = q.amountKrw - q.refundKrw;
+  return '이용 ' + q.usedDays + '/' + q.totalDays + '일분 ' + won(deduct) + '을 뺀 ' + won(q.refundKrw) + '을 환불합니다.';
+});
+
+async function openCancel(): Promise<void> {
+  cancelMode.value = null;
+  quote.value = null;
+  cancelSubOpen.value = true;
+  quoteLoading.value = true;
+  try {
+    quote.value = await billingApi.refundQuote();
+  } catch (err) {
+    toast.error(errMessageOf(err), '환불 정보 조회 실패');
+  } finally {
+    quoteLoading.value = false;
+  }
+}
 const withdrawOpen = ref(false);
 const withdrawing = ref(false);
 
@@ -303,30 +363,23 @@ async function loadSubscription(): Promise<void> {
 }
 
 async function confirmCancelSubscription(): Promise<void> {
+  if (!cancelMode.value) return;
   cancellingSub.value = true;
   try {
-    await billingApi.cancelSubscription();
-    subscription.value = null;
+    const res = await billingApi.cancelSubscription(cancelMode.value, '이용자 해지 요청');
     cancelSubOpen.value = false;
-    toast.success('이용권을 해지했습니다.');
+    if (res.mode === 'IMMEDIATE') {
+      subscription.value = null;
+      const refunded = res.quote?.refundKrw ?? 0;
+      toast.success(refunded > 0 ? '즉시 해지했습니다. ' + won(refunded) + '이 환불됩니다.' : '즉시 해지했습니다.');
+    } else if (subscription.value && res.subscription) {
+      subscription.value = { ...subscription.value, cancelRequestedAt: res.subscription.cancelRequestedAt };
+      toast.success('일반해지를 신청했습니다. 만료일까지 이용할 수 있습니다.');
+    }
   } catch (err) {
     toast.error(errMessageOf(err), '해지 실패');
   } finally {
     cancellingSub.value = false;
-  }
-}
-
-async function confirmRefund(): Promise<void> {
-  refunding.value = true;
-  try {
-    await billingApi.refundActivePass('이용자 환불 요청');
-    subscription.value = null;
-    refundOpen.value = false;
-    toast.success('환불이 접수되었습니다. 이용권이 종료됩니다.');
-  } catch (err) {
-    toast.error(errMessageOf(err), '환불 실패');
-  } finally {
-    refunding.value = false;
   }
 }
 

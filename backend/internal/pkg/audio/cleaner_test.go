@@ -206,7 +206,7 @@ func TestCleaner_100HeterogeneousAudioStreams(t *testing.T) {
 	for iter := 0; iter < totalTests; iter++ {
 		sr := sampleRates[rng.Intn(len(sampleRates))]
 		ch := channelsList[rng.Intn(len(channelsList))]
-		numSamples := sr/2 + rng.Intn(sr) // 0.5s to 1.5s
+		numSamples := sr/2 + rng.Intn(sr)     // 0.5s to 1.5s
 		dcBias := (rng.Float64()*0.20 - 0.10) // -10% to +10% DC bias
 
 		pcm := createSyntheticPCMBuffer(sr, ch, numSamples, func(s, c int) float64 {

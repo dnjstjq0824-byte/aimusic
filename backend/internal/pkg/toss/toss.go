@@ -126,12 +126,19 @@ func (c *Client) GetPayment(ctx context.Context, paymentKey string) (*Payment, e
 
 // CancelPayment voids a payment in full (POST /v1/payments/{paymentKey}/cancel).
 func (c *Client) CancelPayment(ctx context.Context, paymentKey, cancelReason string) (*Payment, error) {
+	return c.CancelPaymentAmount(ctx, paymentKey, cancelReason, 0)
+}
+
+// CancelPaymentAmount voids cancelAmount won of a payment; 0 cancels in full.
+func (c *Client) CancelPaymentAmount(ctx context.Context, paymentKey, cancelReason string, cancelAmount int) (*Payment, error) {
 	if strings.TrimSpace(cancelReason) == "" {
 		cancelReason = "구매자 환불 요청"
 	}
-	raw, err := c.do(ctx, http.MethodPost, "/v1/payments/"+paymentKey+"/cancel", map[string]any{
-		"cancelReason": cancelReason,
-	})
+	body := map[string]any{"cancelReason": cancelReason}
+	if cancelAmount > 0 {
+		body["cancelAmount"] = cancelAmount
+	}
+	raw, err := c.do(ctx, http.MethodPost, "/v1/payments/"+paymentKey+"/cancel", body)
 	if err != nil {
 		return nil, err
 	}

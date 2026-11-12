@@ -42,9 +42,10 @@ type dspAlbumStore interface {
 	GetByID(ctx context.Context, id string) (*domain.Album, error)
 }
 
-// dspPresigner signs master downloads.
+// dspPresigner signs master downloads handed to distributors, so it uses
+// the public endpoint.
 type dspPresigner interface {
-	PresignGet(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	PresignGetPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 }
 
 // DSPKitTrack is one distributor-ready track row.
@@ -200,7 +201,7 @@ func (s *DistributionService) buildRow(ctx context.Context, id string, now time.
 			row.CertPolicyVersion = snap.PolicyVersion
 		}
 	}
-	signed, err := s.storage.PresignGet(ctx, s.stagingBucket, track.OriginalObjectKey, DSPMasterURLTTL)
+	signed, err := s.storage.PresignGetPublic(ctx, s.stagingBucket, track.OriginalObjectKey, DSPMasterURLTTL)
 	if err != nil {
 		return nil, "master_sign_error"
 	}

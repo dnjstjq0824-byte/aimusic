@@ -42,12 +42,10 @@
       <UiCard class="space-y-3">
         <h2 class="text-sm font-bold text-white">청약철회 및 환불 기준 동의 (필수)</h2>
         <ul class="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-neutral-300">
-          <li>이용권은 결제 후 7일 이내 미사용 시 전액 환불됩니다.</li>
-          <li>디지털콘텐츠 제공이 개시된 후(스트리밍 이용 시작)에는 청약철회가 제한될 수 있습니다.</li>
-          <li>이용권은 1개월 단기 패스로 자동 연장되지 않으며, 잔여 기간 환불은 고객센터를 통해 신청할 수 있습니다.</li>
+          <li v-for="line in REFUND_POLICY_LINES" :key="line">{{ line }}</li>
         </ul>
         <UiCheckbox v-model="refundAgreed" required>
-          위 청약철회 제한 조건과 환불 기준을 확인했으며 이에 동의합니다. (필수)
+          위 청약철회·환불 기준을 확인했으며 이에 동의합니다. (필수)
         </UiCheckbox>
       </UiCard>
 
@@ -78,6 +76,7 @@ import { useRoute } from 'vue-router';
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 import { billingApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { REFUND_POLICY_LINES } from '@/api/refundPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import type { BillingOrder, BillingPlan } from '@/api/types';

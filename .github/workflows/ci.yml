@@ -48,6 +48,8 @@ jobs:
       - name: build
         run: npm run build
         working-directory: web
+      - name: edge worker grant tests
+        run: node --test scripts/worker-grant.test.mjs
 
   mobile:
     runs-on: ubuntu-latest
@@ -56,6 +58,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned: an unpinned stable moved past 3.47 and flagged the
+          # material.dart import as deprecated, failing analyze.
+          flutter-version: 3.47.8
       - name: analyze
         run: flutter analyze
         working-directory: mobile

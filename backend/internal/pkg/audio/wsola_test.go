@@ -131,7 +131,7 @@ func TestWSOLA_TimeStretch_PitchInvariance(t *testing.T) {
 // TestWSOLA_PitchShift_Frequencies tests pitch shifting accuracy while preserving tempo.
 func TestWSOLA_PitchShift_Frequencies(t *testing.T) {
 	sr := 48000
-	baseFreq := 440.0 // A4
+	baseFreq := 440.0   // A4
 	numSamples := 48000 // 1.0 second
 
 	sig := make([]float64, numSamples)
@@ -153,10 +153,10 @@ func TestWSOLA_PitchShift_Frequencies(t *testing.T) {
 		expected  float64
 	}{
 		{semitones: 0.0, expected: 440.0},
-		{semitones: 2.0, expected: 440.0 * math.Pow(2.0, 2.0/12.0)},    // B4 ~ 493.88 Hz
-		{semitones: -2.0, expected: 440.0 * math.Pow(2.0, -2.0/12.0)},  // G4 ~ 391.99 Hz
-		{semitones: 12.0, expected: 880.0},                              // A5 1 octave up
-		{semitones: -12.0, expected: 220.0},                             // A3 1 octave down
+		{semitones: 2.0, expected: 440.0 * math.Pow(2.0, 2.0/12.0)},   // B4 ~ 493.88 Hz
+		{semitones: -2.0, expected: 440.0 * math.Pow(2.0, -2.0/12.0)}, // G4 ~ 391.99 Hz
+		{semitones: 12.0, expected: 880.0},                            // A5 1 octave up
+		{semitones: -12.0, expected: 220.0},                           // A3 1 octave down
 	}
 
 	for _, tc := range shifts {

@@ -15,7 +15,7 @@
         <div>
           <div class="font-bold text-white text-sm mb-1">상업 이용 조건 확인 절차를 거친 AI 음원을 유통합니다</div>
           <p class="leading-relaxed text-neutral-300">
-            AVIBE는 Suno Pro/Premier, AIVA Pro 등 <strong>유료 상업용 요금제에서 생성된 음원만</strong> 4단계 게이트키퍼(Gate 1~4)를 거쳐 정식 서비스합니다. 무료 플랜이나 BGM 전용(Sync-only) 음원은 원천 차단됩니다.
+            AVIBE는 Suno Pro/Premier, AIVA Pro 등 <strong>유료 상업용 요금제에서 생성된 음원만</strong> 4단계 게이트키퍼(Gate 1~4)를 거쳐 정식 서비스합니다. 무료 플랜이나 BGM 전용(Sync-only)으로 확인된 음원은 등록 단계에서 차단합니다.
           </p>
         </div>
       </div>
@@ -27,11 +27,11 @@
         </div>
         <div class="flex items-start gap-2.5">
           <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-brand-400 font-bold text-[10px]">2</div>
-          <p><strong>끊김 없는 백그라운드 재생:</strong> 웹 탭을 닫거나 스마트폰 화면을 꺼도 음악이 멈추지 않고 연속 재생됩니다.</p>
+          <p><strong>이어지는 재생:</strong> 웹에서는 탭을 열어 두면 다른 화면을 보는 동안에도 계속 재생됩니다. 화면을 끈 상태의 재생은 모바일 앱에서 지원합니다.</p>
         </div>
         <div class="flex items-start gap-2.5">
           <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-brand-400 font-bold text-[10px]">3</div>
-          <p><strong>권리자 즉시 보호(OSP):</strong> 보이스 클로닝이나 타인 저작물 침해 의심 시 클릭 한 번으로 즉시 임시조치(Takedown)가 실행됩니다.</p>
+          <p><strong>권리자 보호(OSP):</strong> 보이스 클로닝이나 타인 저작물 침해가 의심되면 트랙 화면에서 신고할 수 있습니다. 접수된 신고는 검토 후 저작권법 제103조 절차에 따라 임시조치합니다.</p>
         </div>
       </div>
     </div>
