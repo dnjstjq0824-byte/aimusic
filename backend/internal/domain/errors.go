@@ -63,6 +63,8 @@ var (
 	ErrAgeConfirmRequired = errors.New("age confirmation required")
 	// ErrConsentRequired marks accounts missing required terms consent.
 	ErrConsentRequired = errors.New("terms consent required")
+	// ErrTOTPEnrollRequired blocks admins without a second factor (S-03).
+	ErrTOTPEnrollRequired = errors.New("totp enrollment required")
 	// ErrActivePassExists blocks buying a pass while one is active (B-08).
 	ErrActivePassExists = errors.New("active pass exists")
 )

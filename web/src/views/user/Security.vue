@@ -5,6 +5,18 @@
       <p class="text-xs text-neutral-400 mt-1">2단계 인증, 전체 기기 로그아웃, 회원 탈퇴를 관리합니다.</p>
     </div>
 
+    <!-- S-03: admins are sent here until they enroll a second factor -->
+    <div
+      v-if="adminEnroll"
+      class="rounded-xl border border-amber-500/40 bg-amber-950/30 p-4 text-sm text-amber-100"
+      role="status"
+    >
+      관리자 계정은 2단계 인증을 등록해야 관리자 콘솔을 쓸 수 있습니다. 아래에서 등록을 마치면 원래 화면으로 돌아갈 수 있습니다.
+      <div v-if="auth.totpEnabled === true" class="mt-3">
+        <UiButton variant="brand" size="sm" @click="router.push(adminReturn)">관리자 콘솔로 돌아가기</UiButton>
+      </div>
+    </div>
+
     <!-- 2FA card -->
     <UiCard>
       <h2 class="text-sm font-bold text-white mb-1">2단계 인증 (TOTP)</h2>
@@ -164,8 +176,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { safeRedirect } from '@/router';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { authApi } from '@/api/endpoints';
@@ -178,6 +191,12 @@ import UiInput from '@/components/ui/UiInput.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
+const adminEnroll = computed(() => route.query.enroll === 'admin');
+const adminReturn = computed(() => {
+  const target = safeRedirect(route.query.redirect);
+  return target.startsWith('/admin') ? target : '/admin';
+});
 const toast = useToast();
 const busy = ref(false);
 

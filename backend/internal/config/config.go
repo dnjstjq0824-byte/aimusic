@@ -42,6 +42,9 @@ type SecurityConfig struct {
 	// RegistrationInviteCode gates sign-up while set (C8): register calls
 	// must present this code. Empty means open registration.
 	RegistrationInviteCode string
+	// AdminTOTPRequired blocks /admin/* for admins without an enrolled
+	// second factor (S-03). Default: on outside local/dev/test.
+	AdminTOTPRequired bool
 }
 
 // DBConfig configures PostgreSQL access.
@@ -192,6 +195,7 @@ func Load() (*Config, error) {
 		CORSAllowedOrigins:     getenvList("CORS_ALLOWED_ORIGINS"),
 		TrustedProxies:         getenvList("TRUSTED_PROXIES"),
 		RegistrationInviteCode: strings.TrimSpace(os.Getenv("REGISTRATION_INVITE_CODE")),
+		AdminTOTPRequired:      getenvBool("ADMIN_TOTP_REQUIRED", !nonProdEnv(cfg.Env)),
 	}
 	frontendBase := strings.TrimRight(getenv("FRONTEND_BASE_URL", "http://localhost:5173"), "/")
 	cfg.Reset = PasswordResetConfig{

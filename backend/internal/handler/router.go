@@ -193,7 +193,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	billingAuthed.POST("/payments/refund", billingH.Refund)
 
 	admin := v1.Group("/admin")
-	admin.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleAdmin))
+	admin.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleAdmin), RequireAdminTOTP(d.Repos.Users, d.Config.Security.AdminTOTPRequired))
 	admin.GET("/overview", adminH.Overview)
 	admin.GET("/pending", adminH.Pending)
 	admin.GET("/audit-events", adminH.ListAuditEvents)

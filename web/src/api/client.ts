@@ -133,6 +133,13 @@ export function createApiClient(): AxiosInstance {
           if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
         }
       }
+      // S-03: admins without a second factor are sent to enroll it.
+      const code = (err.response?.data as ApiErrorBody | undefined)?.error?.code;
+      if (code === 'ERR_TOTP_ENROLL_REQUIRED' && typeof window !== 'undefined' &&
+          !window.location.pathname.startsWith('/account/security')) {
+        const back = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.assign('/account/security?enroll=admin&redirect=' + back);
+      }
       return Promise.reject(err);
     },
   );
