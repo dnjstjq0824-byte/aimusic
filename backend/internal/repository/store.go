@@ -272,6 +272,26 @@ func (r *StoreRepo) AppendPlayLog(ctx context.Context, deviceID, trackID string,
 	return l, err
 }
 
+// LatestPlayLogByDevice returns the device's most recent play row, or
+// (nil, nil) when it has none.
+func (r *StoreRepo) LatestPlayLogByDevice(ctx context.Context, deviceID string) (*domain.StorePlayLog, error) {
+	l, err := scanStorePlayLog(r.db.QueryRowContext(ctx, `
+		SELECT `+storePlayLogColumns+` FROM store_play_logs
+		WHERE device_id = $1::uuid ORDER BY created_at DESC LIMIT 1`, deviceID))
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return l, err
+}
+
+// UpdatePlayLog extends an in-progress play row (cumulative heartbeat).
+func (r *StoreRepo) UpdatePlayLog(ctx context.Context, id string, durationSecs int, counted bool) (*domain.StorePlayLog, error) {
+	return scanStorePlayLog(r.db.QueryRowContext(ctx, `
+		UPDATE store_play_logs SET duration_played_secs = $2, counted_as_play = $3
+		WHERE id = $1::uuid
+		RETURNING `+storePlayLogColumns, id, durationSecs, counted))
+}
+
 // ListPlayLogsByDevice returns recent plays for a device.
 func (r *StoreRepo) ListPlayLogsByDevice(ctx context.Context, deviceID string, limit int) ([]*domain.StorePlayLog, error) {
 	rows, err := r.db.QueryContext(ctx, `

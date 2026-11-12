@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -44,6 +45,8 @@ type storeStore interface {
 	UpsertSchedule(ctx context.Context, businessID string, weekday int, open, closeTime string, playlistID *string, isClosed bool) (*domain.StoreSchedule, error)
 	ListSchedulesByBusiness(ctx context.Context, businessID string) ([]*domain.StoreSchedule, error)
 	AppendPlayLog(ctx context.Context, deviceID, trackID string, durationSecs int, counted bool) (*domain.StorePlayLog, error)
+	LatestPlayLogByDevice(ctx context.Context, deviceID string) (*domain.StorePlayLog, error)
+	UpdatePlayLog(ctx context.Context, id string, durationSecs int, counted bool) (*domain.StorePlayLog, error)
 	ListPlayLogsByDevice(ctx context.Context, deviceID string, limit int) ([]*domain.StorePlayLog, error)
 }
 
@@ -467,15 +470,83 @@ func (s *StoreService) Heartbeat(ctx context.Context, deviceID, trackID string, 
 	if track.Status != domain.TrackReady {
 		return false, domain.ErrNotStreamable
 	}
-	if durationSecs < 0 {
-		durationSecs = 0
+	// The player reports the cumulative seconds of the current play every
+	// few seconds. One play must stay one row (settlement sums rows), and
+	// the reported value is capped by the track length and the real time
+	// elapsed since the device's previous heartbeat (B-01).
+	latest, err := s.store.LatestPlayLogByDevice(ctx, deviceID)
+	if err != nil {
+		return false, err
 	}
-	counted := durationSecs >= StoreCountSeconds
-	if _, err := s.store.AppendPlayLog(ctx, deviceID, trackID, durationSecs, counted); err != nil {
+	now := s.clock()
+	var elapsed *int
+	if dev.LastSeenAt != nil {
+		e := int(now.Sub(*dev.LastSeenAt).Seconds())
+		if e < 0 {
+			e = 0
+		}
+		elapsed = &e
+	}
+	continuing := latest != nil && latest.TrackID == trackID && elapsed != nil &&
+		*elapsed <= storePlaySessionGapSecs && durationSecs > latest.DurationPlayedSecs
+	base := 0
+	if continuing {
+		base = latest.DurationPlayedSecs
+	}
+	applied := clampStorePlaySecs(durationSecs, base, track.DurationMs, elapsed)
+	if applied != durationSecs {
+		slog.Warn("store_heartbeat_clamped", "device_id", deviceID, "track_id", trackID,
+			"reported_secs", durationSecs, "applied_secs", applied)
+	}
+	counted := applied >= StoreCountSeconds
+	if continuing {
+		if _, err := s.store.UpdatePlayLog(ctx, latest.ID, applied, counted); err != nil {
+			return false, err
+		}
+	} else if _, err := s.store.AppendPlayLog(ctx, deviceID, trackID, applied, counted); err != nil {
 		return false, err
 	}
 	_ = s.store.TouchDeviceSeen(ctx, deviceID)
 	return counted, nil
+}
+
+// Store heartbeat limits (B-01).
+const (
+	// storePlayToleranceSecs absorbs timer jitter between player and server.
+	storePlayToleranceSecs = 5
+	// storePlaySessionGapSecs: a heartbeat for the same track within this gap
+	// extends the current play instead of starting a new one.
+	storePlaySessionGapSecs = 60
+	// maxStorePlaySecs caps a single play when the track length is unknown.
+	maxStorePlaySecs = 3600
+)
+
+// clampStorePlaySecs caps a reported cumulative play length. base is the
+// already-recorded length of the play being extended (0 for a new play);
+// the value may grow by at most the elapsed seconds since the previous
+// heartbeat, and never past the track length.
+func clampStorePlaySecs(reported, base int, trackDurationMs *int, elapsed *int) int {
+	d := reported
+	if d < 0 {
+		d = 0
+	}
+	if d > maxStorePlaySecs {
+		d = maxStorePlaySecs
+	}
+	if trackDurationMs != nil && *trackDurationMs > 0 {
+		if limit := *trackDurationMs/1000 + storePlayToleranceSecs; d > limit {
+			d = limit
+		}
+	}
+	if elapsed != nil {
+		if limit := base + *elapsed + storePlayToleranceSecs; d > limit {
+			d = limit
+		}
+	}
+	if d < base {
+		d = base
+	}
+	return d
 }
 
 // DeviceLogs returns recent plays for a device (owner-checked).

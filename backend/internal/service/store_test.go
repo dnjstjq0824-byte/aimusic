@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -143,10 +144,33 @@ func (f *fakeStoreRepo) RevokeDevice(_ context.Context, id string) error {
 }
 
 func (f *fakeStoreRepo) TouchDeviceSeen(_ context.Context, id string) error {
-	if _, ok := f.devices[id]; !ok {
+	d, ok := f.devices[id]
+	if !ok {
 		return domain.ErrNotFound
 	}
+	seen := f.now
+	d.LastSeenAt = &seen
 	return nil
+}
+
+func (f *fakeStoreRepo) LatestPlayLogByDevice(_ context.Context, deviceID string) (*domain.StorePlayLog, error) {
+	for i := len(f.logs) - 1; i >= 0; i-- {
+		if f.logs[i].DeviceID == deviceID {
+			return f.logs[i], nil
+		}
+	}
+	return nil, nil
+}
+
+func (f *fakeStoreRepo) UpdatePlayLog(_ context.Context, id string, durationSecs int, counted bool) (*domain.StorePlayLog, error) {
+	for _, l := range f.logs {
+		if l.ID == id {
+			l.DurationPlayedSecs = durationSecs
+			l.CountedAsPlay = counted
+			return l, nil
+		}
+	}
+	return nil, domain.ErrNotFound
 }
 
 func (f *fakeStoreRepo) UpsertSchedule(_ context.Context, businessID string, weekday int, open, closeTime string, playlistID *string, isClosed bool) (*domain.StoreSchedule, error) {
@@ -164,7 +188,7 @@ func (f *fakeStoreRepo) ListSchedulesByBusiness(_ context.Context, businessID st
 }
 
 func (f *fakeStoreRepo) AppendPlayLog(_ context.Context, deviceID, trackID string, durationSecs int, counted bool) (*domain.StorePlayLog, error) {
-	l := &domain.StorePlayLog{ID: "log", DeviceID: deviceID, TrackID: trackID,
+	l := &domain.StorePlayLog{ID: fmt.Sprintf("log-%d", len(f.logs)+1), DeviceID: deviceID, TrackID: trackID,
 		DurationPlayedSecs: durationSecs, CountedAsPlay: counted}
 	f.logs = append(f.logs, l)
 	return l, nil
@@ -355,5 +379,82 @@ func TestScheduleValidation(t *testing.T) {
 	}
 	if _, err := svc.UpsertSchedule(context.Background(), "other-partner", "biz-1", 1, "09:00", "22:00", nil, false); err == nil {
 		t.Error("foreign business must fail")
+	}
+}
+
+func newHeartbeatFixture(durationMs int) (*fakeStoreRepo, *StoreService) {
+	f := newFakeStoreRepo()
+	f.businesses["biz-1"] = &domain.StoreBusiness{ID: "biz-1", PartnerID: "partner-1",
+		BusinessNumber: "1234567891", StoreName: "S", LicenseCount: 1, Status: domain.StoreApproved}
+	f.devices["dev-1"] = &domain.StoreDevice{ID: "dev-1", BusinessID: "biz-1",
+		DeviceName: "D", Status: domain.DeviceActive, Volume: 70}
+	tracks := map[string]*domain.Track{
+		"t1": {ID: "t1", PartnerID: "partner-1", Status: domain.TrackReady, DurationMs: &durationMs},
+		"t2": {ID: "t2", PartnerID: "partner-1", Status: domain.TrackReady, DurationMs: &durationMs},
+	}
+	return f, testStoreService(f, tracks, nil, nil)
+}
+
+func TestHeartbeatCumulativeIsOneRowPerPlay(t *testing.T) {
+	f, svc := newHeartbeatFixture(300000) // 5-minute track
+	ctx := context.Background()
+	for secs := 10; secs <= 300; secs += 10 {
+		if _, err := svc.Heartbeat(ctx, "dev-1", "t1", secs); err != nil {
+			t.Fatalf("heartbeat %d: %v", secs, err)
+		}
+		f.now = f.now.Add(10 * time.Second)
+	}
+	if len(f.logs) != 1 {
+		t.Fatalf("one play must be one row, got %d rows", len(f.logs))
+	}
+	if got := f.logs[0].DurationPlayedSecs; got != 300 || !f.logs[0].CountedAsPlay {
+		t.Fatalf("row = %d secs counted=%v, want 300 counted", got, f.logs[0].CountedAsPlay)
+	}
+	// Next track starts a new row.
+	if _, err := svc.Heartbeat(ctx, "dev-1", "t2", 10); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.logs) != 2 {
+		t.Fatalf("new track must start a new row, got %d", len(f.logs))
+	}
+}
+
+func TestHeartbeatClampsInflatedSeconds(t *testing.T) {
+	f, svc := newHeartbeatFixture(180000) // 3-minute track
+	ctx := context.Background()
+	if _, err := svc.Heartbeat(ctx, "dev-1", "t1", 10_000_000); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.logs[0].DurationPlayedSecs; got != 185 {
+		t.Fatalf("first heartbeat capped to %d, want track length + 5 = 185", got)
+	}
+	// 10 s later the device claims a fresh play of 170 s on another track.
+	f.now = f.now.Add(10 * time.Second)
+	if _, err := svc.Heartbeat(ctx, "dev-1", "t2", 170); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.logs[1].DurationPlayedSecs; got != 15 {
+		t.Fatalf("new play capped to %d, want elapsed 10 + 5 = 15", got)
+	}
+}
+
+func TestClampStorePlaySecs(t *testing.T) {
+	dur := 200000
+	ten := 10
+	cases := []struct {
+		name           string
+		reported, base int
+		durMs, elapsed *int
+		want           int
+	}{
+		{"normal growth", 40, 30, &dur, &ten, 40},
+		{"jump beyond elapsed", 120, 30, &dur, &ten, 45},
+		{"negative", -5, 0, &dur, nil, 0},
+		{"unknown length ceiling", 99999, 0, nil, nil, maxStorePlaySecs},
+	}
+	for _, c := range cases {
+		if got := clampStorePlaySecs(c.reported, c.base, c.durMs, c.elapsed); got != c.want {
+			t.Errorf("%s: got %d want %d", c.name, got, c.want)
+		}
 	}
 }
