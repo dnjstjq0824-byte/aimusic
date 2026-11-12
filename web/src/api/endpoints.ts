@@ -39,6 +39,9 @@ import type {
   UserBlock,
   UserTermConsent,
   AIProviderPolicy,
+  RefundQuote,
+  CancelMode,
+  CancelResult,
 } from './types';
 
 // Thin wrappers over the exact router.go URIs.
@@ -116,11 +119,12 @@ export const billingApi = {
   mySubscription() {
     return unwrap<{ subscription: BillingSubscription | null }>(api.get('/billing/subscriptions/me'));
   },
-  cancelSubscription() {
-    return unwrap<{ cancelled: boolean }>(api.post('/billing/subscriptions/cancel'));
+  refundQuote() {
+    return unwrap<RefundQuote>(api.get('/billing/subscriptions/me/refund-quote'));
   },
-  refundActivePass(reason?: string) {
-    return unwrap<{ order: BillingOrder }>(api.post('/billing/payments/refund', { reason }));
+  /** mode: END_OF_PERIOD (일반해지) | IMMEDIATE (즉시 해지·환불). Required. */
+  cancelSubscription(mode: CancelMode, reason?: string) {
+    return unwrap<CancelResult>(api.post('/billing/subscriptions/cancel', { mode, reason }));
   },
 };
 

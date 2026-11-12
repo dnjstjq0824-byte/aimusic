@@ -454,8 +454,33 @@ export interface BillingOrder {
   approvedAt?: string;
   refundConsentAt?: string | null;
   refundTermsVersion?: string | null;
+  refundedAmountKrw?: number | null;
+  refundedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type CancelMode = 'END_OF_PERIOD' | 'IMMEDIATE';
+
+/** Server-computed refund for ending the active pass now (billing.go ComputeRefund). */
+export interface RefundQuote {
+  type: 'WITHDRAWAL' | 'PRORATED';
+  amountKrw: number;
+  refundKrw: number;
+  usedDays: number;
+  totalDays: number;
+  paidAt: string;
+  periodEnd: string;
+  hasUsage: boolean;
+  cancelRequested: boolean;
+  firstUsageAt?: string | null;
+}
+
+export interface CancelResult {
+  mode: CancelMode;
+  quote?: RefundQuote;
+  order?: BillingOrder;
+  subscription?: BillingSubscription;
 }
 
 export interface BillingSubscription {
@@ -466,6 +491,8 @@ export interface BillingSubscription {
   status: string;
   currentPeriodStart: string;
   currentPeriodEnd: string;
+  /** Set by 일반해지: access continues until currentPeriodEnd. */
+  cancelRequestedAt?: string | null;
   plan?: BillingPlan;
   createdAt: string;
   updatedAt: string;
