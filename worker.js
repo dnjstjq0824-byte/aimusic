@@ -1,5 +1,6 @@
-// Cloudflare Worker: serves the SPA from static assets and reverse-proxies
-// /api/* to the external Go backend and /local-hls/* to the S3 audio storage.
+// Cloudflare Worker: serves the SPA from static assets, reverse-proxies
+// /api/* to the external Go backend, and reads /local-hls/* from the private
+// R2 bucket bound as HLS_BUCKET (WI-D1: no origin fetch, no Access tokens).
 //
 // HLS is signature-gated: every playlist/segment request must carry the
 // exp+jti+q+sig query issued by GET /tracks/:id/stream (HMAC-SHA256 hex over
@@ -24,6 +25,79 @@ export function fileAllowed(q, file) {
   if (q === 'HQ') return true;
   if (q === 'SQ') return SQ_FILE.test(file);
   return false;
+}
+
+// parseHlsPath splits '/local-hls/hls/<trackId>/<file>' for the R2 key.
+export function parseHlsPath(pathname) {
+  if (!pathname.startsWith('/local-hls/')) return null;
+  const key = pathname.slice('/local-hls/'.length);
+  const parts = key.split('/');
+  if (parts.length < 3 || parts[0] !== 'hls' || !parts[1]) return null;
+  return { key, trackId: parts[1], file: parts[parts.length - 1] || '' };
+}
+
+// rewritePlaylistUris embeds the verified grant into relative media URIs.
+// HLS clients resolve segment URIs without forwarding the playlist query.
+export function rewritePlaylistUris(text, grant) {
+  return text
+    .split('\n')
+    .map((line) => {
+      const t = line.trim();
+      if (t === '' || t.startsWith('#')) return line;
+      if (/^https?:\/\//i.test(t)) return line;
+      const hash = t.indexOf('#');
+      const path = hash === -1 ? t : t.slice(0, hash);
+      const frag = hash === -1 ? '' : t.slice(hash);
+      return `${path}${path.includes('?') ? '&' : '?'}${grant}${frag}`;
+    })
+    .join('\n');
+}
+
+function contentTypeFor(file) {
+  if (file.endsWith('.m3u8')) return 'application/vnd.apple.mpegurl';
+  if (file.endsWith('.ts')) return 'video/mp2t';
+  if (file.endsWith('.json')) return 'application/json';
+  return 'application/octet-stream';
+}
+
+// parseRange maps a single 'bytes=start-end' range onto size.
+export function parseRange(header, size) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec((header || '').trim());
+  if (!m || (m[1] === '' && m[2] === '')) return null;
+  let start;
+  let end;
+  if (m[1] === '') {
+    const suffix = Number(m[2]);
+    if (!suffix || size === 0) return null;
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] === '' ? size - 1 : Number(m[2]);
+  }
+  if (start >= size || end < start) return null;
+  return { offset: start, length: Math.min(end, size - 1) - start + 1 };
+}
+
+// r2ResponseHeaders sets playback headers from R2 metadata.
+function r2ResponseHeaders(obj, file, bodyLength, extra = {}) {
+  const headers = new Headers();
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  headers.set('Content-Type', (obj.httpMetadata && obj.httpMetadata.contentType) || contentTypeFor(file));
+  const etag = obj.httpEtag || (obj.etag ? `"${obj.etag}"` : '');
+  if (etag) headers.set('ETag', etag);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Content-Length', String(bodyLength));
+  if (file.endsWith('.ts')) {
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (file.endsWith('.m3u8')) {
+    headers.set('Cache-Control', 'private, max-age=60');
+  } else {
+    headers.set('Cache-Control', 'private, max-age=3600');
+  }
+  if (extra.contentRange) headers.set('Content-Range', extra.contentRange);
+  return headers;
 }
 
 async function hmacHex(key, message) {
@@ -59,10 +133,10 @@ export default {
         return Response.json({ error: 'Method Not Allowed' }, { status: 405 });
       }
       // Object keys look like hls/<trackId>/<file>; only media files served.
-      const key = url.pathname.slice('/local-hls/'.length);
-      const parts = key.split('/');
-      const file = parts[parts.length - 1] || '';
-      const trackId = parts.length >= 3 && parts[0] === 'hls' ? parts[1] : '';
+      const parsed = parseHlsPath(url.pathname);
+      const key = parsed ? parsed.key : '';
+      const file = parsed ? parsed.file : '';
+      const trackId = parsed ? parsed.trackId : '';
       const extOk = file.endsWith('.m3u8') || file.endsWith('.ts') || file === 'peaks.json';
       const signingKey = env.HLS_SIGNING_KEY || '';
       if (!signingKey) {
@@ -98,77 +172,71 @@ export default {
           { status: 403 },
         );
       }
-      const s3Origin = (env.S3_ORIGIN || '').replace(/\/+$/, '');
-      if (!s3Origin) {
+      const bucket = env.HLS_BUCKET;
+      if (!bucket) {
         return Response.json(
-          { error: 'Bad Gateway', detail: 'S3_ORIGIN is not configured on this Worker.' },
+          { error: 'Bad Gateway', detail: 'HLS_BUCKET is not bound to this Worker.' },
           { status: 502 }
         );
       }
-      // Strip the signature before hitting origin (R2 is private to Workers).
-      const clean = new URL(url.pathname, 'http://origin');
-      const target = s3Origin + clean.pathname;
-      // Forward only cache/range headers; never the client's cookies or
-      // auth. When the origin sits behind Cloudflare Access, the Worker
-      // authenticates with a service token (secrets S3_ACCESS_CLIENT_ID /
-      // S3_ACCESS_CLIENT_SECRET); without them it calls the origin bare.
-      const originHeaders = new Headers();
-      for (const name of ['range', 'if-none-match', 'if-modified-since', 'accept-encoding']) {
-        const v = request.headers.get(name);
-        if (v) originHeaders.set(name, v);
-      }
-      if (env.S3_ACCESS_CLIENT_ID && env.S3_ACCESS_CLIENT_SECRET) {
-        originHeaders.set('CF-Access-Client-Id', env.S3_ACCESS_CLIENT_ID);
-        originHeaders.set('CF-Access-Client-Secret', env.S3_ACCESS_CLIENT_SECRET);
-      }
-      const init = {
-        method: request.method,
-        headers: originHeaders,
-        redirect: 'manual',
-      };
-      const res = await fetch(target, init);
-      const headers = new Headers(res.headers);
-      headers.set('Access-Control-Allow-Origin', '*');
-      headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-      // VOD segments are immutable once packaged: cache hard.
-      if (file.endsWith('.ts')) {
-        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-      } else if (file.endsWith('.m3u8')) {
-        // HLS clients (hls.js, Safari, just_audio) resolve segment URIs
-        // relative to the playlist WITHOUT forwarding its query string,
-        // so every segment would 403 here. Embed the already-verified
-        // grant into each media URI instead of patching every player.
-        // Private: one grant must never be served to another client.
-        if (res.status === 200 && !headers.get('content-encoding')) {
-          const grant = `exp=${encodeURIComponent(exp)}&jti=${encodeURIComponent(jti)}&q=${encodeURIComponent(q)}&sig=${encodeURIComponent(sig)}`;
-          const text = await res.text();
-          const rewritten = text
-            .split('\n')
-            .map((line) => {
-              const t = line.trim();
-              if (t === '' || t.startsWith('#')) return line;
-              if (/^https?:\/\//i.test(t)) return line;
-              const hash = t.indexOf('#');
-              const path = hash === -1 ? t : t.slice(0, hash);
-              const frag = hash === -1 ? '' : t.slice(hash);
-              return `${path}${path.includes('?') ? '&' : '?'}${grant}${frag}`;
-            })
-            .join('\n');
-          headers.set('Cache-Control', 'private, max-age=60');
-          headers.delete('content-length');
-          return new Response(rewritten, {
-            status: res.status,
-            statusText: res.statusText,
-            headers,
-          });
+      // R2 is private to this Worker: read the binding, never the network.
+      if (request.method === 'HEAD') {
+        const meta = await bucket.head(key);
+        if (!meta) {
+          return Response.json({ error: 'Not Found' }, { status: 404 });
         }
-        headers.set('Cache-Control', 'private, max-age=60');
+        return new Response(null, { status: 200, headers: r2ResponseHeaders(meta, file, meta.size) });
       }
-      return new Response(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-      });
+      const rangeHeader = request.headers.get('range');
+      let obj;
+      let status = 200;
+      let contentRange = '';
+      if (rangeHeader) {
+        const meta = await bucket.head(key);
+        if (!meta) {
+          return Response.json({ error: 'Not Found' }, { status: 404 });
+        }
+        const range = parseRange(rangeHeader, meta.size);
+        if (!range) {
+          return Response.json({ error: 'Range Not Satisfiable' }, { status: 416 });
+        }
+        obj = await bucket.get(key, { range });
+        if (!obj) {
+          return Response.json({ error: 'Not Found' }, { status: 404 });
+        }
+        status = 206;
+        contentRange = `bytes ${range.offset}-${range.offset + range.length - 1}/${meta.size}`;
+      } else {
+        obj = await bucket.get(key);
+        if (!obj) {
+          return Response.json({ error: 'Not Found' }, { status: 404 });
+        }
+      }
+      const etag = obj.httpEtag || (obj.etag ? `"${obj.etag}"` : '');
+      const inm = request.headers.get('if-none-match');
+      if (inm && etag && inm.split(',').some((t) => t.trim() === etag || t.trim() === '*')) {
+        const notModified = new Headers();
+        notModified.set('ETag', etag);
+        return new Response(null, { status: 304, headers: notModified });
+      }
+      const ims = request.headers.get('if-modified-since');
+      if (ims && obj.uploaded && !Number.isNaN(Date.parse(ims)) && Date.parse(ims) >= obj.uploaded.getTime()) {
+        const notModified = new Headers();
+        if (etag) notModified.set('ETag', etag);
+        return new Response(null, { status: 304, headers: notModified });
+      }
+      const bodyLength = obj.range ? obj.range.length : obj.size;
+      const headers = r2ResponseHeaders(obj, file, bodyLength, { contentRange });
+      if (file.endsWith('.m3u8') && status === 200) {
+        // Embed the already-verified grant into each media URI (see
+        // rewritePlaylistUris). Private: one grant must never be served
+        // to another client.
+        const grant = `exp=${encodeURIComponent(exp)}&jti=${encodeURIComponent(jti)}&q=${encodeURIComponent(q)}&sig=${encodeURIComponent(sig)}`;
+        const rewritten = rewritePlaylistUris(await obj.text(), grant);
+        headers.delete('content-length');
+        return new Response(rewritten, { status, headers });
+      }
+      return new Response(obj.body, { status, headers });
     }
 
     // 2. API reverse proxy

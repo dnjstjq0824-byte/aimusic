@@ -2,14 +2,9 @@
 # Place the tunnel credentials JSON next to this file as tunnel.json
 # (copied from the operator machine; never committed).
 #
-# S-01 (2026-11-12): hls.avibemusic.com is NOT a general S3 endpoint.
-# - The API and media worker reach S3 internally (S3_ENDPOINT=http://localstack:4566).
-# - Only two shapes are reachable from the internet:
-#   1. HLS media files the Cloudflare Worker proxies after checking its signature.
-#   2. Presigned partner uploads (PUT) to a canonical staging key
-#      staging/<partnerId>/<sha256>/<file>. Keys are unguessable and never
-#      returned by public APIs; bucket roots, listings and LocalStack admin
-#      endpoints return 404.
+# WI-D1: media storage moved to private R2 buckets. The Worker reads HLS via
+# an R2 binding and browsers PUT staging uploads to a presigned R2 URL, so no
+# S3 hostname is exposed through this tunnel anymore.
 tunnel: 237e6076-337b-4966-ba52-0e8f4ebe3c07
 credentials-file: /etc/cloudflared/tunnel.json
 
@@ -19,19 +14,4 @@ ingress:
     service: http://api:8080
     originRequest:
       httpHostHeader: api.avibemusic.com
-  # HLS media (Worker origin)
-  - hostname: hls.avibemusic.com
-    path: ^/local-hls/hls/[0-9a-fA-F-]+/[A-Za-z0-9_.-]+$
-    service: http://localstack:4566
-    originRequest:
-      httpHostHeader: hls.avibemusic.com
-  # Presigned partner uploads (canonical staging keys only)
-  - hostname: hls.avibemusic.com
-    path: ^/local-staging/staging/[0-9a-fA-F-]+/[0-9a-f]{64}/[^/]+$
-    service: http://localstack:4566
-    originRequest:
-      httpHostHeader: hls.avibemusic.com
-  # Everything else on the S3 host is closed
-  - hostname: hls.avibemusic.com
-    service: http_status:404
   - service: http_status:404

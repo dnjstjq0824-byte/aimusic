@@ -2,14 +2,15 @@
 # Usage (on the VPS, in /opt/avibe):
 #   1. cp .env.prod.example .env  (or receive the generated .env), chmod 600 .env
 #   2. docker compose -f docker-compose.prod.yml build api worker
-#   3. docker compose -f docker-compose.prod.yml up -d postgres redis localstack
-#   4. docker compose -f docker-compose.prod.yml up s3-init   # buckets+policy+CORS
-#   5. docker compose -f docker-compose.prod.yml run --rm migrate up
-#   6. psql $DB_DSN -f deploy/seed-prod.sql && adminctl create-admin ...
-#   7. docker compose -f docker-compose.prod.yml up -d api worker cloudflared
+#   3. docker compose -f docker-compose.prod.yml up -d postgres redis
+#   4. docker compose -f docker-compose.prod.yml run --rm migrate up
+#   5. psql $DB_DSN -f deploy/seed-prod.sql && adminctl create-admin ...
+#   6. docker compose -f docker-compose.prod.yml up -d api worker cloudflared
 #
-# No ports are published: api/hls are served only via the Cloudflare named
-# tunnel (api.avibemusic.com -> api:8080, hls.avibemusic.com -> localstack:4566).
+# Media storage is private Cloudflare R2 (WI-D1): the Worker reads HLS via an
+# R2 binding and browsers PUT staging uploads to presigned R2 URLs.
+# No ports are published: the API is served only via the Cloudflare named
+# tunnel (api.avibemusic.com -> api:8080).
 # The web SPA is served by the Cloudflare Worker (wrangler deploy).
 name: avibe-prod
 
@@ -51,54 +52,6 @@ services:
     networks:
       - avibe
 
-  # S3-compatible origin (staging uploads + HLS). MinIO's official images
-  # were removed from Docker Hub / gated on Quay, so prod mirrors the
-  # E2E-proven local stack: LocalStack S3-only + aws-cli init.
-  localstack:
-    image: localstack/localstack:4.0
-    container_name: avibe-prod-localstack
-    restart: unless-stopped
-    environment:
-      SERVICES: s3
-    volumes:
-      - localstackdata:/var/lib/localstack
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4566/_localstack/health >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
-    mem_limit: 384m
-    networks:
-      - avibe
-
-  s3-init:
-    image: amazon/aws-cli:2.0.9
-    container_name: avibe-prod-s3-init
-    depends_on:
-      localstack:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      export AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy AWS_REGION=us-east-1 AWS_PAGER='' &&
-      EP=http://localstack:4566 &&
-      for i in 1 2 3 4 5 6; do
-      aws --endpoint-url $$EP s3api create-bucket --bucket $${S3_STAGING_BUCKET} 2>/dev/null &&
-      aws --endpoint-url $$EP s3api create-bucket --bucket $${S3_PUBLIC_HLS_BUCKET} 2>/dev/null &&
-      break || sleep 5; done;
-      aws --endpoint-url $$EP s3api put-bucket-policy --bucket $${S3_PUBLIC_HLS_BUCKET}
-      --policy '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::$${S3_PUBLIC_HLS_BUCKET}/*\"}]}' &&
-      CORS_JSON='{\"CORSRules\":[{\"AllowedOrigins\":[\"https://avibemusic.com\"],\"AllowedMethods\":[\"GET\",\"PUT\",\"HEAD\"],\"AllowedHeaders\":[\"*\"],\"ExposeHeaders\":[\"ETag\"],\"MaxAgeSeconds\":3000}]}' &&
-      aws --endpoint-url $$EP s3api put-bucket-cors --bucket $${S3_PUBLIC_HLS_BUCKET} --cors-configuration "$$CORS_JSON" &&
-      aws --endpoint-url $$EP s3api put-bucket-cors --bucket $${S3_STAGING_BUCKET} --cors-configuration "$$CORS_JSON" &&
-      echo buckets-ready;
-      "
-    environment:
-      S3_STAGING_BUCKET: ${S3_STAGING_BUCKET:-local-staging}
-      S3_PUBLIC_HLS_BUCKET: ${S3_PUBLIC_HLS_BUCKET:-local-hls}
-    networks:
-      - avibe
-
   api:
     build:
       context: ./backend
@@ -114,8 +67,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      s3-init:
-        condition: service_completed_successfully
     mem_limit: 256m
     networks:
       - avibe
@@ -132,8 +83,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      s3-init:
-        condition: service_completed_successfully
     # ffmpeg transcode of a 40MB+ wav peaks over 384m (OOM-killed 2026-11-10);
     # the queue loop is serial so one transcode peak is the bound.
     mem_limit: 512m
@@ -178,8 +127,6 @@ services:
     depends_on:
       api:
         condition: service_started
-      localstack:
-        condition: service_healthy
     mem_limit: 128m
     networks:
       - avibe
@@ -187,6 +134,8 @@ services:
 volumes:
   pgdata:
   redisdata:
+  # WI-D1: pre-cutover media backup. No service mounts it anymore; keep until
+  # PO approves deletion (G-R2), then remove this declaration too.
   localstackdata:
 
 networks:

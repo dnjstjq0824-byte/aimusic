@@ -12,11 +12,15 @@ not_found_handling = "single-page-application"
 
 # Production origins. Set these to the stable prod hosts before deploy
 # (ephemeral trycloudflare tunnel URLs expire and must never ship):
-# Both are served by the Cloudflare named tunnel `avibe` (stable hostnames).
+# API is served by the Cloudflare named tunnel `avibe` (stable hostname).
+# HLS media comes from the private R2 bucket below (WI-D1).
 # Secret (never in this file):  wrangler secret put HLS_SIGNING_KEY
 [vars]
 API_ORIGIN = "https://api.avibemusic.com"
-S3_ORIGIN = "https://hls.avibemusic.com"
+
+[[r2_buckets]]
+binding = "HLS_BUCKET"
+bucket_name = "public-hls"
 # Rollout bridge for the SQ/HQ grant change (B-04): accept pre-tier grants
 # only until the new backend is live, then set to "false" and redeploy.
 ALLOW_LEGACY_GRANTS = "false"
