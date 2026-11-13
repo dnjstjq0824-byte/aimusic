@@ -2,7 +2,10 @@ package handler
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,11 +21,14 @@ import (
 )
 
 // Download policy (P2-1 #22): paid passes only (owner + admin exempt),
-// 50 downloads per rolling 24h, masters capped at 500 MiB per fetch.
+// 50 downloads per rolling 24h, masters capped at 500 MiB total. Only the
+// head window is buffered for tag planning; the rest streams (B-07), so a
+// download holds ~KBs regardless of master size.
 const (
 	maxDownloadsPerDay  = 50
 	maxDownloadBytes    = 500 << 20
 	downloadWindowHours = 24
+	downloadHeadWindow  = 64 << 10
 )
 
 // detectDownloadFormat sniffs the master bytes: "wav" for RIFF/WAVE,
@@ -212,6 +218,10 @@ func (h *TrackHandler) Stream(c *gin.Context) {
 	playlistURL := base + "/" + strings.TrimPrefix(*track.HLSPrefix, "/") + "/" + playlist
 	jti := uuid.NewString()
 	exp := time.Now().Add(time.Duration(h.Config.HLS.URLTTLSecs) * time.Second)
+	if err := h.Repos.Grants.RecordGrant(c.Request.Context(), jti, userID, track.ID); err != nil {
+		AbortError(c, err)
+		return
+	}
 	signed := apcrypto.BuildSignedPlaybackURL(playlistURL, track.ID, jti, exp, quality, h.Config.HLS.SigningKey)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"url": signed, "expiresAt": exp.Format(time.RFC3339), "jti": jti, "quality": quality,
@@ -222,6 +232,7 @@ func (h *TrackHandler) Stream(c *gin.Context) {
 // paid passes only (track owner + admin exempt), 50/day quota, READY
 // tracks only. WAV masters get a LIST-INFO disclosure chunk, MP3s an
 // ID3v2 comment; unknown formats serve raw with the disclosure header.
+// Only the head is buffered for tag planning; the body streams (B-07).
 func (h *TrackHandler) Download(c *gin.Context) {
 	userID := CurrentUserID(c)
 	if userID == "" {
@@ -267,22 +278,23 @@ func (h *TrackHandler) Download(c *gin.Context) {
 			return
 		}
 	}
-	master, err := h.Storage.Get(c.Request.Context(), h.Buckets.Staging, track.OriginalObjectKey, maxDownloadBytes)
-	if err != nil {
+	ctx := c.Request.Context()
+	head, total, err := h.Storage.GetRange(ctx, h.Buckets.Staging, track.OriginalObjectKey, 0, downloadHeadWindow)
+	if err != nil || total <= 0 || total > maxDownloadBytes {
 		abort(c, http.StatusBadGateway, "ERR_DOWNLOAD_UNAVAILABLE", "master file unavailable")
 		return
 	}
 	disclosure := downloadDisclosureText(track, h.Config.OAuth.FrontendBaseURL)
-	var body []byte
-	var contentType, ext string
-	switch detectDownloadFormat(master) {
+	var plan *audio.DownloadPlan
+	var ext string
+	switch detectDownloadFormat(head) {
 	case "wav":
-		tagged, err := audio.InjectWAVInfo(master, track.Title, "AVIBE", disclosure)
-		if err != nil {
-			abort(c, http.StatusBadGateway, "ERR_DOWNLOAD_UNAVAILABLE", "master file unavailable")
-			return
+		fetch := func(offset, length int64) ([]byte, error) {
+			b, _, err := h.Storage.GetRange(ctx, h.Buckets.Staging, track.OriginalObjectKey, offset, length)
+			return b, err
 		}
-		body, contentType, ext = tagged, "audio/wav", "wav"
+		plan, err = audio.PlanWAVDownload(head, total, track.Title, "AVIBE", disclosure, fetch)
+		ext = "wav"
 	case "mp3":
 		meta := &audio.AudioMetadata{Title: track.Title, Artist: "AVIBE", Comment: disclosure, AIProvider: track.AIProvider}
 		if track.AIModelVersion != nil {
@@ -291,22 +303,33 @@ func (h *TrackHandler) Download(c *gin.Context) {
 		if track.ISRC != nil {
 			meta.ISRC = *track.ISRC
 		}
-		tagged, err := audio.InjectID3v24(master, meta)
-		if err != nil {
-			abort(c, http.StatusBadGateway, "ERR_DOWNLOAD_UNAVAILABLE", "master file unavailable")
-			return
-		}
-		body, contentType, ext = tagged, "audio/mpeg", "mp3"
+		plan, err = audio.PlanMP3Download(head, total, meta)
+		ext = "mp3"
 	default:
-		body, contentType, ext = master, "application/octet-stream", "bin"
+		plan, ext = audio.PlanRawDownload(total), "bin"
 	}
-	if err := h.Repos.Downloads.Log(c.Request.Context(), userID, track.ID, int64(len(body))); err != nil {
+	if err != nil {
+		abort(c, http.StatusBadGateway, "ERR_DOWNLOAD_UNAVAILABLE", "master file unavailable")
+		return
+	}
+	if err := h.Repos.Downloads.Log(ctx, userID, track.ID, plan.TotalSize); err != nil {
 		AbortError(c, err)
 		return
 	}
 	c.Header("Content-Disposition", "attachment; filename=\""+downloadFilename(track.ID, track.Title, ext)+"\"")
 	c.Header("X-AVIBE-AI-Disclosure", disclosure)
-	c.Data(http.StatusOK, contentType, body)
+	c.Header("Content-Type", plan.ContentType)
+	c.Header("Content-Length", strconv.FormatInt(plan.TotalSize, 10))
+	c.Status(http.StatusOK)
+	open := func(offset, length int64) (io.ReadCloser, error) {
+		rc, _, err := h.Storage.OpenRange(ctx, h.Buckets.Staging, track.OriginalObjectKey, offset, length)
+		return rc, err
+	}
+	// Headers are already sent: a mid-stream failure can only truncate the
+	// body, so log it for operations and let the client retry.
+	if err := plan.Stream(ctx, c.Writer, open); err != nil {
+		slog.Error("download stream aborted", "track_id", track.ID, "user_id", userID, "error", err)
+	}
 }
 
 // PlaybackHandler serves heartbeat and resume state.

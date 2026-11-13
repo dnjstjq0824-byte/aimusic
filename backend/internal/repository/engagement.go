@@ -3,7 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 
 	"avibe-platform/backend/internal/domain"
 )
@@ -281,6 +284,57 @@ func (r *StreamingRepo) SumPlayMsSinceLastCounted(ctx context.Context, userID, t
 			'1970-01-01'::timestamptz)`,
 		userID, trackID).Scan(&n)
 	return n, err
+}
+
+// LastHeartbeatAt returns the newest heartbeat receive time for a user+track.
+// ok=false when the pair never reported (first heartbeat has no elapsed
+// basis). played_at is server receive time, so elapsed is client-clock-free.
+func (r *StreamingRepo) LastHeartbeatAt(ctx context.Context, userID, trackID string) (at time.Time, ok bool, err error) {
+	var last sql.NullTime
+	err = r.db.QueryRowContext(ctx, `
+		SELECT MAX(played_at) FROM streaming_logs
+		WHERE user_id = $1::uuid AND track_id = $2::uuid`,
+		userID, trackID).Scan(&last)
+	if err != nil || !last.Valid {
+		return time.Time{}, false, err
+	}
+	return last.Time, true, nil
+}
+
+// PlaybackGrantTTL bounds heartbeat authorization per stream grant. It
+// deliberately outlives the signed URL TTL: long mixes keep sending
+// heartbeats after the playlist URL expires, and the jti check proves issuance, not
+// freshness. Claimed time stays bounded by the per-heartbeat elapsed cap
+// plus the hourly fraud windows.
+const PlaybackGrantTTL = 24 * time.Hour
+
+// PlaybackGrantStore records stream-grant ids so heartbeats prove they
+// follow a real grant (B-06). Values bind user and track ids with a unit separator.
+type PlaybackGrantStore struct{ rdb *redis.Client }
+
+func playbackGrantKey(jti string) string { return "playback:grant:" + jti }
+
+// RecordGrant stores a grant issued to userID for trackID.
+func (g *PlaybackGrantStore) RecordGrant(ctx context.Context, jti, userID, trackID string) error {
+	if g == nil || g.rdb == nil {
+		return errors.New("playback grant store is not configured")
+	}
+	return g.rdb.Set(ctx, playbackGrantKey(jti), userID+"\x1f"+trackID, PlaybackGrantTTL).Err()
+}
+
+// VerifyGrant reports whether jti was issued to userID for trackID.
+func (g *PlaybackGrantStore) VerifyGrant(ctx context.Context, jti, userID, trackID string) (bool, error) {
+	if g == nil || g.rdb == nil {
+		return false, errors.New("playback grant store is not configured")
+	}
+	got, err := g.rdb.Get(ctx, playbackGrantKey(jti)).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
+		return false, err
+	}
+	return got == userID+"\x1f"+trackID, nil
 }
 
 // CountCountedSince counts counted plays platform-wide since a time.

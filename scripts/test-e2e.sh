@@ -804,11 +804,26 @@ else
   code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":36000,\"playMs\":12000,\"jti\":\"$STREAM_JTI\"}")"
   assert_status "heartbeat 12s delta #3 (crosses 30s)" "200" "$code"
   assert_contains "crossing delta counted" '"countedAsPlay":true' "$(cat "$BODY")"
-  # Heartbeat: 30s+ counts, short play does not; resume state persists.
+  # B-06: an instant 35s claim clamps to elapsed+tolerance (~15s), so right
+  # after the counted delta above it does NOT count again.
   code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":31000,\"playMs\":35000,\"jti\":\"$STREAM_JTI\"}")"
-  assert_status "heartbeat 35s" "200" "$code"
-  assert_contains "heartbeat counted" '"countedAsPlay":true' "$(cat "$BODY")"
+  assert_status "heartbeat instant 35s clamped" "200" "$code"
+  assert_contains "clamped delta not counted" '"countedAsPlay":false' "$(cat "$BODY")"
+  clamped_ms="$(psql_q "SELECT play_ms FROM streaming_logs WHERE track_id='$HAPPY_TRACK_ID'::uuid ORDER BY played_at DESC LIMIT 1;" | tr -d ' \r\n')"
+  if [ "$clamped_ms" -le 25000 ] 2>/dev/null; then pass "stored play_ms clamped ($clamped_ms)"; else fail "stored play_ms not clamped ($clamped_ms)"; fi
+  # B-06 red drill: a 1-hour single claim earns only ~15s of credit. It counts
+  # here because 15s (prior clamped row) + 15s crosses 30s honestly.
+  code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":31000,\"playMs\":3600000,\"jti\":\"$STREAM_JTI\"}")"
+  assert_status "heartbeat 1h claim clamped" "200" "$code"
+  assert_contains "clamped accumulation counts" '"countedAsPlay":true' "$(cat "$BODY")"
+  hour_ms="$(psql_q "SELECT play_ms FROM streaming_logs WHERE track_id='$HAPPY_TRACK_ID'::uuid ORDER BY played_at DESC LIMIT 1;" | tr -d ' \r\n')"
+  if [ "$hour_ms" -le 25000 ] 2>/dev/null; then pass "1h claim stored clamped ($hour_ms)"; else fail "1h claim stored unclamped ($hour_ms)"; fi
+  # B-06: missing or forged jti is rejected; short play with a grant is kept.
   code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":5000,\"playMs\":5000}")"
+  assert_status "heartbeat missing jti -> 403" "403" "$code"
+  code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":5000,\"playMs\":5000,\"jti\":\"00000000-0000-0000-0000-000000000000\"}")"
+  assert_status "heartbeat forged jti -> 403" "403" "$code"
+  code="$(api POST "/playback/heartbeat" "$USER_TOKEN" "{\"trackId\":\"$HAPPY_TRACK_ID\",\"positionMs\":5000,\"playMs\":5000,\"jti\":\"$STREAM_JTI\"}")"
   assert_status "heartbeat 5s (short)" "200" "$code"
   assert_contains "short play not counted" '"countedAsPlay":false' "$(cat "$BODY")"
   code="$(api GET "/playback/state/$HAPPY_TRACK_ID" "$USER_TOKEN" "")"
@@ -1229,6 +1244,36 @@ assert_contains "withdraw purges display name" "탈퇴한사용자" "$(printf '%
 code="$(api POST "/auth/register" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-wd2\",\"ageConfirmed\":true}")"
 assert_status "email reusable after withdraw" "201" "$code"
 WD2_ID="$(jget "data.id")"
+# Withdraw tx completeness: every step of the single transaction landed.
+wd_sub="$(psql_q "SELECT COUNT(*) FROM billing_subscriptions WHERE user_id='$WD_ID'::uuid AND status='ACTIVE';" | tr -d ' \r\n')"
+assert_eq "withdraw cancels subscription" "0" "$wd_sub"
+wd_left="$(psql_q "SELECT (SELECT COUNT(*) FROM password_reset_tokens WHERE user_id='$WD_ID'::uuid AND used_at IS NULL)+(SELECT COUNT(*) FROM oauth_accounts WHERE user_id='$WD_ID'::uuid)+(SELECT COUNT(*) FROM notifications WHERE user_id='$WD_ID'::uuid);" | tr -d ' \r\n')"
+assert_eq "withdraw clears reset/oauth/notify" "0" "$wd_left"
+wd_ver="$(psql_q "SELECT token_version FROM users WHERE id='$WD_ID'::uuid;" | tr -d ' \r\n')"
+if [ "$wd_ver" -ge 1 ] 2>/dev/null; then pass "withdraw bumps token version ($wd_ver)"; else fail "withdraw token_version=$wd_ver"; fi
+code="$(api GET "/auth/me" "$WD_TOKEN" "")"
+assert_status "withdrawn access rejected" "403" "$code"
+# B-09: refresh rotates single-use; replaying a consumed token revokes the family.
+RF_EMAIL="e2e-rf-$STAMP@example.com"
+code="$(api POST "/auth/register" "" "{\"email\":\"$RF_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-rf\",\"ageConfirmed\":true}")"
+assert_status "register refresh-candidate" "201" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$RF_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "login refresh-candidate" "200" "$code"
+RF_OLD="$(jget "data.tokens.refreshToken")"
+code="$(api POST "/auth/refresh" "" "{\"refreshToken\":\"$RF_OLD\"}")"
+assert_status "refresh rotates" "200" "$code"
+RF_NEW="$(jget "data.tokens.refreshToken")"
+RF_ACCESS="$(jget "data.tokens.accessToken")"
+code="$(api GET "/auth/me" "$RF_ACCESS" "")"
+assert_status "rotated access works" "200" "$code"
+code="$(api POST "/auth/refresh" "" "{\"refreshToken\":\"$RF_OLD\"}")"
+assert_status "reused refresh rejected" "401" "$code"
+code="$(api GET "/auth/me" "$RF_ACCESS" "")"
+assert_status "rotated access revoked after reuse" "401" "$code"
+code="$(api POST "/auth/refresh" "" "{\"refreshToken\":\"$RF_NEW\"}")"
+assert_status "rotated refresh revoked after reuse" "401" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$RF_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "fresh login recovers" "200" "$code"
 # Export: bundle contains profile+playlists, never secrets.
 code="$(api GET "/auth/export" "$USER_TOKEN" "")"
 assert_status "export my data -> 200" "200" "$code"

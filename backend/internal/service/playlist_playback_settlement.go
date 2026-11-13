@@ -135,6 +135,27 @@ const (
 	maxTrackPlaysPerHour = 40
 )
 
+// heartbeatToleranceMs is the jitter allowance added to the elapsed time
+// since the previous heartbeat. Clients report on a ~10s cadence, so one
+// delayed tick legitimately carries ~20s; rapid-fire claims past elapsed +
+// tolerance are clamped (B-06).
+const heartbeatToleranceMs = 15000
+
+// capPlayMs bounds one heartbeat's claimed play time to the real elapsed
+// time since the previous heartbeat plus tolerance. Without a prior
+// heartbeat the elapsed basis is zero, so the first claim caps at the
+// tolerance alone. Negative playMs is rejected by the caller, never here.
+func capPlayMs(playMs int, elapsed time.Duration, hasPrior bool) int {
+	elapsedMs := int64(0)
+	if hasPrior && elapsed > 0 {
+		elapsedMs = elapsed.Milliseconds()
+	}
+	if limit := elapsedMs + heartbeatToleranceMs; int64(playMs) > limit {
+		return int(limit)
+	}
+	return playMs
+}
+
 // HeartbeatInput is one playback progress report.
 type HeartbeatInput struct {
 	UserID     string
@@ -162,7 +183,9 @@ type PlaybackService struct {
 // Counting is cumulative: clients send small playMs deltas (~10s cadence), so
 // the delta is added to the uncounted play_ms accumulated since the last
 // counted play for this user+track, and the heartbeat that crosses the 30s
-// threshold counts exactly once.
+// threshold counts exactly once. Each delta is capped to the real elapsed
+// time since the previous heartbeat plus tolerance, and the jti must match
+// a grant this server issued (B-06).
 func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*HeartbeatOutput, error) {
 	if in.PlayMs < 0 {
 		return nil, fmt.Errorf("%w: playMs", domain.ErrInvalidInput)
@@ -174,7 +197,26 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 	if track.Status != domain.TrackReady {
 		return nil, domain.ErrNotStreamable
 	}
-	since := time.Now().Add(-time.Hour)
+	// The heartbeat must follow a grant this server issued to this user for
+	// this track (B-06). Taken-down tracks stay 403 above, so this gate only
+	// sees streamable tracks.
+	if in.JTI == "" {
+		return nil, domain.ErrForbidden
+	}
+	granted, err := s.repos.Grants.VerifyGrant(ctx, in.JTI, in.UserID, in.TrackID)
+	if err != nil {
+		return nil, err
+	}
+	if !granted {
+		return nil, domain.ErrForbidden
+	}
+	now := time.Now()
+	last, hasPrior, err := s.repos.Streaming.LastHeartbeatAt(ctx, in.UserID, in.TrackID)
+	if err != nil {
+		return nil, err
+	}
+	playMs := capPlayMs(in.PlayMs, now.Sub(last), hasPrior)
+	since := now.Add(-time.Hour)
 	total, err := s.repos.Streaming.CountUserPlaysSince(ctx, in.UserID, since)
 	if err != nil {
 		return nil, err
@@ -188,11 +230,8 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 	if err != nil {
 		return nil, err
 	}
-	counted := !fraud && prior+in.PlayMs >= ValidStreamMs
-	var jti *string
-	if in.JTI != "" {
-		jti = &in.JTI
-	}
+	counted := !fraud && prior+playMs >= ValidStreamMs
+	jti := &in.JTI
 	var ip, ua *string
 	if in.IP != "" {
 		ip = &in.IP
@@ -202,7 +241,7 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 	}
 	if err := s.repos.Streaming.Insert(ctx, &domain.StreamingLog{
 		UserID: &in.UserID, TrackID: &in.TrackID, PartnerID: &track.PartnerID,
-		PlayMs: in.PlayMs, CountedAsPlay: counted, IP: ip, UserAgent: ua, HLSTokenJTI: jti,
+		PlayMs: playMs, CountedAsPlay: counted, IP: ip, UserAgent: ua, HLSTokenJTI: jti,
 	}); err != nil {
 		return nil, err
 	}

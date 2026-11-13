@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
 	"avibe-platform/backend/internal/config"
@@ -46,6 +47,88 @@ type AuthService struct {
 	inviteCode string
 	// getUser resolves accounts for per-request validation (override in tests).
 	getUser func(ctx context.Context, userID string) (*domain.User, error)
+	// bumpVersion revokes every outstanding token (override in tests).
+	bumpVersion func(ctx context.Context, userID string) error
+	// refreshTracker enforces single-use rotation (nil disables tracking).
+	refreshTracker refreshTracker
+}
+
+// refreshConsume is the outcome of presenting a refresh-token jti.
+type refreshConsume int
+
+const (
+	// refreshUnknown was never tracked: a token issued before rotation
+	// tracking deployed. Graced exactly once, then tracked.
+	refreshUnknown refreshConsume = iota
+	// refreshLive was tracked and is now consumed.
+	refreshLive
+	// refreshReused was already consumed: a theft signal, revoke the family.
+	refreshReused
+	// refreshMismatch is tracked under another user: reject without revoke.
+	refreshMismatch
+)
+
+// refreshTracker records refresh-token ids at issue and consumes them at rotation.
+type refreshTracker interface {
+	record(ctx context.Context, jti, userID string) error
+	consume(ctx context.Context, jti, userID string) (refreshConsume, error)
+	markUsed(ctx context.Context, jti, userID string) error
+}
+
+// redisRefreshTracker implements refreshTracker over Redis. Consume runs as
+// one Lua script so concurrent double-refresh cannot both slip through.
+type redisRefreshTracker struct {
+	rdb *redis.Client
+	ttl time.Duration
+}
+
+// refreshConsumeLua returns 1 (consumed live), 2 (reused), 0 (unknown) or
+// 3 (tracked under another user). KEYS[1]=live, KEYS[2]=used,
+// ARGV[1]=userID, ARGV[2]=ttl seconds.
+const refreshConsumeLua = `
+local live = redis.call('GET', KEYS[1])
+if live then
+  if live ~= ARGV[1] then return 3 end
+  redis.call('DEL', KEYS[1])
+  redis.call('SET', KEYS[2], ARGV[1], 'EX', ARGV[2])
+  return 1
+end
+local used = redis.call('GET', KEYS[2])
+if used then
+  if used ~= ARGV[1] then return 3 end
+  return 2
+end
+return 0
+`
+
+func refreshLiveKey(jti string) string { return "refresh:live:" + jti }
+func refreshUsedKey(jti string) string { return "refresh:used:" + jti }
+
+func (t *redisRefreshTracker) record(ctx context.Context, jti, userID string) error {
+	return t.rdb.Set(ctx, refreshLiveKey(jti), userID, t.ttl).Err()
+}
+
+func (t *redisRefreshTracker) markUsed(ctx context.Context, jti, userID string) error {
+	return t.rdb.Set(ctx, refreshUsedKey(jti), userID, t.ttl).Err()
+}
+
+func (t *redisRefreshTracker) consume(ctx context.Context, jti, userID string) (refreshConsume, error) {
+	n, err := t.rdb.Eval(ctx, refreshConsumeLua,
+		[]string{refreshLiveKey(jti), refreshUsedKey(jti)},
+		userID, int64(t.ttl/time.Second)).Int()
+	if err != nil {
+		return refreshUnknown, err
+	}
+	switch n {
+	case 1:
+		return refreshLive, nil
+	case 2:
+		return refreshReused, nil
+	case 3:
+		return refreshMismatch, nil
+	default:
+		return refreshUnknown, nil
+	}
 }
 
 // NewAuthService builds an AuthService from config.
@@ -61,6 +144,10 @@ func NewAuthService(repos *repository.Repos, cfg *config.Config) *AuthService {
 	if repos != nil && repos.Users != nil {
 		users := repos.Users
 		s.getUser = users.GetByID
+		s.bumpVersion = users.BumpTokenVersion
+		if repos.RDB != nil {
+			s.refreshTracker = &redisRefreshTracker{rdb: repos.RDB, ttl: s.refreshTTL}
+		}
 	}
 	return s
 }
@@ -197,21 +284,44 @@ func (s *AuthService) Login(ctx context.Context, email, password, totpCode strin
 		}
 	}
 	s.clearLoginFailures(ctx, mail)
-	tokens, err := s.issue(u.ID, u.Role, u.TokenVersion)
+	tokens, err := s.issue(ctx, u.ID, u.Role, u.TokenVersion)
 	if err != nil {
 		return nil, nil, err
 	}
 	return tokens, u, nil
 }
 
-// Refresh rotates a refresh token into a new pair. Stale token versions
-// (after password change, withdraw, or logout-all) are rejected.
+// Refresh rotates a refresh token into a new pair. Rotation is single-use:
+// replaying a consumed token revokes every token on the account (B-09).
+// Stale token versions (after password change, withdraw, or logout-all)
+// are rejected. Tokens issued before tracking deployed are graced once.
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*Tokens, error) {
 	claims, err := s.parse(refreshToken, s.refreshKey, TokenRefresh)
 	if err != nil {
 		return nil, err
 	}
-	u, err := s.repos.Users.GetByID(ctx, claims.UserID)
+	grace := false
+	if s.refreshTracker != nil {
+		st, err := s.refreshTracker.consume(ctx, claims.ID, claims.UserID)
+		if err != nil {
+			return nil, err
+		}
+		switch st {
+		case refreshReused:
+			if s.bumpVersion != nil {
+				if err := s.bumpVersion(ctx, claims.UserID); err != nil {
+					return nil, err
+				}
+			}
+			return nil, domain.ErrInvalidCredentials
+		case refreshMismatch:
+			return nil, domain.ErrInvalidCredentials
+		case refreshUnknown:
+			grace = true
+		case refreshLive:
+		}
+	}
+	u, err := s.getUser(ctx, claims.UserID)
 	if err != nil {
 		return nil, domain.ErrInvalidCredentials
 	}
@@ -221,7 +331,12 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*Tokens
 	if claims.TokenVersion != u.TokenVersion {
 		return nil, domain.ErrInvalidCredentials
 	}
-	return s.issue(u.ID, u.Role, u.TokenVersion)
+	if grace {
+		if err := s.refreshTracker.markUsed(ctx, claims.ID, claims.UserID); err != nil {
+			return nil, err
+		}
+	}
+	return s.issue(ctx, u.ID, u.Role, u.TokenVersion)
 }
 
 // LogoutAll revokes every outstanding token for the account.
@@ -293,7 +408,7 @@ func (s *AuthService) Issue(ctx context.Context, userID, role string) (*Tokens, 
 			version = u.TokenVersion
 		}
 	}
-	return s.issue(userID, role, version)
+	return s.issue(ctx, userID, role, version)
 }
 
 // Withdraw deactivates the user account immediately (in-app immediate
@@ -304,23 +419,10 @@ func (s *AuthService) Withdraw(ctx context.Context, userID string) error {
 	if userID == "" {
 		return domain.ErrInvalidCredentials
 	}
-	if err := s.repos.Users.SetActive(ctx, userID, false); err != nil {
-		return err
-	}
-	if err := s.repos.Users.PurgePII(ctx, userID); err != nil {
-		return err
-	}
-	if err := s.repos.Partners.PurgePIIByUser(ctx, userID); err != nil {
-		return err
-	}
-	_ = s.repos.Billing.CancelActiveSubscription(ctx, userID)
-	_ = s.repos.Resets.DeleteForUser(ctx, userID)
-	_ = s.repos.OAuth.DeleteForUser(ctx, userID)
-	_ = s.repos.Notify.DeleteForUser(ctx, userID)
-	return s.repos.Users.BumpTokenVersion(ctx, userID)
+	return s.repos.WithdrawUserTx(ctx, userID)
 }
 
-func (s *AuthService) issue(userID, role string, version int) (*Tokens, error) {
+func (s *AuthService) issue(ctx context.Context, userID, role string, version int) (*Tokens, error) {
 	now := time.Now()
 	access := &Claims{
 		UserID: userID, Role: role, TokenType: TokenAccess, TokenVersion: version,
@@ -341,6 +443,11 @@ func (s *AuthService) issue(userID, role string, version int) (*Tokens, error) {
 	refreshStr, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refresh).SignedString(s.refreshKey)
 	if err != nil {
 		return nil, err
+	}
+	if s.refreshTracker != nil {
+		if err := s.refreshTracker.record(ctx, refresh.ID, userID); err != nil {
+			return nil, err
+		}
 	}
 	return &Tokens{AccessToken: accessStr, RefreshToken: refreshStr, ExpiresIn: int64(s.accessTTL.Seconds())}, nil
 }

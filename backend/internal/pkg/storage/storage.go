@@ -28,6 +28,11 @@ type Storage interface {
 	PresignGetPublic(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 	// Get fetches a whole object (at most maxBytes+1 probed; error when over).
 	Get(ctx context.Context, bucket, key string, maxBytes int64) ([]byte, error)
+	// GetRange fetches [offset, offset+length) and reports the object total.
+	GetRange(ctx context.Context, bucket, key string, offset, length int64) ([]byte, int64, error)
+	// OpenRange streams [offset, offset+length) (length < 0 reads to the end
+	// of the object) and reports the object total; the caller closes it.
+	OpenRange(ctx context.Context, bucket, key string, offset, length int64) (io.ReadCloser, int64, error)
 	Delete(ctx context.Context, bucket, key string) error
 	// ListPrefix returns every key under prefix (directory-style listing).
 	ListPrefix(ctx context.Context, bucket, prefix string) ([]string, error)
@@ -162,6 +167,99 @@ func (s *S3Compat) Get(ctx context.Context, bucket, key string, maxBytes int64) 
 		return nil, fmt.Errorf("get %s/%s: object exceeds %d bytes", bucket, key, maxBytes)
 	}
 	return body, nil
+}
+
+// rangeHeader renders an S3 Range header: bytes=first-last, or bytes=first-
+// when length < 0 reads to the end of the object.
+func rangeHeader(offset, length int64) string {
+	if length < 0 {
+		return "bytes=" + strconv.FormatInt(offset, 10) + "-"
+	}
+	return "bytes=" + strconv.FormatInt(offset, 10) + "-" + strconv.FormatInt(offset+length-1, 10)
+}
+
+// contentRangeTotal parses the total out of a Content-Range header
+// ("bytes first-last/total").
+func contentRangeTotal(header string) (int64, error) {
+	_, rest, ok := strings.Cut(header, "/")
+	if !ok {
+		return 0, fmt.Errorf("malformed Content-Range %q", header)
+	}
+	total, err := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+	if err != nil || total < 0 {
+		return 0, fmt.Errorf("malformed Content-Range %q", header)
+	}
+	return total, nil
+}
+
+// doRange issues one ranged GET on a presigned URL. Only the host header is
+// signed, so the Range header rides unsigned. A 206 with a parseable total
+// is required: a 200 answer would be the whole object, which ranged callers
+// must never mistake for their span.
+func (s *S3Compat) doRange(ctx context.Context, bucket, key string, offset, length int64) (*http.Response, int64, error) {
+	if bucket == "" || key == "" {
+		return nil, 0, fmt.Errorf("bucket and key are required")
+	}
+	if offset < 0 || length == 0 {
+		return nil, 0, fmt.Errorf("invalid range offset=%d length=%d", offset, length)
+	}
+	signed, err := s.presign("GET", bucket, key, 5*time.Minute)
+	if err != nil {
+		return nil, 0, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, signed, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Range", rangeHeader(offset, length))
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	if resp.StatusCode != http.StatusPartialContent {
+		io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
+		resp.Body.Close()
+		return nil, 0, fmt.Errorf("range %s/%s: unexpected status %d", bucket, key, resp.StatusCode)
+	}
+	total, err := contentRangeTotal(resp.Header.Get("Content-Range"))
+	if err != nil {
+		resp.Body.Close()
+		return nil, 0, fmt.Errorf("range %s/%s: %w", bucket, key, err)
+	}
+	return resp, total, nil
+}
+
+// GetRange fetches one bounded span plus the object total (for head/tag
+// planning without downloading the master).
+func (s *S3Compat) GetRange(ctx context.Context, bucket, key string, offset, length int64) ([]byte, int64, error) {
+	if length <= 0 {
+		return nil, 0, fmt.Errorf("invalid range offset=%d length=%d", offset, length)
+	}
+	resp, total, err := s.doRange(ctx, bucket, key, offset, length)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	// Length+1 probe: a longer-than-asked body means the span is not what
+	// was requested (defensive; S3 clamps to the object end instead).
+	body, err := io.ReadAll(io.LimitReader(resp.Body, length+1))
+	if err != nil {
+		return nil, 0, err
+	}
+	if int64(len(body)) > length {
+		return nil, 0, fmt.Errorf("range %s/%s: body exceeds requested %d bytes", bucket, key, length)
+	}
+	return body, total, nil
+}
+
+// OpenRange streams one span for io.Copy pipelines; the caller closes the
+// body. At most one copy buffer is live regardless of object size.
+func (s *S3Compat) OpenRange(ctx context.Context, bucket, key string, offset, length int64) (io.ReadCloser, int64, error) {
+	resp, total, err := s.doRange(ctx, bucket, key, offset, length)
+	if err != nil {
+		return nil, 0, err
+	}
+	return resp.Body, total, nil
 }
 
 // Delete removes an object; missing keys are treated as success.
