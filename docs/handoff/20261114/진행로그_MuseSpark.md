@@ -8,7 +8,7 @@
 | WI | 상태 | 커밋 | 변경파일 | 검증 | 캡처 | 남은 결함 |
 |----|------|------|---------|------|------|----------|
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
-| P1 | PASS | (아래) | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
+| P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 
 ## 항목 기록
 
