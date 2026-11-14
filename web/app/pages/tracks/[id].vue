@@ -323,6 +323,7 @@ import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+const localePath = useLocalePath();
 
 const route = useRoute();
 const router = useRouter();
@@ -534,7 +535,7 @@ async function confirmBlockPartner() {
 function openReport() {
   if (!auth.isAuthenticated) {
     toast.info('신고하려면 먼저 로그인하세요.');
-    void router.push({ name: 'login', query: { redirect: route.fullPath } });
+    void router.push(localePath({ name: 'login', query: { redirect: route.fullPath } }));
     return;
   }
   reportModalOpen.value = true;

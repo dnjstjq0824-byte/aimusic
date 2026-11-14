@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "AVIBE",
+    "tagline": "Beyond Your Music",
+    "nav": {
+      "mainMenu": "メインメニュー",
+      "home": "ホーム",
+      "explore": "楽曲を探す",
+      "exploreFilter": "楽曲検索 & フィルター",
+      "playlists": "プレイリスト",
+      "library": "マイライブラリ",
+      "rightsCenter": "権利保護センター",
+      "rightsCenterOsp": "権利保護センター (OSP紛争)",
+      "pricing": "料金プラン",
+      "studio": "スタジオ",
+      "partnerStudio": "パートナースタジオ",
+      "partnerStudioDashboard": "パートナースタジオ ダッシュボード",
+      "adminConsole": "管理コンソール",
+      "reviewBench": "審査ワークベンチ",
+      "uploadGatekeeper": "楽曲アップロード (Gatekeeper)",
+      "uploadWizard": "アップロードウィザード",
+      "userMenu": "アカウントメニュー",
+      "myPlaylistsLibrary": "マイプレイリスト & ライブラリ",
+      "legal": "利用規約・ポリシー",
+      "accountSecurity": "アカウントセキュリティ (2段階認証)",
+      "security2fa": "アカウントセキュリティ (2段階認証)",
+      "logout": "ログアウト",
+      "login": "ログイン",
+      "signup": "新規登録",
+      "mobileMenuOpen": "メニューを開く",
+      "mobileMenuClose": "メニューを閉じる",
+      "mobileMenu": "モバイルメニュー"
+    },
+    "footer": {
+      "tagline": "商用利用条件を確認したAI音楽を配信するストリーミングプラットフォームです。",
+      "aiBadge": "AI生成表示を提供",
+      "colStream": "ストリーミング & 探索",
+      "popular": "人気楽曲",
+      "byModel": "AIモデル別に探す (Suno, Udio, AIVA)",
+      "focus": "集中 & 作業用サウンド",
+      "chill": "チル & ローファイラウンジ",
+      "colPartner": "パートナー & クリエイター",
+      "gate": "4段階の商用ライセンス審査ゲート",
+      "proof": "有料AIサブスクリプションの証明登録",
+      "settlement": "パートナー精算ダッシュボード",
+      "disputes": "権利侵害の申告 & 反論センター",
+      "colLegal": "法的通知 & ガバナンス",
+      "tos": "利用規約",
+      "privacy": "プライバシーポリシー",
+      "copyright": "AI著作権・OSP免責ポリシー",
+      "contract": "パートナー配信・免責契約書",
+      "bizInfo": "事業者情報",
+      "ospContact": "著作権侵害の削除要請先",
+      "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "biz": {
+        "company": "相互",
+        "ceo": "代表者",
+        "address": "住所",
+        "contact": "連絡先",
+        "regNo": "事業者登録番号",
+        "mailOrderNo": "通信販売業届出番号",
+        "hosting": "ホスティング事業者"
+      }
+    },
+    "titles": {
+      "home": "ホーム",
+      "explore": "楽曲を探す",
+      "my-library": "マイライブラリ",
+      "playlists": "プレイリスト",
+      "login": "ログイン",
+      "reset-password": "パスワード再設定",
+      "pricing": "料金プラン",
+      "checkout": "お支払い",
+      "checkout-confirm": "お支払い完了",
+      "track-detail": "楽曲詳細",
+      "playlist-detail": "プレイリスト",
+      "dispute-center": "権利保護センター",
+      "account-security": "アカウントセキュリティ",
+      "legal-root": "規約",
+      "legal-terms": "規約",
+      "certificate-verify": "証明書の確認",
+      "partner-dashboard": "パートナーダッシュボード",
+      "partner-upload": "楽曲アップロード",
+      "partner-subscriptions": "AIサブスクリプションの証明",
+      "partner-stores": "店舗管理",
+      "partner-generations": "楽曲生成",
+      "admin-overview": "管理者概要",
+      "admin-reviews": "審査",
+      "admin-policies": "ライセンスポリシー",
+      "admin-disputes": "紛争対応",
+      "admin-curation": "キュレーション",
+      "admin-audit": "監査ログ",
+      "admin-users": "ユーザー管理",
+      "admin-stores": "店舗承認",
+      "admin-distribution": "配信",
+      "admin-settlements": "精算",
+      "store-player": "店舗プレイヤー",
+      "server-error": "エラー",
+      "not-found": "ページが見つかりません"
+    },
+    "locale": {
+      "label": "表示言語",
+      "beta": "Beta",
+      "ko": "한국어",
+      "en": "English",
+      "ja": "日本語",
+      "zh-cn": "简体中文",
+      "th": "ไทย"
+    },
+    "banner": {
+      "suggest": "このページを{language}で表示しますか?",
+      "view": "表示",
+      "dismiss": "閉じる"
+    },
+    "actions": {
+      "close": "閉じる",
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "retry": "再試行",
+      "save": "保存",
+      "delete": "削除",
+      "edit": "編集",
+      "back": "戻る",
+      "next": "次へ",
+      "search": "検索",
+      "clear": "クリア",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "loading": "読み込み中…",
+      "showMore": "さらに表示",
+      "more": "もっと見る"
+    },
+    "auth": {
+      "sessionExpired": "セッションが切れました。もう一度ログインしてください。",
+      "sessionExpiredTitle": "ログインが必要です",
+      "needAdmin": "管理者専用ページです。",
+      "needPartner": "パートナー専用ページです。パートナー承認後に利用できます。"
+    },
+    "brand": {
+      "logoAlt": "AVIBEロゴ"
+    },
+    "input": {
+      "showPassword": "パスワードを表示",
+      "hidePassword": "パスワードを隠す",
+      "show": "表示",
+      "hide": "隠す",
+      "openPicker": "カレンダーを開く"
+    },
+    "toast": {
+      "dismiss": "通知を閉じる"
+    },
+    "stepper": {
+      "label": "進行ステップ"
+    },
+    "seal": {
+      "short": "認証済み",
+      "full": "商用利用権の保有を認証"
+    }
+  }
+}

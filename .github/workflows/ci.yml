@@ -45,6 +45,9 @@ jobs:
       - name: unit test
         run: npm run test -- --run
         working-directory: web
+      - name: i18n gate (allowlist until P5)
+        run: node scripts/check-i18n.mjs
+        working-directory: web
       - name: build
         run: npm run build
         working-directory: web

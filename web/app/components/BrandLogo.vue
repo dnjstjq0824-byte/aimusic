@@ -1,6 +1,6 @@
 <template>
   <span class="inline-flex items-center gap-2">
-    <img :src="logoUrl" :width="size" :height="size" alt="AVIBE 로고" class="rounded-lg" />
+    <img :src="logoUrl" :width="size" :height="size" :alt="t('common.brand.logoAlt')" class="rounded-lg" />
     <span v-if="wordmark" class="flex flex-col leading-none">
       <slot>
         <span class="font-extrabold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>
@@ -24,6 +24,7 @@ export const SLOGAN = 'Beyond Your Music';
 <script setup lang="ts">
 import { computed } from 'vue';
 import logoUrl from '@/assets/img/logo.svg';
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<{ size?: number; wordmark?: boolean; tagline?: string }>(), {
   size: 28,

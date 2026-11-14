@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 -on-brand">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 selection:text-on-brand">
+    <LocaleBanner />
     <!-- Top Navigation -->
     <UiNavbar />
 
@@ -24,6 +25,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import LocaleBanner from '@/components/LocaleBanner.vue';
 import UiNavbar from '@/components/ui/UiNavbar.vue';
 import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';

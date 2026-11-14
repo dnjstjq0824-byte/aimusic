@@ -33,7 +33,7 @@
         role="tab"
         :aria-selected="activeCode === code.id"
         class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150"
-        :class="activeCode === code.id ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-2 text-text-primary hover:bg-surface-3 hover:text-white border border-surface-border'"
+        :class="activeCode === code.id ? 'bg-brand-500 text-on-brand shadow-glow-brand' : 'bg-surface-2 text-text-primary hover:bg-surface-3 hover:text-white border border-surface-border'"
         @click="selectCode(code.id)"
       >
         {{ code.name }}

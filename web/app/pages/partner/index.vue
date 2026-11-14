@@ -120,7 +120,7 @@
           <div class="min-w-0 flex-1">
             <div class="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
               <RouterLink
-                :to="{ name: 'track-detail', params: { id: t.id } }"
+                :to="localePath({ name: 'track-detail', params: { id: t.id } })"
                 class="block min-w-0 max-w-full font-bold text-white hover:text-brand-400 truncate"
               >
                 {{ t.title }}
@@ -141,7 +141,7 @@
             <UiBadge :variant="statusVariant(t.status)" size="sm">
               {{ statusKo(t.status) }}
             </UiBadge>
-            <RouterLink :to="{ name: 'track-detail', params: { id: t.id } }">
+            <RouterLink :to="localePath({ name: 'track-detail', params: { id: t.id } })">
               <UiButton variant="secondary" size="xs">상세보기</UiButton>
             </RouterLink>
           </div>
@@ -152,6 +152,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, onMounted, ref } from 'vue';
 import { partnerApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
@@ -164,6 +165,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
+const localePath = useLocalePath();
 
 const tracks = ref<Track[]>([]);
 const subs = ref<PartnerAISubscription[]>([]);

@@ -16,7 +16,7 @@
       >
         <div
           class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-caption font-bold"
-          :class="store.step === st.num ? 'bg-brand-500 -on-brand' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-text-secondary'"
+          :class="store.step === st.num ? 'bg-brand-500 text-on-brand' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-text-secondary'"
           :aria-label="store.step > st.num ? `${st.title} 완료` : `${st.title}`"
         >
           <svg v-if="store.step > st.num" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -332,6 +332,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import {

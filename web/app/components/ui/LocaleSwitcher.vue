@@ -3,10 +3,10 @@
     <button
       ref="buttonRef"
       type="button"
-      class="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-surface-border bg-surface-1 px-2.5 text-text-secondary transition-colors hover:text-text-primary"
+      class="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-1 px-2.5 text-text-secondary transition-colors hover:text-text-primary"
       aria-haspopup="listbox"
       :aria-expanded="open"
-      aria-label="표시 언어"
+      :aria-label="t('common.locale.label')"
       @click="open = !open"
     >
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -18,20 +18,20 @@
     <ul
       v-if="open"
       role="listbox"
-      aria-label="언어 선택"
+      :aria-label="t('common.locale.label')"
       class="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-surface-border bg-surface-2 py-1.5 shadow-2xl"
     >
-      <li v-for="lang in LANGS" :key="lang.code" role="option" :aria-selected="lang.code === modelValue">
+      <li v-for="lang in LANGS" :key="lang.code" role="option" :aria-selected="lang.code === locale">
         <button
           type="button"
           class="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-surface-3"
-          :class="lang.code === modelValue ? 'font-bold text-text-primary' : 'text-text-secondary'"
+          :class="lang.code === locale ? 'font-bold text-text-primary' : 'text-text-secondary'"
           @click="select(lang.code)"
         >
           <span>{{ lang.name }}</span>
           <span class="flex items-center gap-1.5">
-            <span v-if="lang.beta" class="rounded bg-surface-3 px-1.5 py-0.5 text-caption text-text-muted">Beta</span>
-            <span v-if="lang.code === modelValue" class="text-brand-400" aria-hidden="true">✓</span>
+            <span v-if="lang.beta" class="rounded bg-surface-3 px-1.5 py-0.5 text-caption text-text-muted">{{ t('common.locale.beta') }}</span>
+            <span v-if="lang.code === locale" class="text-brand-400" aria-hidden="true">✓</span>
           </span>
         </button>
       </li>
@@ -41,26 +41,41 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { writeStoredLocale } from '@/utils/locale';
 
-// Locale switcher (v2 §4.5): globe + self-name, no flags. Wired to @nuxtjs/i18n in WI-R2.
+// Locale switcher (v2 §4.5): globe + self-name, no flags. ja/zh-cn/th carry Beta (G-L).
 const LANGS = [
   { code: 'ko', name: '한국어', beta: false },
   { code: 'en', name: 'English', beta: false },
   { code: 'ja', name: '日本語', beta: true },
-  { code: 'zh-CN', name: '简体中文', beta: true },
+  { code: 'zh-cn', name: '简体中文', beta: true },
   { code: 'th', name: 'ไทย', beta: true },
 ] as const;
 
-const props = withDefaults(defineProps<{ modelValue?: string }>(), { modelValue: 'ko' });
-const emit = defineEmits<{ (e: 'update:modelValue', code: string): void }>();
+const { t, locale, setLocale } = useI18n();
+const switchLocalePath = useSwitchLocalePath();
+const route = useRoute();
+const router = useRouter();
 
 const open = ref(false);
 const buttonRef = ref<HTMLElement | null>(null);
-const currentName = computed(() => LANGS.find((l) => l.code === props.modelValue)?.name ?? '한국어');
+const currentName = computed(() => LANGS.find((l) => l.code === locale.value)?.name ?? '한국어');
 
-function select(code: string): void {
+type LocaleCode = (typeof LANGS)[number]['code'];
+
+async function select(code: LocaleCode): Promise<void> {
   open.value = false;
-  emit('update:modelValue', code);
+  if (code === locale.value) return;
+  writeStoredLocale(code);
+  // TODO(A2): persist to users.locale when logged in.
+  const first = route.path.split('/')[1];
+  const prefixed = ['en', 'ja', 'zh-cn', 'th'].includes(first ?? '');
+  if (prefixed) {
+    await router.push(switchLocalePath(code));
+  } else {
+    await setLocale(code);
+  }
 }
 
 function onPointerDown(e: Event): void {

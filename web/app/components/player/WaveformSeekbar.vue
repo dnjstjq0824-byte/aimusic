@@ -6,7 +6,7 @@
     :aria-valuemin="0"
     :aria-valuemax="Math.round(durationMs)"
     :aria-valuetext="`${fmtPos(positionMs)} / ${fmtDur(durationMs)}`"
-    aria-label="재생 위치"
+    :aria-label="t('player.seekLabel')"
     tabindex="0"
     @click="onClick"
     @keydown.left.prevent="nudge(-5000)"
@@ -31,6 +31,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{ positionMs: number; durationMs: number; seed?: string }>();
 const emit = defineEmits<{ seek: [ms: number] }>();
+const { t } = useI18n();
 
 // Deterministic pseudo-waveform derived from the track id seed.
 const bars = computed<number[]>(() => {
@@ -68,11 +69,11 @@ function nudge(delta: number): void {
 
 function fmtPos(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
+  return t('player.timeMin', { m: Math.floor(s / 60), s: String(s % 60).padStart(2, '0') });
 }
 
 function fmtDur(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
-  return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, '0')}초`;
+  return t('player.timeMin', { m: Math.floor(s / 60), s: String(s % 60).padStart(2, '0') });
 }
 </script>

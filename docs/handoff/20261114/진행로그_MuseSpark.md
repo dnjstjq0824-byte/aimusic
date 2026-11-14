@@ -10,6 +10,7 @@
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
 | P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 | R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
+| R2 | IN PROGRESS (90%) | (WIP 아래) | 2분할 예정 | tsc·vitest 52·checker PASS·스팟 EN/JA/TH/ZH | r2-*-1440/390+switcher | 전체 하네스·prod 빌드 미완 |
 
 ## 항목 기록
 
@@ -48,3 +49,14 @@
 - 검증: neutral 0·tiny 0(repo grep), 12px 미만 노드 8411→0(하네스), 대비 muted 6.23/5.61·ink 10.72(실측), 외부 글꼴 요청 0·font loaded true·에러 0, ja/zh/th computed 스택 전환 확인, vitest 47/47·tsc 0·하네스 9동일(기존 404)·prod 빌드(219 폰트 포함).
 - 교훈: PS Get/Set-Content 재기록은 한글 손상 → 대량 교체는 Node utf8 스크립트로만. (1회 손상 후 git 복구·Node 재실행으로 수습, 무결성 확인済)
 - 잔여: 장식용 raw 팔레트(gradient용 blue/teal/amber 등) 일부 잔존 — 수용 기준(neutral·임의크기)은 만족. LocaleSwitcher 실동작은 R2에서 연결.
+- 후속 발견(WI-R2에서 수습): R1 스윕이 `text-[#04121a]` 19건을 `-on-brand`로 깨뜨림(PS 인라인 정규식 인용 간섭) + `hover:`/`selection:` 접두 4건 손실. R2a에 포함해 복구, prefix 복원 확인済. 교훈 강화: 인라인 node -e/PS 정규식 금지, 파일 스크립트만.
+
+### WI-R2 (P1b) — i18n 기반 — IN PROGRESS
+- 모듈 @nuxtjs/i18n 10.6.0 exact(+@nuxt/kit 호이스팅). 전략 prefix_except_default(ko), langDir ../i18n/locales, files 배열 지연 로딩, vueI18n은 파일 방식(i18n.config.ts, 인라인 불가).
+- 로케일 5+1: ko/en/ja/zh-cn/th + en-XA(dev 의사로케일, 생성 스크립트). 네임스페이스 17종 골격, common/errors/player 완성(ko 원문·en 자필·ja/zh/th machine-draft).
+- 공개 페이지만 접두(27페이지 defineI18nRoute(false)), 미들웨어 ___xx 접미 처리 + i18n 타이틀(반응형) + 가드 토스트 + 후행슬래시 301(로케일 루트 제외).
+- 이름 기반 내비 14파일 localePath 전환(v10은 ko 포함 전 접미사), route.name 비교는 base명 computed.
+- 감지 플러그인(공개면 스킵)+제안 배너(세션 1회)+스위처 실동작(Beta 뱃지)+useFormat(+테스트)+useApiError(+테스트)+check-i18n(허용목록)+CI 잡.
+- 검증 중간: tsc 0·vitest 52/52·check-i18n PASS·스팟 4언어 내비/플레이어/타이틀/배너/전환 전부 PASS. 전체 하네스·prod 빌드는 미완.
+- WIP 커밋 (아래): 구현 완료, 검증 2건 남음. 재개 시 순서: ①dev 기동(npm run dev, 15173) ②하네스 setup+run → evidence/r2 (15분, historic: 캐시 문제 시 .nuxt 삭제 후 재시작) ③npm run build ④결과 기입 후 R2a/R2b 분할 커밋 정리(WIP 유지 or 분할) ⑤R3 착수.
+- 주의: 하네스 실행 중 .nuxt 캐시가 오래되면 오탐(151 bad 사례) — 하네스 전 dev 재시작 권장. B-09 토큰 회전 때문에 하네스는 setup 직후 바로 실행.

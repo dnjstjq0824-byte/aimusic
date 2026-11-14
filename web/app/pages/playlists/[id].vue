@@ -95,7 +95,7 @@
           >
             <!-- Track index / play -->
             <button
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-text-primary hover:bg-brand-500 -on-brand transition-colors"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-text-primary hover:bg-brand-500 hover:text-on-brand transition-colors"
               :disabled="t.status !== 'READY'"
               @click="playTrack(t)"
             >
@@ -106,7 +106,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <RouterLink
-                  :to="{ name: 'track-detail', params: { id: t.id } }"
+                  :to="localePath({ name: 'track-detail', params: { id: t.id } })"
                   class="font-bold text-white hover:text-brand-400 text-xs sm:text-sm truncate"
                 >
                   {{ t.title }}
@@ -204,6 +204,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
+const localePath = useLocalePath();
 
 const route = useRoute();
 const player = usePlayerStore();

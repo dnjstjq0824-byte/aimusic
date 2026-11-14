@@ -24,6 +24,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import UiButton from '@/components/ui/UiButton.vue';

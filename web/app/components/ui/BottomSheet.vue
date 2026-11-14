@@ -11,7 +11,7 @@
           <button
             type="button"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary"
-            aria-label="닫기"
+            :aria-label="$t('common.actions.close')"
             @click="close()"
           >
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">

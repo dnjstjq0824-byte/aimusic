@@ -50,10 +50,10 @@
     <section class="space-y-3">
       <h2 class="font-display text-h2 font-bold text-text-primary">Verified Seal</h2>
       <div class="flex flex-wrap items-center gap-6">
-        <VerifiedSeal :size="16" cert-number="AVB-DEMO" />
-        <VerifiedSeal :size="20" cert-number="AVB-DEMO" />
-        <VerifiedSeal :size="28" cert-number="AVB-DEMO" />
-        <VerifiedSeal :size="20" :show-label="false" />
+        <VerifiedSeal :size="16" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
+        <VerifiedSeal :size="20" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
+        <VerifiedSeal :size="28" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
+        <VerifiedSeal :size="20" :show-label="false" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
       </div>
     </section>
 
@@ -84,7 +84,7 @@
         <UiMenu :items="menuItems" @select="menuPick = $event" />
         <span class="text-caption text-text-muted">선택: {{ menuPick === null ? '없음' : menuItems[menuPick]?.label }}</span>
         <UiButton variant="secondary" @click="sheetOpen = true">시트 열기</UiButton>
-        <LocaleSwitcher v-model="locale" />
+        <LocaleSwitcher />
         <span class="text-caption text-text-muted">locale: {{ locale }}</span>
       </div>
       <BottomSheet v-model="sheetOpen" title="바텀시트 (모바일) / 모달 (데스크톱)">
@@ -99,6 +99,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { ref } from 'vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiInput from '@/components/ui/UiInput.vue';
@@ -119,7 +120,7 @@ definePageMeta({ layout: 'user' });
 const demoText = ref('');
 const step = ref(1);
 const sheetOpen = ref(false);
-const locale = ref('ko');
+const { locale } = useI18n();
 const menuPick = ref<number | null>(null);
 const menuItems = [
   { label: '다음에 재생' },

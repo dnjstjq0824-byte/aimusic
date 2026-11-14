@@ -252,6 +252,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { safeRedirect } from '@/utils/redirect';

@@ -18,7 +18,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <RouterLink
-            :to="{ name: 'track-detail', params: { id: track.id } }"
+            :to="localePath({ name: 'track-detail', params: { id: track.id } })"
             class="block truncate text-sm font-bold text-white transition-colors hover:text-brand-400"
           >
             {{ track.title }}
@@ -66,6 +66,7 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
 import type { Track } from '@/api/types';
+const localePath = useLocalePath();
 
 defineProps<{ track: Track }>();
 

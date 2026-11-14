@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import UiButton from '@/components/ui/UiButton.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 

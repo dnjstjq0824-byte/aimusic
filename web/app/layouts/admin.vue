@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 -on-brand">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 selection:text-on-brand">
     <!-- Admin Header -->
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -12,70 +12,70 @@
             <RouterLink
               to="/admin"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-overview' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-overview' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               개요
             </RouterLink>
             <RouterLink
               to="/admin/reviews"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-reviews' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-reviews' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               Gate 4 검수 워크벤치
             </RouterLink>
             <RouterLink
               to="/admin/policies"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-policies' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-policies' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               AI 정책 매트릭스
             </RouterLink>
             <RouterLink
               to="/admin/disputes"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-disputes' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-disputes' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               OSP 분쟁 &amp; 임시조치
             </RouterLink>
             <RouterLink
               to="/admin/curation"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-curation' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-curation' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               큐레이션 &amp; 정산배치
             </RouterLink>
             <RouterLink
               to="/admin/audit"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-audit' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-audit' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               감사 추적
             </RouterLink>
             <RouterLink
               to="/admin/users"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-users' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-users' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               회원 관리
             </RouterLink>
             <RouterLink
               to="/admin/stores"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-stores' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-stores' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               매장 승인
             </RouterLink>
             <RouterLink
               to="/admin/distribution"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-distribution' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-distribution' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               DSP 키트
             </RouterLink>
             <RouterLink
               to="/admin/settlements"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-              :class="route.name === 'admin-settlements' ? 'bg-surface-2 text-white font-bold' : ''"
+              :class="routeName === 'admin-settlements' ? 'bg-surface-2 text-white font-bold' : ''"
             >
               정산 관리
             </RouterLink>
@@ -225,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import UiFooter from '@/components/ui/UiFooter.vue';
@@ -234,6 +234,7 @@ import BrandLogo from '@/components/BrandLogo.vue';
 
 const auth = useAuthStore();
 const route = useRoute();
+const routeName = computed(() => String(route.name ?? '').replace(/___.+$/, ''));
 const mobileNavOpen = ref(false);
 watch(() => route.fullPath, () => (mobileNavOpen.value = false));
 </script>

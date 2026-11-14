@@ -6,64 +6,64 @@
         <div class="col-span-2 space-y-3 md:col-span-1">
           <BrandLogo :size="32" />
           <p class="text-xs leading-relaxed text-text-secondary">
-            상업 이용 조건 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.
+            {{ t('common.footer.tagline') }}
           </p>
-          <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-1 text-caption text-emerald-300">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            AI 생성 표시 제공
+          <div class="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-caption text-success">
+            <span class="h-1.5 w-1.5 rounded-full bg-success animate-pulse"></span>
+            {{ t('common.footer.aiBadge') }}
           </div>
         </div>
 
         <!-- Navigation Links -->
         <div>
-          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">스트리밍 &amp; 탐색</h4>
+          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">{{ t('common.footer.colStream') }}</h4>
           <ul class="space-y-2 text-xs">
-            <li><RouterLink to="/explore?sort=popular" class="hover:text-white transition-colors">인기 음원</RouterLink></li>
-            <li><RouterLink to="/explore" class="hover:text-white transition-colors">AI 모델별 탐색 (Suno, Udio, AIVA)</RouterLink></li>
-            <li><RouterLink to="/explore?mood=Focus" class="hover:text-white transition-colors">집중 &amp; 작업용 사운드</RouterLink></li>
-            <li><RouterLink to="/explore?mood=Chill" class="hover:text-white transition-colors">칠 &amp; 로우파이 라운지</RouterLink></li>
+            <li><RouterLink to="/explore?sort=popular" class="hover:text-white transition-colors">{{ t('common.footer.popular') }}</RouterLink></li>
+            <li><RouterLink to="/explore" class="hover:text-white transition-colors">{{ t('common.footer.byModel') }}</RouterLink></li>
+            <li><RouterLink to="/explore?mood=Focus" class="hover:text-white transition-colors">{{ t('common.footer.focus') }}</RouterLink></li>
+            <li><RouterLink to="/explore?mood=Chill" class="hover:text-white transition-colors">{{ t('common.footer.chill') }}</RouterLink></li>
           </ul>
         </div>
 
         <!-- Partner & Studio -->
         <div>
-          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">파트너 &amp; 크리에이터</h4>
+          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">{{ t('common.footer.colPartner') }}</h4>
           <ul class="space-y-2 text-xs">
-            <li><RouterLink to="/partner/upload" class="hover:text-white transition-colors">4단계 상업 라이선스 업로드 게이트</RouterLink></li>
-            <li><RouterLink to="/partner/subscriptions" class="hover:text-white transition-colors">유료 AI 구독 증빙 등록</RouterLink></li>
-            <li><RouterLink to="/partner" class="hover:text-white transition-colors">파트너 정산 대시보드</RouterLink></li>
-            <li><RouterLink to="/disputes" class="hover:text-white transition-colors">권리침해 신고 &amp; 소명 센터</RouterLink></li>
+            <li><RouterLink to="/partner/upload" class="hover:text-white transition-colors">{{ t('common.footer.gate') }}</RouterLink></li>
+            <li><RouterLink to="/partner/subscriptions" class="hover:text-white transition-colors">{{ t('common.footer.proof') }}</RouterLink></li>
+            <li><RouterLink to="/partner" class="hover:text-white transition-colors">{{ t('common.footer.settlement') }}</RouterLink></li>
+            <li><RouterLink to="/disputes" class="hover:text-white transition-colors">{{ t('common.footer.disputes') }}</RouterLink></li>
           </ul>
         </div>
 
         <!-- Legal & Compliance -->
         <div>
-          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">법적 고지 &amp; 거버넌스</h4>
+          <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">{{ t('common.footer.colLegal') }}</h4>
           <ul class="space-y-2 text-xs">
-            <li><RouterLink to="/legal/TOS" class="hover:text-white transition-colors">서비스 이용약관</RouterLink></li>
-            <li><RouterLink to="/legal/PRIVACY" class="hover:text-white transition-colors font-medium text-text-primary">개인정보처리방침</RouterLink></li>
-            <li><RouterLink to="/legal/COPYRIGHT_POLICY" class="hover:text-white transition-colors">AI 저작권 및 OSP 면책 정책</RouterLink></li>
-            <li><RouterLink to="/legal/PARTNER_CONTRACT" class="hover:text-white transition-colors">파트너 음원유통·면책 계약서</RouterLink></li>
+            <li><RouterLink to="/legal/TOS" class="hover:text-white transition-colors">{{ t('common.footer.tos') }}</RouterLink></li>
+            <li><RouterLink to="/legal/PRIVACY" class="hover:text-white transition-colors font-medium text-text-primary">{{ t('common.footer.privacy') }}</RouterLink></li>
+            <li><RouterLink to="/legal/COPYRIGHT_POLICY" class="hover:text-white transition-colors">{{ t('common.footer.copyright') }}</RouterLink></li>
+            <li><RouterLink to="/legal/PARTNER_CONTRACT" class="hover:text-white transition-colors">{{ t('common.footer.contract') }}</RouterLink></li>
           </ul>
         </div>
       </div>
 
       <!-- Business identity block (C5): values come from VITE_BUSINESS_* env, hidden until registered -->
       <div v-if="businessLines.length > 0" class="mt-8 border-t border-surface-border pt-6 text-caption leading-relaxed text-text-muted">
-        <div class="font-bold text-text-primary mb-1">사업자 정보</div>
+        <div class="font-bold text-text-primary mb-1">{{ t('common.footer.bizInfo') }}</div>
         <p v-for="(line, i) in businessLines" :key="i">{{ line }}</p>
         <p v-if="ospContact">
-          저작권 침해 중단 요구(수령인): <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
+          {{ t('common.footer.ospContact') }}: <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
         </p>
       </div>
       <div v-else-if="ospContact" class="mt-8 border-t border-surface-border pt-6 text-caption text-text-muted">
-        저작권 침해 중단 요구(수령인): <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
+        {{ t('common.footer.ospContact') }}: <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
       </div>
 
       <!-- Bottom Compliance strip -->
       <div class="mt-10 border-t border-surface-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-caption text-text-muted">
         <div>
-          © 2026 AVIBE — Beyond Your Music. All rights reserved.
+          {{ t('common.footer.rights') }}
         </div>
         <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <span>암호화: AES-256-GCM</span>
@@ -78,6 +78,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import BrandLogo from '@/components/BrandLogo.vue';
+const { t } = useI18n();
 
 const env = import.meta.env as Record<string, string | undefined>;
 const ospContact = (env.VITE_OSP_CONTACT_EMAIL ?? '').trim();
@@ -94,12 +95,12 @@ const businessLines = computed(() => {
   const bizNo = (env.VITE_BUSINESS_REG_NO ?? '').trim();
   const mailOrderNo = (env.VITE_BUSINESS_MAILORDER_NO ?? '').trim();
   const hosting = (env.VITE_BUSINESS_HOSTING ?? '').trim();
-  if (name) lines.push(`상호: ${name}${ceo ? ` · 대표자: ${ceo}` : ''}`);
-  if (addr) lines.push(`주소: ${addr}`);
-  if (tel || email) lines.push(`연락처: ${[tel, email].filter(Boolean).join(' · ')}`);
-  if (bizNo) lines.push(`사업자등록번호: ${bizNo}`);
-  if (mailOrderNo) lines.push(`통신판매업 신고번호: ${mailOrderNo}`);
-  if (hosting) lines.push(`호스팅 제공자: ${hosting}`);
+  if (name) lines.push(`${t('common.footer.biz.company')}: ${name}${ceo ? ` · ${t('common.footer.biz.ceo')}: ${ceo}` : ''}`);
+  if (addr) lines.push(`${t('common.footer.biz.address')}: ${addr}`);
+  if (tel || email) lines.push(`${t('common.footer.biz.contact')}: ${[tel, email].filter(Boolean).join(' · ')}`);
+  if (bizNo) lines.push(`${t('common.footer.biz.regNo')}: ${bizNo}`);
+  if (mailOrderNo) lines.push(`${t('common.footer.biz.mailOrderNo')}: ${mailOrderNo}`);
+  if (hosting) lines.push(`${t('common.footer.biz.hosting')}: ${hosting}`);
   return lines;
 });
 </script>

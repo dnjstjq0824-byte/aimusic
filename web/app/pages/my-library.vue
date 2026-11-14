@@ -80,7 +80,7 @@
             <UiCoverArt :seed="p.id" :title="p.title" size="lg" rounded="lg" />
             <div class="min-w-0 flex-1">
               <RouterLink
-                :to="{ name: 'playlist-detail', params: { id: p.id } }"
+                :to="localePath({ name: 'playlist-detail', params: { id: p.id } })"
                 class="font-bold text-white hover:text-brand-400 text-sm block truncate"
               >
                 {{ p.title }}
@@ -95,7 +95,7 @@
           </div>
           <div class="mt-4 flex items-center justify-between border-t border-surface-border pt-3">
             <RouterLink
-              :to="{ name: 'playlist-detail', params: { id: p.id } }"
+              :to="localePath({ name: 'playlist-detail', params: { id: p.id } })"
               class="text-xs font-semibold text-brand-400 hover:underline"
             >
               상세보기 &amp; 편집
@@ -245,6 +245,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlaylistStore } from '@/stores/playlistStore';
@@ -264,6 +265,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import type { BillingSubscription, CancelMode, Playlist, RefundQuote } from '@/api/types';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
+const localePath = useLocalePath();
 
 const playlists = usePlaylistStore();
 const auth = useAuthStore();

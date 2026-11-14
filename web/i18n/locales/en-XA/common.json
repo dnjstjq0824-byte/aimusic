@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "⟦ÀVÌBÈ～～⟧",
+    "tagline": "⟦Bèyònd Yòùr Mùsìc～～～～～～～⟧",
+    "nav": {
+      "mainMenu": "⟦Màìn mènù～～～～⟧",
+      "home": "⟦Hòmè～～⟧",
+      "explore": "⟦Èxplòrè～～～⟧",
+      "exploreFilter": "⟦Èxplòrè & fìltèrs～～～～～～～⟧",
+      "playlists": "⟦Plàylìsts～～～～⟧",
+      "library": "⟦My lìbràry～～～～⟧",
+      "rightsCenter": "⟦Rìghts Cèntèr～～～～～～⟧",
+      "rightsCenterOsp": "⟦Rìghts Cèntèr (ÒSP dìspùtès)～～～～～～～～～～～～⟧",
+      "pricing": "⟦Prìcìng～～～⟧",
+      "studio": "⟦Stùdìò～～～⟧",
+      "partnerStudio": "⟦Pàrtnèr Stùdìò～～～～～～⟧",
+      "partnerStudioDashboard": "⟦Pàrtnèr Stùdìò dàshbòàrd～～～～～～～～～～⟧",
+      "adminConsole": "⟦Àdmìn cònsòlè～～～～～～⟧",
+      "reviewBench": "⟦Mòdèràtìòn wòrkbènch～～～～～～～～⟧",
+      "uploadGatekeeper": "⟦Ùplòàd mùsìc (Gàtèkèèpèr)～～～～～～～～～～⟧",
+      "uploadWizard": "⟦Ùplòàd wìzàrd～～～～～～⟧",
+      "userMenu": "⟦Àccòùnt mènù～～～～～⟧",
+      "myPlaylistsLibrary": "⟦My plàylìsts & lìbràry～～～～～～～～～⟧",
+      "legal": "⟦Tèrms & pòlìcìès～～～～～～～⟧",
+      "accountSecurity": "⟦Àccòùnt sècùrìty (2-stèp vèrìfìcàtìòn)～～～～～～～～～～～～～～～～⟧",
+      "security2fa": "⟦Àccòùnt sècùrìty (2-stèp vèrìfìcàtìòn)～～～～～～～～～～～～～～～～⟧",
+      "logout": "⟦Lòg òùt～～～⟧",
+      "login": "⟦Lòg ìn～～～⟧",
+      "signup": "⟦Sìgn ùp～～～⟧",
+      "mobileMenuOpen": "⟦Òpèn mènù～～～～⟧",
+      "mobileMenuClose": "⟦Clòsè mènù～～～～⟧",
+      "mobileMenu": "⟦Mòbìlè mènù～～～～～⟧"
+    },
+    "footer": {
+      "tagline": "⟦Strèàmìng lìcènsèd ÀÌ mùsìc clèàrèd fòr còmmèrcìàl ùsè.～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "aiBadge": "⟦ÀÌ-gènèràtèd làbèls pròvìdèd～～～～～～～～～～～～⟧",
+      "colStream": "⟦Strèàmìng & dìscòvèry～～～～～～～～～⟧",
+      "popular": "⟦Pòpùlàr tràcks～～～～～～⟧",
+      "byModel": "⟦Bròwsè by ÀÌ mòdèl (Sùnò, Ùdìò, ÀÌVÀ)～～～～～～～～～～～～～～～⟧",
+      "focus": "⟦Fòcùs & wòrk sòùnds～～～～～～～～⟧",
+      "chill": "⟦Chìll & lò-fì lòùngè～～～～～～～～⟧",
+      "colPartner": "⟦Pàrtnèrs & crèàtòrs～～～～～～～～⟧",
+      "gate": "⟦4-stèp còmmèrcìàl lìcènsè ùplòàd gàtè～～～～～～～～～～～～～～～⟧",
+      "proof": "⟦Pàìd ÀÌ sùbscrìptìòn pròòf～～～～～～～～～～～⟧",
+      "settlement": "⟦Pàrtnèr sèttlèmènt dàshbòàrd～～～～～～～～～～～～⟧",
+      "disputes": "⟦Tàkèdòwn rèpòrts & còùntèr-nòtìcès～～～～～～～～～～～～～～⟧",
+      "colLegal": "⟦Lègàl & gòvèrnàncè～～～～～～～～⟧",
+      "tos": "⟦Tèrms òf Sèrvìcè～～～～～～～⟧",
+      "privacy": "⟦Prìvàcy Pòlìcy～～～～～～⟧",
+      "copyright": "⟦ÀÌ còpyrìght & ÒSP sàfè-hàrbòr pòlìcy～～～～～～～～～～～～～～～⟧",
+      "contract": "⟦Pàrtnèr dìstrìbùtìòn & lìàbìlìty àgrèèmènt～～～～～～～～～～～～～～～～～⟧",
+      "bizInfo": "⟦Bùsìnèss ìnfòrmàtìòn～～～～～～～～⟧",
+      "ospContact": "⟦Còpyrìght tàkèdòwn rècìpìènt～～～～～～～～～～～～⟧",
+      "rights": "⟦© 2026 ÀVÌBÈ — Bèyònd Yòùr Mùsìc. Àll rìghts rèsèrvèd.～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "biz": {
+        "company": "⟦Còmpàny～～～⟧",
+        "ceo": "⟦Rèprèsèntàtìvè～～～～～～⟧",
+        "address": "⟦Àddrèss～～～⟧",
+        "contact": "⟦Còntàct～～～⟧",
+        "regNo": "⟦Bùsìnèss règìstràtìòn nò.～～～～～～～～～～⟧",
+        "mailOrderNo": "⟦Màìl-òrdèr bùsìnèss nò.～～～～～～～～～～⟧",
+        "hosting": "⟦Hòstìng pròvìdèr～～～～～～～⟧"
+      }
+    },
+    "titles": {
+      "home": "⟦Hòmè～～⟧",
+      "explore": "⟦Èxplòrè mùsìc～～～～～～⟧",
+      "my-library": "⟦My lìbràry～～～～⟧",
+      "playlists": "⟦Plàylìsts～～～～⟧",
+      "login": "⟦Lòg ìn～～～⟧",
+      "reset-password": "⟦Rèsèt pàsswòrd～～～～～～⟧",
+      "pricing": "⟦Prìcìng～～～⟧",
+      "checkout": "⟦Chèckòùt～～～～⟧",
+      "checkout-confirm": "⟦Pàymènt còmplètè～～～～～～～⟧",
+      "track-detail": "⟦Tràck～～⟧",
+      "playlist-detail": "⟦Plàylìst～～～～⟧",
+      "dispute-center": "⟦Rìghts Cèntèr～～～～～～⟧",
+      "account-security": "⟦Àccòùnt sècùrìty～～～～～～～⟧",
+      "legal-root": "⟦Tèrms～～⟧",
+      "legal-terms": "⟦Tèrms～～⟧",
+      "certificate-verify": "⟦Vèrìfy cèrtìfìcàtè～～～～～～～～⟧",
+      "partner-dashboard": "⟦Pàrtnèr dàshbòàrd～～～～～～～⟧",
+      "partner-upload": "⟦Ùplòàd mùsìc～～～～～⟧",
+      "partner-subscriptions": "⟦ÀÌ sùbscrìptìòn pròòf～～～～～～～～～⟧",
+      "partner-stores": "⟦Stòrès～～～⟧",
+      "partner-generations": "⟦Gènèràtè mùsìc～～～～～～⟧",
+      "admin-overview": "⟦Àdmìn òvèrvìèw～～～～～～⟧",
+      "admin-reviews": "⟦Rèvìèws～～～⟧",
+      "admin-policies": "⟦Lìcènsè pòlìcìès～～～～～～～⟧",
+      "admin-disputes": "⟦Dìspùtès～～～～⟧",
+      "admin-curation": "⟦Cùràtìòn～～～～⟧",
+      "admin-audit": "⟦Àùdìt lòg～～～～⟧",
+      "admin-users": "⟦Ùsèrs～～⟧",
+      "admin-stores": "⟦Stòrè àppròvàls～～～～～～⟧",
+      "admin-distribution": "⟦Dìstrìbùtìòn～～～～～⟧",
+      "admin-settlements": "⟦Sèttlèmènts～～～～～⟧",
+      "store-player": "⟦Stòrè plàyèr～～～～～⟧",
+      "server-error": "⟦Èrròr～～⟧",
+      "not-found": "⟦Pàgè nòt fòùnd～～～～～～⟧"
+    },
+    "locale": {
+      "label": "⟦Dìsplày làngùàgè～～～～～～～⟧",
+      "beta": "⟦Bètà～～⟧",
+      "ko": "⟦한국어～～⟧",
+      "en": "⟦Ènglìsh～～～⟧",
+      "ja": "⟦日本語～～⟧",
+      "zh-cn": "⟦简体中文～～⟧",
+      "th": "⟦ไทย～～⟧"
+    },
+    "banner": {
+      "suggest": "⟦Vìèw thìs pàgè ìn {language}?～～～～～～～～～～～～⟧",
+      "view": "⟦Vìèw～～⟧",
+      "dismiss": "⟦Dìsmìss～～～⟧"
+    },
+    "actions": {
+      "close": "⟦Clòsè～～⟧",
+      "cancel": "⟦Càncèl～～～⟧",
+      "confirm": "⟦Cònfìrm～～～⟧",
+      "retry": "⟦Rètry～～⟧",
+      "save": "⟦Sàvè～～⟧",
+      "delete": "⟦Dèlètè～～～⟧",
+      "edit": "⟦Èdìt～～⟧",
+      "back": "⟦Bàck～～⟧",
+      "next": "⟦Nèxt～～⟧",
+      "search": "⟦Sèàrch～～～⟧",
+      "clear": "⟦Clèàr～～⟧",
+      "copy": "⟦Còpy～～⟧",
+      "copied": "⟦Còpìèd～～～⟧",
+      "loading": "⟦Lòàdìng…～～～～⟧",
+      "showMore": "⟦Shòw mòrè～～～～⟧",
+      "more": "⟦Mòrè～～⟧"
+    },
+    "auth": {
+      "sessionExpired": "⟦Yòùr sèssìòn èxpìrèd. Plèàsè lòg ìn àgàìn.～～～～～～～～～～～～～～～～～⟧",
+      "sessionExpiredTitle": "⟦Lògìn rèqùìrèd～～～～～～⟧",
+      "needAdmin": "⟦Thìs pàgè ìs fòr àdmìns ònly.～～～～～～～～～～～～⟧",
+      "needPartner": "⟦Thìs pàgè ìs fòr pàrtnèrs ònly. Ìt ùnlòcks àftèr pàrtnèr àppròvàl.～～～～～～～～～～～～～～～～～～～～～～～～⟧"
+    },
+    "brand": {
+      "logoAlt": "⟦ÀVÌBÈ lògò～～～～⟧"
+    },
+    "input": {
+      "showPassword": "⟦Shòw pàsswòrd～～～～～～⟧",
+      "hidePassword": "⟦Hìdè pàsswòrd～～～～～～⟧",
+      "show": "⟦Shòw～～⟧",
+      "hide": "⟦Hìdè～～⟧",
+      "openPicker": "⟦Òpèn dàtè pìckèr～～～～～～～⟧"
+    },
+    "toast": {
+      "dismiss": "⟦Dìsmìss nòtìfìcàtìòn～～～～～～～～⟧"
+    },
+    "stepper": {
+      "label": "⟦Prògrèss stèps～～～～～～⟧"
+    },
+    "seal": {
+      "short": "⟦Vèrìfìèd～～～～⟧",
+      "full": "⟦Vèrìfìèd còmmèrcìàl-ùsè rìghts～～～～～～～～～～～～⟧"
+    }
+  }
+}

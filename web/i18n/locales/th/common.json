@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "AVIBE",
+    "tagline": "Beyond Your Music",
+    "nav": {
+      "mainMenu": "เมนูหลัก",
+      "home": "หน้าแรก",
+      "explore": "ค้นหาเพลง",
+      "exploreFilter": "ค้นหาเพลง & ตัวกรอง",
+      "playlists": "เพลย์ลิสต์",
+      "library": "คลังของฉัน",
+      "rightsCenter": "ศูนย์คุ้มครองสิทธิ์",
+      "rightsCenterOsp": "ศูนย์คุ้มครองสิทธิ์ (ข้อพิพาท OSP)",
+      "pricing": "แพ็กเกจ",
+      "studio": "สตูดิโอ",
+      "partnerStudio": "พาร์ทเนอร์สตูดิโอ",
+      "partnerStudioDashboard": "แดชบอร์ดพาร์ทเนอร์สตูดิโอ",
+      "adminConsole": "คอนโซลผู้ดูแล",
+      "reviewBench": "โต๊ะตรวจสอบ",
+      "uploadGatekeeper": "อัปโหลดเพลง (Gatekeeper)",
+      "uploadWizard": "ตัวช่วยอัปโหลด",
+      "userMenu": "เมนูบัญชี",
+      "myPlaylistsLibrary": "เพลย์ลิสต์ & คลังของฉัน",
+      "legal": "ข้อกำหนดและนโยบาย",
+      "accountSecurity": "ความปลอดภัยบัญชี (ยืนยัน 2 ขั้นตอน)",
+      "security2fa": "ความปลอดภัยบัญชี (ยืนยัน 2 ขั้นตอน)",
+      "logout": "ออกจากระบบ",
+      "login": "เข้าสู่ระบบ",
+      "signup": "สมัครสมาชิก",
+      "mobileMenuOpen": "เปิดเมนู",
+      "mobileMenuClose": "ปิดเมนู",
+      "mobileMenu": "เมนูมือถือ"
+    },
+    "footer": {
+      "tagline": "แพลตฟอร์มสตรีมมิงเพลง AI ที่ผ่านการยืนยันเงื่อนไขการใช้เชิงพาณิชย์",
+      "aiBadge": "มีป้ายกำกับ AI",
+      "colStream": "สตรีมมิง & ค้นพบ",
+      "popular": "เพลงยอดนิยม",
+      "byModel": "ค้นหาตามโมเดล AI (Suno, Udio, AIVA)",
+      "focus": "เสียงสำหรับสมาธิ & ทำงาน",
+      "chill": "ชิล & เลานจ์โลไฟ",
+      "colPartner": "พาร์ทเนอร์ & ครีเอเตอร์",
+      "gate": "เกณฑ์อัปโหลดใบอนุญาตเชิงพาณิชย์ 4 ขั้น",
+      "proof": "ลงทะเบียนหลักฐานสมาชิก AI แบบชำระเงิน",
+      "settlement": "แดชบอร์ดการจ่ายเงินพาร์ทเนอร์",
+      "disputes": "ศูนย์แจ้งลบ & โต้แย้งสิทธิ์",
+      "colLegal": "ประกาศกฎหมาย & ธรรมาภิบาล",
+      "tos": "ข้อกำหนดการให้บริการ",
+      "privacy": "นโยบายความเป็นส่วนตัว",
+      "copyright": "นโยบายลิขสิทธิ์ AI & การยกเว้น OSP",
+      "contract": "สัญญาจัดจำหน่าย & ยกเว้นความรับผิดพาร์ทเนอร์",
+      "bizInfo": "ข้อมูลผู้ประกอบการ",
+      "ospContact": "ผู้รับคำขอระงับการละเมิดลิขสิทธิ์",
+      "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "biz": {
+        "company": "ชื่อบริษัท",
+        "ceo": "ผู้แทน",
+        "address": "ที่อยู่",
+        "contact": "ติดต่อ",
+        "regNo": "เลขทะเบียนธุรกิจ",
+        "mailOrderNo": "เลขแจ้งพาณิชย์อิเล็กทรอนิกส์",
+        "hosting": "ผู้ให้บริการโฮสติ้ง"
+      }
+    },
+    "titles": {
+      "home": "หน้าแรก",
+      "explore": "ค้นหาเพลง",
+      "my-library": "คลังของฉัน",
+      "playlists": "เพลย์ลิสต์",
+      "login": "เข้าสู่ระบบ",
+      "reset-password": "รีเซ็ตรหัสผ่าน",
+      "pricing": "แพ็กเกจ",
+      "checkout": "ชำระเงิน",
+      "checkout-confirm": "ชำระเงินสำเร็จ",
+      "track-detail": "รายละเอียดเพลง",
+      "playlist-detail": "เพลย์ลิสต์",
+      "dispute-center": "ศูนย์คุ้มครองสิทธิ์",
+      "account-security": "ความปลอดภัยบัญชี",
+      "legal-root": "ข้อกำหนด",
+      "legal-terms": "ข้อกำหนด",
+      "certificate-verify": "ตรวจสอบใบรับรอง",
+      "partner-dashboard": "แดชบอร์ดพาร์ทเนอร์",
+      "partner-upload": "อัปโหลดเพลง",
+      "partner-subscriptions": "หลักฐานสมาชิก AI",
+      "partner-stores": "จัดการร้าน",
+      "partner-generations": "สร้างเพลง",
+      "admin-overview": "ภาพรวมผู้ดูแล",
+      "admin-reviews": "ตรวจสอบ",
+      "admin-policies": "นโยบายใบอนุญาต",
+      "admin-disputes": "จัดการข้อพิพาท",
+      "admin-curation": "คัดสรร",
+      "admin-audit": "บันทึกตรวจสอบ",
+      "admin-users": "จัดการผู้ใช้",
+      "admin-stores": "อนุมัติร้าน",
+      "admin-distribution": "จัดจำหน่าย",
+      "admin-settlements": "การจ่ายเงิน",
+      "store-player": "เครื่องเล่นในร้าน",
+      "server-error": "เกิดข้อผิดพลาด",
+      "not-found": "ไม่พบหน้า"
+    },
+    "locale": {
+      "label": "ภาษาที่แสดง",
+      "beta": "Beta",
+      "ko": "한국어",
+      "en": "English",
+      "ja": "日本語",
+      "zh-cn": "简体中文",
+      "th": "ไทย"
+    },
+    "banner": {
+      "suggest": "ดูหน้านี้เป็น{language}หรือไม่?",
+      "view": "ดู",
+      "dismiss": "ปิด"
+    },
+    "actions": {
+      "close": "ปิด",
+      "cancel": "ยกเลิก",
+      "confirm": "ยืนยัน",
+      "retry": "ลองใหม่",
+      "save": "บันทึก",
+      "delete": "ลบ",
+      "edit": "แก้ไข",
+      "back": "กลับ",
+      "next": "ถัดไป",
+      "search": "ค้นหา",
+      "clear": "ล้าง",
+      "copy": "คัดลอก",
+      "copied": "คัดลอกแล้ว",
+      "loading": "กำลังโหลด…",
+      "showMore": "ดูเพิ่มเติม",
+      "more": "เพิ่มเติม"
+    },
+    "auth": {
+      "sessionExpired": "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง",
+      "sessionExpiredTitle": "ต้องเข้าสู่ระบบ",
+      "needAdmin": "หน้านี้สำหรับผู้ดูแลเท่านั้น",
+      "needPartner": "หน้านี้สำหรับพาร์ทเนอร์เท่านั้น ใช้งานได้หลังอนุมัติพาร์ทเนอร์"
+    },
+    "brand": {
+      "logoAlt": "โลโก้ AVIBE"
+    },
+    "input": {
+      "showPassword": "แสดงรหัสผ่าน",
+      "hidePassword": "ซ่อนรหัสผ่าน",
+      "show": "แสดง",
+      "hide": "ซ่อน",
+      "openPicker": "เปิดปฏิทิน"
+    },
+    "toast": {
+      "dismiss": "ปิดการแจ้งเตือน"
+    },
+    "stepper": {
+      "label": "ขั้นตอน"
+    },
+    "seal": {
+      "short": "ยืนยันแล้ว",
+      "full": "การรับรองการถือสิทธิ์ใช้งานเชิงพาณิชย์"
+    }
+  }
+}

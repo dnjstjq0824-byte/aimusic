@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "AVIBE",
+    "tagline": "Beyond Your Music",
+    "nav": {
+      "mainMenu": "주 메뉴",
+      "home": "홈",
+      "explore": "음원 탐색",
+      "exploreFilter": "음원 탐색 & 필터",
+      "playlists": "플레이리스트",
+      "library": "내 라이브러리",
+      "rightsCenter": "권리보호센터",
+      "rightsCenterOsp": "권리보호센터 (OSP 분쟁)",
+      "pricing": "요금제",
+      "studio": "스튜디오",
+      "partnerStudio": "파트너 스튜디오",
+      "partnerStudioDashboard": "파트너 스튜디오 대시보드",
+      "adminConsole": "어드민 콘솔",
+      "reviewBench": "관리자 검수 워크벤치",
+      "uploadGatekeeper": "음원 업로드 (Gatekeeper)",
+      "uploadWizard": "음원 업로드 위저드",
+      "userMenu": "사용자 메뉴",
+      "myPlaylistsLibrary": "내 플레이리스트 & 라이브러리",
+      "legal": "이용약관 및 법적 정책",
+      "accountSecurity": "계정 보안 (2단계 인증)",
+      "security2fa": "계정 보안 (2단계 인증)",
+      "logout": "로그아웃",
+      "login": "로그인",
+      "signup": "회원가입",
+      "mobileMenuOpen": "모바일 메뉴 열기",
+      "mobileMenuClose": "모바일 메뉴 닫기",
+      "mobileMenu": "모바일 메뉴"
+    },
+    "footer": {
+      "tagline": "상업 이용 조건 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.",
+      "aiBadge": "AI 생성 표시 제공",
+      "colStream": "스트리밍 & 탐색",
+      "popular": "인기 음원",
+      "byModel": "AI 모델별 탐색 (Suno, Udio, AIVA)",
+      "focus": "집중 & 작업용 사운드",
+      "chill": "칠 & 로우파이 라운지",
+      "colPartner": "파트너 & 크리에이터",
+      "gate": "4단계 상업 라이선스 업로드 게이트",
+      "proof": "유료 AI 구독 증빙 등록",
+      "settlement": "파트너 정산 대시보드",
+      "disputes": "권리침해 신고 & 소명 센터",
+      "colLegal": "법적 고지 & 거버넌스",
+      "tos": "서비스 이용약관",
+      "privacy": "개인정보처리방침",
+      "copyright": "AI 저작권 및 OSP 면책 정책",
+      "contract": "파트너 음원유통·면책 계약서",
+      "bizInfo": "사업자 정보",
+      "ospContact": "저작권 침해 중단 요구(수령인)",
+      "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "biz": {
+        "company": "상호",
+        "ceo": "대표자",
+        "address": "주소",
+        "contact": "연락처",
+        "regNo": "사업자등록번호",
+        "mailOrderNo": "통신판매업 신고번호",
+        "hosting": "호스팅 제공자"
+      }
+    },
+    "titles": {
+      "home": "홈",
+      "explore": "음원 탐색",
+      "my-library": "내 라이브러리",
+      "playlists": "플레이리스트",
+      "login": "로그인",
+      "reset-password": "비밀번호 찾기",
+      "pricing": "요금제",
+      "checkout": "결제",
+      "checkout-confirm": "결제 완료",
+      "track-detail": "음원 상세",
+      "playlist-detail": "플레이리스트",
+      "dispute-center": "권리보호센터",
+      "account-security": "계정 보안",
+      "legal-root": "약관",
+      "legal-terms": "약관",
+      "certificate-verify": "인증서 확인",
+      "partner-dashboard": "파트너 대시보드",
+      "partner-upload": "음원 업로드",
+      "partner-subscriptions": "AI 구독 증빙",
+      "partner-stores": "매장 관리",
+      "partner-generations": "음원 생성",
+      "admin-overview": "관리자 개요",
+      "admin-reviews": "심사",
+      "admin-policies": "라이선스 정책",
+      "admin-disputes": "분쟁 처리",
+      "admin-curation": "큐레이션",
+      "admin-audit": "감사 로그",
+      "admin-users": "사용자 관리",
+      "admin-stores": "매장 승인",
+      "admin-distribution": "유통",
+      "admin-settlements": "정산",
+      "store-player": "매장 플레이어",
+      "server-error": "오류",
+      "not-found": "페이지를 찾을 수 없음"
+    },
+    "locale": {
+      "label": "표시 언어",
+      "beta": "Beta",
+      "ko": "한국어",
+      "en": "English",
+      "ja": "日本語",
+      "zh-cn": "简体中文",
+      "th": "ไทย"
+    },
+    "banner": {
+      "suggest": "이 페이지를 {language}(으)로 보시겠습니까?",
+      "view": "보기",
+      "dismiss": "닫기"
+    },
+    "actions": {
+      "close": "닫기",
+      "cancel": "취소",
+      "confirm": "확인",
+      "retry": "다시 시도",
+      "save": "저장",
+      "delete": "삭제",
+      "edit": "수정",
+      "back": "뒤로",
+      "next": "다음",
+      "search": "검색",
+      "clear": "지우기",
+      "copy": "복사",
+      "copied": "복사됨",
+      "loading": "불러오는 중…",
+      "showMore": "더 보기",
+      "more": "더보기"
+    },
+    "auth": {
+      "sessionExpired": "세션이 만료되었습니다. 다시 로그인해 주세요.",
+      "sessionExpiredTitle": "로그인 필요",
+      "needAdmin": "관리자 전용 페이지입니다.",
+      "needPartner": "파트너 전용 페이지입니다. 파트너 승인 후 이용하세요."
+    },
+    "brand": {
+      "logoAlt": "AVIBE 로고"
+    },
+    "input": {
+      "showPassword": "비밀번호 표시",
+      "hidePassword": "비밀번호 숨기기",
+      "show": "표시",
+      "hide": "숨김",
+      "openPicker": "날짜 선택 달력 열기"
+    },
+    "toast": {
+      "dismiss": "알림 닫기"
+    },
+    "stepper": {
+      "label": "진행 단계"
+    },
+    "seal": {
+      "short": "이용권 인증",
+      "full": "상업적 이용권 보유 인증"
+    }
+  }
+}

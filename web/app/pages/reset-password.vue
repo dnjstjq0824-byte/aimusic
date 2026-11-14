@@ -69,6 +69,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authApi } from '@/api/endpoints';

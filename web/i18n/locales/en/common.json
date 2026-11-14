@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "AVIBE",
+    "tagline": "Beyond Your Music",
+    "nav": {
+      "mainMenu": "Main menu",
+      "home": "Home",
+      "explore": "Explore",
+      "exploreFilter": "Explore & filters",
+      "playlists": "Playlists",
+      "library": "My library",
+      "rightsCenter": "Rights Center",
+      "rightsCenterOsp": "Rights Center (OSP disputes)",
+      "pricing": "Pricing",
+      "studio": "Studio",
+      "partnerStudio": "Partner Studio",
+      "partnerStudioDashboard": "Partner Studio dashboard",
+      "adminConsole": "Admin console",
+      "reviewBench": "Moderation workbench",
+      "uploadGatekeeper": "Upload music (Gatekeeper)",
+      "uploadWizard": "Upload wizard",
+      "userMenu": "Account menu",
+      "myPlaylistsLibrary": "My playlists & library",
+      "legal": "Terms & policies",
+      "accountSecurity": "Account security (2-step verification)",
+      "security2fa": "Account security (2-step verification)",
+      "logout": "Log out",
+      "login": "Log in",
+      "signup": "Sign up",
+      "mobileMenuOpen": "Open menu",
+      "mobileMenuClose": "Close menu",
+      "mobileMenu": "Mobile menu"
+    },
+    "footer": {
+      "tagline": "Streaming licensed AI music cleared for commercial use.",
+      "aiBadge": "AI-generated labels provided",
+      "colStream": "Streaming & discovery",
+      "popular": "Popular tracks",
+      "byModel": "Browse by AI model (Suno, Udio, AIVA)",
+      "focus": "Focus & work sounds",
+      "chill": "Chill & lo-fi lounge",
+      "colPartner": "Partners & creators",
+      "gate": "4-step commercial license upload gate",
+      "proof": "Paid AI subscription proof",
+      "settlement": "Partner settlement dashboard",
+      "disputes": "Takedown reports & counter-notices",
+      "colLegal": "Legal & governance",
+      "tos": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "copyright": "AI copyright & OSP safe-harbor policy",
+      "contract": "Partner distribution & liability agreement",
+      "bizInfo": "Business information",
+      "ospContact": "Copyright takedown recipient",
+      "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "biz": {
+        "company": "Company",
+        "ceo": "Representative",
+        "address": "Address",
+        "contact": "Contact",
+        "regNo": "Business registration no.",
+        "mailOrderNo": "Mail-order business no.",
+        "hosting": "Hosting provider"
+      }
+    },
+    "titles": {
+      "home": "Home",
+      "explore": "Explore music",
+      "my-library": "My library",
+      "playlists": "Playlists",
+      "login": "Log in",
+      "reset-password": "Reset password",
+      "pricing": "Pricing",
+      "checkout": "Checkout",
+      "checkout-confirm": "Payment complete",
+      "track-detail": "Track",
+      "playlist-detail": "Playlist",
+      "dispute-center": "Rights Center",
+      "account-security": "Account security",
+      "legal-root": "Terms",
+      "legal-terms": "Terms",
+      "certificate-verify": "Verify certificate",
+      "partner-dashboard": "Partner dashboard",
+      "partner-upload": "Upload music",
+      "partner-subscriptions": "AI subscription proof",
+      "partner-stores": "Stores",
+      "partner-generations": "Generate music",
+      "admin-overview": "Admin overview",
+      "admin-reviews": "Reviews",
+      "admin-policies": "License policies",
+      "admin-disputes": "Disputes",
+      "admin-curation": "Curation",
+      "admin-audit": "Audit log",
+      "admin-users": "Users",
+      "admin-stores": "Store approvals",
+      "admin-distribution": "Distribution",
+      "admin-settlements": "Settlements",
+      "store-player": "Store player",
+      "server-error": "Error",
+      "not-found": "Page not found"
+    },
+    "locale": {
+      "label": "Display language",
+      "beta": "Beta",
+      "ko": "한국어",
+      "en": "English",
+      "ja": "日本語",
+      "zh-cn": "简体中文",
+      "th": "ไทย"
+    },
+    "banner": {
+      "suggest": "View this page in {language}?",
+      "view": "View",
+      "dismiss": "Dismiss"
+    },
+    "actions": {
+      "close": "Close",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "retry": "Retry",
+      "save": "Save",
+      "delete": "Delete",
+      "edit": "Edit",
+      "back": "Back",
+      "next": "Next",
+      "search": "Search",
+      "clear": "Clear",
+      "copy": "Copy",
+      "copied": "Copied",
+      "loading": "Loading…",
+      "showMore": "Show more",
+      "more": "More"
+    },
+    "auth": {
+      "sessionExpired": "Your session expired. Please log in again.",
+      "sessionExpiredTitle": "Login required",
+      "needAdmin": "This page is for admins only.",
+      "needPartner": "This page is for partners only. It unlocks after partner approval."
+    },
+    "brand": {
+      "logoAlt": "AVIBE logo"
+    },
+    "input": {
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "show": "Show",
+      "hide": "Hide",
+      "openPicker": "Open date picker"
+    },
+    "toast": {
+      "dismiss": "Dismiss notification"
+    },
+    "stepper": {
+      "label": "Progress steps"
+    },
+    "seal": {
+      "short": "Verified",
+      "full": "Verified commercial-use rights"
+    }
+  }
+}

@@ -10,10 +10,12 @@
     "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "harness:setup": "node e2e/screens/setup.mjs",
     "harness": "node e2e/screens/run.mjs"
   },
   "dependencies": {
+    "@nuxtjs/i18n": "10.6.0",
     "@pinia/nuxt": "1.0.3",
     "@tosspayments/tosspayments-sdk": "^2.10.0",
     "axios": "^1.7.7",
@@ -25,6 +27,7 @@
     "vue-router": "^4.4.3"
   },
   "devDependencies": {
+    "@nuxt/kit": "4.6.4",
     "@playwright/test": "^1.57.0",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^5.1.4",

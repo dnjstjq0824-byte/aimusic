@@ -42,18 +42,18 @@
         <button
           type="button"
           class="whitespace-nowrap text-xs text-text-secondary hover:text-text-primary transition-colors"
-          :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+          :aria-label="showPassword ? $t('common.input.hidePassword') : $t('common.input.showPassword')"
           :aria-pressed="showPassword"
           @click="showPassword = !showPassword"
         >
-          {{ showPassword ? '숨김' : '표시' }}
+          {{ showPassword ? $t('common.input.hide') : $t('common.input.show') }}
         </button>
       </div>
       <div v-else-if="isPickerType" class="shrink-0 pr-3">
         <button
           type="button"
           class="rounded p-0.5 text-text-secondary transition-colors hover:text-text-primary"
-          aria-label="날짜 선택 달력 열기"
+          :aria-label="$t('common.input.openPicker')"
           @click="openPicker"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">

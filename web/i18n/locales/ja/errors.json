@@ -1,0 +1,32 @@
+{
+  "errors": {
+    "ERR_INVALID_INPUT": "入力内容を確認してください。",
+    "ERR_UNAUTHORIZED": "ログインが必要です。",
+    "ERR_FORBIDDEN": "アクセス権限がありません。",
+    "ERR_NOT_FOUND": "リクエストした項目が見つかりません。",
+    "ERR_EMAIL_TAKEN": "このメールアドレスは既に登録されています。",
+    "ERR_INVALID_CREDENTIALS": "メールアドレスまたはパスワードが正しくありません。",
+    "ERR_USER_INACTIVE": "無効化されたアカウントです。",
+    "ERR_NOT_STREAMABLE": "再生できない楽曲です。(審査/ブロック状態)",
+    "ERR_RATE_LIMITED": "リクエストが多すぎます。しばらくしてから再試行してください。",
+    "ERR_TOO_MANY_ATTEMPTS": "試行回数が多すぎます。しばらくしてから再試行してください。",
+    "ERR_AGE_CONFIRM_REQUIRED": "14歳以上の年齢確認が必要です。",
+    "ERR_CONSENT_REQUIRED": "必須規約への同意が必要です。",
+    "ERR_TOTP_REQUIRED": "2段階認証コードが必要です。",
+    "ERR_TOTP_INVALID": "認証コードが正しくありません。もう一度入力してください。",
+    "ERR_TOTP_ENROLL_REQUIRED": "管理者アカウントは2段階認証の登録が必要です。セキュリティ設定で登録してください。",
+    "LOGIN_LOCKED": "ログイン試行が多すぎます。15分後に再試行してください。",
+    "ERR_NON_COMMERCIAL_TIER": "商用プランではありません。商用サブスクリプションの証明を登録してください。",
+    "ERR_RETROACTIVE_GENERATION_DATE": "サブスクリプション開始日より前に生成された楽曲は登録できません。",
+    "ERR_SYNC_ONLY_LICENSE": "このプロバイダーはSync-Onlyライセンスのため単独配信できません。",
+    "ERR_DUPLICATE_AUDIO_FILE": "既に登録済みの音声ファイル(重複)です。",
+    "ERR_PROVIDER_NOT_ALLOWED": "許可リストにないプロバイダーです。許可された提携プロバイダーを選択してください。",
+    "ERR_PAYMENT_UNAVAILABLE": "決済機能はまだ設定されていません。管理者にお問い合わせください。",
+    "ERR_ACTIVE_PASS_EXISTS": "利用中のパスがあります。期限後に購入するか、ライブラリで即時解約してから購入してください。",
+    "ERR_DOWNLOAD_REQUIRES_PASS": "ダウンロードには利用中のパスが必要です。",
+    "ERR_DOWNLOAD_QUOTA": "1日のダウンロード上限に達しました。",
+    "ERR_DOWNLOAD_UNAVAILABLE": "マスターファイルを利用できません。",
+    "ERR_INTERNAL": "サーバーエラーが発生しました。",
+    "ERR_FALLBACK": "リクエストに失敗しました。"
+  }
+}

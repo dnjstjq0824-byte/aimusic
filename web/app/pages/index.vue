@@ -55,7 +55,7 @@
             <button
               type="submit"
               :disabled="loading"
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:opacity-50"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:opacity-50"
               aria-label="검색"
             >
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -172,7 +172,7 @@
           :key="prov"
           type="button"
           class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150"
-          :class="filterProvider === prov ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
+          :class="filterProvider === prov ? 'bg-brand-500 text-on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
           @click="toggleProvider(prov)"
         >
           {{ prov }}
@@ -182,7 +182,7 @@
           :key="mood"
           type="button"
           class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150"
-          :class="filterMood === mood ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
+          :class="filterMood === mood ? 'bg-brand-500 text-on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
           @click="toggleMood(mood)"
         >
           #{{ mood }}
@@ -296,7 +296,7 @@
       <div class="grid items-center gap-6 sm:grid-cols-2">
         <div class="order-2 space-y-3 sm:order-1">
           <div class="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-1 p-4">
-            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-lg font-black -on-brand shadow-glow-brand">▶</span>
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-lg font-black text-on-brand shadow-glow-brand">▶</span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-bold text-white">끊김 없는 감상</p>
               <p class="text-xs text-text-muted">하트비트 집계 · 이어듣기 · 큐</p>
@@ -388,6 +388,7 @@ import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 import OnboardingModal from '@/components/legal/OnboardingModal.vue';
 import { GRADIENTS as COVER_GRADIENTS } from '@/components/ui/UiCoverArt.vue';
 import { SLOGAN } from '@/components/BrandLogo.vue';
+const localePath = useLocalePath();
 
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
@@ -518,7 +519,7 @@ function playAll(): void {
   if (tracks.value.length === 0) return;
   if (!auth.isAuthenticated) {
     toast.info('음원을 들으려면 먼저 로그인하세요.');
-    void router.push({ name: 'login', query: { redirect: '/' } });
+    void router.push(localePath({ name: 'login', query: { redirect: '/' } }));
     return;
   }
   player.setQueue(tracks.value, tracks.value[0]?.id);

@@ -3,7 +3,7 @@
     class="relative flex shrink-0 items-center justify-center overflow-hidden border border-surface-border"
     :class="[sizeClass, roundedClass, gradientClass]"
     role="img"
-    :aria-label="`${title} 커버 아트`"
+    :aria-label="t('player.coverArt', { title })"
   >
     <!-- Decorative wave bars -->
     <svg
@@ -37,7 +37,7 @@
     <span
       v-if="verified"
       class="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-verified text-surface-0"
-      title="상업 라이선스 검증됨"
+      :title="$t('player.verified')"
     >
       <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M20 6 9 17l-5-5" />
@@ -70,11 +70,13 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '음원',
+  title: 'AVIBE',
   size: 'md',
   rounded: 'lg',
   verified: false,
 });
+
+const { t } = useI18n();
 
 const sizeClass = computed(() => {
   switch (props.size) {

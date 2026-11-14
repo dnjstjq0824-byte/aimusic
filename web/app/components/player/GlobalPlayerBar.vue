@@ -2,17 +2,17 @@
   <div class="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 border-t border-surface-border bg-surface-1/95 pt-2.5 backdrop-blur-2xl shadow-2xl transition-all sm:px-6">
     <!-- Notice strip if tracks were skipped -->
     <div v-if="player.skippedIds.length > 0" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-amber font-medium" role="status">
-      재생할 수 없는 음원 {{ player.skippedIds.length }}곡을 재생 큐에서 건너뛰었습니다.
+      {{ t('player.skipped', { count: player.skippedIds.length }) }}
     </div>
 
     <div v-if="player.error && player.currentTrack" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-crimson font-medium" role="alert">
       {{ player.error }}
       <RouterLink
         v-if="player.errorCode === 'ERR_UNAUTHORIZED'"
-        :to="{ name: 'login', query: { redirect: $route.fullPath } }"
+        :to="localePath({ name: 'login', query: { redirect: $route.fullPath } })"
         class="ml-2 font-bold text-brand-400 hover:underline"
       >
-        로그인하기
+        {{ t('player.loginLink') }}
       </RouterLink>
     </div>
 
@@ -27,7 +27,7 @@
       <div class="flex min-w-0 items-center gap-3 sm:row-span-2">
         <UiCoverArt
           :seed="player.currentTrack?.id ?? 'idle'"
-          :title="player.currentTrack?.title ?? '재생 대기 중'"
+          :title="player.currentTrack?.title ?? t('player.idle')"
           size="sm"
           :verified="player.currentTrack?.status === 'READY'"
         />
@@ -35,7 +35,7 @@
         <div class="min-w-0 flex-1">
           <div v-if="player.currentTrack">
             <RouterLink
-              :to="{ name: 'track-detail', params: { id: player.currentTrack.id } }"
+              :to="localePath({ name: 'track-detail', params: { id: player.currentTrack.id } })"
               class="block truncate text-xs font-bold text-white hover:text-brand-400 transition-colors"
             >
               {{ player.currentTrack.title }}
@@ -43,18 +43,18 @@
             <div class="flex items-center gap-1.5 text-caption text-text-secondary mt-0.5 truncate">
               <span class="font-medium text-brand-300">{{ player.currentTrack.aiProvider }}</span>
               <span aria-hidden="true">·</span>
-              <span class="text-verified font-semibold">이용조건 확인됨</span>
+              <span class="text-verified font-semibold">{{ t('player.verified') }}</span>
               <span aria-hidden="true">·</span>
               <span
                 class="rounded px-1 py-px font-bold"
                 :class="player.currentQuality === 'HQ' ? 'bg-brand-500/20 text-brand-300' : 'bg-surface-3 text-text-secondary'"
-                :title="player.currentQuality === 'HQ' ? '고음질 256k (이용권)' : '표준 음질 128k (무료)'"
+                :title="player.currentQuality === 'HQ' ? t('player.qualityHq') : t('player.qualitySq')"
               >{{ player.currentQuality }}</span>
             </div>
           </div>
           <div v-else>
-            <div class="truncate text-xs font-semibold text-text-secondary">재생 대기 중</div>
-            <div class="truncate text-caption text-text-muted">원하는 음원을 선택하세요</div>
+            <div class="truncate text-xs font-semibold text-text-secondary">{{ t('player.idle') }}</div>
+            <div class="truncate text-caption text-text-muted">{{ t('player.idleHint') }}</div>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@
           class="hidden rounded p-1 transition-colors sm:inline-flex"
           :class="player.shuffle ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
           :aria-pressed="player.shuffle"
-          aria-label="셔플 재생"
+          :aria-label="t('player.shuffle')"
           @click="player.toggleShuffle()"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -79,7 +79,7 @@
         <button
           type="button"
           class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
-          aria-label="이전 곡"
+          :aria-label="t('player.previous')"
           @click="player.playPrev()"
         >
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -90,9 +90,9 @@
         <!-- Play / Pause -->
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer sm:h-9 sm:w-9"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-on-brand shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer sm:h-9 sm:w-9"
           :disabled="player.isLoading || !player.currentTrack"
-          :aria-label="player.isPlaying ? '일시정지' : '재생'"
+          :aria-label="player.isPlaying ? t('player.pause') : t('player.play')"
           @click="player.toggle()"
         >
           <svg v-if="player.isLoading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -111,7 +111,7 @@
         <button
           type="button"
           class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
-          aria-label="다음 곡"
+          :aria-label="t('player.next')"
           @click="player.playNext(true)"
         >
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -125,7 +125,7 @@
           class="relative hidden rounded p-1 transition-colors sm:inline-flex"
           :class="player.repeat !== 'off' ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
           :aria-pressed="player.repeat !== 'off'"
-          :aria-label="`반복 재생: ${repeatLabel}`"
+          :aria-label="t('player.repeat', { mode: repeatLabel })"
           @click="player.cycleRepeat()"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -133,14 +133,14 @@
             <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4" />
             <path d="M21 13v1a4 4 0 0 1-4 4H3" />
           </svg>
-          <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-caption font-bold -on-brand">1</span>
+          <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-caption font-bold text-on-brand">1</span>
         </button>
 
         <!-- Queue (mobile, icon only) -->
         <button
           type="button"
           class="relative ml-1 flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-2 text-text-primary hover:text-white sm:hidden"
-          :aria-label="`재생 대기열 열기 (${player.queue.length}곡)`"
+          :aria-label="t('player.queueOpenCount', { count: player.queue.length })"
           @click="$emit('toggle-queue')"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -148,7 +148,7 @@
           </svg>
           <span
             v-if="player.queue.length > 0"
-            class="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-brand-500 px-1 text-center font-mono text-caption font-bold leading-4 -on-brand"
+            class="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-brand-500 px-1 text-center font-mono text-caption font-bold leading-4 text-on-brand"
           >
             {{ player.queue.length }}
           </span>
@@ -160,13 +160,13 @@
         <button
           type="button"
           class="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-text-primary hover:text-white hover:border-surface-border-hover transition-colors"
-          aria-label="재생 대기열 열기"
+          :aria-label="t('player.queueOpen')"
           @click="$emit('toggle-queue')"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M4 6h16M4 12h16M4 18h10" />
           </svg>
-          <span>큐</span>
+          <span>{{ t('player.queue') }}</span>
           <span class="rounded-full bg-brand-500/20 text-brand-400 px-1.5 py-0.5 text-caption font-mono font-bold">
             {{ player.queue.length }}
           </span>
@@ -195,17 +195,19 @@ import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+const localePath = useLocalePath();
 
 const player = usePlayerStore();
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'toggle-queue'): void;
 }>();
 
 const repeatLabel = computed(() => {
-  if (player.repeat === 'one') return '한 곡 반복';
-  if (player.repeat === 'all') return '전체 반복';
-  return '끔';
+  if (player.repeat === 'one') return t('player.repeatOne');
+  if (player.repeat === 'all') return t('player.repeatAll');
+  return t('player.repeatOff');
 });
 
 function fmtPos(ms: number): string {

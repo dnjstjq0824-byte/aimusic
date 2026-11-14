@@ -124,3 +124,4 @@ for (const r of results) {
 }
 const withErr = results.filter((r) => r.errors.length || r.badResponses.length).length;
 console.log(`\ndone: ${results.length} screens, ${withErr} with errors/bad-responses -> ${OUT}`);
+process.exit(0);

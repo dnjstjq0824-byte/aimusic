@@ -1,0 +1,160 @@
+{
+  "common": {
+    "appName": "AVIBE",
+    "tagline": "Beyond Your Music",
+    "nav": {
+      "mainMenu": "主菜单",
+      "home": "首页",
+      "explore": "发现音乐",
+      "exploreFilter": "发现音乐 & 筛选",
+      "playlists": "歌单",
+      "library": "我的音乐库",
+      "rightsCenter": "权利保护中心",
+      "rightsCenterOsp": "权利保护中心 (OSP纠纷)",
+      "pricing": "价格方案",
+      "studio": "工作室",
+      "partnerStudio": "合作方工作室",
+      "partnerStudioDashboard": "合作方工作室仪表盘",
+      "adminConsole": "管理控制台",
+      "reviewBench": "审核工作台",
+      "uploadGatekeeper": "上传音乐 (Gatekeeper)",
+      "uploadWizard": "上传向导",
+      "userMenu": "账户菜单",
+      "myPlaylistsLibrary": "我的歌单 & 音乐库",
+      "legal": "条款与政策",
+      "accountSecurity": "账户安全 (两步验证)",
+      "security2fa": "账户安全 (两步验证)",
+      "logout": "退出登录",
+      "login": "登录",
+      "signup": "注册",
+      "mobileMenuOpen": "打开菜单",
+      "mobileMenuClose": "关闭菜单",
+      "mobileMenu": "移动端菜单"
+    },
+    "footer": {
+      "tagline": "发行经商用条件确认的AI音乐的流媒体平台。",
+      "aiBadge": "提供AI生成标识",
+      "colStream": "串流 & 发现",
+      "popular": "热门歌曲",
+      "byModel": "按AI模型浏览 (Suno, Udio, AIVA)",
+      "focus": "专注 & 工作声音",
+      "chill": "放松 & 低保真休息室",
+      "colPartner": "合作方 & 创作者",
+      "gate": "四步商用许可上传审核",
+      "proof": "付费AI订阅证明登记",
+      "settlement": "合作方结算仪表盘",
+      "disputes": "侵权举报 & 申诉中心",
+      "colLegal": "法律声明 & 治理",
+      "tos": "服务条款",
+      "privacy": "隐私政策",
+      "copyright": "AI版权与OSP免责政策",
+      "contract": "合作方发行·免责协议",
+      "bizInfo": "经营者信息",
+      "ospContact": "版权侵权下架请求接收人",
+      "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "biz": {
+        "company": "公司名称",
+        "ceo": "法定代表人",
+        "address": "地址",
+        "contact": "联系方式",
+        "regNo": "营业执照注册号",
+        "mailOrderNo": "通信销售申报号",
+        "hosting": "托管服务商"
+      }
+    },
+    "titles": {
+      "home": "首页",
+      "explore": "发现音乐",
+      "my-library": "我的音乐库",
+      "playlists": "歌单",
+      "login": "登录",
+      "reset-password": "找回密码",
+      "pricing": "价格方案",
+      "checkout": "结算",
+      "checkout-confirm": "支付完成",
+      "track-detail": "歌曲详情",
+      "playlist-detail": "歌单",
+      "dispute-center": "权利保护中心",
+      "account-security": "账户安全",
+      "legal-root": "条款",
+      "legal-terms": "条款",
+      "certificate-verify": "验证证书",
+      "partner-dashboard": "合作方仪表盘",
+      "partner-upload": "上传音乐",
+      "partner-subscriptions": "AI订阅证明",
+      "partner-stores": "门店管理",
+      "partner-generations": "音乐生成",
+      "admin-overview": "管理概览",
+      "admin-reviews": "审核",
+      "admin-policies": "许可政策",
+      "admin-disputes": "纠纷处理",
+      "admin-curation": "精选",
+      "admin-audit": "审计日志",
+      "admin-users": "用户管理",
+      "admin-stores": "门店审批",
+      "admin-distribution": "发行",
+      "admin-settlements": "结算",
+      "store-player": "门店播放器",
+      "server-error": "出错了",
+      "not-found": "页面不存在"
+    },
+    "locale": {
+      "label": "显示语言",
+      "beta": "Beta",
+      "ko": "한국어",
+      "en": "English",
+      "ja": "日本語",
+      "zh-cn": "简体中文",
+      "th": "ไทย"
+    },
+    "banner": {
+      "suggest": "是否使用{language}查看此页?",
+      "view": "查看",
+      "dismiss": "关闭"
+    },
+    "actions": {
+      "close": "关闭",
+      "cancel": "取消",
+      "confirm": "确认",
+      "retry": "重试",
+      "save": "保存",
+      "delete": "删除",
+      "edit": "编辑",
+      "back": "返回",
+      "next": "下一步",
+      "search": "搜索",
+      "clear": "清除",
+      "copy": "复制",
+      "copied": "已复制",
+      "loading": "加载中…",
+      "showMore": "查看更多",
+      "more": "更多"
+    },
+    "auth": {
+      "sessionExpired": "会话已过期，请重新登录。",
+      "sessionExpiredTitle": "需要登录",
+      "needAdmin": "此页面仅限管理员。",
+      "needPartner": "此页面仅限合作方，合作方审核通过后可用。"
+    },
+    "brand": {
+      "logoAlt": "AVIBE 标志"
+    },
+    "input": {
+      "showPassword": "显示密码",
+      "hidePassword": "隐藏密码",
+      "show": "显示",
+      "hide": "隐藏",
+      "openPicker": "打开日期选择器"
+    },
+    "toast": {
+      "dismiss": "关闭通知"
+    },
+    "stepper": {
+      "label": "进度步骤"
+    },
+    "seal": {
+      "short": "已认证",
+      "full": "商用使用权持有认证"
+    }
+  }
+}

@@ -3,7 +3,7 @@
     class="grid shrink-0 grid-cols-2 gap-0.5 overflow-hidden rounded-xl border border-surface-border"
     :class="boxClass"
     role="img"
-    :aria-label="`${title} 커버 모자이크`"
+    :aria-label="t('player.mosaic', { title })"
   >
     <UiCoverArt
       v-for="(seed, i) in cells"
@@ -21,6 +21,8 @@
 import { computed } from 'vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 
+const { t } = useI18n();
+
 // 2x2 mosaic of generative covers (playlist cards, UI §3.4).
 const props = withDefaults(
   defineProps<{
@@ -28,7 +30,7 @@ const props = withDefaults(
     title?: string;
     size?: 'sm' | 'md' | 'lg';
   }>(),
-  { title: '플레이리스트', size: 'md' },
+  { title: 'AVIBE', size: 'md' },
 );
 
 const cells = computed(() => {

@@ -190,6 +190,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, onMounted, reactive, ref } from 'vue';
 import { partnerApi, playlistApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';

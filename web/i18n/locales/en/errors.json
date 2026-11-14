@@ -1,0 +1,32 @@
+{
+  "errors": {
+    "ERR_INVALID_INPUT": "Please check your input.",
+    "ERR_UNAUTHORIZED": "Please log in.",
+    "ERR_FORBIDDEN": "You don't have permission to do that.",
+    "ERR_NOT_FOUND": "The requested item was not found.",
+    "ERR_EMAIL_TAKEN": "This email is already registered.",
+    "ERR_INVALID_CREDENTIALS": "The email or password is incorrect.",
+    "ERR_USER_INACTIVE": "This account is deactivated.",
+    "ERR_NOT_STREAMABLE": "This track can't be played. (review/blocked status)",
+    "ERR_RATE_LIMITED": "Too many requests. Please try again later.",
+    "ERR_TOO_MANY_ATTEMPTS": "Too many attempts. Please try again later.",
+    "ERR_AGE_CONFIRM_REQUIRED": "Age confirmation (14+) is required.",
+    "ERR_CONSENT_REQUIRED": "Required terms consent is missing.",
+    "ERR_TOTP_REQUIRED": "A 2-step verification code is required.",
+    "ERR_TOTP_INVALID": "The code is incorrect. Please try again.",
+    "ERR_TOTP_ENROLL_REQUIRED": "Admin accounts must enroll 2-step verification. Please enroll in security settings.",
+    "LOGIN_LOCKED": "Too many login attempts. Please try again in 15 minutes.",
+    "ERR_NON_COMMERCIAL_TIER": "Not a commercial plan. Please register commercial subscription proof.",
+    "ERR_RETROACTIVE_GENERATION_DATE": "Tracks generated before your subscription started can't be registered.",
+    "ERR_SYNC_ONLY_LICENSE": "This provider's license is sync-only and can't be streamed standalone.",
+    "ERR_DUPLICATE_AUDIO_FILE": "This audio file is already registered (duplicate).",
+    "ERR_PROVIDER_NOT_ALLOWED": "This provider is not allowlisted. Please pick an allowed partner provider.",
+    "ERR_PAYMENT_UNAVAILABLE": "Payments aren't set up yet. Please contact support.",
+    "ERR_ACTIVE_PASS_EXISTS": "You already have an active pass. Buy again after it expires, or cancel it immediately in your library first.",
+    "ERR_DOWNLOAD_REQUIRES_PASS": "Downloads require an active pass.",
+    "ERR_DOWNLOAD_QUOTA": "You've reached the daily download limit.",
+    "ERR_DOWNLOAD_UNAVAILABLE": "The master file is unavailable.",
+    "ERR_INTERNAL": "A server error occurred.",
+    "ERR_FALLBACK": "The request failed."
+  }
+}

@@ -27,7 +27,7 @@
         <button
           type="button"
           class="shrink-0 rounded p-0.5 text-text-secondary hover:text-white transition-colors"
-          aria-label="알림 닫기"
+          :aria-label="$t('common.toast.dismiss')"
           @click="dismiss(t.id)"
         >
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">

@@ -10,11 +10,11 @@
           <UiButton v-if="auth.isAuthenticated" variant="brand" size="sm" @click="createModalOpen = true">
             새 플레이리스트
           </UiButton>
-          <RouterLink v-else :to="{ name: 'login', query: { redirect: '/playlists' } }">
+          <RouterLink v-else :to="localePath({ name: 'login', query: { redirect: '/playlists' } })">
             <UiButton variant="brand" size="sm">로그인하고 만들기</UiButton>
           </RouterLink>
           <template #fallback>
-            <RouterLink :to="{ name: 'login', query: { redirect: '/playlists' } }">
+            <RouterLink :to="localePath({ name: 'login', query: { redirect: '/playlists' } })">
               <UiButton variant="brand" size="sm">로그인하고 만들기</UiButton>
             </RouterLink>
           </template>
@@ -110,7 +110,7 @@
         <article v-for="p in playlists.playlists" :key="p.id" class="group min-w-0">
           <div class="relative aspect-square overflow-hidden rounded-2xl border border-surface-border transition-colors group-hover:border-brand-500/50" :class="gradientFor(p.id)">
             <RouterLink
-              :to="{ name: 'playlist-detail', params: { id: p.id } }"
+              :to="localePath({ name: 'playlist-detail', params: { id: p.id } })"
               class="absolute inset-0"
               :aria-label="`「${p.title}」 열기`"
             >
@@ -136,7 +136,7 @@
               <svg v-else class="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
             </button>
           </div>
-          <RouterLink :to="{ name: 'playlist-detail', params: { id: p.id } }" class="mt-2 block truncate text-sm font-bold text-white hover:text-brand-400">
+          <RouterLink :to="localePath({ name: 'playlist-detail', params: { id: p.id } })" class="mt-2 block truncate text-sm font-bold text-white hover:text-brand-400">
             {{ p.title }}
           </RouterLink>
           <p class="text-xs text-text-muted">
@@ -225,6 +225,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import { GRADIENTS } from '@/components/ui/UiCoverArt.vue';
+const localePath = useLocalePath();
 
 interface Mix {
   key: string;
@@ -242,7 +243,7 @@ const router = useRouter();
 
 const gridClass = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
 const playButtonClass =
-  'absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ' +
+  'absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ' +
   'opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100';
 
 const counts = ref<Record<string, number>>({});
@@ -332,7 +333,7 @@ function playMix(mix: Mix, shuffled: boolean): void {
   if (mix.tracks.length === 0) return;
   if (!auth.isAuthenticated) {
     toast.info('믹스를 들으려면 먼저 로그인하세요.');
-    void router.push({ name: 'login', query: { redirect: '/playlists' } });
+    void router.push(localePath({ name: 'login', query: { redirect: '/playlists' } }));
     return;
   }
   if (player.shuffle !== shuffled) player.toggleShuffle();
@@ -368,7 +369,7 @@ async function submitCreate(): Promise<void> {
     newTitle.value = '';
     newIsPublic.value = false;
     toast.success('플레이리스트를 만들었습니다.');
-    void router.push({ name: 'playlist-detail', params: { id: p.id } });
+    void router.push(localePath({ name: 'playlist-detail', params: { id: p.id } }));
   } catch (err) {
     toast.error(errMessageOf(err), '생성 실패');
   } finally {

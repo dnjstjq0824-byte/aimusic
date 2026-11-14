@@ -128,6 +128,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { onMounted, ref } from 'vue';
 import { trackApi, userBlocksApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';

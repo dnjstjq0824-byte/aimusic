@@ -1,5 +1,5 @@
 <template>
-  <ol class="flex items-center gap-1" :aria-label="label">
+  <ol class="flex items-center gap-1" :aria-label="label || $t('common.stepper.label')">
     <li v-for="(step, i) in steps" :key="i" class="flex flex-1 items-center gap-1 last:flex-none" :aria-current="i === current ? 'step' : undefined">
       <span
         class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
@@ -22,6 +22,6 @@
 // Multi-step progress (signup flows, upload — UI §4).
 withDefaults(defineProps<{ steps: string[]; current?: number; label?: string }>(), {
   current: 0,
-  label: '진행 단계',
+  label: '',
 });
 </script>

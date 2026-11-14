@@ -1,0 +1,32 @@
+{
+  "errors": {
+    "ERR_INVALID_INPUT": "⟦Plèàsè chèck yòùr ìnpùt.～～～～～～～～～～⟧",
+    "ERR_UNAUTHORIZED": "⟦Plèàsè lòg ìn.～～～～～～⟧",
+    "ERR_FORBIDDEN": "⟦Yòù dòn't hàvè pèrmìssìòn tò dò thàt.～～～～～～～～～～～～～～～⟧",
+    "ERR_NOT_FOUND": "⟦Thè rèqùèstèd ìtèm wàs nòt fòùnd.～～～～～～～～～～～～～～⟧",
+    "ERR_EMAIL_TAKEN": "⟦Thìs èmàìl ìs àlrèàdy règìstèrèd.～～～～～～～～～～～～～～⟧",
+    "ERR_INVALID_CREDENTIALS": "⟦Thè èmàìl òr pàsswòrd ìs ìncòrrèct.～～～～～～～～～～～～～～⟧",
+    "ERR_USER_INACTIVE": "⟦Thìs àccòùnt ìs dèàctìvàtèd.～～～～～～～～～～～～⟧",
+    "ERR_NOT_STREAMABLE": "⟦Thìs tràck càn't bè plàyèd. (rèvìèw/blòckèd stàtùs)～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_RATE_LIMITED": "⟦Tòò màny rèqùèsts. Plèàsè try àgàìn làtèr.～～～～～～～～～～～～～～～～～⟧",
+    "ERR_TOO_MANY_ATTEMPTS": "⟦Tòò màny àttèmpts. Plèàsè try àgàìn làtèr.～～～～～～～～～～～～～～～～～⟧",
+    "ERR_AGE_CONFIRM_REQUIRED": "⟦Àgè cònfìrmàtìòn (14+) ìs rèqùìrèd.～～～～～～～～～～～～～～⟧",
+    "ERR_CONSENT_REQUIRED": "⟦Rèqùìrèd tèrms cònsènt ìs mìssìng.～～～～～～～～～～～～～～⟧",
+    "ERR_TOTP_REQUIRED": "⟦À 2-stèp vèrìfìcàtìòn còdè ìs rèqùìrèd.～～～～～～～～～～～～～～～～⟧",
+    "ERR_TOTP_INVALID": "⟦Thè còdè ìs ìncòrrèct. Plèàsè try àgàìn.～～～～～～～～～～～～～～～～⟧",
+    "ERR_TOTP_ENROLL_REQUIRED": "⟦Àdmìn àccòùnts mùst ènròll 2-stèp vèrìfìcàtìòn. Plèàsè ènròll ìn sècùrìty sèttìngs.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "LOGIN_LOCKED": "⟦Tòò màny lògìn àttèmpts. Plèàsè try àgàìn ìn 15 mìnùtès.～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_NON_COMMERCIAL_TIER": "⟦Nòt à còmmèrcìàl plàn. Plèàsè règìstèr còmmèrcìàl sùbscrìptìòn pròòf.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_RETROACTIVE_GENERATION_DATE": "⟦Tràcks gènèràtèd bèfòrè yòùr sùbscrìptìòn stàrtèd càn't bè règìstèrèd.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_SYNC_ONLY_LICENSE": "⟦Thìs pròvìdèr's lìcènsè ìs sync-ònly ànd càn't bè strèàmèd stàndàlònè.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_DUPLICATE_AUDIO_FILE": "⟦Thìs àùdìò fìlè ìs àlrèàdy règìstèrèd (dùplìcàtè).～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_PROVIDER_NOT_ALLOWED": "⟦Thìs pròvìdèr ìs nòt àllòwlìstèd. Plèàsè pìck àn àllòwèd pàrtnèr pròvìdèr.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_PAYMENT_UNAVAILABLE": "⟦Pàymènts àrèn't sèt ùp yèt. Plèàsè còntàct sùppòrt.～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_ACTIVE_PASS_EXISTS": "⟦Yòù àlrèàdy hàvè àn àctìvè pàss. Bùy àgàìn àftèr ìt èxpìrès, òr càncèl ìt ìmmèdìàtèly ìn yòùr lìbràry fìrst.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_DOWNLOAD_REQUIRES_PASS": "⟦Dòwnlòàds rèqùìrè àn àctìvè pàss.～～～～～～～～～～～～～～⟧",
+    "ERR_DOWNLOAD_QUOTA": "⟦Yòù'vè rèàchèd thè dàìly dòwnlòàd lìmìt.～～～～～～～～～～～～～～～～⟧",
+    "ERR_DOWNLOAD_UNAVAILABLE": "⟦Thè màstèr fìlè ìs ùnàvàìlàblè.～～～～～～～～～～～～～⟧",
+    "ERR_INTERNAL": "⟦À sèrvèr èrròr òccùrrèd.～～～～～～～～～～⟧",
+    "ERR_FALLBACK": "⟦Thè rèqùèst fàìlèd.～～～～～～～～⟧"
+  }
+}

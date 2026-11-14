@@ -23,7 +23,25 @@ export default defineNuxtConfig({
   srcDir: 'app',
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
-  modules: ['@pinia/nuxt'],
+  modules: ['@pinia/nuxt', '@nuxtjs/i18n'],
+  i18n: {
+    strategy: 'prefix_except_default',
+    defaultLocale: 'ko',
+    detectBrowserLanguage: false,
+    baseUrl: 'https://avibemusic.com',
+    langDir: '../i18n/locales',
+    locales: [
+      { code: 'ko', language: 'ko-KR', files: ['ko/common.json', 'ko/errors.json', 'ko/player.json', 'ko/auth.json', 'ko/home.json', 'ko/explore.json', 'ko/track.json', 'ko/library.json', 'ko/playlist.json', 'ko/pricing.json', 'ko/checkout.json', 'ko/account.json', 'ko/legal.json', 'ko/studio.json', 'ko/business.json', 'ko/generate.json', 'ko/admin.json'] },
+      { code: 'en', language: 'en-US', files: ['en/common.json', 'en/errors.json', 'en/player.json', 'en/auth.json', 'en/home.json', 'en/explore.json', 'en/track.json', 'en/library.json', 'en/playlist.json', 'en/pricing.json', 'en/checkout.json', 'en/account.json', 'en/legal.json', 'en/studio.json', 'en/business.json', 'en/generate.json', 'en/admin.json'] },
+      { code: 'ja', language: 'ja-JP', files: ['ja/common.json', 'ja/errors.json', 'ja/player.json', 'ja/auth.json', 'ja/home.json', 'ja/explore.json', 'ja/track.json', 'ja/library.json', 'ja/playlist.json', 'ja/pricing.json', 'ja/checkout.json', 'ja/account.json', 'ja/legal.json', 'ja/studio.json', 'ja/business.json', 'ja/generate.json', 'ja/admin.json'] },
+      { code: 'zh-cn', language: 'zh-CN', files: ['zh-CN/common.json', 'zh-CN/errors.json', 'zh-CN/player.json', 'zh-CN/auth.json', 'zh-CN/home.json', 'zh-CN/explore.json', 'zh-CN/track.json', 'zh-CN/library.json', 'zh-CN/playlist.json', 'zh-CN/pricing.json', 'zh-CN/checkout.json', 'zh-CN/account.json', 'zh-CN/legal.json', 'zh-CN/studio.json', 'zh-CN/business.json', 'zh-CN/generate.json', 'zh-CN/admin.json'] },
+      { code: 'th', language: 'th-TH', files: ['th/common.json', 'th/errors.json', 'th/player.json', 'th/auth.json', 'th/home.json', 'th/explore.json', 'th/library.json', 'th/playlist.json', 'th/pricing.json', 'th/checkout.json', 'th/account.json', 'th/legal.json', 'th/studio.json', 'th/business.json', 'th/generate.json', 'th/admin.json'] },
+      ...(process.dev
+        ? [{ code: 'en-XA', language: 'en-XA', files: ['en-XA/common.json', 'en-XA/errors.json', 'en-XA/player.json'] }]
+        : []),
+    ],
+    vueI18n: './i18n.config.ts',
+  },
   css: ['~/assets/css/fonts.css', '~/assets/css/main.css'],
   postcss: {
     plugins: {
@@ -86,7 +104,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      htmlAttrs: { lang: 'ko' },
+      // NOTE: <html lang> is managed by @nuxtjs/i18n per route. Do not set statically.
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1.0, viewport-fit=cover',
       title: 'AVIBE — Beyond Your Music',

@@ -109,6 +109,7 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
+const localePath = useLocalePath();
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -144,10 +145,10 @@ function startCheckout(plan: BillingPlan): void {
   }
   if (!auth.isAuthenticated) {
     toast.info('구매하려면 먼저 로그인하세요.');
-    void router.push({ name: 'login', query: { redirect: `/checkout?plan=${plan.code}` } });
+    void router.push(localePath({ name: 'login', query: { redirect: `/checkout?plan=${plan.code}` } }));
     return;
   }
-  void router.push({ name: 'checkout', query: { plan: plan.code } });
+  void router.push(localePath({ name: 'checkout', query: { plan: plan.code } }));
 }
 
 onMounted(() => {

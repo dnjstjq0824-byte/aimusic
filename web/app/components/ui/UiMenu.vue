@@ -6,7 +6,7 @@
       class="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary"
       aria-haspopup="menu"
       :aria-expanded="open"
-      :aria-label="label"
+      :aria-label="label || $t('common.actions.more')"
       @click="open = !open"
     >
       <slot name="trigger">
@@ -20,7 +20,7 @@
     <div
       v-if="open"
       role="menu"
-      :aria-label="label"
+      :aria-label="label || $t('common.actions.more')"
       class="absolute z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-surface-border bg-surface-2 py-1.5 shadow-2xl"
       :class="align === 'left' ? 'left-0' : 'right-0'"
     >
@@ -51,7 +51,7 @@ export interface MenuItem {
 }
 
 withDefaults(defineProps<{ items: MenuItem[]; label?: string; align?: 'left' | 'right' }>(), {
-  label: '더보기 메뉴',
+  label: '',
   align: 'right',
 });
 const emit = defineEmits<{ (e: 'select', index: number): void }>();

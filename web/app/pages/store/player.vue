@@ -137,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { usePlayerStore } from '@/stores/playerStore';
 import { useStorePlayerStore } from '@/stores/storePlayerStore';

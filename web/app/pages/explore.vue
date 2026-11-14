@@ -70,7 +70,7 @@
           :key="tag"
           type="button"
           class="rounded-full px-2.5 py-1 transition-colors"
-          :class="filterMood === tag ? 'bg-brand-500 -on-brand font-bold' : 'bg-surface-2 text-text-secondary hover:text-white hover:bg-surface-3'"
+          :class="filterMood === tag ? 'bg-brand-500 text-on-brand font-bold' : 'bg-surface-2 text-text-secondary hover:text-white hover:bg-surface-3'"
           @click="selectMood(tag)"
         >
           #{{ tag }}
@@ -179,6 +179,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import TrackCard from '@/components/TrackCard.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+const localePath = useLocalePath();
 
 const route = useRoute();
 const router = useRouter();
@@ -274,7 +275,7 @@ function playAll() {
   if (tracks.value.length === 0) return;
   if (!auth.isAuthenticated) {
     toast.info('음원을 들으려면 먼저 로그인하세요.');
-    void router.push({ name: 'login', query: { redirect: '/explore' } });
+    void router.push(localePath({ name: 'login', query: { redirect: '/explore' } }));
     return;
   }
   player.setQueue(tracks.value, tracks.value[0]?.id);
@@ -289,7 +290,7 @@ function enqueue(t: Track) {
 function requireLogin(action: string): boolean {
   if (auth.isAuthenticated) return true;
   toast.info(`${action}하려면 먼저 로그인하세요.`);
-  void router.push({ name: 'login', query: { redirect: route.fullPath } });
+  void router.push(localePath({ name: 'login', query: { redirect: route.fullPath } }));
   return false;
 }
 

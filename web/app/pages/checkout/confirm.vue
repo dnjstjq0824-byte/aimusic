@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+defineI18nRoute(false);
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { billingApi } from '@/api/endpoints';
