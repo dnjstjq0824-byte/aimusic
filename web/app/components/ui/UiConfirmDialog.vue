@@ -6,7 +6,7 @@
     max-width="sm"
     @close="$emit('update:modelValue', false)"
   >
-    <p v-if="body" class="text-xs leading-relaxed text-neutral-400">{{ body }}</p>
+    <p v-if="body" class="text-xs leading-relaxed text-text-secondary">{{ body }}</p>
     <template #footer>
       <UiButton variant="ghost" size="sm" @click="$emit('update:modelValue', false)">
         {{ cancelLabel }}

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-clip bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 -on-brand">
     <!-- Top Navigation -->
     <UiNavbar />
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-clip bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 -on-brand">
     <!-- Partner Header -->
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -8,7 +8,7 @@
             <BrandLogo :size="32" tagline="Studio Console" />
           </RouterLink>
 
-          <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-neutral-400" aria-label="파트너 메뉴">
+          <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-text-secondary" aria-label="파트너 메뉴">
             <RouterLink
               to="/partner"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
@@ -46,7 +46,7 @@
             </RouterLink>
             <RouterLink
               to="/"
-              class="rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-300 ml-2"
+              class="rounded-lg px-3 py-1.5 text-text-muted hover:text-text-primary ml-2"
             >
               리스너 홈으로 이동 ↗
             </RouterLink>
@@ -56,14 +56,14 @@
         <div class="flex shrink-0 items-center gap-3 text-xs">
           <button
             type="button"
-            class="hidden sm:inline text-neutral-400 hover:text-white transition-colors"
+            class="hidden sm:inline text-text-secondary hover:text-white transition-colors"
             @click="auth.logout()"
           >
             로그아웃
           </button>
           <button
             type="button"
-            class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+            class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-text-primary hover:text-white"
             :aria-expanded="mobileNavOpen"
             aria-controls="partner-mobile-nav"
             :aria-label="mobileNavOpen ? '메뉴 닫기' : '메뉴 열기'"
@@ -88,49 +88,49 @@
       >
         <RouterLink
           to="/partner"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           대시보드
         </RouterLink>
         <RouterLink
           to="/partner/upload"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           음원 업로드 (Gatekeeper)
         </RouterLink>
         <RouterLink
           to="/partner/subscriptions"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           구독 증빙 관리
         </RouterLink>
         <RouterLink
           to="/partner/stores"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           매장 관리
         </RouterLink>
         <RouterLink
           to="/partner/generations"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           AI 생성 콘솔
         </RouterLink>
         <RouterLink
           to="/"
-          class="block rounded-lg px-3 py-2 text-neutral-500 hover:bg-surface-2 hover:text-neutral-300"
+          class="block rounded-lg px-3 py-2 text-text-muted hover:bg-surface-2 hover:text-text-primary"
           @click="mobileNavOpen = false"
         >
           리스너 홈으로 이동 ↗
         </RouterLink>
         <button
           type="button"
-          class="block w-full rounded-lg px-3 py-2 text-left text-neutral-400 hover:bg-surface-2 hover:text-white"
+          class="block w-full rounded-lg px-3 py-2 text-left text-text-secondary hover:bg-surface-2 hover:text-white"
           @click="auth.logout()"
         >
           로그아웃

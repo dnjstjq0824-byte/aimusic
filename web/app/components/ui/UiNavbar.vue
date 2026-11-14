@@ -8,7 +8,7 @@
         </RouterLink>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-sm font-medium text-neutral-400" aria-label="주 메뉴">
+        <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-sm font-medium text-text-secondary" aria-label="주 메뉴">
           <RouterLink
             to="/"
             class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
@@ -88,7 +88,7 @@
           <button
             ref="userMenuButton"
             type="button"
-            class="flex items-center gap-2 rounded-full border border-surface-border bg-surface-1 p-1 pr-3 text-xs text-neutral-200 hover:border-surface-border-hover transition-colors"
+            class="flex items-center gap-2 rounded-full border border-surface-border bg-surface-1 p-1 pr-3 text-xs text-text-primary hover:border-surface-border-hover transition-colors"
             aria-haspopup="menu"
             :aria-expanded="userMenuOpen"
             aria-label="사용자 메뉴"
@@ -96,7 +96,7 @@
           >
             <UiAvatar :name="auth.displayLabel || undefined" size="sm" />
             <span class="max-w-[100px] truncate font-medium hidden sm:inline">{{ auth.displayLabel }}</span>
-            <svg class="h-3 w-3 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="h-3 w-3 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
@@ -109,13 +109,13 @@
             aria-label="사용자 메뉴"
             class="absolute right-0 mt-2 w-48 rounded-xl border border-surface-border glass-dropdown py-1.5 shadow-2xl z-50 text-xs"
           >
-            <div class="px-3 py-2 border-b border-surface-border text-neutral-400">
+            <div class="px-3 py-2 border-b border-surface-border text-text-secondary">
               <div class="font-semibold text-white truncate">{{ auth.displayLabel }}</div>
-              <div class="text-[11px] text-neutral-500 truncate">{{ auth.email }}</div>
+              <div class="text-caption text-text-muted truncate">{{ auth.email }}</div>
             </div>
             <RouterLink
               to="/my-library"
-              class="block px-3 py-2 text-neutral-300 hover:bg-surface-3 hover:text-white"
+              class="block px-3 py-2 text-text-primary hover:bg-surface-3 hover:text-white"
               @click="userMenuOpen = false"
             >
               내 플레이리스트 & 라이브러리
@@ -146,14 +146,14 @@
             </RouterLink>
             <RouterLink
               to="/legal"
-              class="block px-3 py-2 text-neutral-300 hover:bg-surface-3 hover:text-white"
+              class="block px-3 py-2 text-text-primary hover:bg-surface-3 hover:text-white"
               @click="userMenuOpen = false"
             >
               이용약관 및 법적 정책
             </RouterLink>
             <RouterLink
               to="/account/security"
-              class="block px-3 py-2 text-neutral-300 hover:bg-surface-3 hover:text-white"
+              class="block px-3 py-2 text-text-primary hover:bg-surface-3 hover:text-white"
               @click="userMenuOpen = false"
             >
               계정 보안 (2단계 인증)
@@ -170,13 +170,13 @@
         <div v-else class="flex items-center gap-2">
           <RouterLink
             to="/login"
-            class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-surface-3 transition-colors border border-surface-border"
+            class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-3 transition-colors border border-surface-border"
           >
             로그인
           </RouterLink>
           <RouterLink
             to="/login?tab=register"
-            class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-[#04121a] shadow-glow-brand hover:bg-brand-400 transition-all"
+            class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold -on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
           >
             회원가입
           </RouterLink>
@@ -185,13 +185,13 @@
             <div class="flex items-center gap-2">
               <RouterLink
                 to="/login"
-                class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-surface-3 transition-colors border border-surface-border"
+                class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-3 transition-colors border border-surface-border"
               >
                 로그인
               </RouterLink>
               <RouterLink
                 to="/login?tab=register"
-                class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-[#04121a] shadow-glow-brand hover:bg-brand-400 transition-all"
+                class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold -on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
               >
                 회원가입
               </RouterLink>
@@ -202,7 +202,7 @@
         <!-- Mobile hamburger -->
         <button
           type="button"
-          class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+          class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-text-primary hover:text-white"
           :aria-expanded="mobileNavOpen"
           aria-controls="mobile-nav"
           :aria-label="mobileNavOpen ? '모바일 메뉴 닫기' : '모바일 메뉴 열기'"
@@ -227,21 +227,21 @@
     >
       <RouterLink
         to="/"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         홈
       </RouterLink>
       <RouterLink
         to="/explore"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         음원 탐색 &amp; 필터
       </RouterLink>
       <RouterLink
         to="/playlists"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         플레이리스트
@@ -249,21 +249,21 @@
       <RouterLink
         v-if="auth.isAuthenticated"
         to="/my-library"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         내 라이브러리
       </RouterLink>
       <RouterLink
         to="/disputes"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         권리보호센터 (OSP 분쟁)
       </RouterLink>
       <RouterLink
         to="/pricing"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         요금제
@@ -271,7 +271,7 @@
       <RouterLink
         v-if="auth.isAuthenticated"
         to="/account/security"
-        class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+        class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
         @click="mobileNavOpen = false"
       >
         계정 보안 (2단계 인증)
@@ -286,7 +286,7 @@
         </RouterLink>
         <RouterLink
           to="/partner/upload"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           음원 업로드 위저드

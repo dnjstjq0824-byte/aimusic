@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="mt-3 flex items-center justify-between border-t border-surface-border pt-2 text-[11px] text-neutral-400">
+      <div class="mt-3 flex items-center justify-between border-t border-surface-border pt-2 text-caption text-text-secondary">
         <span>재생 {{ track.playCount.toLocaleString() }}회</span>
         <span v-if="track.durationMs">{{ fmtDuration(track.durationMs) }}</span>
       </div>
@@ -38,21 +38,21 @@
     <div class="mt-3 flex items-center justify-between gap-1 pt-1">
       <button
         type="button"
-        class="-my-1.5 py-1.5 text-[11px] font-medium text-neutral-400 transition-colors hover:text-white"
+        class="-my-1.5 py-1.5 text-caption font-medium text-text-secondary transition-colors hover:text-white"
         @click="$emit('enqueue', track)"
       >
         + 큐에 추가
       </button>
       <button
         type="button"
-        class="text-[11px] font-medium text-neutral-400 transition-colors hover:text-brand-400"
+        class="text-caption font-medium text-text-secondary transition-colors hover:text-brand-400"
         @click="$emit('add-to-playlist', track)"
       >
         + 플레이리스트
       </button>
       <button
         type="button"
-        class="text-[11px] font-medium text-neutral-500 transition-colors hover:text-accent-crimson"
+        class="text-caption font-medium text-text-muted transition-colors hover:text-accent-crimson"
         @click="$emit('report', track)"
       >
         신고

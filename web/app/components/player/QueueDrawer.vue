@@ -23,11 +23,11 @@
           :class="t.id === player.currentTrack?.id ? 'bg-brand-950/60 border border-brand-500/30' : 'bg-surface-2/60'"
           :aria-current="t.id === player.currentTrack?.id ? 'true' : undefined"
         >
-          <span class="w-6 shrink-0 text-xs text-neutral-500">{{ i + 1 }}</span>
-          <span class="min-w-0 flex-1 truncate text-xs text-neutral-200">{{ t.title }}</span>
+          <span class="w-6 shrink-0 text-xs text-text-muted">{{ i + 1 }}</span>
+          <span class="min-w-0 flex-1 truncate text-xs text-text-primary">{{ t.title }}</span>
           <button
             type="button"
-            class="rounded p-1 text-xs text-neutral-400 hover:text-white"
+            class="rounded p-1 text-xs text-text-secondary hover:text-white"
             :aria-label="`「${t.title}」 재생`"
             @click="playAt(i)"
           >
@@ -35,7 +35,7 @@
           </button>
           <button
             type="button"
-            class="rounded p-1 text-xs text-neutral-400 hover:text-accent-crimson"
+            class="rounded p-1 text-xs text-text-secondary hover:text-accent-crimson"
             :aria-label="`「${t.title}」 대기열에서 제거`"
             @click="player.removeFromQueue(t.id)"
           >

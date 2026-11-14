@@ -43,7 +43,7 @@ const paddingClasses = {
 const borderClass = {
   default: 'border-surface-border',
   brand: 'border-brand-500/40 shadow-glow-brand',
-  success: 'border-accent-emerald/40',
+  success: 'border-success/40',
   danger: 'border-accent-crimson/40',
 }[props.borderVariant];
 </script>

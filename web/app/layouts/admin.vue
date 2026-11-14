@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-clip bg-surface-0 text-neutral-100 flex flex-col font-sans selection:bg-brand-500 selection:text-[#04121a]">
+  <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 -on-brand">
     <!-- Admin Header -->
     <header class="sticky top-0 z-40 border-b border-surface-border bg-surface-1/90 backdrop-blur-xl">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -8,7 +8,7 @@
             <BrandLogo :size="32" tagline="Audit Console" />
           </RouterLink>
 
-          <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-neutral-400" aria-label="관리자 메뉴">
+          <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-text-secondary" aria-label="관리자 메뉴">
             <RouterLink
               to="/admin"
               class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
@@ -81,7 +81,7 @@
             </RouterLink>
             <RouterLink
               to="/"
-              class="rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-300 ml-2"
+              class="rounded-lg px-3 py-1.5 text-text-muted hover:text-text-primary ml-2"
             >
               리스너 홈으로 ↗
             </RouterLink>
@@ -94,14 +94,14 @@
           </span>
           <button
             type="button"
-            class="hidden sm:inline text-neutral-400 hover:text-white transition-colors"
+            class="hidden sm:inline text-text-secondary hover:text-white transition-colors"
             @click="auth.logout()"
           >
             로그아웃
           </button>
           <button
             type="button"
-            class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-neutral-300 hover:text-white"
+            class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-text-primary hover:text-white"
             :aria-expanded="mobileNavOpen"
             aria-controls="admin-mobile-nav"
             :aria-label="mobileNavOpen ? '메뉴 닫기' : '메뉴 열기'"
@@ -126,84 +126,84 @@
       >
         <RouterLink
           to="/admin"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           개요
         </RouterLink>
         <RouterLink
           to="/admin/reviews"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           Gate 4 검수 워크벤치
         </RouterLink>
         <RouterLink
           to="/admin/policies"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           AI 정책 매트릭스
         </RouterLink>
         <RouterLink
           to="/admin/disputes"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           OSP 분쟁 &amp; 임시조치
         </RouterLink>
         <RouterLink
           to="/admin/curation"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           큐레이션 &amp; 정산배치
         </RouterLink>
         <RouterLink
           to="/admin/audit"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           감사 추적
         </RouterLink>
         <RouterLink
           to="/admin/users"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           회원 관리
         </RouterLink>
         <RouterLink
           to="/admin/stores"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           매장 승인
         </RouterLink>
         <RouterLink
           to="/admin/distribution"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           DSP 키트
         </RouterLink>
         <RouterLink
           to="/admin/settlements"
-          class="block rounded-lg px-3 py-2 text-neutral-300 hover:bg-surface-2 hover:text-white"
+          class="block rounded-lg px-3 py-2 text-text-primary hover:bg-surface-2 hover:text-white"
           @click="mobileNavOpen = false"
         >
           정산 관리
         </RouterLink>
         <RouterLink
           to="/"
-          class="block rounded-lg px-3 py-2 text-neutral-500 hover:bg-surface-2 hover:text-neutral-300"
+          class="block rounded-lg px-3 py-2 text-text-muted hover:bg-surface-2 hover:text-text-primary"
           @click="mobileNavOpen = false"
         >
           리스너 홈으로 ↗
         </RouterLink>
         <button
           type="button"
-          class="block w-full rounded-lg px-3 py-2 text-left text-neutral-400 hover:bg-surface-2 hover:text-white"
+          class="block w-full rounded-lg px-3 py-2 text-left text-text-secondary hover:bg-surface-2 hover:text-white"
           @click="auth.logout()"
         >
           로그아웃

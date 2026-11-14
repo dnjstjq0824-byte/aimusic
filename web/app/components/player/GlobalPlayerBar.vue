@@ -1,11 +1,11 @@
 <template>
   <div class="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 border-t border-surface-border bg-surface-1/95 pt-2.5 backdrop-blur-2xl shadow-2xl transition-all sm:px-6">
     <!-- Notice strip if tracks were skipped -->
-    <div v-if="player.skippedIds.length > 0" class="mx-auto max-w-7xl pb-1.5 text-center text-[11px] text-accent-amber font-medium" role="status">
+    <div v-if="player.skippedIds.length > 0" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-amber font-medium" role="status">
       재생할 수 없는 음원 {{ player.skippedIds.length }}곡을 재생 큐에서 건너뛰었습니다.
     </div>
 
-    <div v-if="player.error && player.currentTrack" class="mx-auto max-w-7xl pb-1.5 text-center text-[11px] text-accent-crimson font-medium" role="alert">
+    <div v-if="player.error && player.currentTrack" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-crimson font-medium" role="alert">
       {{ player.error }}
       <RouterLink
         v-if="player.errorCode === 'ERR_UNAUTHORIZED'"
@@ -40,21 +40,21 @@
             >
               {{ player.currentTrack.title }}
             </RouterLink>
-            <div class="flex items-center gap-1.5 text-[10px] text-neutral-400 mt-0.5 truncate">
+            <div class="flex items-center gap-1.5 text-caption text-text-secondary mt-0.5 truncate">
               <span class="font-medium text-brand-300">{{ player.currentTrack.aiProvider }}</span>
               <span aria-hidden="true">·</span>
-              <span class="text-accent-emerald font-semibold">이용조건 확인됨</span>
+              <span class="text-verified font-semibold">이용조건 확인됨</span>
               <span aria-hidden="true">·</span>
               <span
                 class="rounded px-1 py-px font-bold"
-                :class="player.currentQuality === 'HQ' ? 'bg-brand-500/20 text-brand-300' : 'bg-surface-3 text-neutral-400'"
+                :class="player.currentQuality === 'HQ' ? 'bg-brand-500/20 text-brand-300' : 'bg-surface-3 text-text-secondary'"
                 :title="player.currentQuality === 'HQ' ? '고음질 256k (이용권)' : '표준 음질 128k (무료)'"
               >{{ player.currentQuality }}</span>
             </div>
           </div>
           <div v-else>
-            <div class="truncate text-xs font-semibold text-neutral-400">재생 대기 중</div>
-            <div class="truncate text-[10px] text-neutral-500">원하는 음원을 선택하세요</div>
+            <div class="truncate text-xs font-semibold text-text-secondary">재생 대기 중</div>
+            <div class="truncate text-caption text-text-muted">원하는 음원을 선택하세요</div>
           </div>
         </div>
       </div>
@@ -65,7 +65,7 @@
         <button
           type="button"
           class="hidden rounded p-1 transition-colors sm:inline-flex"
-          :class="player.shuffle ? 'text-brand-400' : 'text-neutral-400 hover:text-white'"
+          :class="player.shuffle ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
           :aria-pressed="player.shuffle"
           aria-label="셔플 재생"
           @click="player.toggleShuffle()"
@@ -78,7 +78,7 @@
         <!-- Previous -->
         <button
           type="button"
-          class="rounded p-1.5 text-neutral-300 hover:text-white transition-colors sm:p-1"
+          class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
           aria-label="이전 곡"
           @click="player.playPrev()"
         >
@@ -90,7 +90,7 @@
         <!-- Play / Pause -->
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-[#04121a] shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer sm:h-9 sm:w-9"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer sm:h-9 sm:w-9"
           :disabled="player.isLoading || !player.currentTrack"
           :aria-label="player.isPlaying ? '일시정지' : '재생'"
           @click="player.toggle()"
@@ -110,7 +110,7 @@
         <!-- Next -->
         <button
           type="button"
-          class="rounded p-1.5 text-neutral-300 hover:text-white transition-colors sm:p-1"
+          class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
           aria-label="다음 곡"
           @click="player.playNext(true)"
         >
@@ -123,7 +123,7 @@
         <button
           type="button"
           class="relative hidden rounded p-1 transition-colors sm:inline-flex"
-          :class="player.repeat !== 'off' ? 'text-brand-400' : 'text-neutral-400 hover:text-white'"
+          :class="player.repeat !== 'off' ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
           :aria-pressed="player.repeat !== 'off'"
           :aria-label="`반복 재생: ${repeatLabel}`"
           @click="player.cycleRepeat()"
@@ -133,13 +133,13 @@
             <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4" />
             <path d="M21 13v1a4 4 0 0 1-4 4H3" />
           </svg>
-          <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-[8px] font-bold text-[#04121a]">1</span>
+          <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-caption font-bold -on-brand">1</span>
         </button>
 
         <!-- Queue (mobile, icon only) -->
         <button
           type="button"
-          class="relative ml-1 flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-2 text-neutral-300 hover:text-white sm:hidden"
+          class="relative ml-1 flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-2 text-text-primary hover:text-white sm:hidden"
           :aria-label="`재생 대기열 열기 (${player.queue.length}곡)`"
           @click="$emit('toggle-queue')"
         >
@@ -148,7 +148,7 @@
           </svg>
           <span
             v-if="player.queue.length > 0"
-            class="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-brand-500 px-1 text-center font-mono text-[9px] font-bold leading-4 text-[#04121a]"
+            class="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-brand-500 px-1 text-center font-mono text-caption font-bold leading-4 -on-brand"
           >
             {{ player.queue.length }}
           </span>
@@ -159,7 +159,7 @@
       <div class="hidden items-center justify-end gap-2.5 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:flex">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:border-surface-border-hover transition-colors"
+          class="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-text-primary hover:text-white hover:border-surface-border-hover transition-colors"
           aria-label="재생 대기열 열기"
           @click="$emit('toggle-queue')"
         >
@@ -167,7 +167,7 @@
             <path d="M4 6h16M4 12h16M4 18h10" />
           </svg>
           <span>큐</span>
-          <span class="rounded-full bg-brand-500/20 text-brand-400 px-1.5 py-0.5 text-[10px] font-mono font-bold">
+          <span class="rounded-full bg-brand-500/20 text-brand-400 px-1.5 py-0.5 text-caption font-mono font-bold">
             {{ player.queue.length }}
           </span>
         </button>
@@ -175,7 +175,7 @@
 
       <!-- Waveform Seekbar & time (full width on mobile) -->
       <div class="col-span-2 flex w-full items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-2">
-        <span class="w-8 shrink-0 text-right font-mono text-[10px] text-neutral-400">{{ fmtPos(player.positionMs) }}</span>
+        <span class="w-8 shrink-0 text-right font-mono text-caption text-text-secondary">{{ fmtPos(player.positionMs) }}</span>
         <div class="min-w-0 flex-1">
           <WaveformSeekbar
             :position-ms="player.positionMs"
@@ -184,7 +184,7 @@
             @seek="player.seek($event)"
           />
         </div>
-        <span class="w-8 shrink-0 font-mono text-[10px] text-neutral-400">{{ fmtDur(player.durationMs || player.currentTrack?.durationMs || 0) }}</span>
+        <span class="w-8 shrink-0 font-mono text-caption text-text-secondary">{{ fmtDur(player.durationMs || player.currentTrack?.durationMs || 0) }}</span>
       </div>
     </div>
   </div>

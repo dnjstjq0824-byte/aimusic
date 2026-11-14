@@ -6,7 +6,7 @@
     @update:model-value="noop"
   >
     <div class="space-y-4">
-      <p class="text-xs leading-relaxed text-neutral-300">
+      <p class="text-xs leading-relaxed text-text-primary">
         개정된 필수 약관이 있습니다. 스트리밍·결제·업로드를 계속 이용하려면 아래 약관에 동의해 주세요.
       </p>
       <ul class="space-y-2">
@@ -17,7 +17,7 @@
         >
           <div class="min-w-0">
             <div class="truncate text-sm font-semibold text-white">{{ t.titleKo }}</div>
-            <div class="text-[11px] text-neutral-400">{{ t.code }} · {{ t.version }}</div>
+            <div class="text-caption text-text-secondary">{{ t.code }} · {{ t.version }}</div>
           </div>
           <div class="flex shrink-0 gap-2">
             <RouterLink :to="`/legal/${t.code}`" target="_blank">

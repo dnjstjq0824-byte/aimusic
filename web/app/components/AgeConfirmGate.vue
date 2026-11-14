@@ -6,12 +6,12 @@
     @update:model-value="noop"
   >
     <div class="space-y-4">
-      <p class="text-xs leading-relaxed text-neutral-300">
+      <p class="text-xs leading-relaxed text-text-primary">
         소셜 계정으로 처음 로그인했습니다. AVIBE는 만 14세 이상만 이용할 수 있습니다.
         스트리밍·결제·업로드를 이용하려면 연령 확인이 필요합니다.
       </p>
       <UiCheckbox v-model="confirmed" required>
-        <span class="text-xs text-neutral-200">만 14세 이상입니다. (필수)</span>
+        <span class="text-xs text-text-primary">만 14세 이상입니다. (필수)</span>
       </UiCheckbox>
       <UiInput
         v-model="birthYear"

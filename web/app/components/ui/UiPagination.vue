@@ -1,6 +1,6 @@
 <template>
   <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2" aria-label="페이지네이션">
-    <div class="text-xs text-neutral-400">
+    <div class="text-xs text-text-secondary">
       <slot name="info">
         <span v-if="total !== null">전체 {{ total.toLocaleString('ko-KR') }}개 중 {{ rangeText }}</span>
         <span v-else>페이지 {{ page }}</span>
@@ -26,8 +26,8 @@
           :disabled="disabled"
           class="min-w-[2rem] rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
           :class="p === page
-            ? 'bg-brand-500 text-[#04121a] shadow-glow-brand'
-            : 'bg-surface-2 text-neutral-300 hover:bg-surface-3 hover:text-white border border-surface-border'"
+            ? 'bg-brand-500 -on-brand shadow-glow-brand'
+            : 'bg-surface-2 text-text-primary hover:bg-surface-3 hover:text-white border border-surface-border'"
           @click="goPage(p)"
         >
           {{ p }}

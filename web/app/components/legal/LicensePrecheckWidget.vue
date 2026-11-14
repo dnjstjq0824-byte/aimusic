@@ -4,8 +4,8 @@
       <div class="flex items-center gap-2">
         <UiBadge :variant="badgeVariant" size="sm" :dot="status === 'checking'">{{ title }}</UiBadge>
       </div>
-      <p class="mt-2 text-xs leading-relaxed text-neutral-300">{{ message }}</p>
-      <p v-if="code" class="mt-1 font-mono text-[11px] text-neutral-500">{{ code }}</p>
+      <p class="mt-2 text-xs leading-relaxed text-text-primary">{{ message }}</p>
+      <p v-if="code" class="mt-1 font-mono text-caption text-text-muted">{{ code }}</p>
     </UiCard>
   </div>
 </template>

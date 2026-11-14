@@ -6,7 +6,7 @@
     @close="$emit('update:modelValue', false)"
   >
     <div v-if="playlists.length === 0 && !creating" class="py-4 text-center">
-      <p class="mb-3 text-xs text-neutral-400">생성된 플레이리스트가 없습니다.</p>
+      <p class="mb-3 text-xs text-text-secondary">생성된 플레이리스트가 없습니다.</p>
       <UiButton variant="brand" size="sm" @click="creating = true">새 플레이리스트 만들기</UiButton>
     </div>
     <div v-else class="space-y-2">
@@ -19,14 +19,14 @@
       >
         <span class="min-w-0">
           <span class="block truncate font-bold text-white">{{ p.title }}</span>
-          <span class="mt-0.5 block text-[11px] text-neutral-500">{{ p.isPublic ? '공개' : '비공개' }}</span>
+          <span class="mt-0.5 block text-caption text-text-muted">{{ p.isPublic ? '공개' : '비공개' }}</span>
         </span>
-        <span class="shrink-0 text-neutral-400">담기 →</span>
+        <span class="shrink-0 text-text-secondary">담기 →</span>
       </button>
       <button
         v-if="!creating"
         type="button"
-        class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-surface-border p-3 text-xs font-semibold text-neutral-400 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+        class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-surface-border p-3 text-xs font-semibold text-text-secondary transition-colors hover:border-brand-500/50 hover:text-brand-300"
         @click="creating = true"
       >
         + 새로 만들기

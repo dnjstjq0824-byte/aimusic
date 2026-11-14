@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <label v-if="label" :for="selectId" class="mb-1.5 block text-xs font-medium text-neutral-300">
+    <label v-if="label" :for="selectId" class="mb-1.5 block text-xs font-medium text-text-primary">
       {{ label }}
       <span v-if="required" class="text-accent-crimson" aria-hidden="true">*</span>
     </label>
@@ -18,19 +18,19 @@
         :required="required"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy || undefined"
-        class="w-full appearance-none bg-transparent px-3 py-2 pr-8 text-sm text-neutral-100 focus:outline-none cursor-pointer"
+        class="w-full appearance-none bg-transparent px-3 py-2 pr-8 text-sm text-text-primary focus:outline-none cursor-pointer"
         @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value); $emit('change', ($event.target as HTMLSelectElement).value)"
       >
         <slot />
       </select>
-      <div class="pointer-events-none absolute right-3 flex items-center text-neutral-400">
+      <div class="pointer-events-none absolute right-3 flex items-center text-text-secondary">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
     </div>
     <p v-if="error" :id="errorId" class="mt-1 text-xs text-accent-crimson">{{ error }}</p>
-    <p v-else-if="hint" :id="hintId" class="mt-1 text-xs text-neutral-500">{{ hint }}</p>
+    <p v-else-if="hint" :id="hintId" class="mt-1 text-xs text-text-muted">{{ hint }}</p>
   </div>
 </template>
 

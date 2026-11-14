@@ -14,7 +14,7 @@
         :class="disabled ? 'opacity-50 cursor-not-allowed' : ''"
       />
       <svg
-        class="pointer-events-none absolute h-3 w-3 text-[#04121a] opacity-0 transition-opacity peer-checked:opacity-100"
+        class="pointer-events-none absolute h-3 w-3 -on-brand opacity-0 transition-opacity peer-checked:opacity-100"
         viewBox="0 0 14 10"
         fill="none"
         stroke="currentColor"
@@ -25,7 +25,7 @@
         <path d="M1 5l4 4L13 1" />
       </svg>
     </div>
-    <div class="text-xs text-neutral-300 leading-snug">
+    <div class="text-xs text-text-primary leading-snug">
       <slot />
     </div>
   </label>

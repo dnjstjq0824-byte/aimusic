@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const sizeClasses = {
-  xs: 'px-1.5 py-0.5 text-[10px] tracking-tight',
+  xs: 'px-1.5 py-0.5 text-caption tracking-tight',
   sm: 'px-2 py-0.5 text-xs',
   md: 'px-2.5 py-1 text-xs',
 };
@@ -52,7 +52,7 @@ const variantClasses = {
   warning: 'bg-amber-950/80 text-amber-400 border border-amber-700/50',
   danger: 'bg-red-950/80 text-red-400 border border-red-700/50',
   info: 'bg-blue-950/80 text-blue-400 border border-blue-700/50',
-  neutral: 'bg-surface-2 text-neutral-300 border border-surface-border',
+  neutral: 'bg-surface-2 text-text-primary border border-surface-border',
 };
 
 const dotColorClass = computed(() => {
@@ -73,7 +73,7 @@ const dotColorClass = computed(() => {
     case 'info':
       return 'bg-blue-400';
     default:
-      return 'bg-neutral-400';
+      return 'bg-surface-3';
   }
 });
 </script>

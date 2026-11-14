@@ -8,11 +8,11 @@
       role="tab"
       :aria-selected="modelValue === tab.value"
       :tabindex="modelValue === tab.value ? 0 : -1"
-      class="flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold sm:px-3 sm:text-xs transition-all duration-150 text-center select-none"
+      class="flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-caption font-semibold sm:px-3 sm:text-xs transition-all duration-150 text-center select-none"
       :class="[
         modelValue === tab.value
           ? 'bg-surface-2 text-white shadow-sm border border-surface-border/60'
-          : 'text-neutral-400 hover:text-neutral-200 hover:bg-surface-1/40',
+          : 'text-text-secondary hover:text-text-primary hover:bg-surface-1/40',
       ]"
       @click="$emit('update:modelValue', tab.value)"
       @keydown.left.prevent="moveFocus(i, -1)"
@@ -21,7 +21,7 @@
       <span class="inline-flex items-center justify-center gap-1.5">
         <span v-if="tab.badge" class="h-1.5 w-1.5 rounded-full bg-brand-500" />
         {{ tab.label }}
-        <span v-if="tab.count !== undefined" class="rounded-full bg-surface-3 px-1.5 text-[10px] text-neutral-300">
+        <span v-if="tab.count !== undefined" class="rounded-full bg-surface-3 px-1.5 text-caption text-text-primary">
           {{ tab.count }}
         </span>
       </span>

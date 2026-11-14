@@ -10,7 +10,7 @@
         </slot>
       </div>
       <h1 class="font-display text-2xl font-black tracking-tight text-white sm:text-3xl">{{ title }}</h1>
-      <p v-if="description" class="mt-1 max-w-2xl text-xs leading-relaxed text-neutral-400 sm:text-sm">
+      <p v-if="description" class="mt-1 max-w-2xl text-xs leading-relaxed text-text-secondary sm:text-sm">
         {{ description }}
       </p>
     </div>

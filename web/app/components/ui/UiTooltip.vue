@@ -13,7 +13,7 @@
       v-if="open"
       :id="tipId"
       role="tooltip"
-      class="pointer-events-none absolute z-50 whitespace-nowrap rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-neutral-100 shadow-2xl"
+      class="pointer-events-none absolute z-50 whitespace-nowrap rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-text-primary shadow-2xl"
       :class="positionClass"
     >
       {{ text }}
