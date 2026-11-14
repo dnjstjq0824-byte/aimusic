@@ -28,13 +28,22 @@
   /* Text */
   --color-text-primary: #f7f7f8;
   --color-text-secondary: #a1a7b3;
-  --color-text-muted: #6e7482;
+  --color-text-muted: #8a909c;
 
   /* Status */
-  --color-success: #10b981;
+  --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #00d4ff;
+
+  /* Seal (verified ONLY — never reuse for decoration or generic success) */
+  --color-verified: #10b981;
+
+  /* Ink on brand-cyan surfaces (10.72:1 — never white text on cyan) */
+  --color-on-brand: #04121a;
+
+  /* Keyboard focus */
+  --color-focus: #7de8ff;
 
   /* Shape */
   --radius-xs: 0.25rem;
@@ -63,9 +72,7 @@ body {
   padding: 0;
   background-color: var(--color-surface-0);
   color: var(--color-text-primary);
-  font-family:
-    'Pretendard Variable', Pretendard, Inter, -apple-system,
-    BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -112,9 +119,42 @@ body {
   }
 }
 
-/* Display headlines: tight studio tracking */
-.font-display {
-  letter-spacing: -0.03em;
+/* Type scale responsive steps (v2 §4.3) + Thai line-heights. */
+@media (max-width: 767px) {
+  .text-display {
+    font-size: 2.25rem;
+    line-height: 2.75rem;
+  }
+  .text-h1 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+}
+:lang(th) .text-display { line-height: 1.35; }
+:lang(th) .text-h1 { line-height: 1.4; }
+:lang(th) .text-h2 { line-height: 1.45; }
+:lang(th) .text-h3 { line-height: 1.5; }
+:lang(th) .text-body, :lang(th) .text-body-sm { line-height: 1.7; }
+:lang(th) .text-caption { line-height: 1.6; }
+
+/* Tabular numerals for time, price, counts. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Consistent keyboard focus (v2 §4.2). */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Reduced motion: stop decorative animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Custom Minimal Scrollbar */
