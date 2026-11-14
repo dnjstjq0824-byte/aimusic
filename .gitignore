@@ -87,3 +87,12 @@ generator/*.pyc
 web/e2e/screens/.auth.json
 
 docs/handoff/20261114/evidence/baseline/*.png
+docs/handoff/20261114/evidence/nuxt-csr/*.png
+docs/handoff/20261114/evidence/nuxt-ssr/*.png
+
+# Nuxt build output
+web/.nuxt
+web/.output
+web/.data
+web/node_modules/.cache/nuxt
+

@@ -8,6 +8,7 @@
 | WI | 상태 | 커밋 | 변경파일 | 검증 | 캡처 | 남은 결함 |
 |----|------|------|---------|------|------|----------|
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
+| P1 | PASS | (아래) | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 
 ## 항목 기록
 
@@ -27,3 +28,14 @@
 - 운영 OAUTH_REDIRECT_BASE_URL=https://avibemusic.com/api/v1/auth/oauth 확인(읽기 전용, 비밀 아님).
 - Phase 파일 추정(내용 변경): P1 ~67 → P1a(P1+R1) + P1b(R2+R3+R4)로 분할. P2 ~75 → P2a(R5+R6) + P2b(R7+R8+L1) + P2c(A1+A2)로 분할. P3 ~50 → 초과 시 분할. P4 ~40. Track G ~25. P5 ~36(ARB 언어당 1 계산).
 - 검증: 하네스 165/165 완주, baseline.json 커밋, vue-tsc·vitest·go test는 앱 변경 없어 생략(다음 WI부터 매 항목 실행).
+
+### WI-P1 (P1a) — Nuxt 4 이전 + 공개 SSR — PASS
+- 버전 고정(exact): nuxt 4.6.4 · vue 3.5.45 · pinia 4.1.0 · @pinia/nuxt 1.0.3 (pinia 2→4 상향, peer 충돌 해소). Nitro 프리셋 실측: cloudflare-module + node-server.
+- 이동: web/src 95파일 → web/app (pages/layouts/components/stores/api/composables/assets). 라우트명은 pages:extend로 구명 유지(코드 참조 60곳 무수정). 가드·타이틀·safeRedirect → middleware app.global + utils.
+- SSR 격리: tokenStore/deviceToken localStorage 가드, hls.js 동적 import 2곳, UiModal immediate watcher 가드, WaveformSeekbar 소수점 3자리(하이드레이션), UiNavbar·playlists 인증 영역 ClientOnly.
+- routeRules: 공개 8경로 SSR+SWR, 앱·콘솔 명시 CSR, /api/** 프록시(NUXT_API_PROXY). 주의: /** 포괄 규칙은 개별 규칙을 덮어써서 사용 금지, / 는 ssr:true 명시 필요, nuxt.config 변경은 dev 수동 재시작(.nuxt 캐시 삭제 병행).
+- 동등성: CSR 하네스 162/165 일치(3건은 신규 매장행 데이터 드리프트, 오류 9건 baseline과 동일). SSR 전환 후 동일 162/165 + 하이드레이션 경고 0.
+- 이중 빌드: node-server + cloudflare-module 둘 다 성공. node preview 실측: 홈 SSR 45KB+h1, login 200, /api 프록시 200.
+- 검증: vitest 47/47, nuxt typecheck 0, worker-grant 14/14(worker.js 무변경). E2E는 API 전용이라 미실행(CI에서 수행).
+- 파일: 내용 23(이동 92 면제, 84% 1건 포함). 증거: evidence/nuxt-csr + nuxt-ssr (json/txt 커밋, PNG 로컬).
+- 잔여: /legal alias 경고(개발 로그만, R8에서 legal 구조 변경 시 해소). 공개 페이지 데이터는 아직 onMounted 로딩 → P3에서 useAsyncData 전환.
