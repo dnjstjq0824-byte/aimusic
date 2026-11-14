@@ -10,7 +10,7 @@
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
 | P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 | R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
-| R2 | IN PROGRESS (90%) | (WIP 아래) | 2분할 예정 | tsc·vitest 52·checker PASS·스팟 EN/JA/TH/ZH | r2-*-1440/390+switcher | 전체 하네스·prod 빌드 미완 |
+| R2 | IN PROGRESS (90%) | eae45f0(WIP) | 2분할 예정 | tsc·vitest 52·checker PASS·스팟 EN/JA/TH/ZH | r2-*-1440/390+switcher | 전체 하네스·prod 빌드 미완 |
 
 ## 항목 기록
 
