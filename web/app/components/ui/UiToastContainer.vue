@@ -22,11 +22,11 @@
         <span class="mt-0.5 shrink-0" aria-hidden="true" v-html="iconSvg(t.type)" />
         <div class="min-w-0 flex-1">
           <div v-if="t.title" class="text-xs font-bold text-white">{{ t.title }}</div>
-          <div class="text-xs text-neutral-200 leading-relaxed">{{ t.message }}</div>
+          <div class="text-xs text-text-primary leading-relaxed">{{ t.message }}</div>
         </div>
         <button
           type="button"
-          class="shrink-0 rounded p-0.5 text-neutral-400 hover:text-white transition-colors"
+          class="shrink-0 rounded p-0.5 text-text-secondary hover:text-white transition-colors"
           aria-label="알림 닫기"
           @click="dismiss(t.id)"
         >
@@ -47,7 +47,7 @@ const { toasts, dismiss } = useToast();
 function bgClass(type: string) {
   switch (type) {
     case 'success':
-      return 'border-accent-emerald/40 bg-surface-1/95 text-accent-emerald';
+      return 'border-success/40 bg-surface-1/95 text-success';
     case 'error':
       return 'border-accent-crimson/40 bg-surface-1/95 text-accent-crimson';
     case 'warning':

@@ -2,7 +2,7 @@
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="inline-flex items-center justify-center font-medium transition-all duration-200 select-none relative focus-visible:ring-2 focus-visible:ring-brand-500/50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+    class="inline-flex items-center justify-center font-medium transition-all duration-200 select-none relative disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
     :class="[
       sizeClasses[size],
       variantClasses[variant],
@@ -57,10 +57,10 @@ defineEmits<{
 }>();
 
 const sizeClasses = {
-  xs: 'px-2 py-1 text-xs gap-1.5',
-  sm: 'px-3 py-1.5 text-xs gap-2',
-  md: 'px-4 py-2 text-sm gap-2',
-  lg: 'px-5 py-2.5 text-base gap-2.5',
+  xs: 'min-h-6 px-2 py-1 text-xs gap-1.5',
+  sm: 'min-h-9 px-3 py-1.5 text-xs gap-2',
+  md: 'min-h-11 px-4 py-2 text-sm gap-2',
+  lg: 'min-h-[52px] px-5 py-2.5 text-base gap-2.5',
 };
 
 const roundedClasses = {
@@ -71,12 +71,12 @@ const roundedClasses = {
 };
 
 const variantClasses = {
-  brand: 'bg-brand-500 hover:bg-brand-400 text-[#04121a] font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
-  primary: 'bg-white hover:bg-neutral-100 text-neutral-900 font-semibold shadow',
-  secondary: 'bg-surface-2 hover:bg-surface-3 text-neutral-100 border border-surface-border hover:border-surface-border-hover',
-  outline: 'bg-transparent hover:bg-surface-2 text-neutral-200 border border-surface-border hover:border-neutral-500',
-  ghost: 'bg-transparent hover:bg-surface-2 text-neutral-300 hover:text-white',
+  brand: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
+  primary: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
+  secondary: 'bg-surface-2 hover:bg-surface-3 text-text-primary border border-surface-border hover:border-surface-border-hover',
+  outline: 'bg-transparent hover:bg-surface-2 text-text-secondary border border-surface-border hover:border-surface-border-hover',
+  ghost: 'bg-transparent hover:bg-surface-2 text-text-secondary hover:text-text-primary',
   danger: 'bg-accent-crimson/90 hover:bg-accent-crimson text-white border border-red-500/30 shadow',
-  success: 'bg-accent-emerald hover:bg-emerald-600 text-white font-semibold shadow-glow-emerald',
+  success: 'bg-success hover:brightness-110 text-on-brand font-semibold shadow',
 };
 </script>

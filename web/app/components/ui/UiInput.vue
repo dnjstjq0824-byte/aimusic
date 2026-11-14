@@ -1,20 +1,20 @@
 <template>
   <div class="w-full">
     <div v-if="label || $slots.labelRight" class="mb-1.5 flex items-center justify-between text-xs">
-      <label v-if="label" :for="inputId" class="font-medium text-neutral-300">
+      <label v-if="label" :for="inputId" class="font-medium text-text-primary">
         {{ label }}
         <span v-if="required" class="text-accent-crimson" aria-hidden="true">*</span>
       </label>
       <slot name="labelRight" />
     </div>
     <div
-      class="relative flex items-center rounded-lg border bg-surface-1 transition-all duration-150"
+      class="relative flex min-h-11 items-center rounded-lg border bg-surface-1 transition-all duration-150"
       :class="[
         error ? 'border-accent-crimson focus-within:ring-2 focus-within:ring-accent-crimson/40' : 'border-surface-border focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/30',
         disabled ? 'opacity-50 cursor-not-allowed bg-surface-0' : '',
       ]"
     >
-      <div v-if="$slots.prefix" class="pl-3 text-neutral-400">
+      <div v-if="$slots.prefix" class="pl-3 text-text-secondary">
         <slot name="prefix" />
       </div>
       <input
@@ -32,7 +32,7 @@
         :max="max"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy || undefined"
-        class="w-full min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none"
+        class="w-full min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @blur="$emit('blur', $event)"
         @focus="$emit('focus', $event)"
@@ -41,7 +41,7 @@
       <div v-if="type === 'password'" class="shrink-0 pr-3">
         <button
           type="button"
-          class="whitespace-nowrap text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+          class="whitespace-nowrap text-xs text-text-secondary hover:text-text-primary transition-colors"
           :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
           :aria-pressed="showPassword"
           @click="showPassword = !showPassword"
@@ -52,7 +52,7 @@
       <div v-else-if="isPickerType" class="shrink-0 pr-3">
         <button
           type="button"
-          class="rounded p-0.5 text-neutral-400 transition-colors hover:text-neutral-200"
+          class="rounded p-0.5 text-text-secondary transition-colors hover:text-text-primary"
           aria-label="날짜 선택 달력 열기"
           @click="openPicker"
         >
@@ -62,12 +62,12 @@
           </svg>
         </button>
       </div>
-      <div v-else-if="$slots.suffix" class="pr-3 text-neutral-400">
+      <div v-else-if="$slots.suffix" class="pr-3 text-text-secondary">
         <slot name="suffix" />
       </div>
     </div>
     <p v-if="error" :id="errorId" class="mt-1 text-xs text-accent-crimson">{{ error }}</p>
-    <p v-else-if="hint" :id="hintId" class="mt-1 text-xs text-neutral-500">{{ hint }}</p>
+    <p v-else-if="hint" :id="hintId" class="mt-1 text-xs text-text-muted">{{ hint }}</p>
   </div>
 </template>
 

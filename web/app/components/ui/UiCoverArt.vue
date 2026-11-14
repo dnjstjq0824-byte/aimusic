@@ -36,7 +36,7 @@
     </svg>
     <span
       v-if="verified"
-      class="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-emerald text-surface-0"
+      class="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-verified text-surface-0"
       title="상업 라이선스 검증됨"
     >
       <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -49,9 +49,9 @@
 <script lang="ts">
 export const GRADIENTS = [
   'bg-gradient-to-tr from-brand-700 via-brand-600 to-amber-500',
-  'bg-gradient-to-tr from-brandteal-raised via-brandteal to-accent-emerald/70',
-  'bg-gradient-to-tr from-sky-600 via-accent-cyan to-accent-emerald',
-  'bg-gradient-to-tr from-accent-emerald/80 via-teal-600 to-accent-cyan/80',
+  'bg-gradient-to-tr from-brandteal-raised via-brandteal to-brand-600',
+  'bg-gradient-to-tr from-sky-600 via-accent-cyan to-brand-700',
+  'bg-gradient-to-tr from-teal-600 via-brandteal to-accent-cyan/80',
   'bg-gradient-to-tr from-accent-crimson/90 via-brand-600 to-brand-200/80',
   'bg-gradient-to-tr from-surface-3 via-brand-800 to-brand-600',
 ];

@@ -11,7 +11,7 @@
     <span
       v-if="status"
       class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-surface-0"
-      :class="status === 'online' ? 'bg-accent-emerald' : 'bg-neutral-500'"
+      :class="status === 'online' ? 'bg-accent-emerald' : 'bg-text-muted'"
     />
   </div>
 </template>
@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const sizeClasses = {
-  xs: 'h-6 w-6 text-[10px]',
+  xs: 'h-6 w-6 text-caption',
   sm: 'h-8 w-8 text-xs',
   md: 'h-10 w-10 text-sm',
   lg: 'h-12 w-12 text-base',
@@ -58,7 +58,7 @@ const gradientClass = computed(() => {
   const gradients = [
     'bg-gradient-to-tr from-brand-600 to-amber-500',
     'bg-gradient-to-tr from-accent-cyan to-blue-700',
-    'bg-gradient-to-tr from-accent-emerald to-teal-500',
+    'bg-gradient-to-tr from-teal-500 to-brandteal',
     'bg-gradient-to-tr from-accent-cyan to-blue-600',
     'bg-gradient-to-tr from-accent-crimson to-pink-600',
   ];
