@@ -1,0 +1,29 @@
+# 진행 로그 — AVIBE 리디자인 연속 개발 (Muse Spark, 2026-11-14~)
+
+브랜치: `feat/redesign-20261114` (from `docs/handoff-20261114` @ 6a5cd65).
+모드: 연속 개발 (Phase 승인 대기 없음). 운영 쓰기 금지, main 직접 push/병합 금지.
+
+## WI 상태판
+
+| WI | 상태 | 커밋 | 변경파일 | 검증 | 캡처 | 남은 결함 |
+|----|------|------|---------|------|------|----------|
+| R0 | PASS | (아래) | 11 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
+
+## 항목 기록
+
+### WI-R0 (P0) — 기준선 하네스 + 보고 — PASS
+- 기준선: 브랜치 feat/redesign-20261114 (from docs/handoff-20261114 @ 6a5cd65), 착수 시 미커밋 0. 앱 코드 변경 0 (하네스·설정·문서만).
+- 로컬 스택: start-local.sh 재빌드, 전 컨테이너 healthy. API 18081, web dev 15173 (VITE_API_PROXY=18081). 운영 계정·데이터 생성 0.
+- 하네스: web/e2e/screens/{config,collect,setup,run}.mjs + @playwright/test 1.57.0 (devDep 1개) + npm scripts harness/harness:setup.
+- 실행: 전 라우트 × 역할 5 × 뷰포트 3 = 165화면 전수. 출력 evidence/baseline/{baseline.json,screens.txt} + PNG 165종(31MB, 로컬 보관·커밋 제외) + baseline-samples 6종 커밋.
+- 결과: HTTP 200 165/165, 가로 스크롤 0, LCP 165/165 수집(예: 모바일 게스트 홈 824ms). 오류 9건 = H-11 인증서 404 ×6 + 무효 인증서 404 ×3. 44px 미만 1차 행동이 대다수(홈 121/152), 12px 미만 텍스트 다수(홈 155), 대비 미달 샘플 매 화면 존재.
+- axe-core: devDependency 1개 상한으로 미설치 → NOT RUN. 대신 수동 프록시(무라벨 버튼·alt 누락·대비 샘플 계산) 수집. R13에서 재검토.
+- H-xx/C-xx 재현: H-01(온보딩 모달 코드 확인)·H-03(기술 용어 9파일)·H-07(단일 URL 3탭)·H-08(인증 화면 플레이어/푸터)·H-10(비즈니스 요금 없음)·H-11(404 재현)·H-12(UUID 원문)·H-14(소셜 버튼 0)·C-01(3역할)·C-02(reset 겸용)·C-04(이메일 인증 없음)·C-05(i18n 없음)·C-11/C-12/C-16(oauth 코드)·C-14(SPA)·C-15(MyLibrary 혼재)·C-17(ILIKE) 전부 재현. C-10 확인(D5 미커밋·대체, D7 유효).
+- 신규 결함: N-01 게스트 공개 플레이리스트 상세(/playlists/:id, isPublic=true)가 로그인으로 리다이렉트 → 공개 SSR 요건(R6)과 충돌, R6에서 해소.
+- 역할 분리 (b) 영향 범위: 마이그레이션(user_roles + 백필) 2, entities/user_partner/auth-서비스/middleware/admin/adminctl/overview 8, JWT roles 클레임, web 가드·스토어·메뉴 6, E2E. 예상 16~18파일(R10). 이관 스크립트는 로컬·스테이징만, 운영 실행 금지(G-ROLE).
+- Nuxt 사전 조사: web/src 95파일(이동 대상, rename 면제). 브라우저 전역 24파일 — hls.js는 playerStore·storePlayerStore 2곳(정적 import → 동적 전환 필요), Toss는 Checkout·CheckoutConfirm·Pricing + types(전부 ssr:false 경로라 격리 용이), localStorage 키 avibe.accessToken/refreshToken/deviceToken/onboarded(SSR 페이지는 비로그인 동일 HTML + 하이드레이션 승격). 라우터 가드 → 미들웨어(auth·role·guest) + safeRedirect 이식. 예상: 이동 ~95(면제) + 내용 P1 15·R1 20·R2 10·R3 12·R4 10.
+- 라이브러리 API: 좋아요·저장·팔로우 테이블·API 전무(playlists.is_public은 존재). 엔진 추가 예상 7~9파일(R6).
+- H-11: 엔진 certificate.go VerifyTrackCertificate 404 → 200 {data:null}로 수정(R5). TrackDetail은 이미 .catch null 처리 → null 분기로 정리.
+- 운영 OAUTH_REDIRECT_BASE_URL=https://avibemusic.com/api/v1/auth/oauth 확인(읽기 전용, 비밀 아님).
+- Phase 파일 추정(내용 변경): P1 ~67 → P1a(P1+R1) + P1b(R2+R3+R4)로 분할. P2 ~75 → P2a(R5+R6) + P2b(R7+R8+L1) + P2c(A1+A2)로 분할. P3 ~50 → 초과 시 분할. P4 ~40. Track G ~25. P5 ~36(ARB 언어당 1 계산).
+- 검증: 하네스 165/165 완주, baseline.json 커밋, vue-tsc·vitest·go test는 앱 변경 없어 생략(다음 WI부터 매 항목 실행).

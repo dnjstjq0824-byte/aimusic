@@ -82,3 +82,8 @@ generator/.venv/
 generator/__pycache__/
 generator/*.pyc
 
+
+# Screen harness local auth (ephemeral local tokens)
+web/e2e/screens/.auth.json
+
+docs/handoff/20261114/evidence/baseline/*.png
