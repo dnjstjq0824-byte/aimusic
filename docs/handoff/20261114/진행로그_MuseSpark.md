@@ -9,6 +9,7 @@
 |----|------|------|---------|------|------|----------|
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
 | P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
+| R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
 
 ## 항목 기록
 
@@ -39,3 +40,11 @@
 - 검증: vitest 47/47, nuxt typecheck 0, worker-grant 14/14(worker.js 무변경). E2E는 API 전용이라 미실행(CI에서 수행).
 - 파일: 내용 23(이동 92 면제, 84% 1건 포함). 증거: evidence/nuxt-csr + nuxt-ssr (json/txt 커밋, PNG 로컬).
 - 잔여: /legal alias 경고(개발 로그만, R8에서 legal 구조 변경 시 해소). 공개 페이지 데이터는 아직 onMounted 로딩 → P3에서 useAsyncData 전환.
+
+### WI-R1 (P1a) — 디자인 토큰 v2 + Ui + 신규 컴포넌트 — PASS (4분할 커밋)
+- R1a 3753448: 토큰(text-muted #8A909C·verified·success #22C55E·focus·on-brand·서체 7단계·xs 390) + 셀프호스팅 글꼴 219파일(10.6MB: Pretendard/JP dynamic-subset, Noto SC/TH 400·500·700 + OFL + README) + :lang() 스택 + CDN 글꼴 제거 + latin 서브셋 preload.
+- R1b 5a23b4e: UiButton(v2 4종+높이 36/44/52, primary=시안) + UiInput(min-h-11) + Toast success 분리 + 신규 6종(VerifiedSeal·CoverMosaic·LocaleSwitcher·BottomSheet·Stepper·UiMenu) + /dev/ui(dev 전용, 비 dev 404).
+- R1c 5c140c9 + R1d d9fe6c3: neutral-* 428건 + text-[8~11px] 144건 + [#04121a] 19건 + verified/success 의미 분리 20건 전수 교체(컴포넌트 27 + 페이지 34).
+- 검증: neutral 0·tiny 0(repo grep), 12px 미만 노드 8411→0(하네스), 대비 muted 6.23/5.61·ink 10.72(실측), 외부 글꼴 요청 0·font loaded true·에러 0, ja/zh/th computed 스택 전환 확인, vitest 47/47·tsc 0·하네스 9동일(기존 404)·prod 빌드(219 폰트 포함).
+- 교훈: PS Get/Set-Content 재기록은 한글 손상 → 대량 교체는 Node utf8 스크립트로만. (1회 손상 후 git 복구·Node 재실행으로 수습, 무결성 확인済)
+- 잔여: 장식용 raw 팔레트(gradient용 blue/teal/amber 등) 일부 잔존 — 수용 기준(neutral·임의크기)은 만족. LocaleSwitcher 실동작은 R2에서 연결.
