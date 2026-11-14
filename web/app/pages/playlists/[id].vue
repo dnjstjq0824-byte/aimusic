@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <RouterLink to="/playlists" class="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors">
+    <RouterLink to="/playlists" class="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-white transition-colors">
       <span>← 플레이리스트로 돌아가기</span>
     </RouterLink>
 
@@ -22,14 +22,14 @@
         <div class="flex flex-col sm:flex-row sm:items-center gap-5">
           <UiCoverArt :seed="playlist.id" :title="playlist.title" size="xl" rounded="xl" />
           <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">플레이리스트</span>
+            <span class="text-caption font-bold uppercase tracking-wider text-brand-400">플레이리스트</span>
             <h1 class="font-display text-2xl sm:text-3xl font-black text-white tracking-tight truncate mt-0.5">
               {{ playlist.title }}
             </h1>
-            <p class="text-xs text-neutral-400 mt-1">
+            <p class="text-xs text-text-secondary mt-1">
               {{ playlist.isPublic ? '공개 플레이리스트' : '비공개 플레이리스트' }}
             </p>
-            <div class="mt-2 flex items-center gap-3 text-xs text-neutral-400">
+            <div class="mt-2 flex items-center gap-3 text-xs text-text-secondary">
               <span>총 <strong>{{ tracks.length }}곡</strong></span>
               <span>·</span>
               <span>재생 큐 연동 완료</span>
@@ -67,7 +67,7 @@
       <!-- Track List Table -->
       <UiCard padding="none">
         <template #header>
-          <div class="px-5 pt-3 flex items-center justify-between text-xs font-bold text-neutral-400 uppercase tracking-wider">
+          <div class="px-5 pt-3 flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
             <span>트랙 목록 (순서 및 재생)</span>
             <span>순서 조정</span>
           </div>
@@ -95,7 +95,7 @@
           >
             <!-- Track index / play -->
             <button
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-neutral-300 hover:bg-brand-500 hover:text-[#04121a] transition-colors"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-text-primary hover:bg-brand-500 -on-brand transition-colors"
               :disabled="t.status !== 'READY'"
               @click="playTrack(t)"
             >
@@ -112,11 +112,11 @@
                   {{ t.title }}
                 </RouterLink>
                 <AiBadge :track="t" />
-                <span v-if="t.status !== 'READY'" class="text-[10px] text-accent-crimson font-semibold">
+                <span v-if="t.status !== 'READY'" class="text-caption text-accent-crimson font-semibold">
                   (임시조치/검수중)
                 </span>
               </div>
-              <div class="text-[11px] text-neutral-500">
+              <div class="text-caption text-text-muted">
                 {{ t.aiProvider }} · {{ fmtDuration(t.durationMs ?? 0) }}
               </div>
             </div>
@@ -125,7 +125,7 @@
             <div class="flex items-center gap-1 text-xs">
               <button
                 type="button"
-                class="rounded p-1.5 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
+                class="rounded p-1.5 text-text-secondary hover:text-white hover:bg-surface-3 disabled:opacity-30"
                 :disabled="idx === 0"
                 :aria-label="`「${t.title}」 위로 이동`"
                 @click="moveTrack(idx, -1)"
@@ -136,7 +136,7 @@
               </button>
               <button
                 type="button"
-                class="rounded p-1.5 text-neutral-400 hover:text-white hover:bg-surface-3 disabled:opacity-30"
+                class="rounded p-1.5 text-text-secondary hover:text-white hover:bg-surface-3 disabled:opacity-30"
                 :disabled="idx === tracks.length - 1"
                 :aria-label="`「${t.title}」 아래로 이동`"
                 @click="moveTrack(idx, 1)"
@@ -147,7 +147,7 @@
               </button>
               <button
                 type="button"
-                class="rounded p-1.5 text-neutral-500 hover:text-accent-crimson hover:bg-surface-3 ml-2"
+                class="rounded p-1.5 text-text-muted hover:text-accent-crimson hover:bg-surface-3 ml-2"
                 :aria-label="`「${t.title}」 플레이리스트에서 제거`"
                 @click="removeTrack(t.id)"
               >

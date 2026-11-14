@@ -20,17 +20,17 @@
     <div v-else class="grid gap-4 md:grid-cols-3">
       <!-- Free tier (always available) -->
       <UiCard class="flex flex-col">
-        <div class="text-xs font-bold uppercase tracking-wider text-neutral-400">Free</div>
+        <div class="text-xs font-bold uppercase tracking-wider text-text-secondary">Free</div>
         <div class="mt-2 flex items-baseline gap-1">
           <span class="text-3xl font-black text-white">₩0</span>
         </div>
-        <p class="mt-2 text-xs leading-relaxed text-neutral-400">
+        <p class="mt-2 text-xs leading-relaxed text-text-secondary">
           무료 가입 후 확인 절차를 거친 음원 스트리밍과 플레이리스트를 이용하세요.
         </p>
-        <ul class="mt-4 space-y-2 text-xs text-neutral-300">
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>전체 확인 음원 스트리밍 (표준 음질 128k)</li>
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>플레이리스트 무제한 생성</li>
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>모바일·웹 동기화</li>
+        <ul class="mt-4 space-y-2 text-xs text-text-primary">
+          <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>전체 확인 음원 스트리밍 (표준 음질 128k)</li>
+          <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>플레이리스트 무제한 생성</li>
+          <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>모바일·웹 동기화</li>
         </ul>
         <div class="mt-6 flex-1" />
         <RouterLink to="/explore">
@@ -46,7 +46,7 @@
         class="flex flex-col"
       >
         <div class="flex items-center justify-between">
-          <div class="text-xs font-bold uppercase tracking-wider text-neutral-400">
+          <div class="text-xs font-bold uppercase tracking-wider text-text-secondary">
             {{ plan.interval === 'MONTHLY' ? '월간 패스' : plan.interval }}
           </div>
           <UiBadge v-if="plan.code === 'LISTENER_PLUS_MONTHLY'" variant="brand" size="xs">인기</UiBadge>
@@ -54,12 +54,12 @@
         <div class="mt-2 text-lg font-bold text-white">{{ plan.nameKo }}</div>
         <div class="mt-1 flex items-baseline gap-1">
           <span class="text-3xl font-black text-white">₩{{ plan.amountKrw.toLocaleString('ko-KR') }}</span>
-          <span class="text-xs text-neutral-500">/ 1개월</span>
+          <span class="text-xs text-text-muted">/ 1개월</span>
         </div>
-        <ul class="mt-4 space-y-2 text-xs text-neutral-300">
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>Free의 모든 혜택</li>
-          <li class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>HQ 256k 고음질 스트리밍</li>
-          <li v-if="plan.code === 'STUDIO_PRO_MONTHLY'" class="flex items-start gap-2"><span class="text-accent-emerald" aria-hidden="true">✓</span>파트너 스튜디오 프로 도구</li>
+        <ul class="mt-4 space-y-2 text-xs text-text-primary">
+          <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>Free의 모든 혜택</li>
+          <li class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>HQ 256k 고음질 스트리밍</li>
+          <li v-if="plan.code === 'STUDIO_PRO_MONTHLY'" class="flex items-start gap-2"><span class="text-success" aria-hidden="true">✓</span>파트너 스튜디오 프로 도구</li>
         </ul>
         <div class="mt-6 flex-1" />
         <UiButton
@@ -79,7 +79,7 @@
           <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
           <path d="m9 12 2 2 4-4" />
         </svg>
-        <div class="text-xs leading-relaxed text-neutral-300">
+        <div class="text-xs leading-relaxed text-text-primary">
           <div class="font-bold text-white">결제 안내</div>
           <p class="mt-1">
             결제는 Toss Payments 결제창에서 직접 처리되며, AVIBE 서버는 카드 정보를 보관하지 않습니다.

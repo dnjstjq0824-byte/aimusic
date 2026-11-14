@@ -12,7 +12,7 @@
 
     <UiErrorBanner :message="error" title="정책 매트릭스를 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
 
-    <UiCard class="text-xs text-neutral-300 space-y-1.5">
+    <UiCard class="text-xs text-text-primary space-y-1.5">
       <div class="font-bold text-white text-sm">미등록·차단 플랫폼 사유 (소유권 원칙)</div>
       <ul class="list-disc pl-5 space-y-1 leading-relaxed">
         <li>Soundraw·Mubert: 작곡권·배포권이 플랫폼에 귀속 — 전면 차단.</li>
@@ -59,9 +59,9 @@
         </td>
         <td class="p-3.5 text-xs">
           <span v-if="p.maxGeneratedAt" class="text-amber-300">{{ fmtDate(p.maxGeneratedAt) }} 이후 거부</span>
-          <span v-else class="text-neutral-500">없음</span>
+          <span v-else class="text-text-muted">없음</span>
         </td>
-        <td class="p-3.5 font-mono text-neutral-300">
+        <td class="p-3.5 font-mono text-text-primary">
           {{ (p.allowedPlanTiers ?? []).join(', ') || '전체 허용' }}
         </td>
         <td class="p-3.5 font-mono text-accent-amber">

@@ -22,8 +22,8 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">내 생성 작업</h2>
-          <span class="text-xs text-neutral-500 font-mono">{{ jobs.length }}개</span>
+          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">내 생성 작업</h2>
+          <span class="text-xs text-text-muted font-mono">{{ jobs.length }}개</span>
         </div>
       </template>
 
@@ -61,15 +61,15 @@
                 <UiBadge :variant="statusVariant(j.status)" size="xs">
                   {{ statusKo(j.status) }}
                 </UiBadge>
-                <span class="font-mono text-[11px] text-neutral-500">{{ j.model }}</span>
+                <span class="font-mono text-caption text-text-muted">{{ j.model }}</span>
               </div>
               <p class="truncate text-sm font-semibold text-white">{{ j.prompt }}</p>
-              <div class="font-mono text-[11px] text-neutral-500">
+              <div class="font-mono text-caption text-text-muted">
                 {{ new Date(j.createdAt).toLocaleString() }} · 시도 {{ j.attempts }}회
                 <span v-if="j.durationMs"> · {{ Math.round(j.durationMs / 1000) }}초</span>
               </div>
             </div>
-            <span class="shrink-0 text-[11px] font-semibold text-brand-400">
+            <span class="shrink-0 text-caption font-semibold text-brand-400">
               {{ expandedId === j.id ? '접기 ▲' : '상세 ▼' }}
             </span>
           </button>
@@ -79,15 +79,15 @@
               <UiSkeleton height="h-4" width="w-2/3" />
             </div>
             <template v-else-if="detail">
-              <div v-if="detail.lyrics" class="whitespace-pre-wrap text-xs text-neutral-300">{{ detail.lyrics }}</div>
-              <div class="font-mono text-[11px] text-neutral-500">작업 ID: {{ detail.id }}</div>
-              <div v-if="detail.outputObjectKey" class="font-mono text-[11px] text-accent-emerald">
+              <div v-if="detail.lyrics" class="whitespace-pre-wrap text-xs text-text-primary">{{ detail.lyrics }}</div>
+              <div class="font-mono text-caption text-text-muted">작업 ID: {{ detail.id }}</div>
+              <div v-if="detail.outputObjectKey" class="font-mono text-caption text-success">
                 출력: {{ detail.outputObjectKey }}
               </div>
-              <div v-if="detail.error" class="text-[11px] font-semibold text-accent-crimson">
+              <div v-if="detail.error" class="text-caption font-semibold text-accent-crimson">
                 실패 사유: {{ failureKo(detail.error) }}
               </div>
-              <div v-if="detail.licenseRef" class="text-[11px] text-neutral-400">
+              <div v-if="detail.licenseRef" class="text-caption text-text-secondary">
                 라이선스 참조: {{ detail.licenseRef }}
               </div>
             </template>

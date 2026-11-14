@@ -19,7 +19,7 @@
         >
           {{ SLOGAN }}
         </p>
-        <p class="mx-auto max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
+        <p class="mx-auto max-w-xl text-sm leading-relaxed text-text-secondary sm:text-base">
           상상하는 모든 노래를 확인 절차를 거친 음원으로. 이용 조건을 확인한 음원으로 듣고,
           플레이리스트에 담고, 영상에 쓰세요.
         </p>
@@ -38,7 +38,7 @@
             type="search"
             autocomplete="off"
             placeholder="어떤 음악을 찾으세요? (제목·장르·무드)"
-            class="w-full bg-transparent py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none sm:text-base"
+            class="w-full bg-transparent py-3 text-sm text-white placeholder:text-text-muted focus:outline-none sm:text-base"
           />
           <div class="flex items-center justify-between gap-2 pb-1 pl-0 pr-1">
             <div class="flex items-center gap-1">
@@ -46,7 +46,7 @@
                 v-for="hint in ['Focus', 'Chill', 'Cinematic']"
                 :key="hint"
                 type="button"
-                class="rounded-full px-2.5 py-1 text-xs font-medium text-neutral-500 transition-colors hover:bg-surface-3 hover:text-brand-300"
+                class="rounded-full px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-surface-3 hover:text-brand-300"
                 @click="applyHint(hint)"
               >
                 #{{ hint }}
@@ -55,7 +55,7 @@
             <button
               type="submit"
               :disabled="loading"
-              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[#04121a] shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:opacity-50"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:opacity-50"
               aria-label="검색"
             >
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -69,25 +69,25 @@
         <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
           <RouterLink
             to="/explore"
-            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:border-brand-500/50 hover:text-brand-300"
           >
             음원 탐색
           </RouterLink>
           <RouterLink
             to="/playlists"
-            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:border-brand-500/50 hover:text-brand-300"
           >
             플레이리스트
           </RouterLink>
           <RouterLink
             to="/my-library"
-            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:border-brand-500/50 hover:text-brand-300"
           >
             내 라이브러리
           </RouterLink>
           <RouterLink
             to="/pricing"
-            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-brand-500/50 hover:text-brand-300"
+            class="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-1 px-4 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:border-brand-500/50 hover:text-brand-300"
           >
             요금제
           </RouterLink>
@@ -128,7 +128,7 @@
             <path d="M9 18.5A3.5 3.5 0 1 1 5.5 15c.54 0 1.05.12 1.5.34V6.6L19 4v11.5a3.5 3.5 0 1 1-2-3.16V7.7l-8 1.5v9.3z" />
           </svg>
           <span class="absolute inset-x-0 bottom-0 p-3">
-            <span class="block text-[10px] font-semibold uppercase tracking-wider text-white/60">{{ card.kicker }}</span>
+            <span class="block text-caption font-semibold uppercase tracking-wider text-white/60">{{ card.kicker }}</span>
             <span class="mt-0.5 block text-sm font-bold leading-snug text-white">{{ card.title }}</span>
           </span>
         </button>
@@ -140,7 +140,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <h2 class="font-display text-xl font-bold tracking-tight text-white">검증 음원 목록</h2>
-          <span class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-neutral-400">
+          <span class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-text-secondary">
             {{ total }}
           </span>
           <span v-if="activeFilterLabel" class="rounded-full bg-brand-950 px-2.5 py-0.5 text-xs font-semibold text-brand-300">
@@ -162,7 +162,7 @@
         <button
           type="button"
           class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150"
-          :class="!filterProvider && !filterMood && !searchQuery ? 'bg-white text-neutral-900 shadow font-bold' : 'bg-surface-1 text-neutral-300 hover:bg-surface-2 border border-surface-border'"
+          :class="!filterProvider && !filterMood && !searchQuery ? 'bg-white text-on-brand shadow font-bold' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
           @click="clearFilters"
         >
           전체 실시간
@@ -172,7 +172,7 @@
           :key="prov"
           type="button"
           class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150"
-          :class="filterProvider === prov ? 'bg-brand-500 text-[#04121a] shadow-glow-brand' : 'bg-surface-1 text-neutral-300 hover:bg-surface-2 border border-surface-border'"
+          :class="filterProvider === prov ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
           @click="toggleProvider(prov)"
         >
           {{ prov }}
@@ -182,7 +182,7 @@
           :key="mood"
           type="button"
           class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150"
-          :class="filterMood === mood ? 'bg-brand-500 text-[#04121a] shadow-glow-brand' : 'bg-surface-1 text-neutral-300 hover:bg-surface-2 border border-surface-border'"
+          :class="filterMood === mood ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-1 text-text-primary hover:bg-surface-2 border border-surface-border'"
           @click="toggleMood(mood)"
         >
           #{{ mood }}
@@ -259,11 +259,11 @@
     <section aria-label="플랫폼 특징" class="space-y-10">
       <div class="grid items-center gap-6 sm:grid-cols-2">
         <div class="space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500">검증</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-text-muted">검증</p>
           <h3 class="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
             4단계 게이트를 통과한 <span class="text-brand-400">음원만</span>
           </h3>
-          <p class="text-sm leading-relaxed text-neutral-400">
+          <p class="text-sm leading-relaxed text-text-secondary">
             상업 플랜 증빙부터 생성일 윈도우, Sync-Only 판별, SHA-256 중복 차단까지.
             무료·비상업 음원은 목록에 오르지 않습니다.
           </p>
@@ -274,19 +274,19 @@
         <div class="rounded-2xl border border-surface-border bg-surface-1 p-5">
           <dl class="grid grid-cols-2 gap-4 text-xs">
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
-              <dt class="font-semibold text-neutral-500">라이선스 기준</dt>
+              <dt class="font-semibold text-text-muted">라이선스 기준</dt>
               <dd class="font-bold text-emerald-400">유료 상업 플랜 생성분만 접수</dd>
             </div>
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
-              <dt class="font-semibold text-neutral-500">법적 컴플라이언스</dt>
+              <dt class="font-semibold text-text-muted">법적 컴플라이언스</dt>
               <dd class="font-bold text-white">인공지능기본법 제31조</dd>
             </div>
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
-              <dt class="font-semibold text-neutral-500">음향 포렌식</dt>
+              <dt class="font-semibold text-text-muted">음향 포렌식</dt>
               <dd class="font-bold text-white">FFprobe 192k+ 검증</dd>
             </div>
             <div class="space-y-1 rounded-xl bg-surface-2 p-3">
-              <dt class="font-semibold text-neutral-500">스트리밍</dt>
+              <dt class="font-semibold text-text-muted">스트리밍</dt>
               <dd class="font-bold text-brand-400">HLS Gapless</dd>
             </div>
           </dl>
@@ -296,10 +296,10 @@
       <div class="grid items-center gap-6 sm:grid-cols-2">
         <div class="order-2 space-y-3 sm:order-1">
           <div class="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-1 p-4">
-            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-lg font-black text-[#04121a] shadow-glow-brand">▶</span>
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-lg font-black -on-brand shadow-glow-brand">▶</span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-bold text-white">끊김 없는 감상</p>
-              <p class="text-xs text-neutral-500">하트비트 집계 · 이어듣기 · 큐</p>
+              <p class="text-xs text-text-muted">하트비트 집계 · 이어듣기 · 큐</p>
             </div>
             <RouterLink to="/my-library" class="shrink-0 text-xs font-semibold text-brand-400 hover:underline">
               라이브러리 →
@@ -307,11 +307,11 @@
           </div>
         </div>
         <div class="order-1 space-y-3 sm:order-2">
-          <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500">감상</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-text-muted">감상</p>
           <h3 class="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
             듣고, 담고, <span class="text-brand-400">영상으로</span>
           </h3>
-          <p class="text-sm leading-relaxed text-neutral-400">
+          <p class="text-sm leading-relaxed text-text-secondary">
             30초 이상 감상은 정산에 집계되고, 플레이리스트와 권리보호센터가 창작자를
             끝까지 보호합니다.
           </p>
@@ -320,11 +320,11 @@
 
       <div class="grid items-center gap-6 sm:grid-cols-2">
         <div class="space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500">창작</p>
+          <p class="text-xs font-semibold uppercase tracking-wider text-text-muted">창작</p>
           <h3 class="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
             파트너 <span class="text-brand-400">스튜디오</span>
           </h3>
-          <p class="text-sm leading-relaxed text-neutral-400">
+          <p class="text-sm leading-relaxed text-text-secondary">
             AI 구독 증빙 등록부터 프리체크·파이널라이즈까지. 승인된 음원은
             재생수 기반으로 투명하게 정산됩니다.
           </p>
@@ -334,7 +334,7 @@
         </div>
         <div class="rounded-2xl border border-brand-500/30 bg-brand-950/40 p-5 text-sm">
           <p class="font-bold text-brand-300">Gate 1 → 4 프리체크</p>
-          <p class="mt-1 text-xs leading-relaxed text-neutral-400">
+          <p class="mt-1 text-xs leading-relaxed text-text-secondary">
             상업 티어 · 생성일 윈도우 · Sync-Only · SHA-256 중복을 업로드 전에 즉시 판정합니다.
           </p>
         </div>

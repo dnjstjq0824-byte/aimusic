@@ -13,7 +13,7 @@
       <UiCard class="space-y-4">
         <div>
           <h2 class="text-sm font-bold text-white">공식 큐레이션 플레이리스트 생성</h2>
-          <p class="text-xs text-neutral-400 mt-0.5">홈 배너 및 상단에 노출되는 공식 AI 테마 앨범입니다.</p>
+          <p class="text-xs text-text-secondary mt-0.5">홈 배너 및 상단에 노출되는 공식 AI 테마 앨범입니다.</p>
         </div>
 
         <form class="space-y-3" @submit.prevent="createCuration">
@@ -45,7 +45,7 @@
           <h2 class="text-sm font-bold text-accent-crimson flex items-center gap-1.5">
             <span>긴급 직권 임시조치 (Emergency Takedown)</span>
           </h2>
-          <p class="text-xs text-neutral-300 mt-0.5">
+          <p class="text-xs text-text-primary mt-0.5">
             사후 라이선스 취소, 실존 가수 보이스 클로닝 적발 시 즉시 스트리밍을 차단합니다.
           </p>
         </div>
@@ -77,7 +77,7 @@
           <span>Settlement Engine (매장 풀 재생 시간 비례 · 직접 판매 귀속 · 원천징수)</span>
         </div>
         <h2 class="text-sm font-bold text-white">파트너 월별 음원 정산 배치 실행</h2>
-        <p class="text-xs text-neutral-400 mt-0.5">
+        <p class="text-xs text-text-secondary mt-0.5">
           유통 순매출 70:30 (파트너 70). 매장 구독료 풀은 30초 이상 매장 재생 시간 비례로 나누고,
           직접 판매·라이선스는 해당 파트너에 직접 귀속한 뒤 원천징수를 차감합니다. 일반 스트리밍 재생은 정산금을 만들지 않습니다.
         </p>
@@ -139,23 +139,23 @@
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-surface-border">
           <div>
-            <span class="text-neutral-400 text-[10px] block">매장 재생 시간 배분 기준</span>
+            <span class="text-text-secondary text-caption block">매장 재생 시간 배분 기준</span>
             <span class="font-bold text-white">{{ lastSettlement.storePlaySecs.toLocaleString() }}초 / 전체 {{ lastSettlement.totalStorePlaySecs.toLocaleString() }}초</span>
           </div>
           <div>
-            <span class="text-neutral-400 text-[10px] block">확정 재생 수 (매장 30초+)</span>
+            <span class="text-text-secondary text-caption block">확정 재생 수 (매장 30초+)</span>
             <span class="font-bold text-white">{{ lastSettlement.playCount.toLocaleString() }}회</span>
           </div>
           <div>
-            <span class="text-neutral-400 text-[10px] block">총 정산액 (Gross)</span>
+            <span class="text-text-secondary text-caption block">총 정산액 (Gross)</span>
             <span class="font-bold text-white">{{ lastSettlement.grossAmountKrw.toLocaleString() }}원</span>
           </div>
           <div>
-            <span class="text-neutral-400 text-[10px] block">원천징수세 ({{ lastSettlement.incomeType === 'OTHER_88' ? '8.8%' : '3.3%' }})</span>
+            <span class="text-text-secondary text-caption block">원천징수세 ({{ lastSettlement.incomeType === 'OTHER_88' ? '8.8%' : '3.3%' }})</span>
             <span class="font-bold text-accent-crimson">-{{ lastSettlement.withholdingKrw.toLocaleString() }}원</span>
           </div>
           <div>
-            <span class="text-neutral-400 text-[10px] block">실지급 예정액 (Net)</span>
+            <span class="text-text-secondary text-caption block">실지급 예정액 (Net)</span>
             <span class="font-black text-brand-400 text-sm">{{ lastSettlement.netAmountKrw.toLocaleString() }}원</span>
           </div>
         </div>

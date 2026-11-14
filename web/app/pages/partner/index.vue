@@ -31,27 +31,27 @@
     </div>
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">등록된 전체 음원</div>
+        <div class="text-caption font-bold text-text-muted uppercase tracking-wider">등록된 전체 음원</div>
         <div class="text-2xl font-black text-white">{{ tracks.length }}곡</div>
-        <div class="text-[11px] text-neutral-400">포렌식 검증 진행 포함</div>
+        <div class="text-caption text-text-secondary">포렌식 검증 진행 포함</div>
       </UiCard>
 
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">상업 유통 승인 (READY)</div>
-        <div class="text-2xl font-black text-accent-emerald">{{ readyCount }}곡</div>
-        <div class="text-[11px] text-emerald-400/80">Gate 1-4 전체 통과</div>
+        <div class="text-caption font-bold text-text-muted uppercase tracking-wider">상업 유통 승인 (READY)</div>
+        <div class="text-2xl font-black text-success">{{ readyCount }}곡</div>
+        <div class="text-caption text-success/80">Gate 1-4 전체 통과</div>
       </UiCard>
 
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">확인된 AI 요금제</div>
+        <div class="text-caption font-bold text-text-muted uppercase tracking-wider">확인된 AI 요금제</div>
         <div class="text-2xl font-black text-brand-400">{{ verifiedSubs }}개</div>
-        <div class="text-[11px] text-neutral-400">{{ verifiedPlanLabel }}</div>
+        <div class="text-caption text-text-secondary">{{ verifiedPlanLabel }}</div>
       </UiCard>
 
       <UiCard class="space-y-1">
-        <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">누적 유효 스트리밍</div>
+        <div class="text-caption font-bold text-text-muted uppercase tracking-wider">누적 유효 스트리밍</div>
         <div class="text-2xl font-black text-white">{{ totalPlays.toLocaleString() }}회</div>
-        <div class="text-[11px] text-neutral-400">30초 이상 재생 집계</div>
+        <div class="text-caption text-text-secondary">30초 이상 재생 집계</div>
       </UiCard>
     </div>
 
@@ -72,7 +72,7 @@
             </svg>
             <h3 class="text-xs font-bold text-white uppercase tracking-wider">정산 기준 (유통 순매출 70:30)</h3>
           </div>
-          <p class="text-xs text-neutral-300">
+          <p class="text-xs text-text-primary">
             총 누적 유효 스트리밍: <strong class="text-white font-mono">{{ totalPlays.toLocaleString() }}회</strong>
             · 파트너 귀속 <strong class="text-brand-400 font-mono">70%</strong>
             (매장 구독료 풀은 30초 이상 매장 재생 시간 비례 배분 · 직접 판매·라이선스는 직접 귀속 · 소득세 원천징수 후 지급 · 정산 주기에 확정)
@@ -88,8 +88,8 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">내 음원 게이트키퍼 통과 현황</h2>
-          <span class="text-xs text-neutral-500 font-mono">{{ tracks.length }} 트랙</span>
+          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">내 음원 게이트키퍼 통과 현황</h2>
+          <span class="text-xs text-text-muted font-mono">{{ tracks.length }} 트랙</span>
         </div>
       </template>
 
@@ -127,7 +127,7 @@
               </RouterLink>
               <AiBadge :track="t" />
             </div>
-            <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-caption text-text-secondary">
               <span>플랫폼: {{ t.aiProvider }}</span>
               <span>·</span>
               <span>재생: {{ t.playCount.toLocaleString() }}회</span>

@@ -16,7 +16,7 @@
     <UiCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-300">내 이용권</h2>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-text-primary">내 이용권</h2>
           <UiBadge v-if="subscription" variant="verified" size="sm">ACTIVE</UiBadge>
           <UiBadge v-else variant="neutral" size="sm">없음</UiBadge>
         </div>
@@ -26,7 +26,7 @@
         <UiSkeleton height="h-3" width="w-1/3" />
       </div>
       <div v-else-if="subscription" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="text-xs text-neutral-300">
+        <div class="text-xs text-text-primary">
           <div class="text-sm font-bold text-white">{{ subscription.plan?.nameKo ?? '이용권' }}</div>
           <div class="mt-1">
             유효기간: {{ fmtDate(subscription.currentPeriodStart) }} ~ {{ fmtDate(subscription.currentPeriodEnd) }}
@@ -40,7 +40,7 @@
         </div>
       </div>
       <div v-else class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-xs leading-relaxed text-neutral-400">
+        <p class="text-xs leading-relaxed text-text-secondary">
           이용권이 없습니다. 리스너 플러스로 HQ 고음질 스트리밍을 이용해 보세요.
         </p>
         <RouterLink to="/pricing">
@@ -53,7 +53,7 @@
     <div>
       <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
         <span>내 플레이리스트</span>
-        <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-neutral-400">{{ playlists.playlists.length }}</span>
+        <span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-text-secondary">{{ playlists.playlists.length }}</span>
       </h2>
 
       <div v-if="playlists.playlists.length === 0" class="py-8">
@@ -85,10 +85,10 @@
               >
                 {{ p.title }}
               </RouterLink>
-              <p class="mt-1 text-xs text-neutral-400">
+              <p class="mt-1 text-xs text-text-secondary">
                 {{ p.isPublic ? '공개 플레이리스트' : '비공개 플레이리스트' }}
               </p>
-              <div class="mt-2 text-[11px] text-neutral-500 font-mono">
+              <div class="mt-2 text-caption text-text-muted font-mono">
                 생성일: {{ new Date(p.createdAt).toLocaleDateString('ko-KR') }}
               </div>
             </div>
@@ -102,7 +102,7 @@
             </RouterLink>
             <button
               type="button"
-              class="text-xs text-neutral-500 hover:text-accent-crimson transition-colors"
+              class="text-xs text-text-muted hover:text-accent-crimson transition-colors"
               :aria-label="`「${p.title}」 플레이리스트 삭제`"
               @click="deleteTarget = p"
             >
@@ -119,21 +119,21 @@
         <h3 class="text-sm font-bold text-white">계정 및 보안 정보</h3>
         <UiButton variant="danger" size="sm" @click="withdrawOpen = true">회원 탈퇴</UiButton>
       </div>
-      <div class="grid gap-3 sm:grid-cols-3 text-xs text-neutral-300">
+      <div class="grid gap-3 sm:grid-cols-3 text-xs text-text-primary">
         <div class="p-3 rounded-xl bg-surface-2 border border-surface-border">
-          <div class="text-neutral-500 text-[10px] uppercase font-bold">계정 식별자</div>
-          <div class="mt-1 font-mono text-neutral-200 truncate">{{ auth.userId }}</div>
+          <div class="text-text-muted text-caption uppercase font-bold">계정 식별자</div>
+          <div class="mt-1 font-mono text-text-primary truncate">{{ auth.userId }}</div>
         </div>
         <div class="p-3 rounded-xl bg-surface-2 border border-surface-border">
-          <div class="text-neutral-500 text-[10px] uppercase font-bold">회원 권한</div>
+          <div class="text-text-muted text-caption uppercase font-bold">회원 권한</div>
           <div class="mt-1 font-semibold text-brand-400">{{ auth.role }}</div>
         </div>
         <div class="p-3 rounded-xl bg-surface-2 border border-surface-border">
-          <div class="text-neutral-500 text-[10px] uppercase font-bold">인공지능 투명성 고지 동의</div>
+          <div class="text-text-muted text-caption uppercase font-bold">인공지능 투명성 고지 동의</div>
           <div class="mt-1"><UiBadge variant="success" size="sm">인증 완료</UiBadge></div>
         </div>
       </div>
-      <p class="text-[11px] leading-relaxed text-neutral-500">
+      <p class="text-caption leading-relaxed text-text-muted">
         회원 탈퇴는 즉시 처리되며, 세무·법정 보존 의무 항목을 제외한 개인식별 정보는 파기됩니다.
       </p>
     </UiCard>
@@ -195,7 +195,7 @@
           <input v-model="cancelMode" type="radio" value="END_OF_PERIOD" class="mt-1" :disabled="quote.cancelRequested" />
           <span>
             <span class="block font-bold text-white">일반해지</span>
-            <span class="block text-neutral-300">
+            <span class="block text-text-primary">
               {{ fmtDate(subscription.currentPeriodEnd) }}까지 이용하고 종료합니다. 환불은 없습니다.
             </span>
             <span v-if="quote.cancelRequested" class="block text-amber-300">이미 일반해지를 신청했습니다.</span>
@@ -208,12 +208,12 @@
           <input v-model="cancelMode" type="radio" value="IMMEDIATE" class="mt-1" />
           <span>
             <span class="block font-bold text-white">즉시 해지(환불)</span>
-            <span class="block text-neutral-300">{{ immediateText }}</span>
-            <span class="block text-neutral-400">이용권은 지금 바로 종료됩니다. 환불은 결제 수단에 따라 3~5영업일 안에 반환됩니다.</span>
+            <span class="block text-text-primary">{{ immediateText }}</span>
+            <span class="block text-text-secondary">이용권은 지금 바로 종료됩니다. 환불은 결제 수단에 따라 3~5영업일 안에 반환됩니다.</span>
           </span>
         </label>
       </div>
-      <p v-else class="text-sm text-neutral-300">환불 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <p v-else class="text-sm text-text-primary">환불 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
       <template #footer>
         <div class="flex justify-end gap-2">
           <UiButton variant="secondary" size="md" @click="cancelSubOpen = false">닫기</UiButton>

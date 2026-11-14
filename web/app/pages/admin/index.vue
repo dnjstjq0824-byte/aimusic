@@ -23,28 +23,28 @@
       <!-- Metric cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <UiCard class="space-y-1">
-          <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">전체 유저</div>
+          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">전체 유저</div>
           <div class="text-2xl font-black text-white">{{ overview.users.total.toLocaleString() }}명</div>
-          <div class="text-[11px] text-neutral-400">
+          <div class="text-caption text-text-secondary">
             리스너 {{ overview.users.users.toLocaleString() }} · 파트너 {{ overview.users.partners.toLocaleString() }} · 관리자 {{ overview.users.admins.toLocaleString() }}
           </div>
         </UiCard>
         <UiCard class="space-y-1">
-          <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">재생 가능 음원</div>
-          <div class="text-2xl font-black text-accent-emerald">{{ overview.tracks.ready.toLocaleString() }}곡</div>
-          <div class="text-[11px] text-neutral-400">
+          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">재생 가능 음원</div>
+          <div class="text-2xl font-black text-success">{{ overview.tracks.ready.toLocaleString() }}곡</div>
+          <div class="text-caption text-text-secondary">
             심사 대기 {{ overview.tracks.pendingGate.toLocaleString() }} · 임시조치 {{ overview.tracks.takenDown.toLocaleString() }}
           </div>
         </UiCard>
         <UiCard class="space-y-1">
-          <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">24시간 유효 재생</div>
+          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">24시간 유효 재생</div>
           <div class="text-2xl font-black text-white">{{ overview.plays.last24h.toLocaleString() }}회</div>
-          <div class="text-[11px] text-neutral-400">누적 {{ overview.plays.total.toLocaleString() }}회</div>
+          <div class="text-caption text-text-secondary">누적 {{ overview.plays.total.toLocaleString() }}회</div>
         </UiCard>
         <UiCard class="space-y-1">
-          <div class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">정산 대기</div>
+          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">정산 대기</div>
           <div class="text-2xl font-black text-brand-300">{{ overview.settlementsPending.count.toLocaleString() }}건</div>
-          <div class="text-[11px] text-neutral-400">순액 합계 ₩{{ overview.settlementsPending.netKrw.toLocaleString() }}</div>
+          <div class="text-caption text-text-secondary">순액 합계 ₩{{ overview.settlementsPending.netKrw.toLocaleString() }}</div>
         </UiCard>
       </div>
 
@@ -52,7 +52,7 @@
       <div class="grid gap-4 lg:grid-cols-2">
         <UiCard>
           <template #header>
-            <h2 class="text-xs font-bold text-neutral-300 uppercase tracking-wider">검수 대기열</h2>
+            <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">검수 대기열</h2>
           </template>
           <ul class="space-y-2 text-xs">
             <li>
@@ -92,17 +92,17 @@
 
         <UiCard>
           <template #header>
-            <h2 class="text-xs font-bold text-neutral-300 uppercase tracking-wider">파이프라인 상태</h2>
+            <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">파이프라인 상태</h2>
           </template>
           <dl class="space-y-3 text-xs">
             <div class="flex items-center justify-between">
-              <dt class="text-neutral-400">트랜스코딩 큐 깊이</dt>
+              <dt class="text-text-secondary">트랜스코딩 큐 깊이</dt>
               <dd class="font-mono font-bold text-white">
                 {{ overview.queueDepth === null ? 'Redis 연결 불가' : `${overview.queueDepth}건` }}
               </dd>
             </div>
             <div class="flex items-center justify-between">
-              <dt class="text-neutral-400">24시간 변환 실패</dt>
+              <dt class="text-text-secondary">24시간 변환 실패</dt>
               <dd>
                 <UiBadge :variant="overview.jobsFailed24h > 0 ? 'danger' : 'success'" size="sm">
                   {{ overview.jobsFailed24h }}건

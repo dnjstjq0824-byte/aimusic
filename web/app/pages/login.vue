@@ -5,7 +5,7 @@
       <BrandLogo :size="44" />
       <div>
         <h1 class="font-display text-2xl font-black text-white tracking-tight">AVIBE에 오신 것을 환영합니다</h1>
-        <p class="text-xs text-neutral-400 mt-1">상업 이용 조건 확인 절차를 거친 AI 음악 스트리밍</p>
+        <p class="text-xs text-text-secondary mt-1">상업 이용 조건 확인 절차를 거친 AI 음악 스트리밍</p>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
           <UiSkeleton height="h-10" width="w-full" />
         </div>
         <div v-else-if="enabledProviders.length > 0" class="space-y-2 pt-2">
-          <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+          <div class="flex items-center gap-3 text-caption text-text-muted">
             <span class="h-px flex-1 bg-surface-border" aria-hidden="true" />
             <span>간편 로그인</span>
             <span class="h-px flex-1 bg-surface-border" aria-hidden="true" />
@@ -94,7 +94,7 @@
 
         <!-- Test credentials quick pills (dev only; never render in production) -->
         <div v-if="isDev" class="pt-4 border-t border-surface-border text-center">
-          <div class="text-[11px] text-neutral-400 mb-2 font-medium">체험용 빠른 로그인 (1-클릭)</div>
+          <div class="text-caption text-text-secondary mb-2 font-medium">체험용 빠른 로그인 (1-클릭)</div>
           <div class="flex flex-wrap justify-center gap-2">
             <button
               type="button"
@@ -105,14 +105,14 @@
             </button>
             <button
               type="button"
-              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
+              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-primary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
               @click="fillCreds('user@example.com', 'Admin1234!', true)"
             >
               🎧 일반 리스너
             </button>
             <button
               type="button"
-              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
+              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-secondary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
               @click="fillCreds('admin@example.com', 'Admin1234!', true)"
             >
               🛡️ 어드민

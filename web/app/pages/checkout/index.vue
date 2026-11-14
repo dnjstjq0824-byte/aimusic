@@ -20,16 +20,16 @@
         </div>
         <dl class="space-y-2.5 text-xs">
           <div class="flex justify-between">
-            <dt class="text-neutral-500">상품</dt>
+            <dt class="text-text-muted">상품</dt>
             <dd class="font-bold text-white">{{ plan.nameKo }}</dd>
           </div>
           <div v-if="order" class="flex justify-between">
-            <dt class="text-neutral-500">주문번호</dt>
-            <dd class="font-mono text-neutral-300">{{ order.orderId }}</dd>
+            <dt class="text-text-muted">주문번호</dt>
+            <dd class="font-mono text-text-primary">{{ order.orderId }}</dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-neutral-500">유효기간</dt>
-            <dd class="text-neutral-300">결제일로부터 1개월 (자동연장 없음)</dd>
+            <dt class="text-text-muted">유효기간</dt>
+            <dd class="text-text-primary">결제일로부터 1개월 (자동연장 없음)</dd>
           </div>
           <div class="flex justify-between border-t border-surface-border pt-2.5">
             <dt class="font-bold text-white">결제금액</dt>
@@ -41,7 +41,7 @@
       <!-- C6: withdrawal/refund consent gate (required before the order exists) -->
       <UiCard class="space-y-3">
         <h2 class="text-sm font-bold text-white">청약철회 및 환불 기준 동의 (필수)</h2>
-        <ul class="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-neutral-300">
+        <ul class="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-text-primary">
           <li v-for="line in REFUND_POLICY_LINES" :key="line">{{ line }}</li>
         </ul>
         <UiCheckbox v-model="refundAgreed" required>
@@ -52,7 +52,7 @@
       <UiCard v-if="!tossReady">
         <div class="flex items-start gap-3">
           <UiBadge variant="neutral" size="sm">준비 중</UiBadge>
-          <p class="text-xs leading-relaxed text-neutral-400">
+          <p class="text-xs leading-relaxed text-text-secondary">
             결제 준비 중입니다. 잠시 후 다시 시도해 주세요.
           </p>
         </div>

@@ -65,7 +65,7 @@
         </div>
         <div class="rounded-2xl border border-dashed border-surface-border p-8 text-center">
           <p class="text-sm font-semibold text-white">로그인하면 나만의 플레이리스트를 만들 수 있어요</p>
-          <p class="mt-1 text-xs text-neutral-400">추천 믹스 재생에도 로그인이 필요합니다. 1분이면 가입할 수 있어요.</p>
+          <p class="mt-1 text-xs text-text-secondary">추천 믹스 재생에도 로그인이 필요합니다. 1분이면 가입할 수 있어요.</p>
         </div>
       </section>
     </template>
@@ -75,7 +75,7 @@
           <h2 id="my-playlists-heading" class="font-display text-xl font-bold tracking-tight text-white">
             내 플레이리스트
           </h2>
-          <span v-if="auth.isAuthenticated" class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-neutral-400">
+          <span v-if="auth.isAuthenticated" class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-text-secondary">
             {{ playlists.playlists.length }}
           </span>
         </div>
@@ -86,7 +86,7 @@
 
       <div v-if="!auth.isAuthenticated" class="rounded-2xl border border-dashed border-surface-border p-8 text-center">
         <p class="text-sm font-semibold text-white">로그인하면 나만의 플레이리스트를 만들 수 있어요</p>
-        <p class="mt-1 text-xs text-neutral-400">추천 믹스 재생에도 로그인이 필요합니다. 1분이면 가입할 수 있어요.</p>
+        <p class="mt-1 text-xs text-text-secondary">추천 믹스 재생에도 로그인이 필요합니다. 1분이면 가입할 수 있어요.</p>
       </div>
 
       <div v-else-if="playlists.loading && playlists.playlists.length === 0" :class="gridClass">
@@ -100,7 +100,7 @@
         <!-- New playlist tile -->
         <button
           type="button"
-          class="group flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-surface-border bg-surface-1 text-neutral-400 transition-colors hover:border-brand-500/60 hover:text-brand-300"
+          class="group flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-surface-border bg-surface-1 text-text-secondary transition-colors hover:border-brand-500/60 hover:text-brand-300"
           @click="createModalOpen = true"
         >
           <span class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-2xl transition-transform group-hover:scale-110" aria-hidden="true">+</span>
@@ -118,7 +118,7 @@
               <svg class="absolute left-3 top-3 h-6 w-6 text-white/70" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M3 6h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm14-4v8.2a3 3 0 1 1-2-2.83V8h5v2z" />
               </svg>
-              <span class="absolute bottom-3 left-3 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white/80 backdrop-blur">
+              <span class="absolute bottom-3 left-3 rounded-full bg-black/40 px-2 py-0.5 text-caption font-semibold text-white/80 backdrop-blur">
                 {{ p.isPublic ? '공개' : '비공개' }}
               </span>
             </RouterLink>
@@ -139,7 +139,7 @@
           <RouterLink :to="{ name: 'playlist-detail', params: { id: p.id } }" class="mt-2 block truncate text-sm font-bold text-white hover:text-brand-400">
             {{ p.title }}
           </RouterLink>
-          <p class="text-xs text-neutral-500">
+          <p class="text-xs text-text-muted">
             {{ counts[p.id] === undefined ? '불러오는 중…' : `${counts[p.id]}곡` }}
           </p>
         </article>
@@ -174,14 +174,14 @@
           <div class="relative aspect-square overflow-hidden rounded-2xl border border-surface-border transition-colors group-hover:border-brand-500/50" :class="gradientFor(m.key)">
             <span class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
             <span class="absolute inset-x-3 bottom-3">
-              <span class="block text-[10px] font-semibold uppercase tracking-wider text-white/60">{{ m.kicker }}</span>
+              <span class="block text-caption font-semibold uppercase tracking-wider text-white/60">{{ m.kicker }}</span>
               <span class="mt-0.5 block truncate text-sm font-bold text-white">{{ m.title }}</span>
             </span>
             <button type="button" :class="playButtonClass" :aria-label="`「${m.title}」 재생`" @click="playMix(m, false)">
               <svg class="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
             </button>
           </div>
-          <p class="mt-2 truncate text-xs text-neutral-500">{{ m.tracks.length }}곡 · {{ m.subtitle }}</p>
+          <p class="mt-2 truncate text-xs text-text-muted">{{ m.tracks.length }}곡 · {{ m.subtitle }}</p>
         </article>
       </div>
     </section>
@@ -242,7 +242,7 @@ const router = useRouter();
 
 const gridClass = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
 const playButtonClass =
-  'absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-[#04121a] shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ' +
+  'absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 -on-brand shadow-glow-brand transition-all hover:bg-brand-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ' +
   'opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100';
 
 const counts = ref<Record<string, number>>({});

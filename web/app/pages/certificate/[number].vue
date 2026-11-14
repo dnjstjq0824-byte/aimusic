@@ -26,39 +26,39 @@
       </div>
       <dl class="grid gap-3 text-xs sm:grid-cols-2">
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">곡명</dt>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">곡명</dt>
           <dd class="mt-0.5 font-semibold text-white">{{ view.title }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">AI 플랫폼</dt>
-          <dd class="mt-0.5 text-neutral-200">
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">AI 플랫폼</dt>
+          <dd class="mt-0.5 text-text-primary">
             {{ view.aiProvider }}<span v-if="view.aiModel"> ({{ view.aiModel }})</span>
           </dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">사용 요금제</dt>
-          <dd class="mt-0.5 text-neutral-200">{{ view.planTier ?? '미기재' }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">사용 요금제</dt>
+          <dd class="mt-0.5 text-text-primary">{{ view.planTier ?? '미기재' }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">생성일</dt>
-          <dd class="mt-0.5 text-neutral-200">{{ view.generatedAt ?? '미기재' }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">생성일</dt>
+          <dd class="mt-0.5 text-text-primary">{{ view.generatedAt ?? '미기재' }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">게이트 통과</dt>
-          <dd class="mt-0.5 font-semibold" :class="view.gatesPassed ? 'text-accent-emerald' : 'text-accent-amber'">
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">게이트 통과</dt>
+          <dd class="mt-0.5 font-semibold" :class="view.gatesPassed ? 'text-verified' : 'text-accent-amber'">
             {{ view.gatesPassed ? 'Gate 1-3 통과' : '일부 미통과' }}
           </dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">발급일</dt>
-          <dd class="mt-0.5 text-neutral-200">{{ fmtDate(view.certificate.issuedAt) }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">발급일</dt>
+          <dd class="mt-0.5 text-text-primary">{{ fmtDate(view.certificate.issuedAt) }}</dd>
         </div>
         <div v-if="view.isrc">
-          <dt class="font-bold uppercase tracking-wider text-neutral-500 text-[10px]">ISRC</dt>
-          <dd class="mt-0.5 font-mono text-neutral-200">{{ view.isrc }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">ISRC</dt>
+          <dd class="mt-0.5 font-mono text-text-primary">{{ view.isrc }}</dd>
         </div>
       </dl>
-      <p class="border-t border-surface-border pt-3 text-[11px] leading-relaxed text-neutral-500">
+      <p class="border-t border-surface-border pt-3 text-caption leading-relaxed text-text-muted">
         본 인증은 생성 시점의 유료 상업 플랜 보유, 당시 정책상 상업 이용 허용, 중복·재등록 아님을
         파트너 신고와 자동 검사에 근거해 확인한 절차이며, 권리 관계를 보증하지 않습니다.
       </p>

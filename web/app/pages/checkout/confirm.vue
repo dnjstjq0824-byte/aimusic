@@ -8,7 +8,7 @@
         </svg>
       </div>
       <h1 class="text-xl font-black text-white">결제 승인 중…</h1>
-      <p class="text-xs text-neutral-400">창을 닫지 마세요.</p>
+      <p class="text-xs text-text-secondary">창을 닫지 마세요.</p>
     </div>
 
     <template v-else-if="subscription">
@@ -20,17 +20,17 @@
         </div>
         <dl class="space-y-2 text-xs">
           <div class="flex justify-between">
-            <dt class="text-neutral-500">유효기간</dt>
-            <dd class="text-neutral-200">
+            <dt class="text-text-muted">유효기간</dt>
+            <dd class="text-text-primary">
               {{ fmtDate(subscription.currentPeriodStart) }} ~ {{ fmtDate(subscription.currentPeriodEnd) }}
             </dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-neutral-500">주문번호</dt>
-            <dd class="font-mono text-neutral-300">{{ orderId }}</dd>
+            <dt class="text-text-muted">주문번호</dt>
+            <dd class="font-mono text-text-primary">{{ orderId }}</dd>
           </div>
         </dl>
-        <p class="border-t border-surface-border pt-3 text-[11px] leading-relaxed text-neutral-400">
+        <p class="border-t border-surface-border pt-3 text-caption leading-relaxed text-text-secondary">
           환불 기준: {{ REFUND_POLICY_SUMMARY }} 해지·환불은 내 라이브러리에서 신청할 수 있습니다.
         </p>
       </UiCard>

@@ -14,7 +14,7 @@
 
     <!-- Filters -->
     <UiCard class="flex flex-col gap-3 sm:flex-row sm:items-end">
-      <label class="flex-1 text-xs text-neutral-400">
+      <label class="flex-1 text-xs text-text-secondary">
         <span class="mb-1 block font-semibold">조치 종류</span>
         <select
           v-model="actionFilter"
@@ -25,13 +25,13 @@
           <option v-for="a in knownActions" :key="a" :value="a">{{ a }}</option>
         </select>
       </label>
-      <label class="flex-1 text-xs text-neutral-400">
+      <label class="flex-1 text-xs text-text-secondary">
         <span class="mb-1 block font-semibold">대상 종류 (예: track, settlement)</span>
         <input
           v-model="entityFilter"
           type="text"
           placeholder="전체"
-          class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
+          class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
         />
       </label>
@@ -55,24 +55,24 @@
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex flex-wrap items-center gap-2">
             <UiBadge variant="info" size="xs">{{ e.action }}</UiBadge>
-            <span v-if="e.entityType" class="text-xs text-neutral-300">
-              {{ e.entityType }}<span v-if="e.entityId" class="font-mono text-neutral-400">:{{ shortId(e.entityId) }}</span>
+            <span v-if="e.entityType" class="text-xs text-text-primary">
+              {{ e.entityType }}<span v-if="e.entityId" class="font-mono text-text-secondary">:{{ shortId(e.entityId) }}</span>
             </span>
           </div>
-          <time class="text-[11px] text-neutral-500" :datetime="e.createdAt">{{ formatTime(e.createdAt) }}</time>
+          <time class="text-caption text-text-muted" :datetime="e.createdAt">{{ formatTime(e.createdAt) }}</time>
         </div>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-500">
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted">
           <span>
             실행자:
-            <strong class="text-neutral-300">{{ e.actorUserId ? shortId(e.actorUserId) : '(시스템/CLI)' }}</strong>
+            <strong class="text-text-primary">{{ e.actorUserId ? shortId(e.actorUserId) : '(시스템/CLI)' }}</strong>
           </span>
           <span v-if="e.ip">
             IP: <span class="font-mono">{{ e.ip }}</span>
           </span>
         </div>
-        <details v-if="e.metadata && e.metadata !== '{}'" class="text-[11px]">
-          <summary class="cursor-pointer text-neutral-400 hover:text-white">상세 보기</summary>
-          <pre class="mt-1 overflow-x-auto rounded-lg bg-surface-0 p-2 font-mono text-neutral-300">{{ prettyMeta(e.metadata) }}</pre>
+        <details v-if="e.metadata && e.metadata !== '{}'" class="text-caption">
+          <summary class="cursor-pointer text-text-secondary hover:text-white">상세 보기</summary>
+          <pre class="mt-1 overflow-x-auto rounded-lg bg-surface-0 p-2 font-mono text-text-primary">{{ prettyMeta(e.metadata) }}</pre>
         </details>
       </UiCard>
 
@@ -86,7 +86,7 @@
         >
           더 불러오기
         </UiButton>
-        <p v-else class="text-[11px] text-neutral-600">마지막 기록입니다.</p>
+        <p v-else class="text-caption text-text-muted">마지막 기록입니다.</p>
       </div>
     </div>
   </div>

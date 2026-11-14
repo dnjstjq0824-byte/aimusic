@@ -3,7 +3,7 @@
     <!-- Back Link -->
     <RouterLink
       to="/"
-      class="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors"
+      class="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-white transition-colors"
     >
       <span>← 목록으로 돌아가기</span>
     </RouterLink>
@@ -56,23 +56,23 @@
                 {{ track.title }}
               </h1>
 
-              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
-                <span>플랫폼: <strong class="text-neutral-200">{{ track.aiProvider }}</strong></span>
+              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
+                <span>플랫폼: <strong class="text-text-primary">{{ track.aiProvider }}</strong></span>
                 <span>·</span>
-                <span>재생 <strong class="text-neutral-200">{{ track.playCount.toLocaleString() }}회</strong></span>
+                <span>재생 <strong class="text-text-primary">{{ track.playCount.toLocaleString() }}회</strong></span>
                 <span>·</span>
-                <span>시간 <strong class="text-neutral-200">{{ fmtDuration(track.durationMs) }}</strong></span>
+                <span>시간 <strong class="text-text-primary">{{ fmtDuration(track.durationMs) }}</strong></span>
                 <template v-if="track.bpm">
                   <span>·</span>
-                  <span>BPM <strong class="text-neutral-200">{{ fmtBpm(track.bpm) }}</strong></span>
+                  <span>BPM <strong class="text-text-primary">{{ fmtBpm(track.bpm) }}</strong></span>
                 </template>
                 <template v-if="track.musicalKey">
                   <span>·</span>
-                  <span>키 <strong class="text-neutral-200">{{ track.musicalKey }}</strong></span>
+                  <span>키 <strong class="text-text-primary">{{ track.musicalKey }}</strong></span>
                 </template>
                 <template v-if="track.isrc">
                   <span>·</span>
-                  <span>ISRC <strong class="font-mono text-neutral-200">{{ track.isrc }}</strong></span>
+                  <span>ISRC <strong class="font-mono text-text-primary">{{ track.isrc }}</strong></span>
                 </template>
               </div>
             </div>
@@ -110,8 +110,8 @@
         <!-- Waveform Visualizer -->
         <UiCard>
           <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">오디오 파형 (Audio Waveform)</h3>
-            <span class="text-xs font-mono text-neutral-400">스트리밍 SQ 128k · HQ 256k(이용권)</span>
+            <h3 class="text-xs font-bold text-text-secondary uppercase tracking-wider">오디오 파형 (Audio Waveform)</h3>
+            <span class="text-xs font-mono text-text-secondary">스트리밍 SQ 128k · HQ 256k(이용권)</span>
           </div>
 
           <div
@@ -127,7 +127,7 @@
               :style="{ height: `${Math.max(10, Math.round(peak * 100))}%` }"
             />
           </div>
-          <div v-else class="py-6 text-center text-xs text-neutral-500">
+          <div v-else class="py-6 text-center text-xs text-text-muted">
             이 음원의 파형 데이터가 아직 없습니다.
           </div>
         </UiCard>
@@ -137,41 +137,41 @@
           <div class="flex items-start justify-between gap-3 border-b border-surface-border pb-3">
             <div class="min-w-0">
               <h3 class="text-sm font-bold text-white">AI 생성 투명성 공시 명세서</h3>
-              <p class="text-[11px] text-neutral-400 mt-0.5">인공지능기본법 제31조 취지에 따른 AI 생성 표시</p>
+              <p class="text-caption text-text-secondary mt-0.5">인공지능기본법 제31조 취지에 따른 AI 생성 표시</p>
             </div>
             <UiBadge variant="brand" size="xs">법적 공시 필</UiBadge>
           </div>
 
           <div class="grid gap-3 sm:grid-cols-2 text-xs">
             <div class="p-3 rounded-xl bg-surface-0 border border-surface-border">
-              <span class="text-neutral-500 text-[10px] uppercase font-bold block">AI 생성 플랫폼 &amp; 모델</span>
+              <span class="text-text-muted text-caption uppercase font-bold block">AI 생성 플랫폼 &amp; 모델</span>
               <span class="font-semibold text-white text-sm">{{ track.aiProvider }}</span>
-              <span v-if="track.aiModelVersion" class="text-neutral-400 ml-1 text-xs">({{ track.aiModelVersion }})</span>
+              <span v-if="track.aiModelVersion" class="text-text-secondary ml-1 text-xs">({{ track.aiModelVersion }})</span>
             </div>
             <div class="p-3 rounded-xl bg-surface-0 border border-surface-border">
-              <span class="text-neutral-500 text-[10px] uppercase font-bold block">생성 유형 구분</span>
+              <span class="text-text-muted text-caption uppercase font-bold block">생성 유형 구분</span>
               <span class="font-semibold text-brand-400 text-sm">
                 {{ track.aiGenerationType === 'AI_ASSISTED_HUMAN' ? 'AI+인간 공동 창작 (Human-in-the-loop)' : '순수 AI 생성물 (Full AI)' }}
               </span>
             </div>
             <div v-if="aiCreditKo" class="p-3 rounded-xl bg-surface-0 border border-surface-border sm:col-span-2">
-              <span class="text-neutral-500 text-[10px] uppercase font-bold block">AI 생성 범위 (AI 크레딧)</span>
+              <span class="text-text-muted text-caption uppercase font-bold block">AI 생성 범위 (AI 크레딧)</span>
               <span class="font-semibold text-white text-sm">{{ aiCreditKo }}</span>
             </div>
           </div>
 
           <!-- Prompt -->
           <div v-if="track.aiPrompt && track.isPromptPublic !== false" class="space-y-1.5">
-            <div class="text-[11px] font-bold text-neutral-400">생성 프롬프트 (Prompt)</div>
-            <div class="p-3 rounded-xl bg-surface-0 border border-surface-border font-mono text-xs text-neutral-300 leading-relaxed break-all">
+            <div class="text-caption font-bold text-text-secondary">생성 프롬프트 (Prompt)</div>
+            <div class="p-3 rounded-xl bg-surface-0 border border-surface-border font-mono text-xs text-text-primary leading-relaxed break-all">
               {{ track.aiPrompt }}
             </div>
           </div>
 
           <!-- Lyrics -->
           <div v-if="track.lyrics" class="space-y-1.5">
-            <div class="text-[11px] font-bold text-neutral-400">가사 (Lyrics)</div>
-            <div class="p-3 rounded-xl bg-surface-0 border border-surface-border text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+            <div class="text-caption font-bold text-text-secondary">가사 (Lyrics)</div>
+            <div class="p-3 rounded-xl bg-surface-0 border border-surface-border text-xs text-text-primary leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
               {{ track.lyrics }}
             </div>
           </div>
@@ -183,7 +183,7 @@
         <!-- License Certification Card -->
         <UiCard class="space-y-3">
           <div class="flex items-center gap-2">
-            <svg class="h-4 w-4 text-accent-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="h-4 w-4 text-verified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
@@ -191,24 +191,24 @@
               {{ cert ? '상업적 이용권 보유 인증' : '권리 확인 상태' }}
             </h3>
           </div>
-          <div v-if="!cert" class="rounded-xl border border-surface-border bg-surface-2 p-3 text-xs leading-relaxed text-neutral-300">
+          <div v-if="!cert" class="rounded-xl border border-surface-border bg-surface-2 p-3 text-xs leading-relaxed text-text-primary">
             곡별 인증서 발급 전입니다. 이 음원은 플랫폼 확인 절차(Gate 1-4)를 거쳐 재생 가능 상태로 등록되었습니다.
             이 표시는 파트너 신고와 자동 검사에 근거하며 권리 관계를 보증하지 않습니다.
           </div>
-          <div v-else class="rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-3 text-xs text-emerald-300 space-y-1.5">
+          <div v-else class="rounded-xl border border-verified/20 bg-verified/10 p-3 text-xs text-emerald-300 space-y-1.5">
             <div class="font-bold flex items-center gap-1.5">
               <UiBadge variant="success" size="xs">Gate 1-4 확인 절차 통과</UiBadge>
             </div>
-            <p class="text-[11px] leading-relaxed text-emerald-200/80">
+            <p class="text-caption leading-relaxed text-text-secondary">
               본 음원은 {{ track.aiProvider }} 유료 플랜 구독 증빙 대조와 FFprobe 자동 검사를 거쳤으며,
               자동 검사에서 비상업 표지가 발견되지 않았습니다.
               본 표시는 파트너 신고와 자동 검사에 근거하며 권리 관계를 보증하지 않습니다.
             </p>
           </div>
-          <div class="space-y-1.5 text-[11px] text-neutral-400 pt-1">
+          <div class="space-y-1.5 text-caption text-text-secondary pt-1">
             <div class="flex justify-between">
               <span>검증 상태</span>
-              <span class="font-semibold text-emerald-400">{{ statusKo }}</span>
+              <span class="font-semibold text-verified">{{ statusKo }}</span>
             </div>
             <div v-if="cert" class="flex items-center justify-between gap-2">
               <span>인증서 번호</span>
@@ -235,7 +235,7 @@
                   복사
                 </button>
               </div>
-              <div class="break-all font-mono text-neutral-300">{{ track.id }}</div>
+              <div class="break-all font-mono text-text-primary">{{ track.id }}</div>
             </div>
           </div>
         </UiCard>
@@ -243,7 +243,7 @@
         <!-- Rights Protection & UGC Safety -->
         <UiCard class="space-y-3">
           <h3 class="text-xs font-bold text-white uppercase tracking-wider">권리자 보호 및 UGC 안전</h3>
-          <p class="text-xs text-neutral-400 leading-relaxed">
+          <p class="text-xs text-text-secondary leading-relaxed">
             타인의 목소리를 무단 합성(보이스 클로닝)했거나 기존 저작물을 표절한 경우 임시조치(Notice &amp; Takedown)를 요청할 수 있습니다. 신고는 검토 후 처리됩니다.
           </p>
 

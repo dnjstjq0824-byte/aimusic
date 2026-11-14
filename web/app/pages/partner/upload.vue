@@ -12,11 +12,11 @@
         v-for="(st, idx) in steps"
         :key="st.num"
         class="flex items-center gap-2.5 rounded-xl border p-3 transition-all text-xs"
-        :class="store.step === st.num ? 'border-brand-500 bg-brand-950/40 text-brand-300 font-bold shadow-glow-brand' : store.step > st.num ? 'border-emerald-600/40 bg-surface-1 text-emerald-400 font-semibold' : 'border-surface-border bg-surface-1 text-neutral-500'"
+        :class="store.step === st.num ? 'border-brand-500 bg-brand-950/40 text-brand-300 font-bold shadow-glow-brand' : store.step > st.num ? 'border-emerald-600/40 bg-surface-1 text-emerald-400 font-semibold' : 'border-surface-border bg-surface-1 text-text-muted'"
       >
         <div
-          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-          :class="store.step === st.num ? 'bg-brand-500 text-[#04121a]' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-neutral-400'"
+          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-caption font-bold"
+          :class="store.step === st.num ? 'bg-brand-500 -on-brand' : store.step > st.num ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-text-secondary'"
           :aria-label="store.step > st.num ? `${st.title} 완료` : `${st.title}`"
         >
           <svg v-if="store.step > st.num" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -26,7 +26,7 @@
         </div>
         <div class="truncate">
           <div class="font-bold">{{ st.title }}</div>
-          <div class="text-[10px] opacity-70 hidden sm:block">{{ st.desc }}</div>
+          <div class="text-caption opacity-70 hidden sm:block">{{ st.desc }}</div>
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
     <UiCard v-if="store.step === 1" class="space-y-5">
       <div>
         <h2 class="text-sm font-bold text-white">Step 1 — 상업 라이선스 사전 검증 (Gate 1 &amp; Gate 2)</h2>
-        <p class="text-xs text-neutral-400 mt-0.5">
+        <p class="text-xs text-text-secondary mt-0.5">
           제작에 사용한 AI 플랫폼과 플랜, 음원 생성 일시를 검증하여 단독 상업 유통 자격을 확인합니다.
         </p>
       </div>
@@ -93,14 +93,14 @@
         </div>
 
         <div class="sm:col-span-2">
-          <label class="block text-xs font-medium text-neutral-300 mb-1.5">
+          <label class="block text-xs font-medium text-text-primary mb-1.5">
             오디오 파일 선택 (무손실 WAV, FLAC, 또는 192k+ MP3)
           </label>
           <input
             type="file"
             accept="audio/*"
             :disabled="store.instantBlockReason !== null"
-            class="w-full text-xs text-neutral-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-2 file:text-white hover:file:bg-surface-3 cursor-pointer"
+            class="w-full text-xs text-text-secondary file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-2 file:text-white hover:file:bg-surface-3 cursor-pointer"
             @change="onFile"
           />
         </div>
@@ -120,7 +120,7 @@
       <LicensePrecheckWidget :status="store.gate12" :code="store.gate12Code" />
 
       <div class="flex items-center justify-between pt-2 border-t border-surface-border">
-        <p class="text-xs text-neutral-500">
+        <p class="text-xs text-text-muted">
           * 사전 검증을 통과해야 실제 파일 업로드 및 Step 2가 해제됩니다.
         </p>
         <div class="flex gap-2">
@@ -149,22 +149,22 @@
     <UiCard v-else-if="store.step === 2" class="space-y-5">
       <div>
         <h2 class="text-sm font-bold text-white">Step 2 — 오디오 업로드 &amp; FFprobe 포렌식 (Gate 3)</h2>
-        <p class="text-xs text-neutral-400 mt-0.5">
+        <p class="text-xs text-text-secondary mt-0.5">
           파일의 무결성(SHA-256)을 확인하고, 오디오 스트림 메타데이터 내 무료 워터마크 태그 및 음질을 분석합니다.
         </p>
       </div>
 
       <div class="rounded-xl border border-surface-border bg-surface-0 p-4 space-y-2 text-xs">
         <div class="flex justify-between">
-          <span class="text-neutral-400">선택된 파일:</span>
+          <span class="text-text-secondary">선택된 파일:</span>
           <span class="font-mono text-white font-semibold">{{ store.fileName || '선택 안됨' }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-neutral-400">파일 고유 SHA-256:</span>
-          <span class="font-mono text-brand-400 break-all text-[11px]">{{ store.audioSha256 || '계산 대기' }}</span>
+          <span class="text-text-secondary">파일 고유 SHA-256:</span>
+          <span class="font-mono text-brand-400 break-all text-caption">{{ store.audioSha256 || '계산 대기' }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-neutral-400">Gate 1-2 사전 승인:</span>
+          <span class="text-text-secondary">Gate 1-2 사전 승인:</span>
           <UiBadge variant="success" size="xs">통과 (ELIGIBLE)</UiBadge>
         </div>
       </div>
@@ -188,7 +188,7 @@
     <UiCard v-else class="space-y-5">
       <div>
         <h2 class="text-sm font-bold text-white">Step 3 — AI 메타데이터 &amp; 4대 필수 법적 서약</h2>
-        <p class="text-xs text-neutral-400 mt-0.5">
+        <p class="text-xs text-text-secondary mt-0.5">
           인공지능기본법 제31조 표시 의무와 저작권 면책을 위한 법적 확약서를 작성합니다.
         </p>
       </div>
@@ -219,8 +219,8 @@
         </UiSelect>
 
         <div class="sm:col-span-2 rounded-xl border border-surface-border bg-surface-0 p-3">
-          <div class="text-xs font-medium text-neutral-300 mb-1">AI 생성 범위 선언 (AI 크레딧, 해당 항목 전부 선택)</div>
-          <p class="text-[11px] text-neutral-500 mb-2">유통사(DDEX) 공개 기준과 동일한 구분입니다. 3개 전부 선택 시 전체 AI 생성으로 표시됩니다.</p>
+          <div class="text-xs font-medium text-text-primary mb-1">AI 생성 범위 선언 (AI 크레딧, 해당 항목 전부 선택)</div>
+          <p class="text-caption text-text-muted mb-2">유통사(DDEX) 공개 기준과 동일한 구분입니다. 3개 전부 선택 시 전체 AI 생성으로 표시됩니다.</p>
           <div class="flex flex-wrap gap-x-5 gap-y-2">
             <UiCheckbox
               v-for="opt in AI_CREDIT_PART_OPTIONS"
@@ -234,8 +234,8 @@
         </div>
 
         <div class="sm:col-span-2 rounded-xl border border-surface-border bg-surface-0 p-3">
-          <div class="text-xs font-medium text-neutral-300 mb-1">인간 창작 기여 항목 (해당 항목 전부 선택)</div>
-          <p class="text-[11px] text-neutral-500 mb-2">저작권 등록·분쟁 대응의 증빙 기초가 되며 인증 스냅샷에 기록됩니다.</p>
+          <div class="text-xs font-medium text-text-primary mb-1">인간 창작 기여 항목 (해당 항목 전부 선택)</div>
+          <p class="text-caption text-text-muted mb-2">저작권 등록·분쟁 대응의 증빙 기초가 되며 인증 스냅샷에 기록됩니다.</p>
           <div class="flex flex-wrap gap-x-5 gap-y-2">
             <UiCheckbox
               v-for="opt in HUMAN_CONTRIBUTION_OPTIONS"

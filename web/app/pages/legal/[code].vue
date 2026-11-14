@@ -33,7 +33,7 @@
         role="tab"
         :aria-selected="activeCode === code.id"
         class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150"
-        :class="activeCode === code.id ? 'bg-brand-500 text-[#04121a] shadow-glow-brand' : 'bg-surface-2 text-neutral-300 hover:bg-surface-3 hover:text-white border border-surface-border'"
+        :class="activeCode === code.id ? 'bg-brand-500 -on-brand shadow-glow-brand' : 'bg-surface-2 text-text-primary hover:bg-surface-3 hover:text-white border border-surface-border'"
         @click="selectCode(code.id)"
       >
         {{ code.name }}
@@ -50,13 +50,13 @@
 
     <UiErrorBanner v-else-if="error" :message="error" title="약관 조회 실패" retry-label="다시 시도" @retry="loadTerms" />
 
-    <UiCard v-else-if="notFound" class="text-sm text-neutral-300">
+    <UiCard v-else-if="notFound" class="text-sm text-text-primary">
       <p class="font-semibold text-white">요청한 약관 문서를 찾을 수 없습니다.</p>
       <p class="mt-1">위 목록에서 문서를 선택해 주세요.</p>
     </UiCard>
 
     <!-- Markdown Content Viewer -->
-    <UiCard v-else class="text-xs leading-relaxed text-neutral-300">
+    <UiCard v-else class="text-xs leading-relaxed text-text-primary">
       <div class="whitespace-pre-wrap space-y-3" v-html="renderedContent" />
     </UiCard>
   </div>
@@ -130,8 +130,8 @@ const renderedContent = computed(() => {
     .replace(/^## (.*$)/gim, '<h2 class="text-base font-extrabold text-white mt-6 mb-3 border-b border-surface-border pb-1">$1</h2>')
     .replace(/^# (.*$)/gim, '<h2 class="text-lg font-black text-brand-400 mt-6 mb-4">$1</h2>')
     .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
-    .replace(/`([^`]+?)`/g, '<code class="rounded bg-surface-3 px-1 py-px font-mono text-[11px] text-brand-300">$1</code>')
-    .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-neutral-300">$1</li>');
+    .replace(/`([^`]+?)`/g, '<code class="rounded bg-surface-3 px-1 py-px font-mono text-caption text-brand-300">$1</code>')
+    .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-text-primary">$1</li>');
 });
 
 function fmtDate(iso?: string): string {

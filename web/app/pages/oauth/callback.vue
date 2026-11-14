@@ -17,7 +17,7 @@
           </svg>
         </div>
         <h1 class="text-xl font-black text-white">소셜 로그인 처리 중…</h1>
-        <p class="text-xs text-neutral-400">잠시만 기다려 주세요. 창을 닫지 마세요.</p>
+        <p class="text-xs text-text-secondary">잠시만 기다려 주세요. 창을 닫지 마세요.</p>
       </div>
     </div>
   </div>

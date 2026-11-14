@@ -29,7 +29,7 @@
                 {{ s.status }}
               </UiBadge>
             </div>
-            <p class="mt-1 font-mono text-[11px] text-neutral-500">
+            <p class="mt-1 font-mono text-caption text-text-muted">
               {{ s.businessNumber }} · 라이선스 {{ s.licenseCount }}대 · 신청 {{ new Date(s.createdAt).toLocaleDateString() }}
             </p>
           </div>

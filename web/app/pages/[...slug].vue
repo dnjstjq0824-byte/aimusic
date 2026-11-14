@@ -8,10 +8,10 @@
       </div>
     </div>
     <h1 class="text-xl font-bold text-white mb-2">페이지를 찾을 수 없습니다</h1>
-    <p class="text-xs text-neutral-400 leading-relaxed mb-2 max-w-sm">
+    <p class="text-xs text-text-secondary leading-relaxed mb-2 max-w-sm">
       요청하신 페이지가 삭제되었거나 주소가 변경되었습니다.
     </p>
-    <p class="text-[11px] font-mono text-neutral-500 mb-6 max-w-sm break-all">{{ attemptedPath }}</p>
+    <p class="text-caption font-mono text-text-muted mb-6 max-w-sm break-all">{{ attemptedPath }}</p>
     <div class="flex items-center gap-3">
       <RouterLink to="/">
         <UiButton variant="brand" size="md">홈으로 돌아가기</UiButton>

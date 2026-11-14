@@ -18,8 +18,8 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">등록된 AI 플랫폼 구독 증빙</h2>
-          <span class="text-xs text-neutral-500 font-mono">{{ subs.length }}개</span>
+          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">등록된 AI 플랫폼 구독 증빙</h2>
+          <span class="text-xs text-text-muted font-mono">{{ subs.length }}개</span>
         </div>
       </template>
 
@@ -58,14 +58,14 @@
                 {{ subStatusKo(s.status) }}
               </UiBadge>
             </div>
-            <div class="font-mono text-[11px] text-neutral-500">증빙 ID: {{ s.id }}</div>
-            <div v-if="s.expiresAt" class="text-[11px] text-neutral-400">
-              구독 유효기간: <strong class="text-neutral-200">{{ new Date(s.expiresAt).toLocaleDateString() }}</strong>까지
+            <div class="font-mono text-caption text-text-muted">증빙 ID: {{ s.id }}</div>
+            <div v-if="s.expiresAt" class="text-caption text-text-secondary">
+              구독 유효기간: <strong class="text-text-primary">{{ new Date(s.expiresAt).toLocaleDateString() }}</strong>까지
             </div>
           </div>
 
-          <div class="text-[11px] shrink-0">
-            <span v-if="s.status === 'VERIFIED'" class="text-accent-emerald font-semibold">Gate 1-2 사용 가능</span>
+          <div class="text-caption shrink-0">
+            <span v-if="s.status === 'VERIFIED'" class="text-verified font-semibold">Gate 1-2 사용 가능</span>
             <span v-else-if="s.status === 'PENDING'" class="text-accent-amber font-semibold">관리자 검증 대기중</span>
             <span v-else class="text-accent-crimson font-semibold">반려됨</span>
           </div>

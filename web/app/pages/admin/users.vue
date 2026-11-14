@@ -14,17 +14,17 @@
 
     <!-- Filters -->
     <UiCard class="flex flex-col gap-3 sm:flex-row sm:items-end">
-      <label class="flex-[2] text-xs text-neutral-400">
+      <label class="flex-[2] text-xs text-text-secondary">
         <span class="mb-1 block font-semibold">이메일/표시 이름 검색</span>
         <input
           v-model="query"
           type="text"
           placeholder="검색어"
-          class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
+          class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
         />
       </label>
-      <label class="flex-1 text-xs text-neutral-400">
+      <label class="flex-1 text-xs text-text-secondary">
         <span class="mb-1 block font-semibold">역할</span>
         <select
           v-model="roleFilter"
@@ -60,7 +60,7 @@
                 {{ u.isActive ? '활성' : '잠금' }}
               </UiBadge>
             </div>
-            <div class="mt-1 truncate font-mono text-[11px] text-neutral-400">{{ u.email }}</div>
+            <div class="mt-1 truncate font-mono text-caption text-text-secondary">{{ u.email }}</div>
           </div>
           <div class="flex shrink-0 flex-wrap gap-2">
             <select
@@ -92,13 +92,13 @@
             </UiButton>
           </div>
         </div>
-        <div class="text-[11px] text-neutral-500">
+        <div class="text-caption text-text-muted">
           가입: {{ formatTime(u.createdAt) }}
           <span v-if="u.ageConfirmedAt"> · 14+ 확인됨</span>
           <span v-else> · 14+ 미확인</span>
         </div>
         <div v-if="expandedBlocksId === u.id" class="rounded-lg border border-surface-border bg-surface-0 p-3 text-xs">
-          <div v-if="(blocksByUser[u.id] ?? []).length === 0" class="text-neutral-500">
+          <div v-if="(blocksByUser[u.id] ?? []).length === 0" class="text-text-muted">
             제재 기록이 없습니다.
           </div>
           <ul v-else class="space-y-2">
@@ -109,9 +109,9 @@
             >
               <div>
                 <UiBadge variant="danger" size="xs">스트라이크 {{ b.strikeNumber }}</UiBadge>
-                <span class="ml-2 text-neutral-200">{{ b.reason }}</span>
+                <span class="ml-2 text-text-primary">{{ b.reason }}</span>
               </div>
-              <div class="font-mono text-[11px] text-neutral-500">
+              <div class="font-mono text-caption text-text-muted">
                 {{ formatTime(b.createdAt) }}
                 <span v-if="b.expiresAt"> · 만료 {{ formatTime(b.expiresAt) }}</span>
               </div>
@@ -130,7 +130,7 @@
         >
           더 불러오기
         </UiButton>
-        <p v-else class="text-[11px] text-neutral-600">마지막 회원입니다.</p>
+        <p v-else class="text-caption text-text-muted">마지막 회원입니다.</p>
       </div>
     </div>
   </div>

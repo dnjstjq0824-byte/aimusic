@@ -13,7 +13,7 @@
           <path d="M12 3v18M5 7l7-4 7 4M5 7v4a3.5 3.5 0 0 0 7 0V7M19 7v4a3.5 3.5 0 0 1-7 0" />
           <path d="M8 21h8" />
         </svg>
-        <div class="text-xs text-neutral-300 space-y-1">
+        <div class="text-xs text-text-primary space-y-1">
           <div class="font-bold text-white text-sm">OSP 책임제한(Notice &amp; Takedown) 즉시 조치 원칙</div>
           <p class="leading-relaxed">
             신고가 접수되면 저작권법 제103조에 따라 해당 AI 음원은 <strong>즉시 복제·전송이 중단</strong>되어 스트리밍 및 검색에서 차단됩니다.
@@ -27,7 +27,7 @@
     <!-- Report a track -->
     <UiCard>
       <template #header>
-        <h2 class="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+        <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">
           권리침해 신고서 작성
         </h2>
       </template>
@@ -53,15 +53,15 @@
             <UiCoverArt :seed="t.id" :title="t.title" size="xs" rounded="md" />
             <div class="min-w-0 flex-1">
               <div class="truncate text-xs font-bold text-white">{{ t.title }}</div>
-              <div class="text-[11px] text-neutral-500">{{ t.aiProvider }}</div>
+              <div class="text-caption text-text-muted">{{ t.aiProvider }}</div>
             </div>
             <UiButton variant="outline" size="xs" @click="reportTarget = t">신고하기</UiButton>
           </li>
         </ul>
-        <p v-else-if="searched" class="text-xs text-neutral-500">
+        <p v-else-if="searched" class="text-xs text-text-muted">
           검색 결과가 없습니다. 음원 상세 페이지에서도 신고할 수 있습니다.
         </p>
-        <p v-else class="text-xs text-neutral-500">
+        <p v-else class="text-xs text-text-muted">
           신고할 음원을 먼저 검색하세요. 음원 상세 페이지에서도 바로 신고할 수 있습니다.
         </p>
       </div>
@@ -71,10 +71,10 @@
     <UiCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+          <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">
             내가 차단한 파트너(아티스트) 목록
           </h2>
-          <span class="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-mono text-neutral-400">
+          <span class="rounded-full bg-surface-2 px-2 py-0.5 text-caption font-mono text-text-secondary">
             {{ blocks.length }}명
           </span>
         </div>
@@ -100,9 +100,9 @@
         >
           <div class="min-w-0">
             <div class="font-bold text-white">
-              차단 파트너 <span class="font-mono font-medium text-neutral-400">{{ shortId(b.blockedPartnerId) }}</span>
+              차단 파트너 <span class="font-mono font-medium text-text-secondary">{{ shortId(b.blockedPartnerId) }}</span>
             </div>
-            <div class="text-[11px] text-neutral-400 mt-0.5 truncate">사유: {{ b.reason || '사유 미기재' }}</div>
+            <div class="text-caption text-text-secondary mt-0.5 truncate">사유: {{ b.reason || '사유 미기재' }}</div>
           </div>
           <UiButton
             variant="secondary"

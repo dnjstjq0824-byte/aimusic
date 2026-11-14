@@ -41,7 +41,7 @@
               {{ storeStatusKo(store.status) }}
             </UiBadge>
           </div>
-          <p class="mt-1 font-mono text-[11px] text-neutral-500">
+          <p class="mt-1 font-mono text-caption text-text-muted">
             사업자 {{ formatBizNo(store.businessNumber) }} · 라이선스 {{ store.licenseCount }}대
           </p>
         </div>
@@ -56,7 +56,7 @@
         <UiErrorBanner :message="detailError(store.id)" title="상세를 불러오지 못했습니다" />
         <section>
           <div class="mb-2 flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-400">플레이어 기기</h3>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-text-secondary">플레이어 기기</h3>
             <UiButton variant="secondary" size="sm" @click="openDeviceModal(store)">기기 추가</UiButton>
           </div>
           <ul v-if="devicesOf(store.id).length > 0" class="divide-y divide-surface-border rounded-lg border border-surface-border">
@@ -67,12 +67,12 @@
                   <UiBadge :variant="d.status === 'ACTIVE' ? 'success' : d.status === 'REVOKED' ? 'danger' : 'warning'" size="xs">
                     {{ deviceStatusKo(d.status) }}
                   </UiBadge>
-                  <span class="text-neutral-500">볼륨 {{ d.volume }}</span>
+                  <span class="text-text-muted">볼륨 {{ d.volume }}</span>
                 </div>
-                <p v-if="d.pairingCode" class="mt-1 font-mono text-[11px] text-brand-300">
+                <p v-if="d.pairingCode" class="mt-1 font-mono text-caption text-brand-300">
                   페어링 코드: {{ d.pairingCode }} ({{ pairingLeft(d) }} 남음)
                 </p>
-                <p v-else-if="d.lastSeenAt" class="mt-1 text-[11px] text-neutral-500">
+                <p v-else-if="d.lastSeenAt" class="mt-1 text-caption text-text-muted">
                   마지막 접속: {{ new Date(d.lastSeenAt).toLocaleString() }}
                 </p>
               </div>
@@ -87,17 +87,17 @@
               </div>
             </li>
           </ul>
-          <p v-else class="rounded-lg border border-dashed border-surface-border px-4 py-3 text-xs text-neutral-500">
+          <p v-else class="rounded-lg border border-dashed border-surface-border px-4 py-3 text-xs text-text-muted">
             등록된 기기가 없습니다. 기기 추가 후 플레이어 화면에서 페어링 코드를 입력하세요.
           </p>
         </section>
 
         <section>
-          <h3 class="mb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">요일별 영업시간·선곡</h3>
+          <h3 class="mb-2 text-xs font-bold uppercase tracking-wider text-text-secondary">요일별 영업시간·선곡</h3>
           <div class="overflow-x-auto rounded-lg border border-surface-border">
             <table class="w-full min-w-[560px] text-xs">
               <thead>
-                <tr class="bg-surface-2/60 text-left text-neutral-400">
+                <tr class="bg-surface-2/60 text-left text-text-secondary">
                   <th class="px-3 py-2 font-semibold">요일</th>
                   <th class="px-3 py-2 font-semibold">영업시간</th>
                   <th class="px-3 py-2 font-semibold">선곡 플레이리스트</th>
@@ -107,9 +107,9 @@
               </thead>
               <tbody class="divide-y divide-surface-border">
                 <tr v-for="w in [1, 2, 3, 4, 5, 6, 0]" :key="w" class="hover:bg-surface-2/40">
-                  <td class="px-3 py-2 font-bold text-neutral-200">{{ weekdayKo(w) }}</td>
-                  <td class="px-3 py-2 font-mono text-neutral-300">{{ scheduleText(store.id, w) }}</td>
-                  <td class="px-3 py-2 text-neutral-300">{{ schedulePlaylistName(store.id, w) }}</td>
+                  <td class="px-3 py-2 font-bold text-text-primary">{{ weekdayKo(w) }}</td>
+                  <td class="px-3 py-2 font-mono text-text-primary">{{ scheduleText(store.id, w) }}</td>
+                  <td class="px-3 py-2 text-text-primary">{{ schedulePlaylistName(store.id, w) }}</td>
                   <td class="px-3 py-2">
                     <UiBadge :variant="scheduleClosed(store.id, w) ? 'danger' : 'success'" size="xs">
                       {{ scheduleClosed(store.id, w) ? '휴무' : '영업' }}
@@ -122,7 +122,7 @@
               </tbody>
             </table>
           </div>
-          <p class="mt-1 text-[11px] text-neutral-500">선곡을 비워 두면 공식 큐레이션으로 자동 편성됩니다.</p>
+          <p class="mt-1 text-caption text-text-muted">선곡을 비워 두면 공식 큐레이션으로 자동 편성됩니다.</p>
         </section>
       </div>
     </UiCard>
@@ -144,7 +144,7 @@
       <form class="space-y-4" @submit.prevent="createDevice">
         <UiInput v-model="deviceName" label="기기명" placeholder="예: 카운터 태블릿" required />
         <div v-if="issuedCode" class="rounded-lg bg-surface-2 px-4 py-3 text-center">
-          <p class="text-[11px] text-neutral-400">페어링 코드</p>
+          <p class="text-caption text-text-secondary">페어링 코드</p>
           <p class="font-mono text-2xl font-bold tracking-[0.3em] text-brand-300">{{ issuedCode }}</p>
         </div>
         <UiErrorBanner :message="formError" title="기기 추가 실패" />
@@ -165,7 +165,7 @@
           <option value="">공식 큐레이션 자동 편성</option>
           <option v-for="p in myPlaylists" :key="p.id" :value="p.id">{{ p.title }}</option>
         </UiSelect>
-        <UiCheckbox v-model="scheduleForm.closed"><span class="text-xs text-neutral-300">휴무일 (이날은 재생하지 않음)</span></UiCheckbox>
+        <UiCheckbox v-model="scheduleForm.closed"><span class="text-xs text-text-primary">휴무일 (이날은 재생하지 않음)</span></UiCheckbox>
         <UiErrorBanner :message="formError" title="저장 실패" />
         <div class="flex justify-end gap-2">
           <UiButton variant="ghost" size="sm" type="button" @click="scheduleOpen = false">취소</UiButton>
@@ -175,11 +175,11 @@
     </UiModal>
 
     <UiModal v-model="logsOpen" title="기기 재생 기록" :description="logsDeviceName" @close="logsOpen = false">
-      <div v-if="logs.length === 0" class="py-6 text-center text-xs text-neutral-500">기록이 없습니다.</div>
+      <div v-if="logs.length === 0" class="py-6 text-center text-xs text-text-muted">기록이 없습니다.</div>
       <ul v-else class="max-h-80 space-y-2 overflow-y-auto text-xs">
         <li v-for="l in logs" :key="l.id" class="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2">
-          <span class="min-w-0 truncate font-mono text-neutral-300">{{ l.trackId }}</span>
-          <span class="shrink-0 text-neutral-500">{{ l.durationPlayedSecs }}초</span>
+          <span class="min-w-0 truncate font-mono text-text-primary">{{ l.trackId }}</span>
+          <span class="shrink-0 text-text-muted">{{ l.durationPlayedSecs }}초</span>
           <UiBadge :variant="l.countedAsPlay ? 'success' : 'warning'" size="xs">
             {{ l.countedAsPlay ? '집계' : '미집계' }}
           </UiBadge>

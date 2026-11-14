@@ -4,7 +4,7 @@
       <BrandLogo :size="44" />
       <div>
         <h1 class="font-display text-2xl font-black text-white tracking-tight">비밀번호 찾기</h1>
-        <p class="text-xs text-neutral-400 mt-1">
+        <p class="text-xs text-text-secondary mt-1">
           {{ token ? '새 비밀번호를 입력하세요.' : '가입한 이메일로 재설정 링크를 보내드립니다.' }}
         </p>
       </div>
@@ -24,12 +24,12 @@
         <UiButton variant="brand" size="md" full-width type="submit" :loading="busy">
           재설정 링크 보내기
         </UiButton>
-        <p v-if="requested" class="text-xs leading-relaxed text-accent-emerald" role="status">
+        <p v-if="requested" class="text-xs leading-relaxed text-success" role="status">
           입력한 이메일이 가입되어 있다면 재설정 링크를 발송했습니다. 메일함을 확인하세요.
           (링크는 30분간 1회만 유효합니다.)
         </p>
         <div class="text-center">
-          <RouterLink to="/login" class="text-xs text-neutral-400 hover:text-white hover:underline">
+          <RouterLink to="/login" class="text-xs text-text-secondary hover:text-white hover:underline">
             로그인으로 돌아가기
           </RouterLink>
         </div>
@@ -59,7 +59,7 @@
           비밀번호 변경하기
         </UiButton>
         <div class="text-center">
-          <RouterLink to="/login" class="text-xs text-neutral-400 hover:text-white hover:underline">
+          <RouterLink to="/login" class="text-xs text-text-secondary hover:text-white hover:underline">
             로그인으로 돌아가기
           </RouterLink>
         </div>

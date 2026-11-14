@@ -8,7 +8,7 @@
       </div>
     </div>
     <h1 class="text-xl font-bold text-white mb-2">일시적인 오류가 발생했습니다</h1>
-    <p class="text-xs text-neutral-400 leading-relaxed mb-6 max-w-sm">
+    <p class="text-xs text-text-secondary leading-relaxed mb-6 max-w-sm">
       서버와의 통신 중 문제가 발생했습니다. 잠시 후 다시 시도해 주시기 바랍니다.
       문제가 계속되면 고객센터로 문의해 주세요.
     </p>

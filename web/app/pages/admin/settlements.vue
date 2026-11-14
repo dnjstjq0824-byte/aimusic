@@ -16,63 +16,63 @@
 
     <UiCard class="space-y-3">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <label class="flex-[2] text-xs text-neutral-400">
+        <label class="flex-[2] text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">파트너 ID</span>
           <input
             v-model="partnerId"
             type="text"
             placeholder="partner UUID"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
             @keyup.enter="reload"
           />
         </label>
-        <label class="flex-1 text-xs text-neutral-400">
+        <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">정산 시작 (YYYY-MM-DD)</span>
           <input
             v-model="periodStart"
             type="text"
             placeholder="2026-11-01"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
           />
         </label>
-        <label class="flex-1 text-xs text-neutral-400">
+        <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">정산 종료 (YYYY-MM-DD)</span>
           <input
             v-model="periodEnd"
             type="text"
             placeholder="2026-11-30"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
           />
         </label>
       </div>
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <label class="flex-1 text-xs text-neutral-400">
+        <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">매장 구독료 풀 KRW (기간 합산)</span>
           <input
             v-model="storePool"
             type="number"
             min="0"
             placeholder="0"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           />
         </label>
-        <label class="flex-1 text-xs text-neutral-400">
+        <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">직접 귀속 매출 KRW (이 파트너)</span>
           <input
             v-model="directRevenue"
             type="number"
             min="0"
             placeholder="0"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           />
         </label>
-        <label class="flex-1 text-xs text-neutral-400">
+        <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">소득 구분 (선택)</span>
           <input
             v-model="incomeType"
             type="text"
             placeholder="예: BUSINESS_33"
-            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-neutral-600"
+            class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
           />
         </label>
         <div class="flex gap-2">
@@ -80,7 +80,7 @@
           <UiButton variant="brand" size="sm" :loading="calcBusy" @click="calculate">정산 계산</UiButton>
         </div>
       </div>
-      <div v-if="account" class="rounded-lg border border-surface-border bg-surface-0 px-3 py-2 font-mono text-xs text-neutral-300">
+      <div v-if="account" class="rounded-lg border border-surface-border bg-surface-0 px-3 py-2 font-mono text-xs text-text-primary">
         정산 계좌: {{ account.bank }} {{ account.accountMasked }}
       </div>
     </UiCard>
@@ -102,17 +102,17 @@
               <span class="font-mono text-xs font-bold text-white">{{ ymd(s.periodStart) }} ~ {{ ymd(s.periodEnd) }}</span>
               <UiBadge :variant="statusVariant(s.status)" size="xs">{{ statusKo(s.status) }}</UiBadge>
             </div>
-            <div class="mt-1 font-mono text-[11px] text-neutral-400">
+            <div class="mt-1 font-mono text-caption text-text-secondary">
               매장 {{ s.playCount.toLocaleString() }}회·{{ s.storePlaySecs.toLocaleString() }}초(전체 {{ s.totalStorePlaySecs.toLocaleString() }}초)
               · 풀 {{ s.storePoolKrw.toLocaleString() }}원·직접 {{ s.directKrw.toLocaleString() }}원
               · 총액(70%) {{ s.grossAmountKrw.toLocaleString() }}원
               · 원천징수 {{ s.withholdingKrw.toLocaleString() }}원
-              · 실지급 <strong class="text-accent-emerald">{{ s.netAmountKrw.toLocaleString() }}원</strong>
+              · 실지급 <strong class="text-success">{{ s.netAmountKrw.toLocaleString() }}원</strong>
             </div>
-            <div v-if="s.forfeitureReason" class="mt-1 text-[11px] font-semibold text-accent-crimson">
+            <div v-if="s.forfeitureReason" class="mt-1 text-caption font-semibold text-accent-crimson">
               몰수 사유: {{ s.forfeitureReason }}
             </div>
-            <div v-if="s.status === 'HELD'" class="mt-1 text-[11px] font-semibold text-accent-amber">
+            <div v-if="s.status === 'HELD'" class="mt-1 text-caption font-semibold text-accent-amber">
               지급 보류 중: {{ s.holdReason }}
             </div>
           </div>
@@ -121,7 +121,7 @@
               v-model="reference[s.id]"
               type="text"
               placeholder="지급 참조번호 (선택)"
-              class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 font-mono text-[11px] text-white placeholder:text-neutral-600"
+              class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 font-mono text-caption text-white placeholder:text-text-muted"
             />
             <UiButton
               variant="secondary"
@@ -146,7 +146,7 @@
               v-model="holdReason[s.id]"
               type="text"
               placeholder="보류 사유 (필수)"
-              class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 text-[11px] text-white placeholder:text-neutral-600"
+              class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 text-caption text-white placeholder:text-text-muted"
             />
             <UiButton
               v-if="s.status === 'PENDING'"

@@ -64,13 +64,13 @@
 
       <!-- Quick Mood Chips (shortcuts for the mood filter above) -->
       <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-surface-border/50 text-xs">
-        <span class="text-neutral-500 font-medium mr-1 text-[11px]">무드 바로가기:</span>
+        <span class="text-text-muted font-medium mr-1 text-caption">무드 바로가기:</span>
         <button
           v-for="tag in popularTags"
           :key="tag"
           type="button"
           class="rounded-full px-2.5 py-1 transition-colors"
-          :class="filterMood === tag ? 'bg-brand-500 text-[#04121a] font-bold' : 'bg-surface-2 text-neutral-400 hover:text-white hover:bg-surface-3'"
+          :class="filterMood === tag ? 'bg-brand-500 -on-brand font-bold' : 'bg-surface-2 text-text-secondary hover:text-white hover:bg-surface-3'"
           @click="selectMood(tag)"
         >
           #{{ tag }}
@@ -78,7 +78,7 @@
         <button
           v-if="filterMood || filterProvider || searchQuery"
           type="button"
-          class="ml-auto text-[11px] text-accent-crimson hover:underline"
+          class="ml-auto text-caption text-accent-crimson hover:underline"
           @click="resetFilters"
         >
           필터 초기화

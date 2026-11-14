@@ -41,29 +41,29 @@
               {{ disputeStatusKo(d.status) }}
             </UiBadge>
           </div>
-          <div class="flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
+          <div class="flex flex-wrap items-center gap-2 text-caption text-text-secondary">
             <span>신고 접수: <strong>{{ d.reporterUserId ? `회원(${d.reporterUserId.slice(0, 8)})` : '외부/익명 접수' }}</strong></span>
             <UiBadge :variant="slaBreached(d) ? 'danger' : 'neutral'" size="xs">
               {{ slaBreached(d) ? `SLA 초과 · ${slaLabel(d)}` : slaLabel(d) }}
             </UiBadge>
-            <span v-if="d.slaNotifiedAt" class="text-neutral-500">SLA 알림 발송됨</span>
+            <span v-if="d.slaNotifiedAt" class="text-text-muted">SLA 알림 발송됨</span>
           </div>
         </div>
 
         <div class="grid gap-2 text-xs sm:grid-cols-2">
           <div>
-            <span class="text-neutral-500 text-[10px] uppercase font-bold block">대상 트랙 ID</span>
-            <span class="font-mono text-neutral-200">{{ d.trackId }}</span>
+            <span class="text-text-muted text-caption uppercase font-bold block">대상 트랙 ID</span>
+            <span class="font-mono text-text-primary">{{ d.trackId }}</span>
           </div>
           <div>
-            <span class="text-neutral-500 text-[10px] uppercase font-bold block">신고 사유 / 침해 유형</span>
-            <span class="text-neutral-200 font-semibold">{{ disputeReasonKo(d.reason) }}</span>
+            <span class="text-text-muted text-caption uppercase font-bold block">신고 사유 / 침해 유형</span>
+            <span class="text-text-primary font-semibold">{{ disputeReasonKo(d.reason) }}</span>
           </div>
         </div>
 
         <div v-if="d.description" class="rounded-xl bg-surface-0 p-3 text-xs border border-surface-border">
-          <span class="text-accent-amber font-bold text-[10px] uppercase block">신고 상세 소명 및 진술</span>
-          <p class="text-neutral-300 mt-1 whitespace-pre-wrap">{{ d.description }}</p>
+          <span class="text-accent-amber font-bold text-caption uppercase block">신고 상세 소명 및 진술</span>
+          <p class="text-text-primary mt-1 whitespace-pre-wrap">{{ d.description }}</p>
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-surface-border">

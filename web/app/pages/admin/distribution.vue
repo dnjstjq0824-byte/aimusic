@@ -27,14 +27,14 @@
     <UiCard v-if="kit" padding="none">
       <template #header>
         <div class="flex items-center justify-between px-5 pt-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-400">유통 가능 {{ kit.tracks.length }}곡 · 제외 {{ kit.skipped.length }}곡</h2>
-          <span class="font-mono text-[11px] text-neutral-500">{{ kit.generatedAt }}</span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-text-secondary">유통 가능 {{ kit.tracks.length }}곡 · 제외 {{ kit.skipped.length }}곡</h2>
+          <span class="font-mono text-caption text-text-muted">{{ kit.generatedAt }}</span>
         </div>
       </template>
       <div class="overflow-x-auto">
         <table class="w-full min-w-[720px] text-xs">
           <thead>
-            <tr class="bg-surface-2/60 text-left text-neutral-400">
+            <tr class="bg-surface-2/60 text-left text-text-secondary">
               <th class="px-3 py-2 font-semibold">ISRC</th>
               <th class="px-3 py-2 font-semibold">곡명</th>
               <th class="px-3 py-2 font-semibold">아티스트</th>
@@ -45,25 +45,25 @@
           </thead>
           <tbody class="divide-y divide-surface-border">
             <tr v-for="t in kit.tracks" :key="t.trackId" class="hover:bg-surface-2/40">
-              <td class="px-3 py-2 font-mono text-neutral-200">{{ t.isrc }}</td>
+              <td class="px-3 py-2 font-mono text-text-primary">{{ t.isrc }}</td>
               <td class="px-3 py-2 font-bold text-white">{{ t.title }}</td>
-              <td class="px-3 py-2 text-neutral-300">{{ t.artistName }}</td>
-              <td class="px-3 py-2 font-mono text-neutral-300">{{ t.bpm ?? '-' }} / {{ t.musicalKey || '-' }}</td>
-              <td class="px-3 py-2 text-neutral-300">{{ t.aiProvider }} {{ t.planTierUsed }}</td>
+              <td class="px-3 py-2 text-text-primary">{{ t.artistName }}</td>
+              <td class="px-3 py-2 font-mono text-text-primary">{{ t.bpm ?? '-' }} / {{ t.musicalKey || '-' }}</td>
+              <td class="px-3 py-2 text-text-primary">{{ t.aiProvider }} {{ t.planTierUsed }}</td>
               <td class="px-3 py-2">
                 <a :href="t.masterDownloadUrl" target="_blank" rel="noopener" class="text-brand-300 underline hover:text-brand-200">
                   다운로드
                 </a>
-                <span class="ml-1 text-[10px] text-neutral-500">({{ masterLeft(t.masterUrlExpiry) }})</span>
+                <span class="ml-1 text-caption text-text-muted">({{ masterLeft(t.masterUrlExpiry) }})</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
       <div v-if="kit.skipped.length > 0" class="border-t border-surface-border px-5 py-3">
-        <h3 class="mb-1 text-xs font-bold text-neutral-400">제외된 곡</h3>
-        <ul class="space-y-1 text-[11px]">
-          <li v-for="s in kit.skipped" :key="s.trackId" class="font-mono text-neutral-500">
+        <h3 class="mb-1 text-xs font-bold text-text-secondary">제외된 곡</h3>
+        <ul class="space-y-1 text-caption">
+          <li v-for="s in kit.skipped" :key="s.trackId" class="font-mono text-text-muted">
             {{ s.trackId }} — {{ skipKo(s.reason) }}
           </li>
         </ul>

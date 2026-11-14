@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-2xl py-6 sm:py-10 space-y-6">
     <div>
       <h1 class="font-display text-2xl font-black text-white tracking-tight">계정 보안</h1>
-      <p class="text-xs text-neutral-400 mt-1">2단계 인증, 전체 기기 로그아웃, 회원 탈퇴를 관리합니다.</p>
+      <p class="text-xs text-text-secondary mt-1">2단계 인증, 전체 기기 로그아웃, 회원 탈퇴를 관리합니다.</p>
     </div>
 
     <!-- S-03: admins are sent here until they enroll a second factor -->
@@ -20,7 +20,7 @@
     <!-- 2FA card -->
     <UiCard>
       <h2 class="text-sm font-bold text-white mb-1">2단계 인증 (TOTP)</h2>
-      <p class="text-xs text-neutral-400 mb-4">
+      <p class="text-xs text-text-secondary mb-4">
         인증 앱(Google Authenticator 등)에 표시되는 6자리 코드로 로그인을 보호합니다.
       </p>
 
@@ -29,17 +29,17 @@
       <!-- Enroll: show secret -->
       <div v-if="enrollment && !recoveryCodes" class="space-y-4">
         <div class="rounded-lg bg-surface-2 p-3">
-          <div class="text-[11px] text-neutral-400 mb-1">인증 앱에 이 키를 직접 입력하세요</div>
+          <div class="text-caption text-text-secondary mb-1">인증 앱에 이 키를 직접 입력하세요</div>
           <code class="block break-all font-mono text-sm text-brand-300">{{ enrollment.secret }}</code>
           <button
             type="button"
-            class="mt-2 text-xs text-neutral-400 hover:text-white underline"
+            class="mt-2 text-xs text-text-secondary hover:text-white underline"
             @click="copy(enrollment.secret)"
           >
             키 복사
           </button>
         </div>
-        <p class="text-[11px] text-neutral-500 break-all">
+        <p class="text-caption text-text-muted break-all">
           직접 입력이 어려운 경우 앱에서 다음 URI를 여세요:
           <code class="font-mono">{{ enrollment.provisioningUri }}</code>
         </p>
@@ -60,7 +60,7 @@
 
       <!-- Recovery codes (shown once) -->
       <div v-else-if="recoveryCodes" class="space-y-4">
-        <p class="text-xs text-accent-emerald font-semibold" role="status">
+        <p class="text-xs text-success font-semibold" role="status">
           2단계 인증이 켜졌습니다. 아래 복구 코드는 지금 한 번만 표시됩니다. 안전한 곳에 보관하세요.
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -85,9 +85,9 @@
       <!-- Default state: exactly one action matching the real 2FA state -->
       <div v-else class="space-y-4">
         <p class="text-xs" role="status">
-          <span class="text-neutral-400">현재 상태: </span>
-          <span v-if="auth.totpEnabled === true" class="font-bold text-accent-emerald">켜짐</span>
-          <span v-else-if="auth.totpEnabled === false" class="font-bold text-neutral-200">꺼짐</span>
+          <span class="text-text-secondary">현재 상태: </span>
+          <span v-if="auth.totpEnabled === true" class="font-bold text-success">켜짐</span>
+          <span v-else-if="auth.totpEnabled === false" class="font-bold text-text-primary">꺼짐</span>
           <span v-else class="font-bold text-accent-amber">확인 중</span>
         </p>
         <div v-if="auth.totpEnabled === false">
@@ -96,7 +96,7 @@
           </UiButton>
         </div>
         <form v-else-if="auth.totpEnabled === true" class="space-y-3" @submit.prevent="submitDisable">
-          <p class="text-xs text-neutral-400">비밀번호 확인 후 2단계 인증을 끌 수 있습니다.</p>
+          <p class="text-xs text-text-secondary">비밀번호 확인 후 2단계 인증을 끌 수 있습니다.</p>
           <UiInput
             v-model="disablePassword"
             type="password"
@@ -120,7 +120,7 @@
     <!-- Sessions card -->
     <UiCard>
       <h2 class="text-sm font-bold text-white mb-1">로그인 세션</h2>
-      <p class="text-xs text-neutral-400 mb-4">
+      <p class="text-xs text-text-secondary mb-4">
         모든 기기에서 로그아웃합니다. 분실한 기기가 있거나 계정 도용이 의심될 때 사용하세요.
       </p>
       <UiButton variant="secondary" size="md" type="button" :loading="busy" @click="submitLogoutAll">
@@ -131,7 +131,7 @@
     <!-- Data export -->
     <UiCard>
       <h2 class="text-sm font-bold text-white mb-1">내 정보 내려받기</h2>
-      <p class="text-xs text-neutral-400 mb-4">
+      <p class="text-xs text-text-secondary mb-4">
         계정·동의 기록·플레이리스트·재생 기록·주문 내역을 JSON 파일로 내려받습니다.
       </p>
       <UiButton variant="secondary" size="md" type="button" :loading="busy" @click="submitExport">
@@ -142,7 +142,7 @@
     <!-- Danger zone -->
     <UiCard>
       <h2 class="text-sm font-bold text-accent-crimson mb-1">회원 탈퇴</h2>
-      <p class="text-xs text-neutral-400 mb-4">
+      <p class="text-xs text-text-secondary mb-4">
         탈퇴하면 계정이 비활성화되고 모든 세션이 종료됩니다. 이 작업은 되돌릴 수 없습니다.
       </p>
       <UiErrorBanner :message="withdrawError" />
@@ -153,7 +153,7 @@
       </div>
       <div v-else class="space-y-3">
         <UiCheckbox v-model="withdrawConfirm">
-          <span class="text-xs text-neutral-300">정말로 탈퇴합니다. 되돌릴 수 없음을 이해했습니다.</span>
+          <span class="text-xs text-text-primary">정말로 탈퇴합니다. 되돌릴 수 없음을 이해했습니다.</span>
         </UiCheckbox>
         <div class="flex gap-2">
           <UiButton variant="secondary" size="md" type="button" @click="withdrawArmed = false">

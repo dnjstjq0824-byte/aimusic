@@ -14,7 +14,7 @@
 
     <UiErrorBanner :message="error" title="심사 대기열을 불러오지 못했습니다" retry-label="다시 시도" @retry="loadAll" />
 
-    <UiCard class="text-xs text-neutral-300 space-y-1.5">
+    <UiCard class="text-xs text-text-primary space-y-1.5">
       <div class="font-bold text-white text-sm">Gate 4 심사 기준 (소유권 원칙)</div>
       <ul class="list-disc pl-5 space-y-1 leading-relaxed">
         <li>구독자인 생성자 본인이 소유권(양도·이전·보유)을 가진 음원만 승인. 라이선스만 부여되는 플랫폼은 반려.</li>
@@ -52,7 +52,7 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <h3 class="font-bold text-white text-base">{{ t.title }}</h3>
-              <div class="text-[11px] font-mono text-neutral-500 mt-0.5">ID: {{ t.id }}</div>
+              <div class="text-caption font-mono text-text-muted mt-0.5">ID: {{ t.id }}</div>
             </div>
             <UiButton
               variant="brand"
@@ -66,30 +66,30 @@
           <!-- Metadata & Specs -->
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="p-2.5 rounded-lg bg-surface-0 border border-surface-border">
-              <span class="text-neutral-500 text-[10px] uppercase font-bold block">AI 플랫폼</span>
+              <span class="text-text-muted text-caption uppercase font-bold block">AI 플랫폼</span>
               <span class="font-semibold text-white">{{ t.aiProvider }}</span>
             </div>
             <div class="p-2.5 rounded-lg bg-surface-0 border border-surface-border">
-              <span class="text-neutral-500 text-[10px] uppercase font-bold block">비트레이트</span>
-              <span class="font-semibold text-accent-emerald">{{ t.bitrateKbps ? `${t.bitrateKbps}kbps` : '192k+' }}</span>
+              <span class="text-text-muted text-caption uppercase font-bold block">비트레이트</span>
+              <span class="font-semibold text-success">{{ t.bitrateKbps ? `${t.bitrateKbps}kbps` : '192k+' }}</span>
             </div>
           </div>
 
           <!-- Forensic & Gate 1-3 Summary -->
           <div v-if="rightsOf(t.id)" class="rounded-xl bg-surface-0 p-3 text-xs space-y-1.5 border border-surface-border">
-            <div class="flex justify-between text-neutral-300">
+            <div class="flex justify-between text-text-primary">
               <span>요금제: <strong class="text-white">{{ rightsOf(t.id)?.planTierUsed || '구독 기본' }}</strong></span>
               <span>생성일: {{ fmtDate(rightsOf(t.id)?.generatedAt) }}</span>
             </div>
-            <div class="font-mono text-[11px] text-accent-emerald flex items-center gap-2">
+            <div class="font-mono text-caption text-success flex items-center gap-2">
               <span>Gate1(Policy): {{ rightsOf(t.id)?.gate1PolicyPassed ? '✓ PASS' : '✕ FAIL' }}</span>
               <span>·</span>
               <span>Gate2(Date): {{ rightsOf(t.id)?.gate2DatePassed ? '✓ PASS' : '✕ FAIL' }}</span>
               <span>·</span>
               <span>Gate3(FFprobe): {{ rightsOf(t.id)?.gate3FfprobePassed ? '✓ PASS' : ' 대기/통과' }}</span>
             </div>
-            <div v-if="rightsOf(t.id)?.providerTrackUrl" class="truncate text-[11px]">
-              <span class="text-neutral-400">원본 링크: </span>
+            <div v-if="rightsOf(t.id)?.providerTrackUrl" class="truncate text-caption">
+              <span class="text-text-secondary">원본 링크: </span>
               <a :href="rightsOf(t.id)?.providerTrackUrl ?? '#'" target="_blank" rel="noreferrer" class="text-brand-400 underline">
                 {{ rightsOf(t.id)?.providerTrackUrl }}
               </a>
@@ -153,7 +153,7 @@
             <div class="font-bold text-white text-sm">{{ p.companyName }}</div>
             <UiBadge variant="warning" size="xs">{{ partnerStatusKo(p.status) }}</UiBadge>
           </div>
-          <div class="font-mono text-[11px] text-neutral-500">파트너 ID: {{ p.id }}</div>
+          <div class="font-mono text-caption text-text-muted">파트너 ID: {{ p.id }}</div>
           <div class="flex gap-2 pt-2 border-t border-surface-border">
             <UiButton variant="success" size="xs" @click="reviewPartner(p.id, true)">승인</UiButton>
             <UiButton variant="danger" size="xs" @click="reviewPartner(p.id, false)">거절 / 정지</UiButton>
@@ -175,8 +175,8 @@
             <div class="font-bold text-white text-sm">{{ s.provider }} — {{ s.planName }}</div>
             <UiBadge variant="neutral" size="xs">{{ subStatusKo(s.status) }}</UiBadge>
           </div>
-          <div class="font-mono text-[11px] text-neutral-500">증빙 ID: {{ s.id }}</div>
-          <div v-if="s.proofObjectKey" class="text-xs text-neutral-300">
+          <div class="font-mono text-caption text-text-muted">증빙 ID: {{ s.id }}</div>
+          <div v-if="s.proofObjectKey" class="text-xs text-text-primary">
             인보이스 파일: <span class="font-mono text-brand-400">{{ s.proofObjectKey }}</span>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t border-surface-border">
