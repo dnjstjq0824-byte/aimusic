@@ -177,7 +177,7 @@
             {{ t('common.nav.login') }}
           </RouterLink>
           <RouterLink
-            to="/login?tab=register"
+            to="/signup"
             class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
           >
             {{ t('common.nav.signup') }}
@@ -192,7 +192,7 @@
                 {{ t('common.nav.login') }}
               </RouterLink>
               <RouterLink
-                to="/login?tab=register"
+                to="/signup"
                 class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
               >
                 {{ t('common.nav.signup') }}

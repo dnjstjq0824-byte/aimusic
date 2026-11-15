@@ -64,9 +64,7 @@ web/app/pages/disputes.vue
 web/app/pages/explore.vue
 web/app/pages/index.vue
 web/app/pages/legal/[code].vue
-web/app/pages/login.vue
 web/app/pages/my-library.vue
-web/app/pages/oauth/callback.vue
 web/app/pages/partner/generations.vue
 web/app/pages/partner/index.vue
 web/app/pages/partner/stores.vue
@@ -75,7 +73,6 @@ web/app/pages/partner/upload.vue
 web/app/pages/playlists/[id].vue
 web/app/pages/playlists/index.vue
 web/app/pages/pricing.vue
-web/app/pages/reset-password.vue
 web/app/pages/store/player.vue
 web/app/pages/tracks/[id].vue
 `.trim().split('\n'),
@@ -157,6 +154,7 @@ for (const loc of localeCodes) {
     const close = (v.match(/\}/g) || []).length;
     if (open !== close) { console.log(`ICU unbalanced ${loc}: ${k}`); fail++; continue; }
     for (const m of v.match(/\{([^}]*)\}/g) || []) {
+      if (m === "{'@'}") continue; // vue-i18n literal @ (R3: email placeholders)
       if (!/^\{[A-Za-z0-9_]+\}$/.test(m)) {
         console.log(`ICU bad placeholder ${loc}: ${k} :: ${m}`);
         fail++;

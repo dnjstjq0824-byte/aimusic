@@ -17,8 +17,24 @@ function layoutFor(path: string): string | false {
   if (path.startsWith('/partner')) return 'partner';
   if (path.startsWith('/admin')) return 'admin';
   if (path === '/store/player' || path === '/500') return false;
+  if (
+    path === '/login' || path.startsWith('/signup') || path === '/forgot-password' ||
+    path === '/reset-password' || path === '/verify-email' || path.startsWith('/oauth/')
+  ) {
+    return 'auth';
+  }
   return 'user';
 }
+
+// Entry screens that make no sense once signed in (R3: login + signup + forgot).
+const GUEST_ONLY = new Set([
+  'login',
+  'signup',
+  'signup-listener',
+  'signup-creator',
+  'signup-business',
+  'forgot-password',
+]);
 
 /** Strip the i18n route-name suffix (home___en -> home). */
 export function baseRouteName(name: unknown): string {
@@ -38,13 +54,23 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // [...slug] catch-all renders bare.
   const layout = name === 'not-found' ? false : layoutFor(to.path);
   if (layout === false) setPageLayout(false);
-  else setPageLayout(layout as 'user' | 'partner' | 'admin');
+  else setPageLayout(layout as 'user' | 'partner' | 'admin' | 'auth');
+
+  // Legacy tab URLs keep working (R3 split): single-URL 3-tab login is gone.
+  if (name === 'login' && typeof to.query.tab === 'string') {
+    if (to.query.tab === 'register') return navigateTo('/signup/listener', { redirectCode: 301 });
+    if (to.query.tab === 'partner') return navigateTo('/signup/creator', { redirectCode: 301 });
+  }
+  // Tokenless reset is the forgot screen (R3 split).
+  if (name === 'reset-password' && (typeof to.query.token !== 'string' || to.query.token === '')) {
+    return navigateTo('/forgot-password', { redirectCode: 301 });
+  }
 
   const localePath = useLocalePath();
   const auth = useAuthStore();
   if (!auth.initialized && import.meta.client) await auth.hydrate();
-  // Already signed in: never show the login form again; continue to the target.
-  if (name === 'login' && auth.isAuthenticated) {
+  // Already signed in: never show entry forms again; continue to the target.
+  if (GUEST_ONLY.has(name) && auth.isAuthenticated) {
     const redirect = safeRedirect(to.query.redirect);
     return redirect === to.fullPath ? localePath({ name: 'home' }) : redirect;
   }

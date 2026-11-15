@@ -1,12 +1,12 @@
 <template>
-  <div class="mx-auto max-w-md py-16 text-center">
+  <div class="mx-auto max-w-md py-8 text-center">
     <BrandLogo :size="48" />
     <div class="mt-6 space-y-3">
       <div v-if="failed" class="space-y-4">
-        <h1 class="text-xl font-black text-white">소셜 로그인에 실패했습니다</h1>
+        <h1 class="text-xl font-black text-white">{{ t('auth.oauth.failedTitle') }}</h1>
         <UiErrorBanner :message="error" />
-        <RouterLink to="/login">
-          <UiButton variant="brand" size="md">로그인으로 돌아가기</UiButton>
+        <RouterLink :to="localePath('/login')">
+          <UiButton variant="brand" size="md">{{ t('auth.oauth.back') }}</UiButton>
         </RouterLink>
       </div>
       <div v-else class="space-y-3">
@@ -16,8 +16,8 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
         </div>
-        <h1 class="text-xl font-black text-white">소셜 로그인 처리 중…</h1>
-        <p class="text-xs text-text-secondary">잠시만 기다려 주세요. 창을 닫지 마세요.</p>
+        <h1 class="text-xl font-black text-white">{{ t('auth.oauth.processingTitle') }}</h1>
+        <p class="text-xs text-text-secondary">{{ t('auth.oauth.processingBody') }}</p>
       </div>
     </div>
   </div>
@@ -33,6 +33,8 @@ import UiButton from '@/components/ui/UiButton.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 
+const { t } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
@@ -46,17 +48,17 @@ onMounted(async () => {
   const refresh = route.query.refreshToken;
   if (typeof access !== 'string' || typeof refresh !== 'string' || access === '' || refresh === '') {
     failed.value = true;
-    error.value = '소셜 로그인 응답이 올바르지 않습니다. 다시 시도해 주세요.';
+    error.value = t('auth.oauth.invalidResponse');
     return;
   }
   try {
     await auth.loginWithTokens(access, refresh);
-    toast.success('소셜 로그인되었습니다.');
+    toast.success(t('auth.oauth.success'));
     // Strip tokens from history so they never linger in the URL bar.
-    await router.replace('/');
-  } catch (err: unknown) {
+    await router.replace(localePath('/'));
+  } catch {
     failed.value = true;
-    error.value = err instanceof Error ? err.message : '소셜 로그인 세션을 확인할 수 없습니다.';
+    error.value = t('auth.oauth.sessionFailed');
   }
 });
 </script>
