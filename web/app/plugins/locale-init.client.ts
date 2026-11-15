@@ -16,12 +16,12 @@ const PUBLIC_BASE_NAMES = new Set([
   'certificate-verify',
 ]);
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
   const route = useRoute();
   const base = String(route.name ?? '').replace(/___.+$/, '');
   if (PUBLIC_BASE_NAMES.has(base)) return;
-  const { setLocale } = useI18n();
+  // NOTE: useI18n() is setup-only; in plugins use nuxtApp.$i18n (cf. app.global.ts).
   const code = resolveLocale(null, navigator.languages ? [...navigator.languages] : []);
   writeStoredLocale(code);
-  void setLocale(code);
+  void nuxtApp.$i18n.setLocale(code);
 });
