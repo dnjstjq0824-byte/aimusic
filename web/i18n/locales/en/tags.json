@@ -1,0 +1,23 @@
+{
+  "tags": {
+    "focus": "Focus",
+    "chill": "Chill",
+    "cafe": "Cafe",
+    "workout": "Workout",
+    "drive": "Drive",
+    "sleep": "Sleep",
+    "cinematic": "Cinematic",
+    "cyberpunk": "Cyberpunk",
+    "electronic": "Electronic",
+    "pop": "Pop",
+    "rock": "Rock",
+    "hiphop": "Hip-hop",
+    "jazz": "Jazz",
+    "classical": "Classical",
+    "ambient": "Ambient",
+    "gym": "Gym",
+    "work": "Work",
+    "youtube": "YouTube",
+    "party": "Party"
+  }
+}

@@ -101,6 +101,9 @@ onMounted(async () => {
   }
   try {
     view.value = await trackApi.verifyCertificate(number);
+    if (!view.value) {
+      error.value = '인증서를 찾을 수 없습니다. 번호를 확인해 주세요.';
+    }
   } catch (err) {
     error.value = errMessageOf(err);
   } finally {

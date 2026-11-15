@@ -277,12 +277,22 @@ export const trackApi = {
   list(
     limit = 20,
     offset = 0,
-    filters?: { provider?: string; genre?: string; mood?: string; q?: string; sort?: string },
+    filters?: {
+      provider?: string; genre?: string; mood?: string; q?: string; sort?: string;
+      certified?: boolean; partnerId?: string;
+      minBpm?: number; maxBpm?: number; minDur?: number; maxDur?: number;
+    },
   ) {
     return unwrap<TrackPage>(api.get('/tracks', { params: { limit, offset, ...filters } }));
   },
   get(id: string) {
     return unwrap<Track>(api.get(`/tracks/${encodeURIComponent(id)}`));
+  },
+  charts(window: 'week' | 'month' | 'all' = 'week', limit = 50) {
+    return unwrap<Track[]>(api.get('/charts', { params: { window, limit } }));
+  },
+  trackPlaylists(id: string) {
+    return unwrap<Playlist[]>(api.get(`/tracks/${encodeURIComponent(id)}/playlists`));
   },
   stream(id: string) {
     return unwrap<StreamGrant>(api.get(`/tracks/${encodeURIComponent(id)}/stream`));
@@ -294,14 +304,17 @@ export const trackApi = {
     return { blob: res.data as Blob, filename: m?.[1] ?? `AVIBE-${id.slice(0, 8)}.bin` };
   },
   getCertificate(id: string) {
-    return unwrap<CertificateView>(api.get(`/tracks/${encodeURIComponent(id)}/certificate`));
+    return unwrap<CertificateView | null>(api.get(`/tracks/${encodeURIComponent(id)}/certificate`));
   },
   verifyCertificate(number: string) {
-    return unwrap<CertificateView>(api.get(`/certificates/${encodeURIComponent(number)}`));
+    return unwrap<CertificateView | null>(api.get(`/certificates/${encodeURIComponent(number)}`));
   },
 };
 
 export const playbackApi = {
+  recent(limit = 10) {
+    return unwrap<Track[]>(api.get('/playback/recent', { params: { limit } }));
+  },
   heartbeat(input: { trackId: string; positionMs: number; playMs: number; jti?: string }) {
     return unwrap<HeartbeatOutput>(api.post('/playback/heartbeat', input));
   },
@@ -316,6 +329,9 @@ export const playbackApi = {
 export const playlistApi = {
   listMine() {
     return unwrap<Playlist[]>(api.get('/playlists'));
+  },
+  listPublic(limit = 8) {
+    return unwrap<Playlist[]>(api.get('/playlists/public', { params: { limit } }));
   },
   create(title: string, isPublic = false) {
     return unwrap<Playlist>(api.post('/playlists', { title, isPublic }));

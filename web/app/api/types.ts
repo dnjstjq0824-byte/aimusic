@@ -71,6 +71,7 @@ export interface Track {
   id: string;
   albumId?: string | null;
   partnerId: string;
+  creatorName?: string;
   title: string;
   genre?: string | null;
   moodTags?: string[];

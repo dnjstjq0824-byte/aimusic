@@ -27,7 +27,6 @@ web/app/stores/playlistStore.ts
 web/app/stores/storePlayerStore.ts
 web/app/components/AgeConfirmGate.vue
 web/app/components/TermsConsentGate.vue
-web/app/components/TrackCard.vue
 web/app/components/legal/AiBadge.vue
 web/app/components/legal/ComplianceNotice.vue
 web/app/components/legal/DisputeReportModal.vue
@@ -60,8 +59,6 @@ web/app/pages/certificate/[number].vue
 web/app/pages/checkout/confirm.vue
 web/app/pages/checkout/index.vue
 web/app/pages/disputes.vue
-web/app/pages/explore.vue
-web/app/pages/index.vue
 web/app/pages/legal/[code].vue
 web/app/pages/my-library.vue
 web/app/pages/partner/generations.vue
@@ -73,7 +70,6 @@ web/app/pages/playlists/[id].vue
 web/app/pages/playlists/index.vue
 web/app/pages/pricing.vue
 web/app/pages/store/player.vue
-web/app/pages/tracks/[id].vue
 `.trim().split('\n'),
 );
 

@@ -78,6 +78,7 @@
     "titles": {
       "home": "首页",
       "explore": "发现音乐",
+      "charts": "排行榜",
       "my-library": "我的音乐库",
       "playlists": "歌单",
       "login": "登录",
@@ -149,7 +150,8 @@
       "copied": "已复制",
       "loading": "加载中…",
       "showMore": "查看更多",
-      "more": "更多"
+      "more": "更多",
+      "share": "分享"
     },
     "auth": {
       "sessionExpired": "会话已过期，请重新登录。",

@@ -1,10 +1,6 @@
 <template>
   <div class="space-y-6">
-    <UiPageHeader
-      eyebrow="Catalog"
-      title="AI 음원 탐색"
-      description="상업 이용 조건 확인 절차를 거친 AI 아티스트 음원을 다양한 필터로 탐색하세요."
-    >
+    <UiPageHeader :title="t('explore.title')" :description="t('explore.sub')">
       <template #actions>
         <UiButton
           variant="brand"
@@ -12,130 +8,160 @@
           :disabled="tracks.length === 0 || loading"
           @click="playAll"
         >
-          전체 재생
+          {{ t('explore.playAll') }}
         </UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="음원 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+    <UiErrorBanner :message="error" :title="t('track.errTitle')" :retry-label="t('track.retry')" @retry="load" />
 
-    <!-- Filter Toolbar -->
-    <UiCard class="space-y-4">
-      <div class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <!-- Search Keyword -->
+    <!-- Search + sort -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <form class="flex-1" role="search" @submit.prevent="submitSearch">
         <UiInput
           v-model="searchQuery"
-          label="검색"
-          placeholder="곡 제목, 아티스트, 키워드 검색…"
+          :label="t('explore.searchLabel')"
+          :placeholder="t('explore.searchPh')"
           @enter="submitSearch"
         />
+      </form>
+      <UiSelect v-model="sortBy" :label="t('explore.sortLabel')" class="sm:w-44" @change="onSearch">
+        <option value="recent">{{ t('explore.sortRecent') }}</option>
+        <option value="popular">{{ t('explore.sortPopular') }}</option>
+        <option value="relevant">{{ t('explore.sortRelevant') }}</option>
+        <option value="oldest">{{ t('explore.sortOldest') }}</option>
+        <option value="title">{{ t('explore.sortTitle') }}</option>
+      </UiSelect>
+      <UiButton variant="secondary" size="sm" class="lg:hidden" @click="filtersOpen = true">
+        {{ t('explore.moodLabel') }} ({{ activeFilterCount }})
+      </UiButton>
+    </div>
 
-        <!-- AI Provider -->
-        <UiSelect v-model="filterProvider" label="AI 플랫폼" @change="onSearch">
-          <option value="">모든 AI 플랫폼</option>
-          <option value="SUNO">Suno (Pro / Premier)</option>
-          <option value="UDIO">Udio (Standard / Pro)</option>
-          <option value="AIVA">AIVA (Pro)</option>
-          <option value="STABLE_AUDIO">Stable Audio (Creator)</option>
-          <option value="SOUNDRAW">Soundraw (Distribute)</option>
-          <option value="MUBERT">Mubert (Studio)</option>
-          <option value="CUSTOM_OPEN_MODEL">Custom Open Model</option>
-        </UiSelect>
+    <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <!-- Filter panel (desktop) -->
+      <aside class="hidden lg:block">
+        <UiCard>
+          <ExploreFilters :model="filters" @update="applyFilters" />
+        </UiCard>
+      </aside>
 
-        <!-- Mood & Genre -->
-        <UiSelect v-model="filterMood" label="무드" @change="onSearch">
-          <option value="">모든 무드 / 분위기</option>
-          <option value="Focus">Focus &amp; Work (집중/업무)</option>
-          <option value="Chill">Chill &amp; Lo-Fi (휴식/라운지)</option>
-          <option value="Cyberpunk">Cyberpunk &amp; Synth (사이버펑크)</option>
-          <option value="Cinematic">Cinematic &amp; Epic (영화/웅장)</option>
-          <option value="Workout">Workout &amp; Energy (운동/에너지)</option>
-          <option value="Sleep">Sleep &amp; Ambient (수면/명상)</option>
-        </UiSelect>
-
-        <!-- Sort Option -->
-        <UiSelect v-model="sortBy" label="정렬" @change="onSearch">
-          <option value="recent">최신 등록순</option>
-          <option value="popular">인기 재생순</option>
-          <option value="oldest">오래된 등록순</option>
-          <option value="title">제목순</option>
-        </UiSelect>
-      </div>
-
-      <!-- Quick Mood Chips (shortcuts for the mood filter above) -->
-      <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-surface-border/50 text-xs">
-        <span class="text-text-muted font-medium mr-1 text-caption">무드 바로가기:</span>
-        <button
-          v-for="tag in popularTags"
-          :key="tag"
-          type="button"
-          class="rounded-full px-2.5 py-1 transition-colors"
-          :class="filterMood === tag ? 'bg-brand-500 text-on-brand font-bold' : 'bg-surface-2 text-text-secondary hover:text-white hover:bg-surface-3'"
-          @click="selectMood(tag)"
-        >
-          #{{ tag }}
-        </button>
-        <button
-          v-if="filterMood || filterProvider || searchQuery"
-          type="button"
-          class="ml-auto text-caption text-accent-crimson hover:underline"
-          @click="resetFilters"
-        >
-          필터 초기화
-        </button>
-      </div>
-    </UiCard>
-
-    <!-- Track Grid / List -->
-    <div v-if="loading" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <UiCard v-for="i in 6" :key="i" class="space-y-3">
-        <div class="flex items-center gap-3">
-          <UiSkeleton height="h-12" width="w-12" rounded="lg" />
-          <div class="flex-1 space-y-1.5">
-            <UiSkeleton height="h-4" width="w-3/4" />
-            <UiSkeleton height="h-3" width="w-1/2" />
+      <!-- Results -->
+      <section class="min-w-0 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-text-secondary" role="status">
+            {{ t('explore.results', { count: fmt.number(total) }) }}
+          </p>
+          <div class="flex items-center gap-2">
+            <div class="flex gap-1 rounded-lg border border-surface-border bg-surface-1 p-1" role="group" :aria-label="t('explore.viewList')">
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
+                :class="view === 'list' ? 'bg-brand-500 text-on-brand' : 'text-text-secondary hover:text-white'"
+                :aria-pressed="view === 'list'"
+                @click="view = 'list'"
+              >
+                {{ t('explore.viewList') }}
+              </button>
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
+                :class="view === 'grid' ? 'bg-brand-500 text-on-brand' : 'text-text-secondary hover:text-white'"
+                :aria-pressed="view === 'grid'"
+                @click="view = 'grid'"
+              >
+                {{ t('explore.viewGrid') }}
+              </button>
+            </div>
+            <button
+              v-if="hasActiveFilters"
+              type="button"
+              class="text-caption text-accent-crimson hover:underline"
+              @click="resetFilters"
+            >
+              {{ t('explore.resetFilters') }}
+            </button>
           </div>
         </div>
-      </UiCard>
+
+        <div v-if="chips.length > 0" class="flex flex-wrap gap-1.5">
+          <button
+            v-for="chip in chips"
+            :key="chip.id"
+            type="button"
+            class="inline-flex items-center gap-1 rounded-full border border-brand-500/50 bg-brand-950 px-2.5 py-1 text-xs font-semibold text-brand-300 transition-colors hover:bg-brand-900"
+            @click="chip.clear"
+          >
+            {{ chip.label }} ✕
+          </button>
+        </div>
+
+        <div v-if="loading" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <UiCard v-for="i in 6" :key="i" class="space-y-3">
+            <div class="flex items-center gap-3">
+              <UiSkeleton height="h-12" width="w-12" rounded="lg" />
+              <div class="flex-1 space-y-1.5">
+                <UiSkeleton height="h-4" width="w-3/4" />
+                <UiSkeleton height="h-3" width="w-1/2" />
+              </div>
+            </div>
+          </UiCard>
+        </div>
+
+        <div v-else-if="!error && tracks.length === 0" class="py-12">
+          <UiEmptyState :title="t('explore.emptyTitle')" :description="t('explore.emptyDesc')">
+            <template #action>
+              <UiButton variant="secondary" size="sm" @click="resetFilters">{{ t('explore.resetFilters') }}</UiButton>
+            </template>
+          </UiEmptyState>
+        </div>
+
+        <ol v-else-if="view === 'list'" class="space-y-1">
+          <li v-for="tr in tracks" :key="tr.id">
+            <TrackRow
+              :track="tr"
+              @play="playTrack"
+              @enqueue="enqueue"
+              @add-to-playlist="openAddToPlaylist"
+              @report="openReport"
+            />
+          </li>
+        </ol>
+
+        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <TrackCard
+            v-for="tr in tracks"
+            :key="tr.id"
+            :track="tr"
+            @play="playTrack"
+            @enqueue="enqueue"
+            @add-to-playlist="openAddToPlaylist"
+            @report="openReport"
+          />
+        </div>
+
+        <UiPagination
+          v-if="tracks.length > 0"
+          :page="Math.floor(offset / limit) + 1"
+          :has-more="offset + tracks.length < total"
+          :total="total"
+          :limit="limit"
+          :disabled="loading"
+          @prev="changePage(-1)"
+          @next="changePage(1)"
+          @page="goPage"
+        />
+      </section>
     </div>
 
-    <div v-else-if="!error && tracks.length === 0" class="py-12">
-      <UiEmptyState
-        title="일치하는 음원이 없습니다"
-        description="다른 검색어나 필터를 선택해 보세요. AVIBE에는 확인 절차를 거친 음원이 지속적으로 등록됩니다."
-      >
-        <template #action>
-          <UiButton variant="secondary" size="sm" @click="resetFilters">필터 초기화</UiButton>
-        </template>
-      </UiEmptyState>
-    </div>
+    <BottomSheet v-model="filtersOpen" :title="t('explore.moodLabel')">
+      <div class="space-y-4">
+        <ExploreFilters :model="filters" @update="applyFilters" />
+        <UiButton variant="brand" size="md" full-width @click="filtersOpen = false">
+          {{ t('explore.results', { count: fmt.number(total) }) }}
+        </UiButton>
+      </div>
+    </BottomSheet>
 
-    <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <TrackCard
-        v-for="t in tracks"
-        :key="t.id"
-        :track="t"
-        @play="playTrack"
-        @enqueue="enqueue"
-        @add-to-playlist="openAddToPlaylist"
-        @report="openReport"
-      />
-    </div>
-
-    <!-- Pagination -->
-    <UiPagination
-      v-if="tracks.length > 0"
-      :page="Math.floor(offset / limit) + 1"
-      :has-more="offset + tracks.length < total"
-      :total="total"
-      :limit="limit"
-      :disabled="loading"
-      @prev="changePage(-1)"
-      @next="changePage(1)"
-      @page="goPage"
-    />
-
-    <!-- Dispute Modal -->
     <DisputeReportModal
       v-if="reportTarget"
       :track-id="reportTarget.id"
@@ -144,7 +170,6 @@
       @reported="onReported"
     />
 
-    <!-- Playlist Add Picker Modal -->
     <UiPlaylistPicker
       :model-value="Boolean(playlistTargetTrack)"
       :track-title="playlistTargetTrack?.title ?? ''"
@@ -158,14 +183,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { trackApi, playlistApi } from '@/api/endpoints';
-import { errMessageOf } from '@/api/client';
 import { useAuthStore } from '@/stores/authStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
+import { useApiError } from '@/composables/useApiError';
+import { useFormat } from '@/composables/useFormat';
+import { tagDisplayName } from '@/utils/tags';
+import { providerDisplayName } from '@/utils/providerDisplay';
 import type { Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -177,18 +205,22 @@ import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiPagination from '@/components/ui/UiPagination.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
+import BottomSheet from '@/components/ui/BottomSheet.vue';
 import TrackCard from '@/components/TrackCard.vue';
+import TrackRow from '@/components/TrackRow.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+import ExploreFilters, { type ExploreFilterModel } from '@/components/explore/ExploreFilters.vue';
 const localePath = useLocalePath();
 
+const { t, te } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const toast = useToast();
-
-const popularTags = ['Focus', 'Chill', 'Cyberpunk', 'Cinematic', 'Workout', 'Sleep'];
+const apiError = useApiError();
+const fmt = useFormat();
 
 const tracks = ref<Track[]>([]);
 const loading = ref(true);
@@ -196,66 +228,137 @@ const error = ref<string | null>(null);
 const offset = ref(0);
 const limit = 18;
 const total = ref(0);
+const view = ref<'list' | 'grid'>('list');
+const filtersOpen = ref(false);
 
 const searchQuery = ref((route.query.q as string) || '');
-const filterProvider = ref('');
-const filterMood = ref((route.query.mood as string) || '');
-const sortBy = ref(['recent', 'oldest', 'popular', 'title'].includes(route.query.sort as string) ? (route.query.sort as string) : 'recent');
+const sortBy = ref(
+  ['recent', 'oldest', 'popular', 'title', 'relevant'].includes(route.query.sort as string)
+    ? (route.query.sort as string)
+    : 'recent',
+);
+const filters = reactive<ExploreFilterModel>({
+  mood: (route.query.mood as string) || '',
+  genre: '',
+  provider: '',
+  certified: false,
+  bpm: '',
+  dur: '',
+});
 
 const reportTarget = ref<Track | null>(null);
 const playlistTargetTrack = ref<Track | null>(null);
 const creatingPlaylist = ref(false);
 
-async function load() {
+const BPM_RANGES: Record<string, { minBpm?: number; maxBpm?: number }> = {
+  slow: { maxBpm: 90 },
+  mid: { minBpm: 90, maxBpm: 120 },
+  fast: { minBpm: 120 },
+};
+const DUR_RANGES: Record<string, { minDur?: number; maxDur?: number }> = {
+  short: { maxDur: 180000 },
+  mid: { minDur: 180000, maxDur: 300000 },
+  long: { minDur: 300000 },
+};
+
+const activeFilterCount = computed(() => {
+  let n = 0;
+  if (filters.mood) n++;
+  if (filters.genre) n++;
+  if (filters.provider) n++;
+  if (filters.certified) n++;
+  if (filters.bpm) n++;
+  if (filters.dur) n++;
+  return n;
+});
+
+const hasActiveFilters = computed(
+  () => activeFilterCount.value > 0 || searchQuery.value.trim() !== '',
+);
+
+interface Chip { id: string; label: string; clear: () => void }
+const chips = computed<Chip[]>(() => {
+  const out: Chip[] = [];
+  if (searchQuery.value.trim()) {
+    out.push({ id: 'q', label: `“${searchQuery.value.trim()}”`, clear: () => { searchQuery.value = ''; onSearch(); } });
+  }
+  if (filters.mood) {
+    out.push({ id: 'mood', label: tagDisplayName(filters.mood, t, te), clear: () => { filters.mood = ''; onSearch(); } });
+  }
+  if (filters.genre) {
+    out.push({ id: 'genre', label: tagDisplayName(filters.genre, t, te), clear: () => { filters.genre = ''; onSearch(); } });
+  }
+  if (filters.provider) {
+    out.push({ id: 'provider', label: providerDisplayName(filters.provider), clear: () => { filters.provider = ''; onSearch(); } });
+  }
+  if (filters.certified) {
+    out.push({ id: 'cert', label: t('explore.certOnly'), clear: () => { filters.certified = false; onSearch(); } });
+  }
+  if (filters.bpm) {
+    const label = filters.bpm === 'slow' ? t('explore.bpmSlow') : filters.bpm === 'mid' ? t('explore.bpmMid') : t('explore.bpmFast');
+    out.push({ id: 'bpm', label, clear: () => { filters.bpm = ''; onSearch(); } });
+  }
+  if (filters.dur) {
+    const label = filters.dur === 'short' ? t('explore.durShort') : filters.dur === 'mid' ? t('explore.durMid') : t('explore.durLong');
+    out.push({ id: 'dur', label, clear: () => { filters.dur = ''; onSearch(); } });
+  }
+  return out;
+});
+
+async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
     const res = await trackApi.list(limit, offset.value, {
       q: searchQuery.value.trim() || undefined,
-      provider: filterProvider.value || undefined,
-      mood: filterMood.value || undefined,
+      provider: filters.provider || undefined,
+      genre: filters.genre || undefined,
+      mood: filters.mood || undefined,
+      certified: filters.certified || undefined,
       sort: sortBy.value || undefined,
+      ...(filters.bpm ? BPM_RANGES[filters.bpm] : {}),
+      ...(filters.dur ? DUR_RANGES[filters.dur] : {}),
     });
     tracks.value = res.items ?? [];
     total.value = res.total;
-  } catch (err) {
-    error.value = errMessageOf(err);
+  } catch (err: unknown) {
+    error.value = apiError(err);
   } finally {
     loading.value = false;
   }
 }
 
-function onSearch() {
+function onSearch(): void {
   offset.value = 0;
   void load();
 }
 
+function applyFilters(patch: Partial<ExploreFilterModel>): void {
+  Object.assign(filters, patch);
+  onSearch();
+}
+
 function submitSearch(): void {
-  if (!searchQuery.value.trim() && !filterProvider.value && !filterMood.value) {
-    toast.info('검색어를 입력해 주세요. 비워 두면 전체 음원이 표시됩니다.');
+  if (!searchQuery.value.trim() && activeFilterCount.value === 0) {
+    toast.info(t('explore.enterHint'));
     return;
   }
   onSearch();
 }
 
-function selectMood(mood: string) {
-  if (filterMood.value === mood) {
-    filterMood.value = '';
-  } else {
-    filterMood.value = mood;
-  }
-  onSearch();
-}
-
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
-  filterProvider.value = '';
-  filterMood.value = '';
+  filters.mood = '';
+  filters.genre = '';
+  filters.provider = '';
+  filters.certified = false;
+  filters.bpm = '';
+  filters.dur = '';
   sortBy.value = 'recent';
   onSearch();
 }
 
-function changePage(direction: number) {
+function changePage(direction: number): void {
   offset.value = Math.max(0, offset.value + direction * limit);
   void load();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -267,50 +370,49 @@ function goPage(p: number): void {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function playTrack(t: Track) {
-  player.setQueue([t], t.id);
+function playTrack(tr: Track): void {
+  player.setQueue([tr], tr.id);
 }
 
-function playAll() {
+function playAll(): void {
   if (tracks.value.length === 0) return;
   if (!auth.isAuthenticated) {
-    toast.info('음원을 들으려면 먼저 로그인하세요.');
+    toast.info(t('track.toastNeedLogin'));
     void router.push(localePath({ name: 'login', query: { redirect: '/explore' } }));
     return;
   }
   player.setQueue(tracks.value, tracks.value[0]?.id);
-  toast.success(`${tracks.value.length}개 트랙을 재생 목록에 담았습니다.`);
 }
 
-function enqueue(t: Track) {
-  player.enqueue(t);
-  toast.info(`"${t.title}"을(를) 재생 대기열에 추가했습니다.`);
+function enqueue(tr: Track): void {
+  player.enqueue(tr);
+  toast.info(t('track.toastQueued'));
 }
 
-function requireLogin(action: string): boolean {
+function requireLogin(): boolean {
   if (auth.isAuthenticated) return true;
-  toast.info(`${action}하려면 먼저 로그인하세요.`);
+  toast.info(t('track.toastNeedLogin'));
   void router.push(localePath({ name: 'login', query: { redirect: route.fullPath } }));
   return false;
 }
 
-function openAddToPlaylist(t: Track) {
-  if (!requireLogin('플레이리스트에 담으')) return;
-  playlistTargetTrack.value = t;
+function openAddToPlaylist(tr: Track): void {
+  if (!requireLogin()) return;
+  playlistTargetTrack.value = tr;
 }
 
-async function addTrackToPlaylist(playlistId: string) {
+async function addTrackToPlaylist(playlistId: string): Promise<void> {
   if (!playlistTargetTrack.value) return;
   try {
     await playlistApi.addTrack(playlistId, playlistTargetTrack.value.id);
-    toast.success('플레이리스트에 추가되었습니다.');
+    toast.success(t('track.toastAdded'));
     playlistTargetTrack.value = null;
-  } catch (err) {
-    toast.error(errMessageOf(err), '추가 실패');
+  } catch (err: unknown) {
+    toast.error(apiError(err));
   }
 }
 
-async function createNewPlaylist(title: string) {
+async function createNewPlaylist(title: string): Promise<void> {
   creatingPlaylist.value = true;
   try {
     const created = await playlistApi.create(title, false);
@@ -318,25 +420,49 @@ async function createNewPlaylist(title: string) {
     if (playlistTargetTrack.value) {
       await addTrackToPlaylist(created.id);
     }
-  } catch (err) {
-    toast.error(errMessageOf(err));
+  } catch (err: unknown) {
+    toast.error(apiError(err));
   } finally {
     creatingPlaylist.value = false;
   }
 }
 
-function openReport(t: Track) {
-  if (!requireLogin('신고')) return;
-  reportTarget.value = t;
+function openReport(tr: Track): void {
+  if (!requireLogin()) return;
+  reportTarget.value = tr;
 }
 
-function onReported(id: string) {
+function onReported(): void {
   reportTarget.value = null;
-  toast.success(`신고가 접수되었습니다. (ID: ${id})`);
+  toast.success(t('track.toastReported'));
 }
+
+watch(
+  () => route.query.q,
+  (q) => {
+    const next = typeof q === 'string' ? q : '';
+    if (next !== searchQuery.value) {
+      searchQuery.value = next;
+      onSearch();
+    }
+  },
+);
+
+watch(
+  () => route.query.mood,
+  (mood) => {
+    const next = typeof mood === 'string' ? mood : '';
+    if (next !== filters.mood) {
+      filters.mood = next;
+      onSearch();
+    }
+  },
+);
 
 onMounted(() => {
   void load();
-  void playlists.fetchMine();
+  if (auth.isAuthenticated) {
+    void playlists.fetchMine();
+  }
 });
 </script>

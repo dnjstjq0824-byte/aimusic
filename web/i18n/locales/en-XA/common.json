@@ -78,6 +78,7 @@
     "titles": {
       "home": "⟦Hòmè～～⟧",
       "explore": "⟦Èxplòrè mùsìc～～～～～～⟧",
+      "charts": "⟦Chàrts～～～⟧",
       "my-library": "⟦My lìbràry～～～～⟧",
       "playlists": "⟦Plàylìsts～～～～⟧",
       "login": "⟦Lòg ìn～～～⟧",
@@ -149,7 +150,8 @@
       "copied": "⟦Còpìèd～～～⟧",
       "loading": "⟦Lòàdìng…～～～～⟧",
       "showMore": "⟦Shòw mòrè～～～～⟧",
-      "more": "⟦Mòrè～～⟧"
+      "more": "⟦Mòrè～～⟧",
+      "share": "⟦Shàrè～～⟧"
     },
     "auth": {
       "sessionExpired": "⟦Yòùr sèssìòn èxpìrèd. Plèàsè lòg ìn àgàìn.～～～～～～～～～～～～～～～～～⟧",

@@ -78,6 +78,7 @@
     "titles": {
       "home": "홈",
       "explore": "음원 탐색",
+      "charts": "차트",
       "my-library": "내 라이브러리",
       "playlists": "플레이리스트",
       "login": "로그인",
@@ -149,7 +150,8 @@
       "copied": "복사됨",
       "loading": "불러오는 중…",
       "showMore": "더 보기",
-      "more": "더보기"
+      "more": "더보기",
+      "share": "공유"
     },
     "auth": {
       "sessionExpired": "세션이 만료되었습니다. 다시 로그인해 주세요.",

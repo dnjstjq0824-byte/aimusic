@@ -78,6 +78,7 @@
     "titles": {
       "home": "Home",
       "explore": "Explore music",
+      "charts": "Charts",
       "my-library": "My library",
       "playlists": "Playlists",
       "login": "Log in",
@@ -149,7 +150,8 @@
       "copied": "Copied",
       "loading": "Loading…",
       "showMore": "Show more",
-      "more": "More"
+      "more": "More",
+      "share": "Share"
     },
     "auth": {
       "sessionExpired": "Your session expired. Please log in again.",

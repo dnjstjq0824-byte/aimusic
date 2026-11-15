@@ -14,6 +14,7 @@ export const ROLES = ['guest', 'listener', 'creator', 'storePartner', 'admin'];
 const GUEST_ROUTES = [
   ['home', '/'],
   ['explore', '/explore'],
+  ['charts', '/charts'],
   ['pricing', '/pricing'],
   ['playlists', '/playlists'],
   ['playlist-public', '/playlists/{playlist}'],

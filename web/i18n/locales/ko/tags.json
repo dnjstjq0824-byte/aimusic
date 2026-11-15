@@ -1,0 +1,23 @@
+{
+  "tags": {
+    "focus": "집중",
+    "chill": "휴식",
+    "cafe": "카페",
+    "workout": "운동",
+    "drive": "드라이브",
+    "sleep": "수면",
+    "cinematic": "시네마틱",
+    "cyberpunk": "사이버펑크",
+    "electronic": "일렉트로닉",
+    "pop": "팝",
+    "rock": "록",
+    "hiphop": "힙합",
+    "jazz": "재즈",
+    "classical": "클래식",
+    "ambient": "앰비언트",
+    "gym": "헬스장",
+    "work": "작업",
+    "youtube": "유튜브",
+    "party": "파티"
+  }
+}
