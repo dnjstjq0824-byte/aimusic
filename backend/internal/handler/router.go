@@ -142,6 +142,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	tracks.GET("", trackH.ListTracks)
 	tracks.GET("/:id", JWTOptional(d.Services.Auth), trackH.GetTrack)
 	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
+	tracks.GET("/:id/playlists", trackH.TrackPlaylists)
+	v1.GET("/charts", trackH.Charts)
 	certs := v1.Group("/certificates")
 	certs.GET("/:number", certH.VerifyCertificate)
 	tracks.GET("/:id/stream", JWTAuth(d.Services.Auth), RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), trackH.Stream)
@@ -150,10 +152,12 @@ func SetupRouter(d *Deps) *gin.Engine {
 	playback := v1.Group("/playback")
 	playback.Use(JWTAuth(d.Services.Auth))
 	playback.POST("/heartbeat", playbackH.Heartbeat)
+	playback.GET("/recent", playbackH.Recent)
 	playback.GET("/state/:trackId", playbackH.GetState)
 	playback.PUT("/state/:trackId", playbackH.SetState)
 	playback.PUT("/state", playbackH.SetState)
 
+	v1.GET("/playlists/public", playlistH.ListPublic)
 	playlists := v1.Group("/playlists")
 	playlists.Use(JWTAuth(d.Services.Auth))
 	playlists.GET("", playlistH.ListMine)
@@ -162,7 +166,9 @@ func SetupRouter(d *Deps) *gin.Engine {
 	playlists.GET("/:id", playlistH.Get)
 	playlists.PUT("/:id", playlistH.Update)
 	playlists.DELETE("/:id", playlistH.Delete)
-	playlists.GET("/:id/tracks", playlistH.ListTracks)
+	// Track listing is visibility-gated in service (public passes for guests);
+	// R6 opens the detail page itself (N-01).
+	v1.GET("/playlists/:id/tracks", JWTOptional(d.Services.Auth), playlistH.ListTracks)
 	playlists.POST("/:id/tracks", playlistH.AddTrack)
 	playlists.DELETE("/:id/tracks/:trackId", playlistH.RemoveTrack)
 	playlists.PUT("/:id/reorder", playlistH.Reorder)

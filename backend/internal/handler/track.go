@@ -94,9 +94,10 @@ type TrackHandler struct {
 }
 
 // ListTracks returns one page of READY tracks with server-side search
-// (q), filters (provider/genre/mood), sort, and a total count:
+// (q), filters (provider/genre/mood/certified/partnerId/bpm/duration),
+// sort, and a total count:
 //
-//	GET /tracks?q=&provider=&genre=&mood=&sort=recent|oldest|popular|title&limit=&offset=
+//	GET /tracks?q=&provider=&genre=&mood=&certified=&partnerId=&minBpm=&maxBpm=&minDur=&maxDur=&sort=recent|oldest|popular|title|relevant&limit=&offset=
 func (h *TrackHandler) ListTracks(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
 	if len([]rune(q)) > 100 {
@@ -104,18 +105,24 @@ func (h *TrackHandler) ListTracks(c *gin.Context) {
 		return
 	}
 	sort := strings.TrimSpace(c.Query("sort"))
-	if _, valid := repository.TrackSortOrderBy(sort); !valid {
-		AbortError(c, fmt.Errorf("%w: sort must be recent|oldest|popular|title", domain.ErrInvalidInput))
+	if _, valid := repository.TrackSortOrderBy(sort); !valid && sort != repository.TrackSortRelevant {
+		AbortError(c, fmt.Errorf("%w: sort must be recent|oldest|popular|title|relevant", domain.ErrInvalidInput))
 		return
 	}
 	page, err := h.Repos.Tracks.SearchReady(c.Request.Context(), repository.TrackFilter{
-		Q:        q,
-		Provider: c.Query("provider"),
-		Genre:    c.Query("genre"),
-		Mood:     c.Query("mood"),
-		Sort:     sort,
-		Limit:    queryInt(c, "limit", 50),
-		Offset:   queryInt(c, "offset", 0),
+		Q:         q,
+		Provider:  c.Query("provider"),
+		Genre:     c.Query("genre"),
+		Mood:      c.Query("mood"),
+		Certified: queryBool(c, "certified"),
+		PartnerID: strings.TrimSpace(c.Query("partnerId")),
+		MinBpm:    queryFloat(c, "minBpm"),
+		MaxBpm:    queryFloat(c, "maxBpm"),
+		MinDurMs:  queryInt64(c, "minDur"),
+		MaxDurMs:  queryInt64(c, "maxDur"),
+		Sort:      sort,
+		Limit:     queryInt(c, "limit", 50),
+		Offset:    queryInt(c, "offset", 0),
 	})
 	if err != nil {
 		AbortError(c, err)
@@ -129,6 +136,51 @@ func (h *TrackHandler) ListTracks(c *gin.Context) {
 		"items": items, "total": page.Total,
 		"limit": page.Limit, "offset": page.Offset,
 	})
+}
+
+// Charts returns ranked READY tracks for a window (week|month|all).
+//
+//	GET /charts?window=&limit=
+func (h *TrackHandler) Charts(c *gin.Context) {
+	window := strings.TrimSpace(c.Query("window"))
+	if window == "" {
+		window = "week"
+	}
+	limit := queryInt(c, "limit", 50)
+	var items []*domain.Track
+	var err error
+	switch window {
+	case "week":
+		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-7*24*time.Hour), limit)
+	case "month":
+		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-30*24*time.Hour), limit)
+	case "all":
+		items, err = h.Repos.Tracks.TopByPlays(c.Request.Context(), limit)
+	default:
+		AbortError(c, fmt.Errorf("%w: window must be week|month|all", domain.ErrInvalidInput))
+		return
+	}
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	out := make([]*domain.Track, 0, len(items))
+	for _, t := range items {
+		out = append(out, t.PublicView())
+	}
+	okList(c, out)
+}
+
+// TrackPlaylists returns discoverable playlists holding a track.
+//
+//	GET /tracks/:id/playlists
+func (h *TrackHandler) TrackPlaylists(c *gin.Context) {
+	items, err := h.Repos.Playlists.ListPublicContaining(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	okList(c, items)
 }
 
 // GetTrack returns one track. Anonymous callers and listeners only see

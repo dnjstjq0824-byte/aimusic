@@ -261,6 +261,7 @@ type Track struct {
 	ID                   string    `json:"id"`
 	AlbumID              *string   `json:"albumId,omitempty"`
 	PartnerID            string    `json:"partnerId"`
+	CreatorName          string    `json:"creatorName,omitempty"`
 	Title                string    `json:"title"`
 	Genre                *string   `json:"genre,omitempty"`
 	MoodTags             []string  `json:"moodTags,omitempty"`

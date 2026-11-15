@@ -333,6 +333,16 @@ if [ "$BATCH19_EXISTS" != "1" ]; then
 else
   echo "[start-local] batch19 schema already present; skipping 000019_streaming_logs_indexes.up.sql"
 fi
+BATCH20_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM pg_indexes WHERE schemaname='public' AND indexname='idx_tracks_title_trgm';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH20_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000020_search_trgm.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000020_search_trgm.up.sql
+  echo "[start-local] batch20 search trgm applied"
+else
+  echo "[start-local] batch20 schema already present; skipping 000020_search_trgm.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

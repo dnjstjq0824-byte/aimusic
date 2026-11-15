@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"avibe-platform/backend/internal/domain"
+	"avibe-platform/backend/internal/search"
 )
 
 // AlbumRepo accesses albums.
@@ -111,6 +112,45 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	return t, nil
 }
 
+// scanTrackWithCreator scans trackColumns plus the joined creator display
+// name (trackColumnsWithCreator). Queries must include trackCreatorJoin.
+func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, error) {
+	t := &domain.Track{}
+	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, creator sql.NullString
+	var moodsJoined, creditsJoined string
+	var duration, bitrate sql.NullInt64
+	var bpm sql.NullFloat64
+	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title,
+		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
+		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
+		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
+		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &creator)
+	if err != nil {
+		return nil, err
+	}
+	t.AlbumID = strPtr(album)
+	t.Genre = strPtr(genre)
+	t.MoodTags = splitKeywords(moodsJoined)
+	t.AICreditParts = splitKeywords(creditsJoined)
+	t.AIModelVersion = strPtr(modelVer)
+	t.AIPrompt = strPtr(prompt)
+	t.Lyrics = strPtr(lyrics)
+	t.DurationMs = intPtr(duration)
+	t.AudioFingerprintHash = strPtr(fp)
+	t.HLSPrefix = strPtr(hls)
+	t.WaveformJSON = strPtr(waveform)
+	t.AIDisclosureText = strPtr(disclosure)
+	t.BitrateKbps = intPtr(bitrate)
+	t.ISRC = strPtr(isrc)
+	t.BPM = floatPtr(bpm)
+	t.MusicalKey = strPtr(mkey)
+	t.RejectionReasonKo = strPtr(rejection)
+	if creator.Valid {
+		t.CreatorName = creator.String
+	}
+	return t, nil
+}
+
 const trackColumns = `id::text, album_id::text, partner_id::text, title,
 	genre, COALESCE(array_to_string(mood_tags, chr(31)), ''), ai_generation_type,
 	COALESCE(array_to_string(ai_credit_parts, chr(31)), ''),
@@ -118,6 +158,16 @@ const trackColumns = `id::text, album_id::text, partner_id::text, title,
 	duration_ms, original_object_key, audio_fingerprint_hash, hls_prefix, waveform_json,
 	ai_provider, ai_generated, ai_disclosure_text,
 	bitrate_kbps, isrc, bpm, musical_key, status, rejection_reason_ko, play_count, created_at, updated_at`
+
+// trackColumnsQualified mirrors trackColumns for queries joining creator
+// tables (bare names would be ambiguous). Same order + arity.
+const trackColumnsQualified = `tracks.id::text, tracks.album_id::text, tracks.partner_id::text, tracks.title,
+	tracks.genre, COALESCE(array_to_string(tracks.mood_tags, chr(31)), ''), tracks.ai_generation_type,
+	COALESCE(array_to_string(tracks.ai_credit_parts, chr(31)), ''),
+	tracks.ai_model_version, tracks.ai_prompt, tracks.is_prompt_public, tracks.is_instrumental, tracks.lyrics,
+	tracks.duration_ms, tracks.original_object_key, tracks.audio_fingerprint_hash, tracks.hls_prefix, tracks.waveform_json,
+	tracks.ai_provider, tracks.ai_generated, tracks.ai_disclosure_text,
+	tracks.bitrate_kbps, tracks.isrc, tracks.bpm, tracks.musical_key, tracks.status, tracks.rejection_reason_ko, tracks.play_count, tracks.created_at, tracks.updated_at`
 
 func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track, error) {
 	if t.Status == "" {
@@ -141,12 +191,29 @@ func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track,
 }
 
 func (r *TrackRepo) GetByID(ctx context.Context, id string) (*domain.Track, error) {
-	t, err := scanTrack(r.db.QueryRowContext(ctx,
-		`SELECT `+trackColumns+` FROM tracks WHERE id = $1::uuid`, id))
+	t, err := scanTrackWithCreator(r.db.QueryRowContext(ctx,
+		`SELECT `+trackColumnsQualified+`, u.display_name FROM tracks`+trackCreatorJoin+` WHERE tracks.id = $1::uuid`, id))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
 	return t, err
+}
+
+func (r *TrackRepo) listTracksWithCreator(ctx context.Context, query string, args ...any) ([]*domain.Track, error) {
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Track{}
+	for rows.Next() {
+		t, err := scanTrackWithCreator(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
 }
 
 func (r *TrackRepo) listTracks(ctx context.Context, query string, args ...any) ([]*domain.Track, error) {
@@ -180,38 +247,48 @@ func (r *TrackRepo) ListReady(ctx context.Context, limit, offset int) ([]*domain
 const (
 	TrackSortRecent  = "recent"
 	TrackSortOldest  = "oldest"
-	TrackSortPopular = "popular"
-	TrackSortTitle   = "title"
+	TrackSortPopular  = "popular"
+	TrackSortTitle    = "title"
+	TrackSortRelevant = "relevant"
 )
 
 // TrackSortOrderBy maps a validated sort key to its ORDER BY clause.
 func TrackSortOrderBy(sort string) (string, bool) {
 	switch sort {
 	case "", TrackSortRecent:
-		return "created_at DESC", true
+		return "tracks.created_at DESC", true
 	case TrackSortOldest:
-		return "created_at ASC", true
+		return "tracks.created_at ASC", true
 	case TrackSortPopular:
-		return "play_count DESC, created_at DESC", true
+		return "tracks.play_count DESC, tracks.created_at DESC", true
 	case TrackSortTitle:
-		return "title ASC, created_at DESC", true
+		return "tracks.title ASC, tracks.created_at DESC", true
 	default:
 		return "", false
 	}
 }
 
 // TrackFilter carries server-side search, filter, sort, and paging for READY
-// tracks. Q matches the title (case-insensitive substring); Provider is an
+// tracks. Q matches title, creator display name (substring or trigram), and
+// canonical tag keys expanded from any locale display name; Provider is an
 // exact AI-provider code; Genre matches case-insensitively; Mood matches one
-// mood tag case-insensitively.
+// mood tag case-insensitively; Certified restricts to certificate-issued
+// tracks; PartnerID scopes to one creator; Min/MaxBpm and Min/MaxDurMs are
+// inclusive ranges (0/0 disables each bound).
 type TrackFilter struct {
-	Q        string
-	Provider string
-	Genre    string
-	Mood     string
-	Sort     string
-	Limit    int
-	Offset   int
+	Q         string
+	Provider  string
+	Genre     string
+	Mood      string
+	Certified bool
+	PartnerID string
+	MinBpm    float64
+	MaxBpm    float64
+	MinDurMs  int64
+	MaxDurMs  int64
+	Sort      string
+	Limit     int
+	Offset    int
 }
 
 // TrackPage is one page of READY tracks with its total for pagination UI.
@@ -228,51 +305,118 @@ func escapeLike(s string) string {
 	return r.Replace(s)
 }
 
+// trackCreatorJoin resolves the creator display name for search and DTOs.
+// tracks.partner_id is NOT NULL with an enforced FK, so inner joins keep
+// counts exact.
+const trackCreatorJoin = ` JOIN partner_profiles pp ON pp.id = tracks.partner_id JOIN users u ON u.id = pp.user_id`
+
 // buildTrackSearch builds the WHERE fragment (shared by the count and page
 // queries) plus ordered args. It is pure so the SQL contract stays unit
-// tested without a database.
-func buildTrackSearch(f TrackFilter) (where string, args []any) {
-	conds := []string{"status = 'READY'"}
+// tested without a database. simArg is the 1-based index of the raw q arg
+// for similarity ORDER BY (0 when q is empty). Callers must include
+// trackCreatorJoin whenever the fragment references u.display_name.
+func buildTrackSearch(f TrackFilter) (where string, args []any, simArg int) {
+	conds := []string{"tracks.status = 'READY'"}
 	if q := strings.TrimSpace(f.Q); q != "" {
 		args = append(args, "%"+escapeLike(q)+"%")
-		conds = append(conds, fmt.Sprintf(`title ILIKE $%d ESCAPE '\'`, len(args)))
+		pat := len(args)
+		args = append(args, q)
+		raw := len(args)
+		simArg = raw
+		alts := []string{
+			fmt.Sprintf(`tracks.title ILIKE $%d ESCAPE '\'`, pat),
+			fmt.Sprintf(`u.display_name ILIKE $%d ESCAPE '\'`, pat),
+			fmt.Sprintf(`tracks.title %% $%d`, raw),
+			fmt.Sprintf(`u.display_name %% $%d`, raw),
+		}
+		if keys := search.KeysForQuery(q); len(keys) > 0 {
+			place := make([]string, 0, len(keys))
+			for _, k := range keys {
+				args = append(args, k)
+				place = append(place, fmt.Sprintf(`$%d`, len(args)))
+			}
+			in := strings.Join(place, ", ")
+			alts = append(alts,
+				fmt.Sprintf(`EXISTS (SELECT 1 FROM unnest(tracks.mood_tags) AS mt WHERE LOWER(mt) IN (%s))`, in),
+				fmt.Sprintf(`LOWER(tracks.genre) IN (%s)`, in),
+			)
+		}
+		conds = append(conds, "("+strings.Join(alts, " OR ")+")")
 	}
 	if p := strings.TrimSpace(f.Provider); p != "" {
 		args = append(args, strings.ToUpper(p))
-		conds = append(conds, fmt.Sprintf(`ai_provider = $%d`, len(args)))
+		conds = append(conds, fmt.Sprintf(`tracks.ai_provider = $%d`, len(args)))
 	}
 	if g := strings.TrimSpace(f.Genre); g != "" {
 		args = append(args, strings.ToLower(g))
-		conds = append(conds, fmt.Sprintf(`LOWER(genre) = $%d`, len(args)))
+		conds = append(conds, fmt.Sprintf(`LOWER(tracks.genre) = $%d`, len(args)))
 	}
 	if m := strings.TrimSpace(f.Mood); m != "" {
 		args = append(args, strings.ToLower(m))
 		conds = append(conds, fmt.Sprintf(
-			`EXISTS (SELECT 1 FROM unnest(mood_tags) AS mt WHERE LOWER(mt) = $%d)`, len(args)))
+			`EXISTS (SELECT 1 FROM unnest(tracks.mood_tags) AS mt WHERE LOWER(mt) = $%d)`, len(args)))
 	}
-	return " WHERE " + strings.Join(conds, " AND "), args
+	if f.Certified {
+		conds = append(conds, `EXISTS (SELECT 1 FROM track_certificates tc WHERE tc.track_id = tracks.id)`)
+	}
+	if pid := strings.TrimSpace(f.PartnerID); pid != "" {
+		args = append(args, pid)
+		conds = append(conds, fmt.Sprintf(`tracks.partner_id = $%d::uuid`, len(args)))
+	}
+	if f.MinBpm > 0 {
+		args = append(args, f.MinBpm)
+		conds = append(conds, fmt.Sprintf(`tracks.bpm >= $%d`, len(args)))
+	}
+	if f.MaxBpm > 0 {
+		args = append(args, f.MaxBpm)
+		conds = append(conds, fmt.Sprintf(`tracks.bpm <= $%d`, len(args)))
+	}
+	if f.MinDurMs > 0 {
+		args = append(args, f.MinDurMs)
+		conds = append(conds, fmt.Sprintf(`tracks.duration_ms >= $%d`, len(args)))
+	}
+	if f.MaxDurMs > 0 {
+		args = append(args, f.MaxDurMs)
+		conds = append(conds, fmt.Sprintf(`tracks.duration_ms <= $%d`, len(args)))
+	}
+	return " WHERE " + strings.Join(conds, " AND "), args, simArg
+}
+
+// relevanceOrderBy ranks by trigram similarity to the raw q arg (1-based).
+func relevanceOrderBy(simArg int) string {
+	return fmt.Sprintf(`GREATEST(similarity(tracks.title,$%d),similarity(u.display_name,$%d)) DESC, tracks.created_at DESC`, simArg, simArg)
 }
 
 // SearchReady returns one page of READY tracks with server-side search,
 // filters, sort, and a total count for pagination.
 func (r *TrackRepo) SearchReady(ctx context.Context, f TrackFilter) (*TrackPage, error) {
-	orderBy, ok := TrackSortOrderBy(f.Sort)
-	if !ok {
-		return nil, fmt.Errorf("unknown track sort %q", f.Sort)
-	}
 	limit := clampLimit(f.Limit, 20, 100)
 	offset := f.Offset
 	if offset < 0 {
 		offset = 0
 	}
-	where, args := buildTrackSearch(f)
+	where, args, simArg := buildTrackSearch(f)
+	var orderBy string
+	if f.Sort == TrackSortRelevant {
+		if simArg == 0 {
+			orderBy, _ = TrackSortOrderBy(TrackSortRecent)
+		} else {
+			orderBy = relevanceOrderBy(simArg)
+		}
+	} else {
+		var ok bool
+		orderBy, ok = TrackSortOrderBy(f.Sort)
+		if !ok {
+			return nil, fmt.Errorf("unknown track sort %q", f.Sort)
+		}
+	}
 	var total int
 	if err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM tracks`+where, args...).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM tracks`+trackCreatorJoin+where, args...).Scan(&total); err != nil {
 		return nil, err
 	}
 	pageArgs := append(append([]any{}, args...), limit, offset)
-	items, err := r.listTracks(ctx, `SELECT `+trackColumns+` FROM tracks`+where+
+	items, err := r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name FROM tracks`+trackCreatorJoin+where+
 		` ORDER BY `+orderBy+fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(args)+1, len(args)+2),
 		pageArgs...)
 	if err != nil {
@@ -308,9 +452,31 @@ func (r *TrackRepo) ListByStatus(ctx context.Context, status string, limit, offs
 
 // TopByPlays returns READY tracks ordered by play count for curation.
 func (r *TrackRepo) TopByPlays(ctx context.Context, limit int) ([]*domain.Track, error) {
-	return r.listTracks(ctx, `SELECT `+trackColumns+`
-		FROM tracks WHERE status = 'READY' ORDER BY play_count DESC, created_at DESC LIMIT $1`,
+	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+		FROM tracks`+trackCreatorJoin+` WHERE tracks.status = 'READY' ORDER BY tracks.play_count DESC, tracks.created_at DESC LIMIT $1`,
 		clampLimit(limit, 20, 100))
+}
+
+// TopPlayedSince returns READY tracks ranked by counted plays within the
+// window (charts). since bounds streaming_logs.played_at; limit clamps.
+func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, limit int) ([]*domain.Track, error) {
+	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+		FROM tracks`+trackCreatorJoin+`
+		JOIN (SELECT track_id, COUNT(*) AS plays FROM streaming_logs
+			WHERE counted_as_play AND played_at >= $1 GROUP BY track_id) s ON s.track_id = tracks.id
+		WHERE tracks.status = 'READY' ORDER BY s.plays DESC, tracks.play_count DESC LIMIT $2`,
+		since, clampLimit(limit, 20, 100))
+}
+
+// RecentTracks returns the user's recently resumed READY tracks (login home
+// continue-listening), most recent first with each resume position.
+func (r *TrackRepo) RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
+	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+		FROM user_playback_states st
+		JOIN tracks ON tracks.id = st.track_id`+trackCreatorJoin+`
+		WHERE st.user_id = $1::uuid AND tracks.status = 'READY'
+		ORDER BY st.updated_at DESC LIMIT $2`,
+		userID, clampLimit(limit, 20, 100))
 }
 
 // UpdateStatus transitions a track with an optional Korean rejection reason.

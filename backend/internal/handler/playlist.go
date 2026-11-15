@@ -43,6 +43,18 @@ func (h *PlaylistHandler) ListMine(c *gin.Context) {
 	ok(c, playlists)
 }
 
+// ListPublic returns discoverable playlists (no auth).
+//
+//	GET /playlists/public?limit=
+func (h *PlaylistHandler) ListPublic(c *gin.Context) {
+	items, err := h.Playlists.ListPublic(c.Request.Context(), queryInt(c, "limit", 20))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	okList(c, items)
+}
+
 // Get returns one visible playlist.
 func (h *PlaylistHandler) Get(c *gin.Context) {
 	p, err := h.Playlists.Get(c.Request.Context(), CurrentUserID(c), c.Param("id"))

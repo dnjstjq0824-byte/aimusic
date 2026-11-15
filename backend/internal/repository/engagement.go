@@ -88,6 +88,50 @@ func (r *PlaylistRepo) ListOfficialCuration(ctx context.Context) ([]*domain.Play
 	return out, rows.Err()
 }
 
+// ListPublic returns discoverable playlists (official first, then public),
+// newest first. R6 builds full discovery on top of this.
+func (r *PlaylistRepo) ListPublic(ctx context.Context, limit int) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+playlistColumns+`
+		FROM playlists WHERE is_official_curation = TRUE OR is_public = TRUE
+		ORDER BY is_official_curation DESC, created_at DESC LIMIT $1`, clampLimit(limit, 20, 100))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Playlist{}
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ListPublicContaining returns discoverable playlists holding a track.
+func (r *PlaylistRepo) ListPublicContaining(ctx context.Context, trackID string) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id::text, p.owner_user_id::text, p.title, p.description, p.is_public, p.is_official_curation, p.created_at, p.updated_at
+		FROM playlists p JOIN playlist_tracks pt ON pt.playlist_id = p.id
+		WHERE pt.track_id = $1::uuid AND (p.is_official_curation = TRUE OR p.is_public = TRUE)
+		ORDER BY p.created_at DESC`, trackID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Playlist{}
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // Update renames a playlist or flips visibility.
 func (r *PlaylistRepo) Update(ctx context.Context, id, title string, isPublic bool) error {
 	_, err := r.db.ExecContext(ctx,

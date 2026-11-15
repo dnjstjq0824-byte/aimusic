@@ -42,6 +42,11 @@ func (s *PlaylistService) ListMine(ctx context.Context, callerID string) ([]*dom
 	return s.repos.Playlists.ListByOwner(ctx, callerID)
 }
 
+// ListPublic returns discoverable playlists for guests and rails.
+func (s *PlaylistService) ListPublic(ctx context.Context, limit int) ([]*domain.Playlist, error) {
+	return s.repos.Playlists.ListPublic(ctx, limit)
+}
+
 // Update renames a playlist; owner only.
 func (s *PlaylistService) Update(ctx context.Context, callerID, playlistID, title string, isPublic bool) (*domain.Playlist, error) {
 	if err := s.requireOwner(ctx, callerID, playlistID); err != nil {
@@ -261,6 +266,11 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 // GetState returns the resume position.
 func (s *PlaybackService) GetState(ctx context.Context, userID, trackID string) (*domain.UserPlaybackState, error) {
 	return s.repos.Playback.GetState(ctx, userID, trackID)
+}
+
+// RecentTracks returns the user's recently resumed READY tracks.
+func (s *PlaybackService) RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
+	return s.repos.Tracks.RecentTracks(ctx, userID, limit)
 }
 
 // SetPosition stores the resume position.

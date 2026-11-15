@@ -42,6 +42,14 @@
 #        while ACTIVE -> 409 (B-08; 503 without Toss keys), cancel without mode
 #        -> 400 (U-04), store heartbeat x3 -> 1 row (B-01)
 #
+#   T14  site search v2 (R5): 5-locale title match (en/ko/ja/zh/th partial),
+#        creator display-name match, tag display-name expansion, relevant sort
+#        (+ fallback without q), bogus sort 400, mood filter, certified filter,
+#        creatorName in list items
+#   T15  discovery APIs (R5): H-11 200 {data:null} (unissued/unknown/malformed),
+#        issued cert still 200 with number, charts week/month/all (+ bogus 400),
+#        playback recent, public playlists (guest list + by-track)
+#
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
 #
@@ -1126,9 +1134,11 @@ code="$(api GET "/tracks/$CERT_TRACK/certificate" "" "")"
 assert_status "public verify by track -> 200" "200" "$code"
 assert_eq "verify same number" "$CERT_NUM" "$(jget "data.certificate.certNumber")"
 code="$(api GET "/certificates/AVB-AAAAAAAAAA" "" "")"
-assert_status "unknown number -> 404" "404" "$code"
+assert_status "unknown number -> 200 (R5 H-11 null)" "200" "$code"
+assert_contains "unknown null body" '"data":null' "$(cat "$BODY")"
 code="$(api GET "/certificates/not-a-number" "" "")"
-assert_status "malformed number -> 404" "404" "$code"
+assert_status "malformed number -> 200 (R5 H-11 null)" "200" "$code"
+assert_contains "malformed null body" '"data":null' "$(cat "$BODY")"
 
 section "T12 batch2: reset, oauth, billing, overview"
 # Migration proof: batch2 tables exist.
@@ -1385,6 +1395,101 @@ for dur in 3 8 13; do
 done
 T13_ROWS="$(psql_q "SELECT COUNT(*) FROM store_play_logs WHERE device_id='$T13_DEVID'::uuid AND track_id='$HAPPY_TRACK_ID'::uuid;" | tr -d ' \r\n')"
 assert_eq "T13 cumulative heartbeats stay 1 row" "1" "$T13_ROWS"
+
+section "T14 site search v2 (R5 trgm + creator + tag display names)"
+psql_q "UPDATE users SET display_name='E2E 별빛프로듀서' WHERE id=(SELECT user_id FROM partner_profiles WHERE id='$PA_PARTNER_ID'::uuid);" >/dev/null
+T14_T1="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E Neon Focus Run','electronic','{focus}','staging/t14/1.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T2="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 밤하늘 드라이브','pop','{drive}','staging/t14/2.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T3="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 集中チル','ambient','{chill}','staging/t14/3.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T4="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 专注摇滚','rock','{focus}','staging/t14/4.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T5="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E โฟกัส','electronic','{focus}','staging/t14/5.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+code="$(api GET "/tracks?q=Neon&limit=50" "" "")"
+assert_status "T14 en title search" "200" "$code"
+assert_contains "T14 en match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=밤하늘&limit=50" "" "")"
+assert_status "T14 ko substring search" "200" "$code"
+assert_contains "T14 ko match" "$T14_T2" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=集中&limit=50" "" "")"
+assert_status "T14 ja partial search" "200" "$code"
+assert_contains "T14 ja match" "$T14_T3" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=专注&limit=50" "" "")"
+assert_status "T14 zh partial search" "200" "$code"
+assert_contains "T14 zh match" "$T14_T4" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=โฟกัส&limit=50" "" "")"
+assert_status "T14 th partial search" "200" "$code"
+assert_contains "T14 th match" "$T14_T5" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=별빛&limit=50" "" "")"
+assert_status "T14 creator search" "200" "$code"
+assert_contains "T14 creator match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=집중&limit=50" "" "")"
+assert_status "T14 tag display-name search" "200" "$code"
+assert_contains "T14 tag expansion match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/tracks?q=Chill&sort=relevant&limit=50" "" "")"
+assert_status "T14 relevant sort" "200" "$code"
+assert_contains "T14 relevant match" "$T14_T3" "$(cat "$BODY")"
+code="$(api GET "/tracks?sort=relevant&limit=5" "" "")"
+assert_status "T14 relevant without q falls back" "200" "$code"
+code="$(api GET "/tracks?sort=bogus&limit=5" "" "")"
+assert_status "T14 bogus sort -> 400" "400" "$code"
+code="$(api GET "/tracks?mood=focus&limit=50" "" "")"
+assert_status "T14 mood filter" "200" "$code"
+assert_contains "T14 mood match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/tracks?limit=5" "" "")"
+assert_contains "T14 creatorName in list" '"creatorName"' "$(cat "$BODY")"
+T14_CERT="AVB-T14$(printf '%s' "$T14_T1" | tr -d '-' | cut -c1-7)"
+psql_q "INSERT INTO track_certificates (track_id,cert_number) VALUES ('$T14_T1'::uuid,'$T14_CERT') ON CONFLICT DO NOTHING;" >/dev/null
+code="$(api GET "/tracks?certified=true&limit=50" "" "")"
+assert_status "T14 certified filter" "200" "$code"
+assert_contains "T14 certified match" "$T14_T1" "$(cat "$BODY")"
+if [[ "$(cat "$BODY")" == *"$T14_T2"* ]]; then fail "T14 uncertified excluded"; else pass "T14 uncertified excluded"; fi
+
+section "T15 discovery APIs (R5 H-11 null + charts + recent + public playlists)"
+code="$(api GET "/tracks/$T14_T2/certificate" "" "")"
+assert_status "T15 unissued cert -> 200" "200" "$code"
+assert_contains "T15 unissued null body" '"data":null' "$(cat "$BODY")"
+code="$(api GET "/certificates/AVB-ZZZZZZZZZZ" "" "")"
+assert_status "T15 unknown cert number -> 200" "200" "$code"
+assert_contains "T15 unknown null body" '"data":null' "$(cat "$BODY")"
+code="$(api GET "/certificates/AVB-0000" "" "")"
+assert_status "T15 malformed cert number -> 200" "200" "$code"
+assert_contains "T15 malformed null body" '"data":null' "$(cat "$BODY")"
+code="$(api GET "/tracks/$T14_T1/certificate" "" "")"
+assert_status "T15 issued cert -> 200" "200" "$code"
+assert_contains "T15 issued number" "$T14_CERT" "$(cat "$BODY")"
+psql_q "INSERT INTO streaming_logs (user_id,track_id,partner_id,played_at,play_ms,counted_as_play) SELECT '$USER_ID'::uuid,'$T14_T1'::uuid,'$PA_PARTNER_ID'::uuid,NOW(),60000,TRUE FROM generate_series(1,3);" >/dev/null
+psql_q "INSERT INTO streaming_logs (user_id,track_id,partner_id,played_at,play_ms,counted_as_play) VALUES ('$USER_ID'::uuid,'$T14_T1'::uuid,'$PA_PARTNER_ID'::uuid,NOW()-interval '40 days',60000,TRUE);" >/dev/null
+psql_q "INSERT INTO streaming_logs (user_id,track_id,partner_id,played_at,play_ms,counted_as_play) VALUES ('$USER_ID'::uuid,'$T14_T2'::uuid,'$PA_PARTNER_ID'::uuid,NOW(),5000,FALSE);" >/dev/null
+code="$(api GET "/charts?window=week&limit=20" "" "")"
+assert_status "T15 weekly charts" "200" "$code"
+assert_contains "T15 weekly match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/charts?window=month&limit=20" "" "")"
+assert_status "T15 monthly charts" "200" "$code"
+assert_contains "T15 monthly match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/charts?window=all&limit=20" "" "")"
+assert_status "T15 all-time charts" "200" "$code"
+code="$(api GET "/charts?window=fortnight&limit=20" "" "")"
+assert_status "T15 bogus window -> 400" "400" "$code"
+code="$(api PUT "/playback/state/$T14_T2" "$USER_TOKEN" '{"positionMs":61000}')"
+assert_status "T15 save resume position" "200" "$code"
+code="$(api GET "/playback/recent?limit=10" "$USER_TOKEN" "")"
+assert_status "T15 recent plays" "200" "$code"
+assert_contains "T15 recent match" "$T14_T2" "$(cat "$BODY")"
+code="$(api POST "/playlists" "$USER_TOKEN" '{"title":"E2E Public Mix","isPublic":true}')"
+assert_status "T15 public playlist create" "201" "$code"
+T15_PL="$(jget "data.id")"
+code="$(api POST "/playlists/$T15_PL/tracks" "$USER_TOKEN" "{\"trackId\":\"$T14_T1\"}")"
+assert_status "T15 add track" "201" "$code"
+code="$(api GET "/playlists/public?limit=20" "" "")"
+assert_status "T15 public list (guest)" "200" "$code"
+assert_contains "T15 public match" "$T15_PL" "$(cat "$BODY")"
+code="$(api GET "/tracks/$T14_T1/playlists" "" "")"
+assert_status "T15 track playlists" "200" "$code"
+assert_contains "T15 containing match" "$T15_PL" "$(cat "$BODY")"
+code="$(api GET "/playlists/$T15_PL/tracks" "" "")"
+assert_status "T15 public tracks guest" "200" "$code"
+assert_contains "T15 public tracks match" "$T14_T1" "$(cat "$BODY")"
+code="$(api GET "/playlists/$PLAYLIST_ID/tracks" "" "")"
+assert_status "T15 private tracks guest -> 403" "403" "$code"
 
 section "Summary"
 qdepth_final="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"

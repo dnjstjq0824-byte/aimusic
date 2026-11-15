@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -299,4 +300,31 @@ func queryInt(c *gin.Context, key string, def int) int {
 		}
 	}
 	return def
+}
+
+func queryInt64(c *gin.Context, key string) int64 {
+	if raw := c.Query(key); raw != "" {
+		if n, err := strconv.ParseInt(raw, 10, 64); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 0
+}
+
+func queryFloat(c *gin.Context, key string) float64 {
+	if raw := c.Query(key); raw != "" {
+		if n, err := strconv.ParseFloat(raw, 64); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 0
+}
+
+func queryBool(c *gin.Context, key string) bool {
+	switch strings.ToLower(strings.TrimSpace(c.Query(key))) {
+	case "1", "true", "yes":
+		return true
+	default:
+		return false
+	}
 }
