@@ -12,6 +12,7 @@
 | R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
 | R2 | PASS | eae45f0+eab2387+fix | WIP+수정 1·증거 json/txt | tsc0·vitest 52·checker·하네스 165/165·빌드 | r2 baseline.json+screens.txt(+PNG 로컬 165) | volar 경고(무해)·legal alias 경고(R8) |
 | R3 | PASS | (아래 2건) | 코드 20·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·빌드 | r3 json/txt(+PNG 로컬 189)+r3-i18n 20종 | 소셜 무제공시 단위테스트만·legal alias(R8) |
+| R4 | PASS | (아래 2건) | 코드 11·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·프로브 19·빌드 | r4 json/txt(+PNG 로컬 189)+r4-i18n 10종 | 차트·비즈니스 404(R5·R7)·legal alias(R8) |
 
 ## 항목 기록
 
@@ -76,3 +77,13 @@
 - 검증: tsc 0·vitest 60/60(신규 8)·checker PASS(allowlist에서 login/reset/oauth 제거, UNUSED 32=기존 18+동적키 14 실사용)·하네스 189/189 HTTP 200(오류 9=H-11 기존·리다이렉트 9/9·hScroll/tiny/unlabeled/noAlt 0)·5언어×2화면×2뷰포트 20종 무오류 캡처·빌드 20.5s.
 - 수습: ①vue-i18n `@` 링크문법 — emailPh를 `{'@'}`로, 체커 ICU 규칙에 리터럴 허용 추가. ②첫 R3 하네스의 하이드레이션 10건은 빌드 동시 실행이 .nuxt를 오염시킨 환경 사고(코드 회귀 아님) — fresh .nuxt 재실행분으로 증거 교체. 교훈: 빌드와 dev/하네스 절대 병행 금지. ③terminate 뒤 nuxt 좀비가 포트 점유 — 포트 주인 확인 후 PID kill.
 - 잔여: 로컬 엔진에 소셜 공급자 미설정이라 SocialButtons 실렌더 미확인(단위테스트로 커버, A1에서 실증). legal alias 경고는 R8.
+
+### WI-R4 (P1b-2) — 앱 셸·내비게이션 — PASS
+- AppLayout(user.vue→app.vue 개명·개편): 상단 내비 + 푸터 + 플레이어 + 모바일 탭바 + 큐/전체화면 상태. 본문 하단 여백=플레이어+탭바+safe-area(H-09).
+- 상단바 개편: 데스크톱 5항목(홈·탐색·플레이리스트·라이브러리·차트)+검색창(/explore?q)+[비즈니스]+언어+계정 메뉴(계정설정·스튜디오*·관리자*·로그아웃). 햄버거·드로어 삭제(H-15), 모바일 상단은 스크롤 시 숨김.
+- MobileTabBar(신규): 5탭 아이콘+라벨(신규 tabs 키 6언어, 전 언어 한 줄 확인). 계정 탭은 /account/security 고정(가드 경유, SSR 안전).
+- 푸터 개편: H-03 기술 스트립 삭제(allowlist 해제)+언어 선택 추가+요금제 링크(상단에서 이동).
+- 플레이어: 모바일 미니 64(2px 진행선, 파형 제거·H-15)+탭바 위 배치. FullscreenPlayer(신규, §2.4): 미니 탭/커버 클릭·Esc·큐/가사/라이선스 탭·D 우측 420 패널. 좋아요는 R6 엔진 없어 생략, ⋯ 대신 큐 버튼.
+- 검증: tsc 0·vitest 60·checker PASS(UNUSED 55=기존 32+미사용 nav 20+동적 3, R5~R11에서 재사용)·하네스 189/189(오류 9=H-11·리다이렉트 9/9·hScroll/tiny/unlabeled/noAlt 0)·프로브 19/19(데스크톱 8·모바일 5·재생중 6)·5언어 홈 10종 무오류·빌드 17.9s.
+- P1 수용 판정: 인증 플레이어 0·푸터 가림 0·모바일 5탭·5언어 캡처(인증 20+R3·공통 10) 전부 충족. P1 완결.
+- 잔여: /charts·/business 링크는 R5·R7까지 404 껍데기(정본 경로 선반영). 프로필 메뉴·비즈니스 콘솔 메뉴는 R8·R10. 좋아요 R6. legal alias R8.
