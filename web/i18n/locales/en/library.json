@@ -1,3 +1,31 @@
 {
-  "library": {}
+  "library": {
+    "title": "Library",
+    "tabLiked": "Liked tracks",
+    "tabRecent": "Recently played",
+    "tabSaved": "Saved playlists",
+    "tabFollows": "Following",
+    "myPlCard": "{count} of my playlists",
+    "playAll": "Play all",
+    "likedEmptyT": "No liked tracks yet",
+    "likedEmptyD": "Tap ♡ on tracks you love in Explore.",
+    "likedEmptyCta": "Explore",
+    "recentEmptyT": "No recent plays",
+    "recentEmptyD": "Play your first track.",
+    "savedEmptyT": "No saved playlists",
+    "savedEmptyD": "Save playlists you love.",
+    "followsCreatorsT": "Creators you follow",
+    "followsPlaylistsT": "Playlists you follow",
+    "followsEmptyT": "Not following anyone yet",
+    "followsEmptyD": "Follow favorite creators and playlists.",
+    "unfollow": "Unfollow",
+    "follow": "Follow",
+    "likeAria": "Like this track",
+    "unlikeAria": "Unlike this track",
+    "unsave": "Remove",
+    "toastLiked": "Liked.",
+    "toastUnliked": "Like removed.",
+    "toastFollowed": "Following.",
+    "toastUnfollowed": "Unfollowed."
+  }
 }

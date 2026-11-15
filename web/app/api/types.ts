@@ -150,10 +150,18 @@ export interface Album {
 export interface Playlist {
   id: string;
   ownerUserId: string;
+  ownerName?: string;
   title: string;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Follow {
+  targetType: 'creator' | 'playlist';
+  targetId: string;
+  displayName: string;
+  createdAt: string;
 }
 
 export interface PlaylistTrack {

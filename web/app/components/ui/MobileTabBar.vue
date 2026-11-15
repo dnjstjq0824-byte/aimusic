@@ -50,7 +50,7 @@ const tabs = [
   { to: '/', icon: 'home', labelKey: 'common.tabs.home', match: ['home'] },
   { to: '/explore', icon: 'compass', labelKey: 'common.tabs.explore', match: ['explore'] },
   { to: '/playlists', icon: 'list', labelKey: 'common.tabs.playlists', match: ['playlists', 'playlist-detail'] },
-  { to: '/my-library', icon: 'heart', labelKey: 'common.tabs.library', match: ['my-library'] },
+  { to: '/library', icon: 'heart', labelKey: 'common.tabs.library', match: ['library'] },
   { to: '/account/security', icon: 'user', labelKey: 'common.tabs.account', match: ['account-security', 'login', 'signup', 'signup-listener', 'signup-creator', 'signup-business'] },
 ];
 

@@ -60,14 +60,11 @@ web/app/pages/checkout/confirm.vue
 web/app/pages/checkout/index.vue
 web/app/pages/disputes.vue
 web/app/pages/legal/[code].vue
-web/app/pages/my-library.vue
 web/app/pages/partner/generations.vue
 web/app/pages/partner/index.vue
 web/app/pages/partner/stores.vue
 web/app/pages/partner/subscriptions.vue
 web/app/pages/partner/upload.vue
-web/app/pages/playlists/[id].vue
-web/app/pages/playlists/index.vue
 web/app/pages/pricing.vue
 web/app/pages/store/player.vue
 `.trim().split('\n'),

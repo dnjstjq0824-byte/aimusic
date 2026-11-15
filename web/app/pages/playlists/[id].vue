@@ -1,314 +1,458 @@
 <template>
   <div class="space-y-6">
-    <RouterLink to="/playlists" class="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-white transition-colors">
-      <span>← 플레이리스트로 돌아가기</span>
-    </RouterLink>
-
     <UiErrorBanner
       :message="error"
-      title="플레이리스트를 불러오지 못했습니다"
-      retry-label="다시 시도"
-      @retry="loadData"
+      :title="t('playlist.errTitle')"
+      :retry-label="t('track.retry')"
+      @retry="load"
     />
 
-    <div v-if="!error && loading" class="space-y-4">
-      <UiSkeleton height="h-32" width="w-full" rounded="xl" />
+    <div v-if="loading" class="space-y-4">
+      <UiSkeleton height="h-44" width="w-full" rounded="xl" />
       <UiSkeleton height="h-64" width="w-full" rounded="xl" />
     </div>
 
-    <div v-else-if="!error && playlist" class="space-y-6">
-      <!-- Playlist Header Hero -->
-      <UiCard class="relative overflow-hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-          <UiCoverArt :seed="playlist.id" :title="playlist.title" size="xl" rounded="xl" />
-          <div class="min-w-0 flex-1">
-            <span class="text-caption font-bold uppercase tracking-wider text-brand-400">플레이리스트</span>
-            <h1 class="font-display text-2xl sm:text-3xl font-black text-white tracking-tight truncate mt-0.5">
-              {{ playlist.title }}
-            </h1>
-            <p class="text-xs text-text-secondary mt-1">
-              {{ playlist.isPublic ? '공개 플레이리스트' : '비공개 플레이리스트' }}
-            </p>
-            <div class="mt-2 flex items-center gap-3 text-xs text-text-secondary">
-              <span>총 <strong>{{ tracks.length }}곡</strong></span>
-              <span>·</span>
-              <span>재생 큐 연동 완료</span>
-            </div>
+    <template v-else-if="!error && playlist">
+      <!-- Header -->
+      <section class="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <CoverMosaic :seeds="seeds" :title="playlist.title" size="lg" />
+        <div class="min-w-0 flex-1">
+          <p class="text-caption font-bold uppercase tracking-wider text-text-muted">
+            {{ playlist.isPublic ? t('playlist.detailPublic') : t('playlist.detailPrivate') }}
+          </p>
+          <h1 class="font-display mt-1 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
+            {{ playlist.title }}
+          </h1>
+          <p class="mt-1 text-xs text-text-secondary">
+            <span v-if="playlist.ownerName">{{ playlist.ownerName }} · </span>{{ metaLine }}
+          </p>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <UiButton variant="brand" size="sm" :disabled="tracks.length === 0" @click="playAll(false)">
+              {{ t('playlist.playAll') }}
+            </UiButton>
+            <UiButton variant="secondary" size="sm" :disabled="tracks.length === 0" @click="playAll(true)">
+              {{ t('playlist.shuffle') }}
+            </UiButton>
+            <UiButton v-if="ownerView" variant="outline" size="sm" @click="editOpen = true">
+              {{ t('playlist.editInfo') }}
+            </UiButton>
+            <UiButton v-else variant="outline" size="sm" @click="toggleSave">
+              {{ saved ? t('playlist.unsave') : t('playlist.save') }}
+            </UiButton>
+            <UiButton variant="outline" size="sm" @click="sharePlaylist">
+              {{ t('playlist.share') }}
+            </UiButton>
+            <UiMenu
+              v-if="!ownerView"
+              :items="followMenu"
+              :label="t('track.moreActions')"
+              @select="toggleFollow"
+            />
           </div>
         </div>
+      </section>
 
-        <div class="mt-6 flex flex-wrap items-center gap-2 pt-4 border-t border-surface-border">
-          <UiButton
-            variant="brand"
-            size="sm"
-            :disabled="tracks.length === 0"
-            @click="playAll(false)"
-          >
-            전체 재생
-          </UiButton>
-          <UiButton
-            variant="secondary"
-            size="sm"
-            :disabled="tracks.length === 0"
-            @click="playAll(true)"
-          >
-            셔플 재생
-          </UiButton>
-          <UiButton
-            variant="outline"
-            size="sm"
-            @click="editModalOpen = true"
-          >
-            정보 수정
-          </UiButton>
-        </div>
-      </UiCard>
-
-      <!-- Track List Table -->
-      <UiCard padding="none">
-        <template #header>
-          <div class="px-5 pt-3 flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
-            <span>트랙 목록 (순서 및 재생)</span>
-            <span>순서 조정</span>
-          </div>
-        </template>
-
-        <div v-if="tracks.length === 0" class="py-12">
-          <UiEmptyState
-            title="플레이리스트가 비어 있습니다"
-            description="음원 탐색 화면에서 좋아하는 AI 음악을 담아보세요."
-          >
-            <template #action>
-              <RouterLink to="/explore">
-                <UiButton variant="brand" size="sm">음원 탐색하러 가기</UiButton>
+      <!-- Tracks -->
+      <section :aria-label="t('playlist.tracksTitle')">
+        <div v-if="tracks.length === 0" class="py-10">
+          <UiEmptyState :title="t('playlist.trackEmptyT')" :description="t('playlist.trackEmptyD')">
+            <template v-if="isOwner" #action>
+              <RouterLink :to="localePath('/explore')">
+                <UiButton variant="secondary" size="sm">{{ t('playlist.trackEmptyCta') }}</UiButton>
               </RouterLink>
             </template>
           </UiEmptyState>
         </div>
-
-        <ul v-else class="divide-y divide-surface-border">
+        <ol v-else class="space-y-1">
           <li
-            v-for="(t, idx) in tracks"
-            :key="t.id"
-            class="flex items-center gap-3 px-4 py-3 hover:bg-surface-2/60 transition-colors"
-            :class="t.status !== 'READY' ? 'opacity-50' : ''"
+            v-for="(tr, i) in tracks"
+            :key="tr.id"
+            class="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1 transition-colors hover:border-surface-border hover:bg-surface-1"
+            @dragover.prevent="isOwner && onDragOver()"
+            @drop="isOwner && onDrop(i)"
           >
-            <!-- Track index / play -->
-            <button
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-text-primary hover:bg-brand-500 hover:text-on-brand transition-colors"
-              :disabled="t.status !== 'READY'"
-              @click="playTrack(t)"
+            <span
+              v-if="ownerView"
+              class="cursor-grab touch-none select-none text-text-muted"
+              draggable="true"
+              :aria-label="t('playlist.tracksTitle')"
+              @dragstart="onDragStart(i)"
             >
-              {{ idx + 1 }}
-            </button>
-
-            <!-- Title & Provider -->
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="9" cy="6" r="1.4" /><circle cx="15" cy="6" r="1.4" />
+                <circle cx="9" cy="12" r="1.4" /><circle cx="15" cy="12" r="1.4" />
+                <circle cx="9" cy="18" r="1.4" /><circle cx="15" cy="18" r="1.4" />
+              </svg>
+            </span>
+            <span v-else class="w-6 shrink-0 text-center font-mono text-xs text-text-muted">{{ i + 1 }}</span>
             <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <RouterLink
-                  :to="localePath({ name: 'track-detail', params: { id: t.id } })"
-                  class="font-bold text-white hover:text-brand-400 text-xs sm:text-sm truncate"
-                >
-                  {{ t.title }}
-                </RouterLink>
-                <AiBadge :track="t" />
-                <span v-if="t.status !== 'READY'" class="text-caption text-accent-crimson font-semibold">
-                  (임시조치/검수중)
-                </span>
-              </div>
-              <div class="text-caption text-text-muted">
-                {{ t.aiProvider }} · {{ fmtDuration(t.durationMs ?? 0) }}
-              </div>
+              <TrackRow
+                :track="tr"
+                @play="playFrom"
+                @enqueue="enqueue"
+                @add-to-playlist="openAddToPlaylist"
+                @report="openReport"
+              />
             </div>
-
-            <!-- Position controls & delete -->
-            <div class="flex items-center gap-1 text-xs">
-              <button
-                type="button"
-                class="rounded p-1.5 text-text-secondary hover:text-white hover:bg-surface-3 disabled:opacity-30"
-                :disabled="idx === 0"
-                :aria-label="`「${t.title}」 위로 이동`"
-                @click="moveTrack(idx, -1)"
-              >
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m18 15-6-6-6 6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="rounded p-1.5 text-text-secondary hover:text-white hover:bg-surface-3 disabled:opacity-30"
-                :disabled="idx === tracks.length - 1"
-                :aria-label="`「${t.title}」 아래로 이동`"
-                @click="moveTrack(idx, 1)"
-              >
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="rounded p-1.5 text-text-muted hover:text-accent-crimson hover:bg-surface-3 ml-2"
-                :aria-label="`「${t.title}」 플레이리스트에서 제거`"
-                @click="removeTrack(t.id)"
-              >
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            <UiMenu
+              v-if="ownerView"
+              :items="rowMenu"
+              :label="t('track.moreActions')"
+              @select="(idx) => onRowMenu(tr, i, idx)"
+            />
           </li>
-        </ul>
-      </UiCard>
-    </div>
+        </ol>
+      </section>
+    </template>
 
-    <!-- Edit Info Modal -->
-    <UiModal
-      v-model="editModalOpen"
-      title="플레이리스트 정보 수정"
-      @close="editModalOpen = false"
-    >
-      <form v-if="playlist" class="space-y-4" @submit.prevent="saveEdit">
-        <UiInput
-          v-model="editTitle"
-          label="제목"
-          required
-        />
-        <UiCheckbox v-model="editIsPublic">
-          공개 플레이리스트로 설정 (다른 사용자에게 공유 가능)
-        </UiCheckbox>
-        <div class="flex justify-end gap-2 pt-2">
-          <UiButton variant="ghost" size="sm" @click="editModalOpen = false">취소</UiButton>
-          <UiButton variant="brand" size="sm" type="submit" :loading="saving">저장하기</UiButton>
+    <UiModal v-if="isOwner" v-model="editOpen" :title="t('playlist.editInfo')" max-width="sm">
+      <div class="space-y-4 p-5">
+        <UiInput v-model="editTitle" :label="t('playlist.editTitle')" required />
+        <UiCheckbox v-model="editPublic">{{ t('playlist.editVisibility') }}</UiCheckbox>
+        <div class="flex gap-2">
+          <UiButton variant="secondary" size="md" class="flex-1" @click="editOpen = false">
+            {{ t('playlist.editCancel') }}
+          </UiButton>
+          <UiButton variant="brand" size="md" class="flex-1" :loading="busy" :disabled="!editTitle.trim()" @click="submitEdit">
+            {{ t('playlist.editSave') }}
+          </UiButton>
         </div>
-      </form>
+      </div>
     </UiModal>
+
+    <DisputeReportModal
+      v-if="reportTarget"
+      :track-id="reportTarget.id"
+      :track-title="reportTarget.title"
+      @close="reportTarget = null"
+      @reported="onReported"
+    />
+
+    <UiPlaylistPicker
+      :model-value="Boolean(playlistTargetTrack)"
+      :track-title="playlistTargetTrack?.title ?? ''"
+      :playlists="playlists.playlists"
+      :create-loading="creatingPlaylist"
+      @update:model-value="playlistTargetTrack = $event ? playlistTargetTrack : null"
+      @select="addTrackToPlaylist"
+      @create="createNewPlaylist"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
-import { playlistApi } from '@/api/endpoints';
-import { errMessageOf } from '@/api/client';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { playlistApi, trackApi, engagementApi } from '@/api/endpoints';
+import { useAuthStore } from '@/stores/authStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
-import type { Playlist, Track } from '@/api/types';
+import { useApiError } from '@/composables/useApiError';
+import { useFormat } from '@/composables/useFormat';
+import type { Track, Playlist } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
-import UiCard from '@/components/ui/UiCard.vue';
-import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import UiCheckbox from '@/components/ui/UiCheckbox.vue';
+import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
-import UiCheckbox from '@/components/ui/UiCheckbox.vue';
+import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import UiModal from '@/components/ui/UiModal.vue';
+import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
-import UiEmptyState from '@/components/ui/UiEmptyState.vue';
-import AiBadge from '@/components/legal/AiBadge.vue';
-const localePath = useLocalePath();
+import CoverMosaic from '@/components/ui/CoverMosaic.vue';
+import TrackRow from '@/components/TrackRow.vue';
+import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 
+const { t } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
+const router = useRouter();
+const auth = useAuthStore();
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const toast = useToast();
+const apiError = useApiError();
+const fmt = useFormat();
 
 const playlist = ref<Playlist | null>(null);
 const tracks = ref<Track[]>([]);
+const seeds = ref<string[]>([]);
 const loading = ref(true);
+const busy = ref(false);
 const error = ref<string | null>(null);
+const saved = ref(false);
+const following = ref(false);
 
-const editModalOpen = ref(false);
+const editOpen = ref(false);
 const editTitle = ref('');
-const editIsPublic = ref(false);
-const saving = ref(false);
+const editPublic = ref(false);
+const reportTarget = ref<Track | null>(null);
+const playlistTargetTrack = ref<Track | null>(null);
+const creatingPlaylist = ref(false);
+const dragFrom = ref<number | null>(null);
 
-function fmtDuration(ms?: number | null) {
-  if (!ms) return '0:00';
-  const totalSec = Math.round(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+const isOwner = computed(
+  () => auth.isAuthenticated && !!playlist.value && playlist.value.ownerUserId === auth.userId,
+);
+// SSR-safe: owner controls resolve after mount (SSR always renders guest view).
+const ready = ref(false);
+const ownerView = computed(() => ready.value && isOwner.value);
+
+const metaLine = computed(() => {
+  const count = fmt.number(tracks.value.length);
+  const totalMs = tracks.value.reduce((a, tr) => a + (tr.durationMs ?? 0), 0);
+  const mins = Math.floor(totalMs / 60000);
+  if (mins >= 60) {
+    return t('playlist.metaHM', { count, h: fmt.number(Math.floor(mins / 60)), m: fmt.number(mins % 60) });
+  }
+  return t('playlist.metaM', { count, m: fmt.number(mins) });
+});
+
+const rowMenu = computed<MenuItem[]>(() => [
+  { label: t('playlist.trackUp') },
+  { label: t('playlist.trackDown') },
+  { label: t('playlist.trackRemove'), danger: true },
+]);
+
+const followMenu = computed<MenuItem[]>(() => [
+  { label: following.value ? t('library.unfollow') : t('library.follow') },
+]);
+
+function onRowMenu(tr: Track, index: number, menuIndex: number): void {
+  if (menuIndex === 0) void moveTrack(index, -1);
+  else if (menuIndex === 1) void moveTrack(index, 1);
+  else void removeTrack(tr.id);
 }
 
-async function loadData() {
+async function load(): Promise<void> {
   const id = route.params.id as string;
   if (!id) return;
   loading.value = true;
   error.value = null;
   try {
-    playlist.value = await playlistApi.get(id);
-    await playlists.fetchTracks(id);
-    tracks.value = playlists.entryTracks[id] ?? [];
-    editTitle.value = playlist.value.title;
-    editIsPublic.value = playlist.value.isPublic;
-  } catch (err) {
-    error.value = errMessageOf(err);
+    const [pl, entries] = await Promise.all([
+      playlistApi.get(id),
+      playlistApi.listTracks(id),
+    ]);
+    playlist.value = pl;
+    editTitle.value = pl.title;
+    editPublic.value = pl.isPublic;
+    const resolved: Track[] = [];
+    for (const entry of entries ?? []) {
+      try {
+        resolved.push(await trackApi.get(entry.trackId));
+      } catch {
+        // Skip entries whose track vanished.
+      }
+    }
+    tracks.value = resolved;
+    seeds.value = resolved.slice(0, 4).map((x) => x.id);
+    if (auth.isAuthenticated && !isOwner.value) {
+      try {
+        saved.value = (await playlistApi.saveState(id)).saved;
+        const mine = await engagementApi.follows('playlist', 100);
+        following.value = (mine ?? []).some((f) => f.targetId === id);
+      } catch {
+        saved.value = false;
+        following.value = false;
+      }
+    }
+  } catch (err: unknown) {
+    error.value = apiError(err);
   } finally {
     loading.value = false;
   }
 }
 
-function playTrack(t: Track) {
-  const ready = tracks.value.filter((tr) => tr.status === 'READY');
-  player.setQueue(ready, t.id);
-}
-
-function playAll(shuffle: boolean) {
-  const ready = tracks.value.filter((tr) => tr.status === 'READY');
-  if (ready.length === 0) return;
-  let q = [...ready];
+function playAll(shuffle: boolean): void {
+  if (tracks.value.length === 0) return;
+  const list = [...tracks.value];
   if (shuffle) {
-    q = q.sort(() => Math.random() - 0.5);
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j]!, list[i]!];
+    }
   }
-  player.setQueue(q, q[0]?.id);
-  toast.success(shuffle ? '셔플 재생을 시작합니다.' : '순차 재생을 시작합니다.');
+  player.setQueue(list, list[0]?.id);
 }
 
-async function removeTrack(trackId: string) {
+function playFrom(tr: Track): void {
+  const idx = tracks.value.findIndex((x) => x.id === tr.id);
+  player.setQueue(tracks.value, tr.id);
+  if (idx < 0) player.setQueue([tr], tr.id);
+}
+
+function enqueue(tr: Track): void {
+  player.enqueue(tr);
+  toast.info(t('track.toastQueued'));
+}
+
+function requireLogin(): boolean {
+  if (auth.isAuthenticated) return true;
+  toast.info(t('playlist.toastNeedLogin'));
+  void router.push(localePath({ name: 'login', query: { redirect: route.fullPath } }));
+  return false;
+}
+
+async function toggleSave(): Promise<void> {
+  if (!requireLogin() || !playlist.value) return;
+  try {
+    if (saved.value) {
+      await playlistApi.unsave(playlist.value.id);
+      saved.value = false;
+      toast.info(t('playlist.toastUnsaved'));
+    } else {
+      await playlistApi.save(playlist.value.id);
+      saved.value = true;
+      toast.success(t('playlist.toastSaved'));
+    }
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  }
+}
+
+async function toggleFollow(): Promise<void> {
+  if (!requireLogin() || !playlist.value) return;
+  try {
+    if (following.value) {
+      await engagementApi.unfollow('playlist', playlist.value.id);
+      following.value = false;
+      toast.info(t('library.toastUnfollowed'));
+    } else {
+      await engagementApi.follow('playlist', playlist.value.id);
+      following.value = true;
+      toast.success(t('library.toastFollowed'));
+    }
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  }
+}
+
+async function sharePlaylist(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success(t('playlist.toastShared'));
+  } catch {
+    toast.error(t('track.toastCopyFailed'));
+  }
+}
+
+function openAddToPlaylist(tr: Track): void {
+  if (!requireLogin()) return;
+  playlistTargetTrack.value = tr;
+}
+
+async function addTrackToPlaylist(playlistId: string): Promise<void> {
+  if (!playlistTargetTrack.value) return;
+  try {
+    await playlistApi.addTrack(playlistId, playlistTargetTrack.value.id);
+    toast.success(t('track.toastAdded'));
+    playlistTargetTrack.value = null;
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  }
+}
+
+async function createNewPlaylist(title: string): Promise<void> {
+  creatingPlaylist.value = true;
+  try {
+    const created = await playlistApi.create(title, false);
+    playlists.playlists.unshift(created);
+    if (playlistTargetTrack.value) {
+      await addTrackToPlaylist(created.id);
+    }
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  } finally {
+    creatingPlaylist.value = false;
+  }
+}
+
+function openReport(tr: Track): void {
+  if (!requireLogin()) return;
+  reportTarget.value = tr;
+}
+
+function onReported(): void {
+  reportTarget.value = null;
+  toast.success(t('track.toastReported'));
+}
+
+async function submitEdit(): Promise<void> {
+  if (!playlist.value) return;
+  const title = editTitle.value.trim();
+  if (!title) return;
+  busy.value = true;
+  try {
+    playlist.value = await playlistApi.update(playlist.value.id, title, editPublic.value);
+    toast.success(t('playlist.toastUpdated'));
+    editOpen.value = false;
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function removeTrack(trackId: string): Promise<void> {
   if (!playlist.value) return;
   try {
     await playlistApi.removeTrack(playlist.value.id, trackId);
-    tracks.value = tracks.value.filter((t) => t.id !== trackId);
-    toast.success('트랙이 제거되었습니다.');
-  } catch (err) {
-    toast.error(errMessageOf(err), '제거 실패');
+    tracks.value = tracks.value.filter((x) => x.id !== trackId);
+    toast.success(t('playlist.toastRemoved'));
+  } catch (err: unknown) {
+    toast.error(apiError(err));
   }
 }
 
-async function moveTrack(idx: number, delta: number) {
+async function moveTrack(index: number, delta: -1 | 1): Promise<void> {
   if (!playlist.value) return;
-  const targetIdx = idx + delta;
-  if (targetIdx < 0 || targetIdx >= tracks.value.length) return;
-
-  const temp = tracks.value[idx];
-  const target = tracks.value[targetIdx];
-  if (temp === undefined || target === undefined) return;
-  tracks.value[idx] = target;
-  tracks.value[targetIdx] = temp;
-
-  try {
-    await playlistApi.reorder(playlist.value.id, tracks.value.map((t) => t.id));
-    toast.info('순서가 저장되었습니다.');
-  } catch (err) {
-    toast.error(errMessageOf(err), '순서 저장 실패');
-  }
+  const to = index + delta;
+  if (to < 0 || to >= tracks.value.length) return;
+  const next = [...tracks.value];
+  const [moved] = next.splice(index, 1);
+  if (!moved) return;
+  next.splice(to, 0, moved);
+  tracks.value = next;
+  await persistOrder();
 }
 
-async function saveEdit() {
-  if (!playlist.value || !editTitle.value.trim()) return;
-  saving.value = true;
+function onDragStart(index: number): void {
+  dragFrom.value = index;
+}
+
+function onDragOver(): void {
+  // Required to allow drop; reorder commits on drop.
+}
+
+async function onDrop(index: number): Promise<void> {
+  const from = dragFrom.value;
+  dragFrom.value = null;
+  if (from == null || from === index || !playlist.value) return;
+  const next = [...tracks.value];
+  const [moved] = next.splice(from, 1);
+  if (!moved) return;
+  next.splice(index, 0, moved);
+  tracks.value = next;
+  await persistOrder();
+}
+
+async function persistOrder(): Promise<void> {
+  if (!playlist.value) return;
   try {
-    const updated = await playlistApi.update(playlist.value.id, editTitle.value.trim(), editIsPublic.value);
-    playlist.value = updated;
-    editModalOpen.value = false;
-    toast.success('플레이리스트 정보가 수정되었습니다.');
-  } catch (err) {
-    toast.error(errMessageOf(err), '수정 실패');
-  } finally {
-    saving.value = false;
+    await playlistApi.reorder(playlist.value.id, tracks.value.map((x) => x.id));
+    toast.success(t('playlist.toastReordered'));
+  } catch (err: unknown) {
+    toast.error(apiError(err));
   }
 }
 
 onMounted(() => {
-  void loadData();
+  ready.value = true;
+  void load();
+  if (auth.isAuthenticated) {
+    void playlists.fetchMine();
+  }
 });
 </script>

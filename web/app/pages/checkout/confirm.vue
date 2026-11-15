@@ -35,7 +35,7 @@
         </p>
       </UiCard>
       <div class="flex justify-end gap-2">
-        <RouterLink to="/my-library">
+        <RouterLink to="/library">
           <UiButton variant="brand" size="md">내 라이브러리로 이동</UiButton>
         </RouterLink>
       </div>

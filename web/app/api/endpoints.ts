@@ -12,6 +12,7 @@ import type {
   DeviceQueue,
   DSPKit,
   FinalizeOutput,
+  Follow,
   GenerationJob,
   HeartbeatOutput,
   LegalTerm,
@@ -333,6 +334,15 @@ export const playlistApi = {
   listPublic(limit = 8) {
     return unwrap<Playlist[]>(api.get('/playlists/public', { params: { limit } }));
   },
+  saveState(id: string) {
+    return unwrap<{ saved: boolean }>(api.get(`/playlists/${encodeURIComponent(id)}/save`));
+  },
+  save(id: string) {
+    return unwrap<{ saved: boolean; added: boolean }>(api.post(`/playlists/${encodeURIComponent(id)}/save`));
+  },
+  unsave(id: string) {
+    return unwrap<{ saved: boolean; removed: boolean }>(api.delete(`/playlists/${encodeURIComponent(id)}/save`));
+  },
   create(title: string, isPublic = false) {
     return unwrap<Playlist>(api.post('/playlists', { title, isPublic }));
   },
@@ -356,6 +366,35 @@ export const playlistApi = {
   },
   reorder(id: string, trackIds: string[]) {
     return unwrap<{ reordered: boolean }>(api.put(`/playlists/${encodeURIComponent(id)}/reorder`, { trackIds }));
+  },
+};
+
+export const engagementApi = {
+  likeState(trackId: string) {
+    return unwrap<{ liked: boolean }>(api.get(`/likes/tracks/${encodeURIComponent(trackId)}`));
+  },
+  like(trackId: string) {
+    return unwrap<{ liked: boolean; added: boolean }>(api.post(`/likes/tracks/${encodeURIComponent(trackId)}`));
+  },
+  unlike(trackId: string) {
+    return unwrap<{ liked: boolean; removed: boolean }>(api.delete(`/likes/tracks/${encodeURIComponent(trackId)}`));
+  },
+  likedTracks(limit = 50) {
+    return unwrap<Track[]>(api.get('/likes/tracks', { params: { limit } }));
+  },
+  savedPlaylists(limit = 50) {
+    return unwrap<Playlist[]>(api.get('/saves/playlists', { params: { limit } }));
+  },
+  follow(targetType: 'creator' | 'playlist', targetId: string) {
+    return unwrap<{ following: boolean; added: boolean }>(api.post('/follows', { targetType, targetId }));
+  },
+  unfollow(targetType: 'creator' | 'playlist', targetId: string) {
+    return unwrap<{ following: boolean; removed: boolean }>(
+      api.delete(`/follows/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}`),
+    );
+  },
+  follows(targetType?: 'creator' | 'playlist', limit = 50) {
+    return unwrap<Follow[]>(api.get('/follows', { params: { type: targetType, limit } }));
   },
 };
 

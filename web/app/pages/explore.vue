@@ -55,7 +55,7 @@
             <div class="flex gap-1 rounded-lg border border-surface-border bg-surface-1 p-1" role="group" :aria-label="t('explore.viewList')">
               <button
                 type="button"
-                class="rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
+                class="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
                 :class="view === 'list' ? 'bg-brand-500 text-on-brand' : 'text-text-secondary hover:text-white'"
                 :aria-pressed="view === 'list'"
                 @click="view = 'list'"
@@ -64,7 +64,7 @@
               </button>
               <button
                 type="button"
-                class="rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
+                class="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-bold transition-colors"
                 :class="view === 'grid' ? 'bg-brand-500 text-on-brand' : 'text-text-secondary hover:text-white'"
                 :aria-pressed="view === 'grid'"
                 @click="view = 'grid'"

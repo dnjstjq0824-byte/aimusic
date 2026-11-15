@@ -85,6 +85,16 @@
             <UiButton variant="brand" size="sm" :disabled="track.status !== 'READY'" @click="play">
               {{ t('track.playNow') }}
             </UiButton>
+            <UiButton
+              variant="outline"
+              size="sm"
+              :aria-pressed="liked"
+              :aria-label="liked ? t('library.unlikeAria') : t('library.likeAria')"
+              :class="liked ? 'border-accent-crimson/60 text-accent-crimson' : ''"
+              @click="toggleLike"
+            >
+              <span aria-hidden="true">{{ liked ? '♥' : '♡' }}</span>
+            </UiButton>
             <UiButton variant="secondary" size="sm" @click="openAddToPlaylist()">
               {{ t('track.addToPlaylist') }}
             </UiButton>
@@ -323,7 +333,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { trackApi, playlistApi, userBlocksApi, adminApi } from '@/api/endpoints';
+import { trackApi, playlistApi, userBlocksApi, adminApi, engagementApi } from '@/api/endpoints';
 import { errCodeOf } from '@/api/client';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
@@ -374,6 +384,8 @@ const inPlaylists = ref<Playlist[]>([]);
 const canIssueCert = computed(
   () => auth.isAdmin && track.value?.status === 'READY' && cert.value === null,
 );
+
+const liked = ref(false);
 
 const reportModalOpen = ref(false);
 const reportTarget = ref<Track | null>(null);
@@ -473,6 +485,9 @@ async function loadTrack(): Promise<void> {
   try {
     track.value = await trackApi.get(id);
     cert.value = await trackApi.getCertificate(id).catch(() => null);
+    if (auth.isAuthenticated) {
+      liked.value = await engagementApi.likeState(id).then((s) => s.liked, () => false);
+    }
     void loadRelated();
   } catch (err: unknown) {
     error.value = apiError(err);
@@ -519,6 +534,23 @@ async function issueCert(): Promise<void> {
 function play(): void {
   if (!track.value) return;
   player.setQueue([track.value], track.value.id);
+}
+
+async function toggleLike(): Promise<void> {
+  if (!track.value || !requireLogin()) return;
+  try {
+    if (liked.value) {
+      await engagementApi.unlike(track.value.id);
+      liked.value = false;
+      toast.info(t('library.toastUnliked'));
+    } else {
+      await engagementApi.like(track.value.id);
+      liked.value = true;
+      toast.success(t('library.toastLiked'));
+    }
+  } catch (err: unknown) {
+    toast.error(apiError(err));
+  }
 }
 
 function playOther(tr: Track): void {

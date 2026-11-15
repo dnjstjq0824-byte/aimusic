@@ -9,7 +9,7 @@
             type="button"
             role="tab"
             :aria-selected="window === w.id"
-            class="rounded-md px-3 py-1.5 text-xs font-bold transition-colors"
+            class="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-bold transition-colors"
             :class="window === w.id ? 'bg-brand-500 text-on-brand' : 'text-text-secondary hover:text-white'"
             @click="selectWindow(w.id)"
           >

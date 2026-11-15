@@ -33,9 +33,9 @@
             {{ t('common.nav.playlists') }}
           </RouterLink>
           <RouterLink
-            to="/my-library"
+            to="/library"
             class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'my-library' ? 'text-white bg-surface-2 font-semibold' : ''"
+            :class="routeName === 'library' ? 'text-white bg-surface-2 font-semibold' : ''"
           >
             {{ t('common.nav.library') }}
           </RouterLink>

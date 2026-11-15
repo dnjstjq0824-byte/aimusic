@@ -8,6 +8,7 @@ import { resolveLocale, writeStoredLocale } from '@/utils/locale';
 const PUBLIC_BASE_NAMES = new Set([
   'home',
   'explore',
+  'charts',
   'playlists',
   'playlist-detail',
   'track-detail',

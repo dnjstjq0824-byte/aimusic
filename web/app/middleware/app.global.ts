@@ -5,12 +5,13 @@ import { useToast } from '@/composables/useToast';
 import { safeRedirect } from '@/utils/redirect';
 
 const AUTH_REQUIRED = new Set([
-  'my-library',
+  'library',
+  'me-playlists',
   'checkout',
   'checkout-confirm',
-  'playlist-detail',
   'dispute-center',
   'account-security',
+  'account-billing',
 ]);
 
 function layoutFor(path: string): string | false {
@@ -64,6 +65,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Tokenless reset is the forgot screen (R3 split).
   if (name === 'reset-password' && (typeof to.query.token !== 'string' || to.query.token === '')) {
     return navigateTo('/forgot-password', { redirectCode: 301 });
+  }
+  // R6 split: the old combined library lives at /library now.
+  // Path-based: the my-library route no longer exists ([...slug] would 404).
+  if (to.path === '/my-library') {
+    return navigateTo('/library', { redirectCode: 301 });
   }
 
   const localePath = useLocalePath();

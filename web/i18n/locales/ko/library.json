@@ -1,3 +1,31 @@
 {
-  "library": {}
+  "library": {
+    "title": "라이브러리",
+    "tabLiked": "좋아요한 곡",
+    "tabRecent": "최근 재생",
+    "tabSaved": "저장한 플레이리스트",
+    "tabFollows": "팔로우 중",
+    "myPlCard": "내 플레이리스트 {count}개",
+    "playAll": "전체 재생",
+    "likedEmptyT": "아직 좋아요한 곡이 없어요",
+    "likedEmptyD": "탐색에서 마음에 드는 곡에 ♡를 눌러보세요.",
+    "likedEmptyCta": "탐색하기",
+    "recentEmptyT": "최근 재생 기록이 없어요",
+    "recentEmptyD": "첫 곡을 들어보세요.",
+    "savedEmptyT": "저장한 플레이리스트가 없어요",
+    "savedEmptyD": "마음에 드는 플레이리스트를 저장해 보세요.",
+    "followsCreatorsT": "팔로우한 크리에이터",
+    "followsPlaylistsT": "팔로우한 플레이리스트",
+    "followsEmptyT": "아직 팔로우가 없어요",
+    "followsEmptyD": "좋아하는 크리에이터와 플레이리스트를 팔로우해 보세요.",
+    "unfollow": "언팔로우",
+    "follow": "팔로우하기",
+    "likeAria": "좋아요 누르기",
+    "unlikeAria": "좋아요 취소하기",
+    "unsave": "저장 해제",
+    "toastLiked": "좋아요를 눌렀습니다.",
+    "toastUnliked": "좋아요를 취소했습니다.",
+    "toastFollowed": "팔로우했습니다.",
+    "toastUnfollowed": "언팔로우했습니다."
+  }
 }
