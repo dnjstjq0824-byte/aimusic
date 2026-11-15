@@ -132,6 +132,8 @@ type MailConfig struct {
 	SMTPPass string
 	From     string
 	FromName string
+	// NotifyEmail receives ops alerts (business inquiries). Empty disables.
+	NotifyEmail string
 }
 
 // GenerationConfig points the worker at an external GPU generation server
@@ -224,6 +226,7 @@ func Load() (*Config, error) {
 		SMTPPort: getenvInt("SMTP_PORT", 587),
 		SMTPUser: os.Getenv("SMTP_USER"),
 		SMTPPass: os.Getenv("SMTP_PASS"),
+		NotifyEmail: os.Getenv("OPS_NOTIFY_EMAIL"),
 		From:     getenv("MAIL_FROM", "no-reply@avibemusic.com"),
 		FromName: getenv("MAIL_FROM_NAME", "AVIBE"),
 	}

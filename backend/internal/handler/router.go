@@ -81,6 +81,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	billingH := &BillingHandler{Billing: d.Services.Billing}
 	deviceH := &DeviceHandler{Repos: d.Repos, Services: d.Services, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
 	certH := &CertificateHandler{Services: d.Services}
+	bizH := &BusinessHandler{Business: d.Services.Business}
 
 	v1 := r.Group("/api/v1")
 
@@ -145,6 +146,10 @@ func SetupRouter(d *Deps) *gin.Engine {
 	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
 	tracks.GET("/:id/playlists", trackH.TrackPlaylists)
 	v1.GET("/charts", trackH.Charts)
+
+	biz := v1.Group("/business")
+	biz.POST("/inquiries", RateLimit(1, 5), bizH.SubmitInquiry)
+	v1.POST("/waitlist", RateLimit(1, 5), bizH.JoinWaitlist)
 	certs := v1.Group("/certificates")
 	certs.GET("/:number", certH.VerifyCertificate)
 	tracks.GET("/:id/stream", JWTAuth(d.Services.Auth), RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), trackH.Stream)
@@ -256,6 +261,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	admin.GET("/partners/:partnerId/settlement", adminH.GetPartnerSettlement)
 	admin.GET("/stores", adminH.ListStores)
 	admin.POST("/stores/:id/verify", adminH.VerifyStore)
+	admin.GET("/inquiries", bizH.ListInquiries)
+	admin.PUT("/inquiries/:id", bizH.SetInquiryStatus)
 
 	storeDevice := v1.Group("/store/device")
 	storeDevice.POST("/claim", deviceH.ClaimDevice)

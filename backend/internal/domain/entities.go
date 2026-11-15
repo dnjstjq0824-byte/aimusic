@@ -493,6 +493,31 @@ type Playlist struct {
 	UpdatedAt          time.Time `json:"updatedAt"`
 }
 
+// BusinessInquiry is one B2B sales inquiry (R7).
+type BusinessInquiry struct {
+	ID           string    `json:"id"`
+	Company      string    `json:"company"`
+	Country      string    `json:"country"`
+	StoreCount   int       `json:"storeCount"`
+	UseCase      string    `json:"useCase"`
+	ContactName  string    `json:"contactName"`
+	ContactEmail string    `json:"contactEmail"`
+	ContactPhone string    `json:"contactPhone"`
+	Message      string    `json:"message"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+// WaitlistEntry is one /create waitlist signup (R7, shared with G5).
+type WaitlistEntry struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Interest  string    `json:"interest"`
+	Locale    string    `json:"locale"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 // Follow is one resolved follow row (creator display name or playlist title).
 type Follow struct {
 	TargetType  string    `json:"targetType"`

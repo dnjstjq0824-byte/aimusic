@@ -53,6 +53,9 @@
 #        save/unsave/state/list (+ private foreign 403), follow/unfollow/list
 #        (+ bad type 400), N-01 public detail guest 200 (+ ownerName),
 #        private detail guest 403
+#   T17  business inquiries + waitlist (R7): submit 201 + row, honeypot 200
+#        without row, invalid 400, admin list/status (+ guest 401, bad status
+#        400), waitlist join + idempotent rejoin + bad email 400
 #
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
@@ -1551,6 +1554,42 @@ assert_status "T16 N-01 public detail guest" "200" "$code"
 assert_contains "T16 guest owner name" '"ownerName"' "$(cat "$BODY")"
 code="$(api GET "/playlists/$PLAYLIST_ID" "" "")"
 assert_status "T16 N-01 private detail guest -> 403" "403" "$code"
+
+section "T17 business inquiries + waitlist (R7)"
+code="$(api POST "/auth/login" "" "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$PW\"}")"
+ADMIN_TOKEN="$(jget "data.tokens.accessToken")"
+T17_MAIL="owner-e2e-$STAMP@example.com"
+code="$(api POST "/business/inquiries" "" "{\"company\":\"E2E Cafe $STAMP\",\"country\":\"KR\",\"storeCount\":3,\"useCase\":\"cafe\",\"contactName\":\"E2E Owner\",\"contactEmail\":\"$T17_MAIL\",\"contactPhone\":\"010-0000-0000\",\"message\":\"E2E inquiry body\"}")"
+assert_status "T17 inquiry submit" "201" "$code"
+T17_QID="$(jget "data.id")"
+if [ -z "$T17_QID" ]; then fail "T17 inquiry id empty"; else pass "T17 inquiry id $T17_QID"; fi
+T17_ROWS="$(psql_q "SELECT COUNT(*) FROM business_inquiries WHERE contact_email='$T17_MAIL';" | tr -d ' \r\n')"
+assert_eq "T17 inquiry row stored" "1" "$T17_ROWS"
+code="$(api POST "/business/inquiries" "" "{\"company\":\"Spam Bot\",\"contactEmail\":\"spam-$STAMP@example.com\",\"message\":\"spam\",\"website\":\"http://spam.example\"}")"
+assert_status "T17 honeypot fake success" "200" "$code"
+T17_SPAM="$(psql_q "SELECT COUNT(*) FROM business_inquiries WHERE contact_email='spam-$STAMP@example.com';" | tr -d ' \r\n')"
+assert_eq "T17 honeypot not stored" "0" "$T17_SPAM"
+code="$(api POST "/business/inquiries" "" '{"company":"","contactEmail":"bad","message":"x"}')"
+assert_status "T17 invalid inquiry -> 400" "400" "$code"
+code="$(api GET "/admin/inquiries?limit=50" "$ADMIN_TOKEN" "")"
+assert_status "T17 admin list" "200" "$code"
+assert_contains "T17 admin match" "$T17_QID" "$(cat "$BODY")"
+code="$(api GET "/admin/inquiries?limit=50" "" "")"
+assert_status "T17 admin list guest -> 401" "401" "$code"
+code="$(api PUT "/admin/inquiries/$T17_QID" "$ADMIN_TOKEN" '{"status":"CONTACTED"}')"
+assert_status "T17 admin status change" "200" "$code"
+assert_contains "T17 status CONTACTED" '"status":"CONTACTED"' "$(cat "$BODY")"
+code="$(api PUT "/admin/inquiries/$T17_QID" "$ADMIN_TOKEN" '{"status":"BOGUS"}')"
+assert_status "T17 bad status -> 400" "400" "$code"
+T17_WMAIL="wait-e2e-$STAMP@example.com"
+code="$(api POST "/waitlist" "" "{\"email\":\"$T17_WMAIL\",\"interest\":\"creator\",\"locale\":\"ko\"}")"
+assert_status "T17 waitlist join" "200" "$code"
+assert_contains "T17 waitlist registered" '"registered":true' "$(cat "$BODY")"
+code="$(api POST "/waitlist" "" "{\"email\":\"$T17_WMAIL\",\"interest\":\"creator\",\"locale\":\"ko\"}")"
+assert_status "T17 waitlist rejoin idempotent" "200" "$code"
+assert_contains "T17 waitlist existed" '"registered":false' "$(cat "$BODY")"
+code="$(api POST "/waitlist" "" '{"email":"not-an-email"}')"
+assert_status "T17 waitlist bad email -> 400" "400" "$code"
 
 section "Summary"
 qdepth_final="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"
