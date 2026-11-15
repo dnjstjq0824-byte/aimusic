@@ -10,7 +10,7 @@
 | R0 | PASS | f76dd5a | 16 + evidence | 하네스 165/165 | baseline-samples 6종 | axe-core 미실행(의존성 상한) |
 | P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 | R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
-| R2 | IN PROGRESS (90%) | eae45f0(WIP) | 2분할 예정 | tsc·vitest 52·checker PASS·스팟 EN/JA/TH/ZH | r2-*-1440/390+switcher | 전체 하네스·prod 빌드 미완 |
+| R2 | PASS | eae45f0+eab2387+fix | WIP+수정 1·증거 json/txt | tsc0·vitest 52·checker·하네스 165/165·빌드 | r2 baseline.json+screens.txt(+PNG 로컬 165) | volar 경고(무해)·legal alias 경고(R8) |
 
 ## 항목 기록
 
@@ -51,7 +51,7 @@
 - 잔여: 장식용 raw 팔레트(gradient용 blue/teal/amber 등) 일부 잔존 — 수용 기준(neutral·임의크기)은 만족. LocaleSwitcher 실동작은 R2에서 연결.
 - 후속 발견(WI-R2에서 수습): R1 스윕이 `text-[#04121a]` 19건을 `-on-brand`로 깨뜨림(PS 인라인 정규식 인용 간섭) + `hover:`/`selection:` 접두 4건 손실. R2a에 포함해 복구, prefix 복원 확인済. 교훈 강화: 인라인 node -e/PS 정규식 금지, 파일 스크립트만.
 
-### WI-R2 (P1b) — i18n 기반 — IN PROGRESS
+### WI-R2 (P1b) — i18n 기반 — PASS
 - 모듈 @nuxtjs/i18n 10.6.0 exact(+@nuxt/kit 호이스팅). 전략 prefix_except_default(ko), langDir ../i18n/locales, files 배열 지연 로딩, vueI18n은 파일 방식(i18n.config.ts, 인라인 불가).
 - 로케일 5+1: ko/en/ja/zh-cn/th + en-XA(dev 의사로케일, 생성 스크립트). 네임스페이스 17종 골격, common/errors/player 완성(ko 원문·en 자필·ja/zh/th machine-draft).
 - 공개 페이지만 접두(27페이지 defineI18nRoute(false)), 미들웨어 ___xx 접미 처리 + i18n 타이틀(반응형) + 가드 토스트 + 후행슬래시 301(로케일 루트 제외).
@@ -60,3 +60,7 @@
 - 검증 중간: tsc 0·vitest 52/52·check-i18n PASS·스팟 4언어 내비/플레이어/타이틀/배너/전환 전부 PASS. 전체 하네스·prod 빌드는 미완.
 - WIP 커밋 (아래): 구현 완료, 검증 2건 남음. 재개 시 순서: ①dev 기동(npm run dev, 15173) ②하네스 setup+run → evidence/r2 (15분, historic: 캐시 문제 시 .nuxt 삭제 후 재시작) ③npm run build ④결과 기입 후 R2a/R2b 분할 커밋 정리(WIP 유지 or 분할) ⑤R3 착수.
 - 주의: 하네스 실행 중 .nuxt 캐시가 오래되면 오탐(151 bad 사례) — 하네스 전 dev 재시작 권장. B-09 토큰 회전 때문에 하네스는 setup 직후 바로 실행.
+- 검증 완결(11-15): 하네스 165/165 HTTP 200, 오류 9건 = H-11 기존 패턴(track certificate 404×6 + 무효인증서 404×3, R5 해소 예정)과 동일. hScroll 0·tiny 0·unlabeled 0·noAlt 0·failed 0. prod 빌드 2m02s 성공. 증거 evidence/r2/{baseline.json,screens.txt} 커밋(PNG 165종 로컬 보관).
+- 수습 2건: ①locale-init.client.ts가 useI18n()을 setup 밖(플러그인)에서 호출 → 비공개 페이지 전역 크래시. nuxtApp.$i18n.setLocale로 교체(미들웨어 app.global.ts와 동일 패턴), /login·/disputes 브라우저 프로브로 해소 확인. tsc·vitest·스팟(공개면만)은 이 버그를 못 잡음 — 비공개면 프로브를 R3+ 게이트에 추가할 것. ②dev 기동 시 구 Vite 관행(VITE_API_PROXY=18081 포트만) 사용 시 Nitro 프록시가 `18081/api/**`로 깨져 /api 전구간 502. Nuxt는 NUXT_API_PROXY 전체 URL(기본 http://localhost:18081). 해당 런은 폐기 후 재실행.
+- 무효 런 2건 폐기: 11-14 18:30~19:30분(114 타임아웃, stale dev 추정) + 11-15 502 런(프록시 오설정). 본 결과는 fresh .nuxt + 정상 프록시 재실행분.
+- tsc 참고: `[Vue] Load plugin failed: vue-router/volar/sfc-route-blocks` 경고 2종은 exit 0·오류 0이라 무해 확정. 원인=vue-router 4.6.4/v5.5.1이 volar 플러그인 미동봉 + Nuxt 생성 tsconfig가 참조. 프로젝트에 `<route>` 블록이 없어 영향 없음. 수정 금지(toolchain 영역).
