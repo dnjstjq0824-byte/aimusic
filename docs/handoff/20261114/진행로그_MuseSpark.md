@@ -14,6 +14,7 @@
 | R3 | PASS | (아래 2건) | 코드 20·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·빌드 | r3 json/txt(+PNG 로컬 189)+r3-i18n 20종 | 소셜 무제공시 단위테스트만·legal alias(R8) |
 | R4 | PASS | (아래 2건) | 코드 11·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·프로브 19·빌드 | r4 json/txt(+PNG 로컬 189)+r4-i18n 10종 | 차트·비즈니스 404(R5·R7)·legal alias(R8) |
 | R5 | PASS | (아래 3건) | 코드 36·로케일 6언어 | go全·E2E 435·tsc·vitest 64·checker·하네스 192·빌드 | r5 json/txt(+PNG 192)+r5-i18n 20종 | AiBadge 미키화·용도facet·BPM슬라이더·legal alias |
+| R6 | PASS | (아래 3건) | 코드 33·로케일 6언어 | go全·E2E 466·tsc·vitest 64·checker·하네스 198·빌드 | r6 json/txt(+PNG 198)+r6-i18n 20종 | AiBadge·크리에이터팔로우UI(S4)·legal alias |
 
 ## 항목 기록
 
@@ -96,3 +97,10 @@
 - 검증: go build/vet/test 전체 그린·E2E 435/0(T14 검색5언어·T15 발견API·T11b 404→null 개정)·tsc 0·vitest 64(신규 provider/tags 4)·checker PASS·하네스 192/192 무오류(404 9건도 해소)·프로브 18·5언어 홈/트랙 20종·빌드 42.9s.
 - 수습: ①ListPublicContaining 컬럼 모호성 500 → 한정자로 수정. ②T15 고정 인증서번호 재실행 충돌 → 트랙ID 파생. ③게스트 홈 추천 모자이크 401 → 트랙목록 라우트 JWTOptional+서비스 가시성(상세 N-01은 R6). ④인증 홈 하이드레이션 12건 → 마운트 후 분기+ClientOnly.
 - 판단 기록: 용도 facet 저장 컬럼 없어 mood_tags 공유 풀로 매칭(데이터모델은 S4). BPM/길이는 프리셋 칩(슬라이더 대신). 비즈니스 CTA·고객카드는 R7까지 기존 경로(/signup/business·/for-creators·/business 껍데기). 크리에이터명 텍스트(S4 링크). 좋아요 R6. AiBadge 키화 미실시(후속 WI). th track.json 누락 등록.
+
+### WI-R6 (P2a-3) — 플레이리스트/라이브러리 분리 — PASS
+- R6a 엔진: 000021 좋아요·저장·팔로우 3테이블. 좋아요/저장/팔로우 CRUD+상태+목록 11종(멱등). N-01 공개 상세 게스트 개방(서비스 가시성 유지). Playlist ownerName. E2E T16 31어설션. A2 마이그레이션 000022로 재이월.
+- R6b 화면: /library 4탭+내플리 카드·/me/playlists 관리(그리드/리스트·정렬·⋯)·/playlists 발견(추천/최신·히어로)·상세 §3.5(헤더·모자이크·드래그+⋯정렬·저장·팔로우·공유·N-01)·/account/billing(이용권+해지+탈퇴 임시·R8 분리 예정)·상세 ♡·/my-library→/library 301. library/playlist/account 6언어(ko원문·en자필·ja/zh/th machine-draft).
+- 검증: go全·E2E 466/0·tsc 0·vitest 64·checker·하네스 198/198 무오류·프로브 12·5언어 20종·빌드 43.6s.
+- 수습: ①T15 차트 동점 탈락(누적 데이터) → 시드 10건+limit 50. ②me 목록 태그 오타 500 → 수정. ③B-09 회전 프로브 토큰 만료 → setup 후 실행. ④인증 분기 하이드레이션 → ClientOnly/마운트 패턴(상세 오너 포함). ⑤R6 신규 앱 페이지 접두 누락 → defineI18nRoute(false)+charts 공개명단 등록.
+- 판단 기록: 발견 탭은 추천/최신만(무드/용도/인기/믹스는 데이터 모델 없어 보류). 탈퇴 카드는 billing 임시 배치(R8 privacy로). 크리에이터 팔로우 UI는 S4(상세엔 플리 팔로우만). 저장+팔로우 병존(스펙). 토글 줄바꿈 공통 수정.
