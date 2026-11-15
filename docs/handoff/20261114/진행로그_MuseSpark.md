@@ -15,6 +15,7 @@
 | R4 | PASS | (아래 2건) | 코드 11·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·프로브 19·빌드 | r4 json/txt(+PNG 로컬 189)+r4-i18n 10종 | 차트·비즈니스 404(R5·R7)·legal alias(R8) |
 | R5 | PASS | (아래 3건) | 코드 36·로케일 6언어 | go全·E2E 435·tsc·vitest 64·checker·하네스 192·빌드 | r5 json/txt(+PNG 192)+r5-i18n 20종 | AiBadge 미키화·용도facet·BPM슬라이더·legal alias |
 | R6 | PASS | (아래 3건) | 코드 33·로케일 6언어 | go全·E2E 466·tsc·vitest 64·checker·하네스 198·빌드 | r6 json/txt(+PNG 198)+r6-i18n 20종 | AiBadge·크리에이터팔로우UI(S4)·legal alias |
+| R7 | PASS | (아래 3건) | 코드 26·로케일 6언어 | go全·E2E 483·tsc·vitest 64·checker·하네스 210·빌드 | r7 json/txt(+PNG 210)+r7-i18n 20종 | 플랜명 한글 고정·문의UI R11·legal alias |
 
 ## 항목 기록
 
@@ -104,3 +105,9 @@
 - 검증: go全·E2E 466/0·tsc 0·vitest 64·checker·하네스 198/198 무오류·프로브 12·5언어 20종·빌드 43.6s.
 - 수습: ①T15 차트 동점 탈락(누적 데이터) → 시드 10건+limit 50. ②me 목록 태그 오타 500 → 수정. ③B-09 회전 프로브 토큰 만료 → setup 후 실행. ④인증 분기 하이드레이션 → ClientOnly/마운트 패턴(상세 오너 포함). ⑤R6 신규 앱 페이지 접두 누락 → defineI18nRoute(false)+charts 공개명단 등록.
 - 판단 기록: 발견 탭은 추천/최신만(무드/용도/인기/믹스는 데이터 모델 없어 보류). 탈퇴 카드는 billing 임시 배치(R8 privacy로). 크리에이터 팔로우 UI는 S4(상세엔 플리 팔로우만). 저장+팔로우 병존(스펙). 토글 줄바꿈 공통 수정.
+
+### WI-R7 (P2b) — 요금제·랜딩·도입 문의 — PASS
+- R7a 엔진: 000022 문의+대기자 테이블. POST /business/inquiries(허니팟·레이트리밋·운영메일·수신처 OPS_NOTIFY_EMAIL)+관리자 목록·상태. POST /waitlist(멱등). E2E T17 17어설션. A2 마이그레이션 000023으로 재이월.
+- R7b 화면: 요금제 3탭(리스너/크리에이터/비즈니스 무가격 3카드+문의 모달)+비교표+FAQ+환불 정본. 랜딩 /business(히어로·가치·샘플·4단계·FAQ·인라인 문의)·/for-creators·/trust·/create(대기자). pricing/business 6언어(ko원문·en자필·ja/zh/th machine-draft).
+- 검증: go全·E2E 483/0·tsc 0·vitest 64·checker·하네스 210/210 무오류·프로브 8(실제 문의·대기자 제출)·5언어 20종·빌드 61s.
+- 판단 기록: 플랜명은 엔진 nameKo 원문 표시(C-05 후속). 환불문구 경로만 갱신(내 라이브러리→내 이용권, 정책 불변). 문의 모달은 전 사이즈 공통(BottomSheet 분기 생략). 문의 관리 UI는 R11. 비즈니스 탭 가격은 CEO 확정대로 전면 배제.
