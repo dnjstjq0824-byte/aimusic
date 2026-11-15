@@ -13,6 +13,7 @@
 | R2 | PASS | eae45f0+eab2387+fix | WIP+수정 1·증거 json/txt | tsc0·vitest 52·checker·하네스 165/165·빌드 | r2 baseline.json+screens.txt(+PNG 로컬 165) | volar 경고(무해)·legal alias 경고(R8) |
 | R3 | PASS | (아래 2건) | 코드 20·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·빌드 | r3 json/txt(+PNG 로컬 189)+r3-i18n 20종 | 소셜 무제공시 단위테스트만·legal alias(R8) |
 | R4 | PASS | (아래 2건) | 코드 11·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·프로브 19·빌드 | r4 json/txt(+PNG 로컬 189)+r4-i18n 10종 | 차트·비즈니스 404(R5·R7)·legal alias(R8) |
+| R5 | PASS | (아래 3건) | 코드 36·로케일 6언어 | go全·E2E 435·tsc·vitest 64·checker·하네스 192·빌드 | r5 json/txt(+PNG 192)+r5-i18n 20종 | AiBadge 미키화·용도facet·BPM슬라이더·legal alias |
 
 ## 항목 기록
 
@@ -87,3 +88,11 @@
 - 검증: tsc 0·vitest 60·checker PASS(UNUSED 55=기존 32+미사용 nav 20+동적 3, R5~R11에서 재사용)·하네스 189/189(오류 9=H-11·리다이렉트 9/9·hScroll/tiny/unlabeled/noAlt 0)·프로브 19/19(데스크톱 8·모바일 5·재생중 6)·5언어 홈 10종 무오류·빌드 17.9s.
 - P1 수용 판정: 인증 플레이어 0·푸터 가림 0·모바일 5탭·5언어 캡처(인증 20+R3·공통 10) 전부 충족. P1 완결.
 - 잔여: /charts·/business 링크는 R5·R7까지 404 껍데기(정본 경로 선반영). 프로필 메뉴·비즈니스 콘솔 메뉴는 R8·R10. 좋아요 R6. legal alias R8.
+
+### WI-R5 (P2a) — 홈·탐색·트랙 상세 — PASS
+- P2a 분할 선언: R5 내용 변경이 코드 36+로케일 6언어로 상한 50 초과 가능 — P2a-1=R5a 엔진(17)·P2a-2=R5b 화면(19+6)·P2a-3=R6으로 분할. A2 예정 000020은 R5가 사용 → A2 마이그레이션은 000021로 이월.
+- R5a 엔진: 000020 pg_trgm+GIN 3종. 검색v2(제목·크리에이터 ILIKE+trgm·태그표시명 확장·relevant 정렬·certified/partnerId/bpm/dur 필터). 태그 레지스트리 19키+5언어(search/tags.go). 크리에이터명 DTO(GetByID·SearchReady·TopByPlays). /charts(주·월·전체)·/playback/recent·/playlists/public·/tracks/:id/playlists·공개 트랙목록(JWTOptional). H-11 양 인증서 조회 200 null.
+- R5b 화면: 홈 전면 개편(게스트 히어로+스트립+바로듣기+무드칩+차트10+추천플리+고객카드·로그인 이어듣기+최근+내플리·G5 만들기 자리·온보딩 삭제). 탐색 §3.2(필터패널+칩+리스트/그리드+BottomSheet). 트랙 §3.3(라이선스 패널·인증상태·AI표시·비슷한곡·같은크리에이터·담긴플리·ID복사·하단신고). /charts(주·월·전체). TrackRow 신규·TrackCard v2(재생+⋯). home/explore/track/tags 6언어(ko원문·en자필·ja/zh/th machine-draft).
+- 검증: go build/vet/test 전체 그린·E2E 435/0(T14 검색5언어·T15 발견API·T11b 404→null 개정)·tsc 0·vitest 64(신규 provider/tags 4)·checker PASS·하네스 192/192 무오류(404 9건도 해소)·프로브 18·5언어 홈/트랙 20종·빌드 42.9s.
+- 수습: ①ListPublicContaining 컬럼 모호성 500 → 한정자로 수정. ②T15 고정 인증서번호 재실행 충돌 → 트랙ID 파생. ③게스트 홈 추천 모자이크 401 → 트랙목록 라우트 JWTOptional+서비스 가시성(상세 N-01은 R6). ④인증 홈 하이드레이션 12건 → 마운트 후 분기+ClientOnly.
+- 판단 기록: 용도 facet 저장 컬럼 없어 mood_tags 공유 풀로 매칭(데이터모델은 S4). BPM/길이는 프리셋 칩(슬라이더 대신). 비즈니스 CTA·고객카드는 R7까지 기존 경로(/signup/business·/for-creators·/business 껍데기). 크리에이터명 텍스트(S4 링크). 좋아요 R6. AiBadge 키화 미실시(후속 WI). th track.json 누락 등록.
