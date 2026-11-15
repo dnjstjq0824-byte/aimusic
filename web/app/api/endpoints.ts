@@ -398,6 +398,27 @@ export const engagementApi = {
   },
 };
 
+export interface InquiryInput {
+  company: string;
+  country?: string;
+  storeCount?: number;
+  useCase?: string;
+  contactName?: string;
+  contactEmail: string;
+  contactPhone?: string;
+  message: string;
+  website?: string;
+}
+
+export const businessApi = {
+  submitInquiry(input: InquiryInput) {
+    return unwrap<{ id?: string; received: boolean }>(api.post('/business/inquiries', input));
+  },
+  joinWaitlist(input: { email: string; interest?: string; locale?: string }) {
+    return unwrap<{ id: string; registered: boolean }>(api.post('/waitlist', input));
+  },
+};
+
 export const disputeApi = {
   report(trackId: string, reason: string, description?: string) {
     return unwrap<CopyrightDispute>(api.post('/disputes/report', { trackId, reason, description }));

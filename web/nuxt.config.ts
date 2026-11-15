@@ -37,7 +37,7 @@ export default defineNuxtConfig({
       { code: 'zh-cn', language: 'zh-CN', files: ['zh-CN/common.json', 'zh-CN/errors.json', 'zh-CN/player.json', 'zh-CN/auth.json', 'zh-CN/home.json', 'zh-CN/explore.json', 'zh-CN/track.json', 'zh-CN/tags.json', 'zh-CN/library.json', 'zh-CN/playlist.json', 'zh-CN/pricing.json', 'zh-CN/checkout.json', 'zh-CN/account.json', 'zh-CN/legal.json', 'zh-CN/studio.json', 'zh-CN/business.json', 'zh-CN/generate.json', 'zh-CN/admin.json'] },
       { code: 'th', language: 'th-TH', files: ['th/common.json', 'th/errors.json', 'th/player.json', 'th/auth.json', 'th/home.json', 'th/explore.json', 'th/track.json', 'th/tags.json', 'th/library.json', 'th/playlist.json', 'th/pricing.json', 'th/checkout.json', 'th/account.json', 'th/legal.json', 'th/studio.json', 'th/business.json', 'th/generate.json', 'th/admin.json'] },
       ...(process.dev
-        ? [{ code: 'en-XA', language: 'en-XA', files: ['en-XA/common.json', 'en-XA/errors.json', 'en-XA/player.json', 'en-XA/auth.json', 'en-XA/home.json', 'en-XA/explore.json', 'en-XA/track.json', 'en-XA/tags.json', 'en-XA/library.json', 'en-XA/playlist.json', 'en-XA/account.json'] }]
+        ? [{ code: 'en-XA', language: 'en-XA', files: ['en-XA/common.json', 'en-XA/errors.json', 'en-XA/player.json', 'en-XA/auth.json', 'en-XA/home.json', 'en-XA/explore.json', 'en-XA/track.json', 'en-XA/tags.json', 'en-XA/library.json', 'en-XA/playlist.json', 'en-XA/account.json', 'en-XA/pricing.json', 'en-XA/business.json'] }]
         : []),
     ],
     vueI18n: './i18n.config.ts',

@@ -13,6 +13,10 @@ const PUBLIC_BASE_NAMES = new Set([
   'playlist-detail',
   'track-detail',
   'pricing',
+  'business',
+  'for-creators',
+  'trust',
+  'create',
   'legal-terms',
   'certificate-verify',
 ]);

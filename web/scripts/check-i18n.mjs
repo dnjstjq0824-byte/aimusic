@@ -65,7 +65,6 @@ web/app/pages/partner/index.vue
 web/app/pages/partner/stores.vue
 web/app/pages/partner/subscriptions.vue
 web/app/pages/partner/upload.vue
-web/app/pages/pricing.vue
 web/app/pages/store/player.vue
 `.trim().split('\n'),
 );
