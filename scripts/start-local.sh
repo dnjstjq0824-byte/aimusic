@@ -343,6 +343,16 @@ if [ "$BATCH20_EXISTS" != "1" ]; then
 else
   echo "[start-local] batch20 schema already present; skipping 000020_search_trgm.up.sql"
 fi
+BATCH21_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.track_likes') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH21_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000021_engagement.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000021_engagement.up.sql
+  echo "[start-local] batch21 engagement applied"
+else
+  echo "[start-local] batch21 schema already present; skipping 000021_engagement.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

@@ -468,6 +468,16 @@ func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, limit i
 		since, clampLimit(limit, 20, 100))
 }
 
+// LikedTracks returns the user's liked tracks, most recently liked first.
+func (r *TrackRepo) LikedTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
+	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+		FROM track_likes l
+		JOIN tracks ON tracks.id = l.track_id`+trackCreatorJoin+`
+		WHERE l.user_id = $1::uuid
+		ORDER BY l.created_at DESC LIMIT $2`,
+		userID, clampLimit(limit, 20, 100))
+}
+
 // RecentTracks returns the user's recently resumed READY tracks (login home
 // continue-listening), most recent first with each resume position.
 func (r *TrackRepo) RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {

@@ -484,12 +484,21 @@ type AuditEvent struct {
 type Playlist struct {
 	ID                 string    `json:"id"`
 	OwnerUserID        string    `json:"ownerUserId"`
+	OwnerName          string    `json:"ownerName,omitempty"`
 	Title              string    `json:"title"`
 	Description        *string   `json:"description,omitempty"`
 	IsPublic           bool      `json:"isPublic"`
 	IsOfficialCuration bool      `json:"isOfficialCuration"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
+}
+
+// Follow is one resolved follow row (creator display name or playlist title).
+type Follow struct {
+	TargetType  string    `json:"targetType"`
+	TargetID    string    `json:"targetId"`
+	DisplayName string    `json:"displayName"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 // PlaylistTrack mirrors playlist_tracks.

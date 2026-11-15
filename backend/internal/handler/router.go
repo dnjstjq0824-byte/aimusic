@@ -75,6 +75,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	trackH := &TrackHandler{Repos: d.Repos, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
 	playbackH := &PlaybackHandler{Playback: d.Services.Playback}
 	playlistH := &PlaylistHandler{Playlists: d.Services.Playlists}
+	engageH := &EngagementHandler{Engagement: d.Services.Engagement}
 	disputeH := &DisputeHandler{Repos: d.Repos, Disputes: d.Services.Disputes}
 	adminH := &AdminHandler{Repos: d.Repos, Services: d.Services}
 	billingH := &BillingHandler{Billing: d.Services.Billing}
@@ -158,12 +159,14 @@ func SetupRouter(d *Deps) *gin.Engine {
 	playback.PUT("/state", playbackH.SetState)
 
 	v1.GET("/playlists/public", playlistH.ListPublic)
+	// N-01: public playlist detail opens to guests (visibility still enforced
+	// in service for private lists).
+	v1.GET("/playlists/:id", JWTOptional(d.Services.Auth), playlistH.Get)
 	playlists := v1.Group("/playlists")
 	playlists.Use(JWTAuth(d.Services.Auth))
 	playlists.GET("", playlistH.ListMine)
 	playlists.GET("/me", playlistH.ListMine)
 	playlists.POST("", playlistH.Create)
-	playlists.GET("/:id", playlistH.Get)
 	playlists.PUT("/:id", playlistH.Update)
 	playlists.DELETE("/:id", playlistH.Delete)
 	// Track listing is visibility-gated in service (public passes for guests);
@@ -173,6 +176,26 @@ func SetupRouter(d *Deps) *gin.Engine {
 	playlists.DELETE("/:id/tracks/:trackId", playlistH.RemoveTrack)
 	playlists.PUT("/:id/reorder", playlistH.Reorder)
 	playlists.PUT("/:id/tracks/reorder", playlistH.Reorder)
+	playlists.POST("/:id/save", engageH.SavePlaylist)
+	playlists.DELETE("/:id/save", engageH.UnsavePlaylist)
+	playlists.GET("/:id/save", engageH.SaveState)
+
+	likes := v1.Group("/likes")
+	likes.Use(JWTAuth(d.Services.Auth))
+	likes.GET("/tracks", engageH.LikedTracks)
+	likes.GET("/tracks/:id", engageH.LikedState)
+	likes.POST("/tracks/:id", engageH.LikeTrack)
+	likes.DELETE("/tracks/:id", engageH.UnlikeTrack)
+
+	saves := v1.Group("/saves")
+	saves.Use(JWTAuth(d.Services.Auth))
+	saves.GET("/playlists", engageH.SavedPlaylists)
+
+	follows := v1.Group("/follows")
+	follows.Use(JWTAuth(d.Services.Auth))
+	follows.GET("", engageH.ListFollows)
+	follows.POST("", engageH.Follow)
+	follows.DELETE("/:type/:id", engageH.Unfollow)
 
 	disputes := v1.Group("/disputes")
 	disputes.Use(JWTAuth(d.Services.Auth))

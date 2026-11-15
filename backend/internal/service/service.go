@@ -19,6 +19,7 @@ type Services struct {
 	Review        *ReviewService
 	Disputes      *DisputeService
 	Playlists     *PlaylistService
+	Engagement    *EngagementService
 	Playback      *PlaybackService
 	Settlement    *SettlementService
 	PasswordReset *PasswordResetService
@@ -56,6 +57,7 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		Review:        &ReviewService{repos: repos},
 		Disputes:      &DisputeService{repos: repos, storage: st, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
 		Playlists:     &PlaylistService{repos: repos},
+		Engagement:    &EngagementService{repos: repos},
 		Playback:      &PlaybackService{repos: repos},
 		Settlement:    &SettlementService{repos: repos, cipher: settlementCipher},
 		PasswordReset: NewPasswordResetService(repos, mailer, cfg),
