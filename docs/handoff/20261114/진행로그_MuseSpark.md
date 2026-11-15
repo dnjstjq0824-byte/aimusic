@@ -11,6 +11,7 @@
 | P1 | PASS | 0091050 | 23 + 이동 92(면제) | CSR 동등 162/165·SSR 162/165·vitest 47·tsc·이중빌드·grant 14 | nuxt-csr/ssr json | legal alias 경고(개발 로그만, R8 해소) |
 | R1 | PASS | 3753448+3 | 4분할(상한 준수) | tsc·vitest 47·하네스 9동일·tiny 0·빌드 | r1 json+showcase 2종 | 장식 raw 팔레트 일부 잔존 |
 | R2 | PASS | eae45f0+eab2387+fix | WIP+수정 1·증거 json/txt | tsc0·vitest 52·checker·하네스 165/165·빌드 | r2 baseline.json+screens.txt(+PNG 로컬 165) | volar 경고(무해)·legal alias 경고(R8) |
+| R3 | PASS | (아래 2건) | 코드 20·로케일 6언어 | tsc0·vitest 60·checker·하네스 189/189·빌드 | r3 json/txt(+PNG 로컬 189)+r3-i18n 20종 | 소셜 무제공시 단위테스트만·legal alias(R8) |
 
 ## 항목 기록
 
@@ -64,3 +65,14 @@
 - 수습 2건: ①locale-init.client.ts가 useI18n()을 setup 밖(플러그인)에서 호출 → 비공개 페이지 전역 크래시. nuxtApp.$i18n.setLocale로 교체(미들웨어 app.global.ts와 동일 패턴), /login·/disputes 브라우저 프로브로 해소 확인. tsc·vitest·스팟(공개면만)은 이 버그를 못 잡음 — 비공개면 프로브를 R3+ 게이트에 추가할 것. ②dev 기동 시 구 Vite 관행(VITE_API_PROXY=18081 포트만) 사용 시 Nitro 프록시가 `18081/api/**`로 깨져 /api 전구간 502. Nuxt는 NUXT_API_PROXY 전체 URL(기본 http://localhost:18081). 해당 런은 폐기 후 재실행.
 - 무효 런 2건 폐기: 11-14 18:30~19:30분(114 타임아웃, stale dev 추정) + 11-15 502 런(프록시 오설정). 본 결과는 fresh .nuxt + 정상 프록시 재실행분.
 - tsc 참고: `[Vue] Load plugin failed: vue-router/volar/sfc-route-blocks` 경고 2종은 exit 0·오류 0이라 무해 확정. 원인=vue-router 4.6.4/v5.5.1이 volar 플러그인 미동봉 + Nuxt 생성 tsconfig가 참조. 프로젝트에 `<route>` 블록이 없어 영향 없음. 수정 금지(toolchain 영역).
+- P1b 분할 선언: R2 내용 변경이 74건(코드·설정, 번역·증거·락·로그 제외)으로 Phase 상한 50 초과 — R1 스윕 파손 전수 복구가 포함된 탓. P1b-1=R2, P1b-2=R3+R4로 분할 진행. R3=코드 20+로케일 6언어.
+
+### WI-R3 (P1b-2) — 인증 화면 분리 — PASS
+- AuthLayout(신규): 로고+언어 상단, 카드 슬롯, 최소 푸터(©+약관 2종), 플레이어·메뉴 없음. 미들웨어에서 인증 6경로 매핑.
+- 페이지: /login(탭 제거·소셜 상단·TOTP 2단계 유지·dev필 보존) /signup(3카드) /signup/listener /signup/creator(3단계·Stepper) /signup/business(3단계·도입문의 고지) /signup/complete-email(A1 자리) /forgot-password(분리) /reset-password(토큰 전용) /verify-email(A2 자리) /oauth/callback(키화). 문자열 전부 auth 네임스페이스 5언어(ko원문·en자필·ja/zh/th machine-draft).
+- SocialButtons(신규): 엔진 활성 공급자만·언어별 순서(UI §3.11). 순서 로직은 utils/social.ts+social.test.ts 8건으로 분리 검증.
+- 리다이렉트(미들웨어): ?tab=register→/signup/listener, ?tab=partner→/signup/creator, 무토큰 reset→/forgot-password. 로그인 상태 진입 차단도 signup/forgot까지 확장.
+- 비고: business 제출은 R10 전이라 registerPartner로 등록(파트너 계정 즉시 사용 가능)+화면에 도입문의 접수 명시. creator 국가·AI플랫폼/business 사업자번호·업종은 엔진 필드 없어 선택 수집만 — R9/R10에서 배선. 매장 이용 조건은 법문서 없어 라벨만(창작 금지). verify/complete-email은 엔진 없이 껍데기(A1/A2 TODO).
+- 검증: tsc 0·vitest 60/60(신규 8)·checker PASS(allowlist에서 login/reset/oauth 제거, UNUSED 32=기존 18+동적키 14 실사용)·하네스 189/189 HTTP 200(오류 9=H-11 기존·리다이렉트 9/9·hScroll/tiny/unlabeled/noAlt 0)·5언어×2화면×2뷰포트 20종 무오류 캡처·빌드 20.5s.
+- 수습: ①vue-i18n `@` 링크문법 — emailPh를 `{'@'}`로, 체커 ICU 규칙에 리터럴 허용 추가. ②첫 R3 하네스의 하이드레이션 10건은 빌드 동시 실행이 .nuxt를 오염시킨 환경 사고(코드 회귀 아님) — fresh .nuxt 재실행분으로 증거 교체. 교훈: 빌드와 dev/하네스 절대 병행 금지. ③terminate 뒤 nuxt 좀비가 포트 점유 — 포트 주인 확인 후 PID kill.
+- 잔여: 로컬 엔진에 소셜 공급자 미설정이라 SocialButtons 실렌더 미확인(단위테스트로 커버, A1에서 실증). legal alias 경고는 R8.
