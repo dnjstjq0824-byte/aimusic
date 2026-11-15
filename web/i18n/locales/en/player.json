@@ -29,6 +29,15 @@
     "seekLabel": "Seek",
     "coverArt": "{title} cover art",
     "timeMin": "{m}m {s}s",
-    "mosaic": "{title} cover mosaic"
+    "mosaic": "{title} cover mosaic",
+    "close": "Close",
+    "expand": "Open fullscreen",
+    "nowPlaying": "Now playing",
+    "tabQueue": "Queue",
+    "tabLyrics": "Lyrics",
+    "tabLicense": "License",
+    "noLyrics": "No lyrics registered.",
+    "viewTrack": "View on track page",
+    "remove": "Remove"
   }
 }

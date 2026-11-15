@@ -115,7 +115,7 @@ if (!import.meta.dev) {
   throw createError({ statusCode: 404, statusMessage: 'Not found' });
 }
 
-definePageMeta({ layout: 'user' });
+definePageMeta({ layout: 'app' });
 
 const demoText = ref('');
 const step = ref(1);

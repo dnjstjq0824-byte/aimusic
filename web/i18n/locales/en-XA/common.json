@@ -27,9 +27,21 @@
       "logout": "⟦Lòg òùt～～～⟧",
       "login": "⟦Lòg ìn～～～⟧",
       "signup": "⟦Sìgn ùp～～～⟧",
+      "charts": "⟦Chàrts～～～⟧",
+      "business": "⟦Bùsìnèss～～～～⟧",
+      "searchPh": "⟦Tràcks, mòòds, crèàtòrs～～～～～～～～～～⟧",
+      "accountSettings": "⟦Àccòùnt sèttìngs～～～～～～～⟧",
       "mobileMenuOpen": "⟦Òpèn mènù～～～～⟧",
       "mobileMenuClose": "⟦Clòsè mènù～～～～⟧",
       "mobileMenu": "⟦Mòbìlè mènù～～～～～⟧"
+    },
+    "tabs": {
+      "label": "⟦Bòttòm nàvìgàtìòn～～～～～～～⟧",
+      "home": "⟦Hòmè～～⟧",
+      "explore": "⟦Èxplòrè～～～⟧",
+      "playlists": "⟦Plàylìsts～～～～⟧",
+      "library": "⟦Lìbràry～～～⟧",
+      "account": "⟦Àccòùnt～～～⟧"
     },
     "footer": {
       "tagline": "⟦Strèàmìng lìcènsèd ÀÌ mùsìc clèàrèd fòr còmmèrcìàl ùsè.～～～～～～～～～～～～～～～～～～～～～～⟧",
@@ -52,6 +64,7 @@
       "bizInfo": "⟦Bùsìnèss ìnfòrmàtìòn～～～～～～～～⟧",
       "ospContact": "⟦Còpyrìght tàkèdòwn rècìpìènt～～～～～～～～～～～～⟧",
       "rights": "⟦© 2026 ÀVÌBÈ — Bèyònd Yòùr Mùsìc. Àll rìghts rèsèrvèd.～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "pricing": "⟦Prìcìng～～～⟧",
       "biz": {
         "company": "⟦Còmpàny～～～⟧",
         "ceo": "⟦Rèprèsèntàtìvè～～～～～～⟧",

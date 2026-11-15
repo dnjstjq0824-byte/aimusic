@@ -27,9 +27,21 @@
       "logout": "로그아웃",
       "login": "로그인",
       "signup": "회원가입",
+      "charts": "차트",
+      "business": "비즈니스",
+      "searchPh": "곡·무드·크리에이터",
+      "accountSettings": "계정 설정",
       "mobileMenuOpen": "모바일 메뉴 열기",
       "mobileMenuClose": "모바일 메뉴 닫기",
       "mobileMenu": "모바일 메뉴"
+    },
+    "tabs": {
+      "label": "하단 메뉴",
+      "home": "홈",
+      "explore": "탐색",
+      "playlists": "플레이리스트",
+      "library": "라이브러리",
+      "account": "계정"
     },
     "footer": {
       "tagline": "상업 이용 조건 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.",
@@ -52,6 +64,7 @@
       "bizInfo": "사업자 정보",
       "ospContact": "저작권 침해 중단 요구(수령인)",
       "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "pricing": "요금제",
       "biz": {
         "company": "상호",
         "ceo": "대표자",

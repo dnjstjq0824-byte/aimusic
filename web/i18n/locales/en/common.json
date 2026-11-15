@@ -27,9 +27,21 @@
       "logout": "Log out",
       "login": "Log in",
       "signup": "Sign up",
+      "charts": "Charts",
+      "business": "Business",
+      "searchPh": "Tracks, moods, creators",
+      "accountSettings": "Account settings",
       "mobileMenuOpen": "Open menu",
       "mobileMenuClose": "Close menu",
       "mobileMenu": "Mobile menu"
+    },
+    "tabs": {
+      "label": "Bottom navigation",
+      "home": "Home",
+      "explore": "Explore",
+      "playlists": "Playlists",
+      "library": "Library",
+      "account": "Account"
     },
     "footer": {
       "tagline": "Streaming licensed AI music cleared for commercial use.",
@@ -52,6 +64,7 @@
       "bizInfo": "Business information",
       "ospContact": "Copyright takedown recipient",
       "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "pricing": "Pricing",
       "biz": {
         "company": "Company",
         "ceo": "Representative",

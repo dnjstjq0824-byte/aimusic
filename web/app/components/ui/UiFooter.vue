@@ -60,15 +60,14 @@
         {{ t('common.footer.ospContact') }}: <a :href="`mailto:${ospContact}`" class="text-brand-400 hover:underline">{{ ospContact }}</a>
       </div>
 
-      <!-- Bottom Compliance strip -->
+      <!-- Bottom strip -->
       <div class="mt-10 border-t border-surface-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-caption text-text-muted">
         <div>
           {{ t('common.footer.rights') }}
         </div>
-        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <span>암호화: AES-256-GCM</span>
-          <span>포렌식: FFprobe v7.0</span>
-          <span>HLS 적응형 스트리밍</span>
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <RouterLink to="/pricing" class="hover:text-white transition-colors">{{ t('common.footer.pricing') }}</RouterLink>
+          <LocaleSwitcher />
         </div>
       </div>
     </div>
@@ -78,6 +77,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import BrandLogo from '@/components/BrandLogo.vue';
+import LocaleSwitcher from './LocaleSwitcher.vue';
 const { t } = useI18n();
 
 const env = import.meta.env as Record<string, string | undefined>;

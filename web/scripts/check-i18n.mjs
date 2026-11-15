@@ -16,7 +16,6 @@ const STRICT = process.argv.includes('--strict');
 // UiFooter stays listed: only the H-03 tech strip remains, deleted in R4.)
 const ALLOWLIST = new Set(
   `
-web/app/components/ui/UiFooter.vue
 web/app/api/client.ts
 web/app/api/endpoints.ts
 web/app/api/refundPolicy.ts

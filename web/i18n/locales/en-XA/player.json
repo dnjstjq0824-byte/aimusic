@@ -29,6 +29,15 @@
     "seekLabel": "⟦Sèèk～～⟧",
     "coverArt": "⟦{title} còvèr àrt～～～～～～～⟧",
     "timeMin": "⟦{m}m {s}s～～～～⟧",
-    "mosaic": "⟦{title} còvèr mòsàìc～～～～～～～～⟧"
+    "mosaic": "⟦{title} còvèr mòsàìc～～～～～～～～⟧",
+    "close": "⟦Clòsè～～⟧",
+    "expand": "⟦Òpèn fùllscrèèn～～～～～～⟧",
+    "nowPlaying": "⟦Nòw plàyìng～～～～～⟧",
+    "tabQueue": "⟦Qùèùè～～⟧",
+    "tabLyrics": "⟦Lyrìcs～～～⟧",
+    "tabLicense": "⟦Lìcènsè～～～⟧",
+    "noLyrics": "⟦Nò lyrìcs règìstèrèd.～～～～～～～～～⟧",
+    "viewTrack": "⟦Vìèw òn tràck pàgè～～～～～～～⟧",
+    "remove": "⟦Rèmòvè～～～⟧"
   }
 }

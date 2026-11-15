@@ -29,6 +29,15 @@
     "seekLabel": "播放位置",
     "coverArt": "{title}封面",
     "timeMin": "{m}分{s}秒",
-    "mosaic": "{title}封面拼贴"
+    "mosaic": "{title}封面拼贴",
+    "close": "关闭",
+    "expand": "全屏打开",
+    "nowPlaying": "正在播放",
+    "tabQueue": "播放队列",
+    "tabLyrics": "歌词",
+    "tabLicense": "授权",
+    "noLyrics": "暂无歌词。",
+    "viewTrack": "在歌曲页面查看",
+    "remove": "删除"
   }
 }

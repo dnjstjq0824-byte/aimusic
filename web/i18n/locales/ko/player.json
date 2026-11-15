@@ -29,6 +29,15 @@
     "seekLabel": "재생 위치",
     "coverArt": "{title} 커버 아트",
     "timeMin": "{m}분 {s}초",
-    "mosaic": "{title} 커버 모자이크"
+    "mosaic": "{title} 커버 모자이크",
+    "close": "닫기",
+    "expand": "전체화면으로 열기",
+    "nowPlaying": "재생 중",
+    "tabQueue": "큐",
+    "tabLyrics": "가사",
+    "tabLicense": "라이선스",
+    "noLyrics": "등록된 가사가 없습니다.",
+    "viewTrack": "이 곡 페이지에서 보기",
+    "remove": "삭제"
   }
 }

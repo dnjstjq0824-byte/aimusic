@@ -27,9 +27,21 @@
       "logout": "ออกจากระบบ",
       "login": "เข้าสู่ระบบ",
       "signup": "สมัครสมาชิก",
+      "charts": "ชาร์ต",
+      "business": "ธุรกิจ",
+      "searchPh": "เพลง อารมณ์ ครีเอเตอร์",
+      "accountSettings": "ตั้งค่าบัญชี",
       "mobileMenuOpen": "เปิดเมนู",
       "mobileMenuClose": "ปิดเมนู",
       "mobileMenu": "เมนูมือถือ"
+    },
+    "tabs": {
+      "label": "เมนูล่าง",
+      "home": "หน้าแรก",
+      "explore": "สำรวจ",
+      "playlists": "เพลย์ลิสต์",
+      "library": "คลัง",
+      "account": "บัญชี"
     },
     "footer": {
       "tagline": "แพลตฟอร์มสตรีมมิงเพลง AI ที่ผ่านการยืนยันเงื่อนไขการใช้เชิงพาณิชย์",
@@ -52,6 +64,7 @@
       "bizInfo": "ข้อมูลผู้ประกอบการ",
       "ospContact": "ผู้รับคำขอระงับการละเมิดลิขสิทธิ์",
       "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "pricing": "แพ็กเกจ",
       "biz": {
         "company": "ชื่อบริษัท",
         "ceo": "ผู้แทน",

@@ -23,7 +23,7 @@ function layoutFor(path: string): string | false {
   ) {
     return 'auth';
   }
-  return 'user';
+  return 'app';
 }
 
 // Entry screens that make no sense once signed in (R3: login + signup + forgot).
@@ -54,7 +54,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // [...slug] catch-all renders bare.
   const layout = name === 'not-found' ? false : layoutFor(to.path);
   if (layout === false) setPageLayout(false);
-  else setPageLayout(layout as 'user' | 'partner' | 'admin' | 'auth');
+  else setPageLayout(layout as 'app' | 'partner' | 'admin' | 'auth');
 
   // Legacy tab URLs keep working (R3 split): single-URL 3-tab login is gone.
   if (name === 'login' && typeof to.query.tab === 'string') {

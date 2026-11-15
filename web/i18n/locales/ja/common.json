@@ -27,9 +27,21 @@
       "logout": "ログアウト",
       "login": "ログイン",
       "signup": "新規登録",
+      "charts": "チャート",
+      "business": "ビジネス",
+      "searchPh": "曲・ムード・クリエイター",
+      "accountSettings": "アカウント設定",
       "mobileMenuOpen": "メニューを開く",
       "mobileMenuClose": "メニューを閉じる",
       "mobileMenu": "モバイルメニュー"
+    },
+    "tabs": {
+      "label": "ボトムナビゲーション",
+      "home": "ホーム",
+      "explore": "探す",
+      "playlists": "プレイリスト",
+      "library": "ライブラリ",
+      "account": "アカウント"
     },
     "footer": {
       "tagline": "商用利用条件を確認したAI音楽を配信するストリーミングプラットフォームです。",
@@ -52,6 +64,7 @@
       "bizInfo": "事業者情報",
       "ospContact": "著作権侵害の削除要請先",
       "rights": "© 2026 AVIBE — Beyond Your Music. All rights reserved.",
+      "pricing": "料金プラン",
       "biz": {
         "company": "相互",
         "ceo": "代表者",

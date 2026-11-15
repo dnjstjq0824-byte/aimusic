@@ -197,7 +197,7 @@ const offset = ref(0);
 const limit = 18;
 const total = ref(0);
 
-const searchQuery = ref('');
+const searchQuery = ref((route.query.q as string) || '');
 const filterProvider = ref('');
 const filterMood = ref((route.query.mood as string) || '');
 const sortBy = ref(['recent', 'oldest', 'popular', 'title'].includes(route.query.sort as string) ? (route.query.sort as string) : 'recent');

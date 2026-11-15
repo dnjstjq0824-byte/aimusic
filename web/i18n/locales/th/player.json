@@ -29,6 +29,15 @@
     "seekLabel": "ตำแหน่งเพลง",
     "coverArt": "ปกเพลง {title}",
     "timeMin": "{m} นาที {s} วินาที",
-    "mosaic": "โมเสกปก {title}"
+    "mosaic": "โมเสกปก {title}",
+    "close": "ปิด",
+    "expand": "เปิดเต็มจอ",
+    "nowPlaying": "กำลังเล่น",
+    "tabQueue": "คิว",
+    "tabLyrics": "เนื้อเพลง",
+    "tabLicense": "ไลเซนส์",
+    "noLyrics": "ยังไม่มีเนื้อเพลง",
+    "viewTrack": "ดูในหน้าเพลง",
+    "remove": "ลบ"
   }
 }
