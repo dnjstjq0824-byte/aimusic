@@ -1,6 +1,7 @@
 <template>
   <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 selection:text-on-brand">
     <LocaleBanner />
+    <EmailVerifyBanner />
     <UiNavbar />
 
     <!-- Bottom pad = mini player 64 + mobile tabbar 56 + safe-area (H-09). -->
@@ -23,8 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import LocaleBanner from '@/components/LocaleBanner.vue';
+import EmailVerifyBanner from '@/components/EmailVerifyBanner.vue';
 import UiNavbar from '@/components/ui/UiNavbar.vue';
 import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';
@@ -32,6 +34,20 @@ import GlobalPlayerBar from '@/components/player/GlobalPlayerBar.vue';
 import MobileTabBar from '@/components/ui/MobileTabBar.vue';
 import QueueDrawer from '@/components/player/QueueDrawer.vue';
 import FullscreenPlayer from '@/components/player/FullscreenPlayer.vue';
+import { usePublicSeo } from '@/composables/usePublicSeo';
+import { stripLocalePrefix } from '@/utils/seo';
+
+// WI-S2 fallback head for public pages without page-level SEO (static
+// landings etc.). Page-level usePublicSeo calls override title/description;
+// canonical/hreflang are path-identical and dedupe.
+const route = useRoute();
+const { t, locale } = useI18n();
+usePublicSeo({
+  title: 'AVIBE — Beyond Your Music',
+  description: computed(() => t('seo.siteDescription')),
+  path: computed(() => stripLocalePrefix(route.path)),
+  locale,
+});
 
 const queueOpen = ref(false);
 const fullscreenOpen = ref(false);

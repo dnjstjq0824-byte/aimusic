@@ -51,7 +51,7 @@ const tabs = [
   { to: '/explore', icon: 'compass', labelKey: 'common.tabs.explore', match: ['explore'] },
   { to: '/playlists', icon: 'list', labelKey: 'common.tabs.playlists', match: ['playlists', 'playlist-detail'] },
   { to: '/library', icon: 'heart', labelKey: 'common.tabs.library', match: ['library'] },
-  { to: '/account/security', icon: 'user', labelKey: 'common.tabs.account', match: ['account-security', 'login', 'signup', 'signup-listener', 'signup-creator', 'signup-business'] },
+  { to: '/account', icon: 'user', labelKey: 'common.tabs.account', match: ['account-index', 'account-profile', 'account-security', 'account-billing', 'account-language', 'account-privacy', 'account-connections', 'login', 'signup', 'signup-listener', 'signup-creator', 'signup-business'] },
 ];
 
 function isActive(tab: { match: string[] }): boolean {

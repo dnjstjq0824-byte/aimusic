@@ -26,7 +26,12 @@
     "ERR_DOWNLOAD_REQUIRES_PASS": "Downloads require an active pass.",
     "ERR_DOWNLOAD_QUOTA": "You've reached the daily download limit.",
     "ERR_DOWNLOAD_UNAVAILABLE": "The master file is unavailable.",
+    "ERR_OAUTH_LINK_LOGIN_REQUIRED": "This email is already registered. Sign in with email first, then link the social account under Connected accounts.",
+    "ERR_OAUTH_LINK_TAKEN": "This social account is already linked to another account.",
+    "ERR_OAUTH_LAST_METHOD": "You can't unlink your last sign-in method.",
+    "EMAIL_NOT_VERIFIED": "Email verification is required. Open the verification link in your inbox.",
     "ERR_INTERNAL": "A server error occurred.",
-    "ERR_FALLBACK": "The request failed."
+    "ERR_FALLBACK": "The request failed.",
+    "ERR_HANDLE_TAKEN": "This handle is already taken."
   }
 }

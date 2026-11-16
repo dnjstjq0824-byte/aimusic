@@ -14,6 +14,18 @@ export function useFormat() {
       : { dateStyle: 'medium' }).format(d);
   }
 
+  /** Gregorian ISO date (YYYY-MM-DD) for certificates/legal/receipts (R-2: always 서력+ISO). */
+  function dateISO(v: string | number | Date): string {
+    const d = v instanceof Date ? v : new Date(v);
+    if (Number.isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('en-CA', {
+      calendar: 'gregory',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  }
+
   function number(v: number): string {
     return new Intl.NumberFormat(tag(), { style: 'decimal' }).format(v);
   }
@@ -23,5 +35,5 @@ export function useFormat() {
     return new Intl.NumberFormat(tag(), { style: 'currency', currency: 'KRW' }).format(v);
   }
 
-  return { date, number, currencyKRW };
+  return { date, dateISO, number, currencyKRW };
 }

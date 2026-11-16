@@ -47,6 +47,7 @@
 import { computed, ref } from 'vue';
 import { businessApi } from '@/api/endpoints';
 import { useApiError } from '@/composables/useApiError';
+import { trackEvent } from '@/utils/analytics';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -74,6 +75,7 @@ async function submit(): Promise<void> {
       interest: interest.value.trim() || undefined,
       locale: locale.value,
     });
+    trackEvent({ name: 'create_waitlist_joined' });
     done.value = true;
   } catch (err: unknown) {
     error.value = apiError(err);

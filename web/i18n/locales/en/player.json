@@ -38,6 +38,11 @@
     "tabLicense": "License",
     "noLyrics": "No lyrics registered.",
     "viewTrack": "View on track page",
-    "remove": "Remove"
+    "remove": "Remove",
+    "errPlayFailed": "Can't play this track. Check your connection and try again.",
+    "errStreamLost": "Stream interrupted: {title}",
+    "errSkipLogin": "Log in to play.",
+    "errSkipUnplayable": "Skipping unplayable track: {title}",
+    "storeErrPlayFailed": "Can't play this track. Check the network."
   }
 }

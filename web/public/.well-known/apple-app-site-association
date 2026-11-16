@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.avibe.music",
+        "paths": ["/tracks/*", "/playlists/*", "/creators/*", "/embed/*", "/oauth/callback"]
+      }
+    ]
+  }
+}

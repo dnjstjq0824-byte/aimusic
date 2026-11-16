@@ -11,21 +11,27 @@ import (
 // GenerationJobRepo accesses generation_jobs (WI-03).
 type GenerationJobRepo struct{ db DBTX }
 
-const generationJobColumns = `id::text, partner_id::text, prompt, lyrics, model,
-	license_ref, params_json, status, output_object_key, duration_ms, error, attempts,
+const generationJobColumns = `id::text, partner_id::text, user_id::text, prompt, lyrics, model,
+	model_version, seed, license_ref, params_json, safety_result, watermark_id,
+	status, output_object_key, duration_ms, error, attempts,
 	created_at, updated_at`
 
 func scanGenerationJob(row interface{ Scan(...any) error }) (*domain.GenerationJob, error) {
 	g := &domain.GenerationJob{}
-	var lyrics, outputKey, errmsg sql.NullString
-	var duration sql.NullInt64
-	err := row.Scan(&g.ID, &g.PartnerID, &g.Prompt, &lyrics, &g.Model,
-		&g.LicenseRef, &g.ParamsJSON, &g.Status, &outputKey, &duration, &errmsg, &g.Attempts,
+	var userID, lyrics, outputKey, errmsg sql.NullString
+	var seed, duration sql.NullInt64
+	err := row.Scan(&g.ID, &g.PartnerID, &userID, &g.Prompt, &lyrics, &g.Model,
+		&g.ModelVersion, &seed, &g.LicenseRef, &g.ParamsJSON, &g.SafetyResult, &g.WatermarkID,
+		&g.Status, &outputKey, &duration, &errmsg, &g.Attempts,
 		&g.CreatedAt, &g.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	g.UserID = strPtr(userID)
 	g.Lyrics = strPtr(lyrics)
+	if seed.Valid {
+		g.Seed = &seed.Int64
+	}
 	g.OutputObjectKey = strPtr(outputKey)
 	g.DurationMs = intPtr(duration)
 	g.Error = strPtr(errmsg)
@@ -34,15 +40,41 @@ func scanGenerationJob(row interface{ Scan(...any) error }) (*domain.GenerationJ
 
 // Create inserts a QUEUED generation job.
 func (r *GenerationJobRepo) Create(ctx context.Context, partnerID, prompt string, lyrics *string, model, paramsJSON string) (*domain.GenerationJob, error) {
-	return r.CreateFull(ctx, partnerID, prompt, lyrics, model, "", paramsJSON)
+	return r.CreateFull(ctx, partnerID, prompt, lyrics, model, "", paramsJSON, nil, "")
 }
 
-// CreateFull inserts a QUEUED generation job with a license reference.
-func (r *GenerationJobRepo) CreateFull(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string) (*domain.GenerationJob, error) {
+// CreateFull inserts a QUEUED generation job with a license reference and
+// optional reproducibility pins (seed/modelVersion, WI-G0).
+func (r *GenerationJobRepo) CreateFull(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string) (*domain.GenerationJob, error) {
 	g, err := scanGenerationJob(r.db.QueryRowContext(ctx, `
-		INSERT INTO generation_jobs (partner_id, prompt, lyrics, model, license_ref, params_json)
-		VALUES ($1::uuid, $2, $3, $4, $5, $6)
-		RETURNING `+generationJobColumns, partnerID, prompt, nullStr(lyrics), model, licenseRef, paramsJSON))
+		INSERT INTO generation_jobs (partner_id, prompt, lyrics, model, license_ref, params_json, seed, model_version)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING `+generationJobColumns, partnerID, prompt, nullStr(lyrics), model, licenseRef, paramsJSON, nullInt64(seed), modelVersion))
+	return g, err
+}
+
+// UpdateResult records the contract-v2 inference evidence (WI-G1): the exact
+// model version + seed served, the weights hash, the safety verdict JSON,
+// and the watermark ID the AVIBE gate branch requires.
+func (r *GenerationJobRepo) UpdateResult(ctx context.Context, id, modelVersion string, seed *int64, weightsHash, safetyJSON, watermarkID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE generation_jobs SET model_version = $2, seed = $3, safety_result = $4,
+			watermark_id = $5, params_json = CASE WHEN $6 = '' THEN params_json
+			ELSE ((COALESCE(NULLIF(params_json, '{}'), '{}'))::jsonb || jsonb_build_object('weightsHash', $6))::text END,
+			updated_at = NOW() WHERE id = $1::uuid`,
+		id, modelVersion, nullInt64(seed), safetyJSON, watermarkID, weightsHash)
+	return err
+}
+
+// FindSucceededByOutputKey returns the SUCCEEDED job that staged a key, for
+// the AVIBE finalize branch (WI-G0). Nil job (no error) means no provenance.
+func (r *GenerationJobRepo) FindSucceededByOutputKey(ctx context.Context, partnerID, outputKey string) (*domain.GenerationJob, error) {
+	g, err := scanGenerationJob(r.db.QueryRowContext(ctx,
+		`SELECT `+generationJobColumns+` FROM generation_jobs
+		WHERE partner_id = $1::uuid AND output_object_key = $2 AND status = 'SUCCEEDED'`, partnerID, outputKey))
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	return g, err
 }
 

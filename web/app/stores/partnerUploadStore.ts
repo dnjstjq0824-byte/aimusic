@@ -1,23 +1,24 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { partnerApi } from '@/api/endpoints';
-import { errCodeOf } from '@/api/client';
+import { errCodeOf, tKey } from '@/api/client';
 import type { AIDisclosure, AIProviderPolicy, PartnerAISubscription, PrecheckOutput } from '@/api/types';
 
 export type GateStatus = 'idle' | 'checking' | 'pass' | 'fail';
 
+// Labels resolve in the consumer via t(opt.key) (R13); the store ships codes only.
 export const AI_CREDIT_PART_OPTIONS = [
-  { code: 'LYRICS', label: '가사' },
-  { code: 'VOCALS', label: '보컬' },
-  { code: 'INSTRUMENTAL', label: '반주' },
+  { code: 'LYRICS', key: 'studio.upload.creditLyrics' },
+  { code: 'VOCALS', key: 'studio.upload.creditVocals' },
+  { code: 'INSTRUMENTAL', key: 'studio.upload.creditInstrumental' },
 ] as const;
 
 export const HUMAN_CONTRIBUTION_OPTIONS = [
-  { code: 'LYRICS', label: '작사' },
-  { code: 'MELODY_INPUT', label: '멜로디 입력' },
-  { code: 'ARRANGEMENT', label: '편곡' },
-  { code: 'PERFORMANCE', label: '실연' },
-  { code: 'MIX_SELECTION', label: '믹스·선별' },
+  { code: 'LYRICS', key: 'studio.upload.contribLyrics' },
+  { code: 'MELODY_INPUT', key: 'studio.upload.contribMelody' },
+  { code: 'ARRANGEMENT', key: 'studio.upload.contribArrange' },
+  { code: 'PERFORMANCE', key: 'studio.upload.contribPerform' },
+  { code: 'MIX_SELECTION', key: 'studio.upload.contribMix' },
 ] as const;
 
 // Gate1-2 = provider commercial eligibility + generation-date/subscription checks
@@ -101,37 +102,69 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
   const instantBlockReason = computed<string | null>(() => {
     const p = selectedPolicy.value;
     if (!p) return null;
+    const base = tKey(
+      'studio.upload.blockBase',
+      "The selected plan or generation-time track can't be distributed as commercial standalone streaming, so it can't be uploaded.",
+    );
     if (!p.allowsStandaloneStreaming) {
-      return `선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (${p.rejectionMessageKo})`;
+      // rejectionMessageKo is server-provided copy, passed through as data.
+      return `${base} (${p.rejectionMessageKo})`;
     }
-    const tier = (planTierUsed.value || selectedSubscription.value?.planName || '').trim().toLowerCase();
+    const planName = planTierUsed.value || selectedSubscription.value?.planName || '';
+    const tier = planName.trim().toLowerCase();
     if (tier) {
+      const basePlan = tKey(
+        'studio.upload.blockBasePlan',
+        "The selected plan ({plan}) or generation-time track can't be distributed as commercial standalone streaming, so it can't be uploaded.",
+        { plan: planName },
+      );
       const isBlocked = (p.blockedPlanTiers ?? []).some((t) => t.toLowerCase() === tier);
       if (isBlocked) {
-        return `선택하신 요금제(${planTierUsed.value || selectedSubscription.value?.planName}) 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (비상업/무료 요금제 차단: ERR_NON_COMMERCIAL_TIER)`;
+        const detail = tKey('studio.upload.blockTier', 'Non-commercial/free-tier block: {code}', {
+          code: 'ERR_NON_COMMERCIAL_TIER',
+        });
+        return `${basePlan} (${detail})`;
       }
       const isSyncOnly = (p.syncOnlyPlanTiers ?? []).some((t) => t.toLowerCase() === tier);
       if (isSyncOnly) {
-        return `선택하신 요금제(${planTierUsed.value || selectedSubscription.value?.planName}) 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (영상 배경음악 Sync 전용 라이선스 차단: ERR_SYNC_ONLY_LICENSE)`;
+        const detail = tKey('studio.upload.blockSyncOnly', 'Sync-only video-BGM license block: {code}', {
+          code: 'ERR_SYNC_ONLY_LICENSE',
+        });
+        return `${basePlan} (${detail})`;
       }
     }
     if (generatedAt.value && selectedSubscription.value) {
       const genTime = new Date(generatedAt.value).getTime();
       const subStart = new Date(selectedSubscription.value.createdAt).getTime();
       if (!Number.isNaN(genTime) && !Number.isNaN(subStart) && genTime < subStart) {
-        return '선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (유료 구독 시작일 이전에 생성된 음원 소급 적용 불가: ERR_RETROACTIVE_GENERATION_DATE)';
+        const detail = tKey(
+          'studio.upload.blockRetro',
+          'Generation predates the paid subscription (no retroactive cover): {code}',
+          { code: 'ERR_RETROACTIVE_GENERATION_DATE' },
+        );
+        return `${base} (${detail})`;
       }
       if (selectedSubscription.value.expiresAt) {
         const subEnd = new Date(selectedSubscription.value.expiresAt).getTime();
         if (!Number.isNaN(genTime) && !Number.isNaN(subEnd) && genTime > subEnd) {
-          return '선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다. (유료 구독 만료 이후 생성된 음원: ERR_NON_COMMERCIAL_TIER)';
+          const detail = tKey(
+            'studio.upload.blockExpired',
+            'Generated after the paid subscription expired: {code}',
+            { code: 'ERR_NON_COMMERCIAL_TIER' },
+          );
+          return `${base} (${detail})`;
         }
       }
     }
     return null;
   });
 
+  // R9 studio flow (4 steps): 1 file → 2 origin/plan/proof (pre-check) →
+  // 3 metadata → 4 review + warranties + submit. Engine call order is
+  // unchanged: pre-check → staged upload → finalize.
+  const canLeaveStep1 = computed(() => file.value !== null);
   const step2Blocked = computed(() => instantBlockReason.value !== null || gate12.value !== 'pass' || !grant.value);
+  const step3Blocked = computed(() => title.value.trim().length === 0 || collectiveTrust.value !== 'NONE');
   const canFinalize = computed(
     () =>
       stagedKey.value !== null &&
@@ -165,7 +198,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     grant.value = null;
   }
 
-  // Step1: Gate1-2 pre-check. On fail, block banner disables Step2.
+  // Step 2: Gate1-2 pre-check. On fail, block banner disables Step 3.
   async function runPrecheck(): Promise<boolean> {
     if (instantBlockReason.value) {
       gate12.value = 'fail';
@@ -176,7 +209,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     if (!file.value) {
       gate12.value = 'fail';
       gate12Code.value = 'ERR_INVALID_INPUT';
-      gate12Message.value = '음원 파일을 먼저 선택해 주세요.';
+      gate12Message.value = tKey('studio.upload.needFile', 'Choose an audio file first.');
       return false;
     }
     gate12.value = 'checking';
@@ -206,7 +239,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     }
   }
 
-  // Step2: PUT file to presigned staging URL, then Gate3 local status.
+  // Step 4 submit (part 1): PUT file to presigned staging URL.
   async function uploadStaged(): Promise<boolean> {
     if (!file.value || !grant.value) return false;
     uploading.value = true;
@@ -232,7 +265,10 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
       stagedKey.value = grant.value.stagingKey;
       uploadProgress.value = 100;
       gate3.value = 'pass';
-      gate3Message.value = '스테이징 업로드 완료. 파일 무결성/형식 검사가 finalize 단계에서 진행됩니다.';
+      gate3Message.value = tKey(
+        'studio.upload.stagedDone',
+        'Staging upload done. Integrity/format checks run at finalize.',
+      );
       return true;
     } catch (err: unknown) {
       gate3.value = 'fail';
@@ -245,11 +281,14 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
 
   function disclosureText(): string {
     return disclosure.value === 'FULL_AI'
-      ? 'FULL_AI: 본 음원은 AI가 전곡 생성한 음원입니다.'
-      : 'AI_ASSISTED_HUMAN: 본 음원은 인간 창작자가 AI 보조 도구를 사용해 제작한 음원입니다.';
+      ? tKey('studio.upload.discFull', 'FULL_AI: this track was fully generated by AI.')
+      : tKey(
+          'studio.upload.discAssist',
+          'AI_ASSISTED_HUMAN: made by a human creator with AI assist tools.',
+        );
   }
 
-  // Step3: metadata + rights finalize.
+  // Step 4 submit (part 2): metadata + rights finalize.
   async function finalize(bitrateKbps?: number, durationMs?: number): Promise<boolean> {
     if (!canFinalize.value || !stagedKey.value) return false;
     finalizing.value = true;
@@ -360,7 +399,7 @@ export const usePartnerUploadStore = defineStore('partnerUpload', () => {
     collectiveTrust, collectiveName,
     declaresOwnership, declaresNoVoiceClone, declaresTrainingConsent, agreesCommercialTerms,
     finalized, finalizing, finalizeError,
-    policies, subscriptions, selectedPolicy, availablePlanTiers, instantBlockReason, step2Blocked, canFinalize,
+    policies, subscriptions, selectedPolicy, availablePlanTiers, instantBlockReason, canLeaveStep1, step2Blocked, step3Blocked, canFinalize,
     loadReference, pickFile, runPrecheck, uploadStaged, finalize, reset,
   };
 });

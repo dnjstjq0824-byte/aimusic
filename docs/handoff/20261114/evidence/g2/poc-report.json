@@ -1,0 +1,32 @@
+{
+  "wi": "G2",
+  "status": "NOT TESTED",
+  "createdAt": "2026-11-16T16:04:13.544658+00:00",
+  "prompt": "calm piano loop, 90 bpm",
+  "durationSec": 30,
+  "weightsDir": null,
+  "weightsPresent": false,
+  "packages": {
+    "acestep": {
+      "name": "acestep",
+      "installed": false
+    },
+    "audioseal": {
+      "name": "audioseal",
+      "installed": false
+    }
+  },
+  "cuda": {
+    "torch": null,
+    "cudaAvailable": false,
+    "device": null
+  },
+  "licenseNote": "Weight + watermark licenses are re-verified from the installed release artifacts on the GPU PC at run time (see packages.*.licenseFile hashes above). Nothing here asserts a license.",
+  "missing": [
+    "GENERATOR_MODEL_DIR with weight files",
+    "python package acestep",
+    "python package audioseal",
+    "CUDA-capable GPU"
+  ],
+  "results": null
+}

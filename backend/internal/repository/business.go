@@ -73,6 +73,79 @@ func (r *BusinessRepo) SetInquiryStatus(ctx context.Context, id, status string) 
 	return q, err
 }
 
+const businessProfileColumns = `user_id::text, company_name, biz_no, country, industry,
+	status, verified_by::text, verified_at, created_at, updated_at`
+
+func scanBusinessProfile(row interface{ Scan(...any) error }) (*domain.BusinessProfile, error) {
+	p := &domain.BusinessProfile{}
+	var bizNo, verifiedBy sql.NullString
+	var verifiedAt sql.NullTime
+	err := row.Scan(&p.UserID, &p.CompanyName, &bizNo, &p.Country, &p.Industry,
+		&p.Status, &verifiedBy, &verifiedAt, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	p.BizNo = strPtr(bizNo)
+	p.VerifiedBy = strPtr(verifiedBy)
+	p.VerifiedAt = timePtr(verifiedAt)
+	return p, nil
+}
+
+// CreateBusinessProfile stores a BUSINESS account's company profile (R10).
+func (r *BusinessRepo) CreateBusinessProfile(ctx context.Context, userID, company, bizNo, country, industry, status string) (*domain.BusinessProfile, error) {
+	var biz any
+	if bizNo != "" {
+		biz = bizNo
+	}
+	return scanBusinessProfile(r.db.QueryRowContext(ctx, `
+		INSERT INTO business_profiles (user_id, company_name, biz_no, country, industry, status)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6)
+		RETURNING `+businessProfileColumns,
+		userID, company, biz, country, industry, status))
+}
+
+// GetBusinessProfileByUser returns one account's business profile.
+func (r *BusinessRepo) GetBusinessProfileByUser(ctx context.Context, userID string) (*domain.BusinessProfile, error) {
+	p, err := scanBusinessProfile(r.db.QueryRowContext(ctx,
+		`SELECT `+businessProfileColumns+` FROM business_profiles WHERE user_id = $1::uuid`, userID))
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	return p, err
+}
+
+// ListBusinessProfilesByStatus returns profiles filtered by status (admin).
+func (r *BusinessRepo) ListBusinessProfilesByStatus(ctx context.Context, status string, limit int) ([]*domain.BusinessProfile, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT `+businessProfileColumns+`
+		FROM business_profiles WHERE status = $1 ORDER BY created_at DESC LIMIT $2`,
+		status, clampLimit(limit, 20, 100))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.BusinessProfile{}
+	for rows.Next() {
+		p, err := scanBusinessProfile(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ReviewBusinessProfile approves or suspends a profile (admin manual review).
+func (r *BusinessRepo) ReviewBusinessProfile(ctx context.Context, userID, status, verifierID string) (*domain.BusinessProfile, error) {
+	p, err := scanBusinessProfile(r.db.QueryRowContext(ctx, `
+		UPDATE business_profiles
+		SET status = $2, verified_by = $3::uuid, verified_at = NOW(), updated_at = NOW()
+		WHERE user_id = $1::uuid RETURNING `+businessProfileColumns, userID, status, verifierID))
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	return p, err
+}
+
 // JoinWaitlist registers an email; re-registration returns existed=true.
 func (r *BusinessRepo) JoinWaitlist(ctx context.Context, email, interest, locale string) (*domain.WaitlistEntry, bool, error) {
 	w := &domain.WaitlistEntry{}

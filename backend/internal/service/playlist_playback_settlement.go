@@ -27,7 +27,8 @@ func (s *PlaylistService) Create(ctx context.Context, ownerID, title string, isP
 
 // Get returns a playlist visible to caller (owner or public).
 func (s *PlaylistService) Get(ctx context.Context, callerID, playlistID string) (*domain.Playlist, error) {
-	p, err := s.repos.Playlists.GetByID(ctx, playlistID)
+	// S1: detail params may be uuid, short ID, or slug-shortID.
+	p, _, _, err := s.repos.SEO.PlaylistByParam(ctx, playlistID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,10 +116,11 @@ func (s *PlaylistService) Reorder(ctx context.Context, callerID, playlistID stri
 
 // ListTracks returns ordered entries visible to caller.
 func (s *PlaylistService) ListTracks(ctx context.Context, callerID, playlistID string) ([]*domain.PlaylistTrack, error) {
-	if _, err := s.Get(ctx, callerID, playlistID); err != nil {
+	p, err := s.Get(ctx, callerID, playlistID)
+	if err != nil {
 		return nil, err
 	}
-	return s.repos.Playlists.ListTracks(ctx, playlistID)
+	return s.repos.Playlists.ListTracks(ctx, p.ID)
 }
 
 func (s *PlaylistService) requireOwner(ctx context.Context, callerID, playlistID string) error {

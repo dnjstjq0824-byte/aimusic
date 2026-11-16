@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from './authStore';
 import { usePlayerStore } from './playerStore';
 import { authApi } from '@/api/endpoints';
-import { tokenStore } from '@/api/client';
+import { setKeyTranslator, tokenStore } from '@/api/client';
 import type { Track } from '@/api/types';
 
 // Player cleanup on logout touches the shared audio element; stub it.
@@ -32,6 +32,7 @@ describe('useAuthStore', () => {
     localStorage.clear();
     vi.resetAllMocks();
     setActivePinia(createPinia());
+    setKeyTranslator(null);
   });
 
   it('hydrate without tokens only marks initialized', async () => {
@@ -110,9 +111,18 @@ describe('useAuthStore', () => {
   it('loginWithTokens clears tokens and throws when /me fails', async () => {
     meMock.mockRejectedValue(new Error('nope'));
     const store = useAuthStore();
-    await expect(store.loginWithTokens('oa', 'or')).rejects.toThrow('소셜 로그인 세션');
+    await expect(store.loginWithTokens('oa', 'or')).rejects.toThrow(
+      "Couldn't verify the social login session.",
+    );
     expect(tokenStore.getAccess()).toBeNull();
     expect(store.userId).toBeNull();
+  });
+
+  it('loginWithTokens failure resolves the app locale when a translator is installed', async () => {
+    setKeyTranslator((key) => (key === 'auth.social.sessionErr' ? 'KO-SESSION-ERR' : null));
+    meMock.mockRejectedValue(new Error('nope'));
+    const store = useAuthStore();
+    await expect(store.loginWithTokens('oa', 'or')).rejects.toThrow('KO-SESSION-ERR');
   });
 
   it('signs out in the UI when tokens are wiped elsewhere (failed refresh)', async () => {
@@ -163,6 +173,36 @@ describe('useAuthStore', () => {
     await store.consentTerms('t-1');
     expect(consentMock).toHaveBeenCalledWith('t-1');
     expect(store.needsTermsConsent).toBe(false);
+  });
+
+  it('hydrate resolves multi-role grants (R10)', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'PARTNER', roles: ['PARTNER', 'BUSINESS'] } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.roles).toEqual(['PARTNER', 'BUSINESS']);
+    expect(store.isPartner).toBe(true);
+    expect(store.isBusiness).toBe(true);
+    expect(store.isAdmin).toBe(false);
+  });
+
+  it('business-only accounts reach the console, not the studio', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-2', role: 'BUSINESS', roles: ['BUSINESS'] } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    expect(store.isBusiness).toBe(true);
+    expect(store.isPartner).toBe(false);
+  });
+
+  it('logout clears roles', async () => {
+    tokenStore.set('a', 'r');
+    meMock.mockResolvedValue({ userId: 'u-1', role: 'PARTNER', roles: ['PARTNER', 'BUSINESS'] } as never);
+    const store = useAuthStore();
+    await store.hydrate();
+    store.logout();
+    expect(store.roles).toEqual([]);
+    expect(store.isBusiness).toBe(false);
   });
 
   it('logout resets everything', async () => {

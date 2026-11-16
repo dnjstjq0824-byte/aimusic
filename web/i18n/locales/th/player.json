@@ -38,6 +38,11 @@
     "tabLicense": "ไลเซนส์",
     "noLyrics": "ยังไม่มีเนื้อเพลง",
     "viewTrack": "ดูในหน้าเพลง",
-    "remove": "ลบ"
+    "remove": "ลบ",
+    "errPlayFailed": "เล่นเพลงไม่ได้ ตรวจสอบเครือข่ายแล้วลองอีกครั้ง",
+    "errStreamLost": "สตรีมขาดการเชื่อมต่อ: {title}",
+    "errSkipLogin": "เข้าสู่ระบบเพื่อเล่นเพลง",
+    "errSkipUnplayable": "ข้ามเพลงที่เล่นไม่ได้: {title}",
+    "storeErrPlayFailed": "เล่นเพลงไม่ได้ กรุณาตรวจสอบเครือข่าย"
   }
 }

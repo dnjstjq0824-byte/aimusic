@@ -1,9 +1,9 @@
 <template>
-  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2" aria-label="페이지네이션">
+  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2" :aria-label="t('common.paginator.label')">
     <div class="text-xs text-text-secondary">
       <slot name="info">
-        <span v-if="total !== null">전체 {{ total.toLocaleString('ko-KR') }}개 중 {{ rangeText }}</span>
-        <span v-else>페이지 {{ page }}</span>
+        <span v-if="total !== null">{{ t('common.paginator.ofTotal', { range: rangeText, total: fmt.number(total) }) }}</span>
+        <span v-else>{{ t('common.paginator.pageOnly', { page }) }}</span>
       </slot>
     </div>
     <div class="flex flex-wrap items-center gap-1.5">
@@ -11,17 +11,17 @@
         variant="secondary"
         size="sm"
         :disabled="page <= 1 || disabled"
-        aria-label="이전 페이지"
+        :aria-label="t('common.paginator.prev')"
         @click="$emit('prev')"
       >
-        ← 이전
+        ← {{ t('common.paginator.prevShort') }}
       </UiButton>
       <template v-if="pageNumbers.length > 0">
         <button
           v-for="p in pageNumbers"
           :key="p"
           type="button"
-          :aria-label="`페이지 ${p}`"
+          :aria-label="t('common.paginator.pageNum', { p })"
           :aria-current="p === page ? 'page' : undefined"
           :disabled="disabled"
           class="min-w-[2rem] rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
@@ -37,10 +37,10 @@
         variant="secondary"
         size="sm"
         :disabled="!hasMore || disabled"
-        aria-label="다음 페이지"
+        :aria-label="t('common.paginator.next')"
         @click="$emit('next')"
       >
-        다음 →
+        {{ t('common.paginator.nextShort') }} →
       </UiButton>
     </div>
   </nav>
@@ -48,7 +48,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useFormat } from '@/composables/useFormat';
 import UiButton from './UiButton.vue';
+
+const { t } = useI18n();
+const fmt = useFormat();
 
 interface Props {
   page: number;
@@ -91,10 +96,10 @@ const pageNumbers = computed(() => {
 const rangeText = computed(() => {
   const limit = props.limit ?? 0;
   const total = props.total ?? 0;
-  if (limit <= 0 || total === 0) return '0개';
+  if (limit <= 0 || total === 0) return t('common.paginator.empty');
   const from = (props.page - 1) * limit + 1;
   const to = Math.min(total, props.page * limit);
-  return `${from.toLocaleString('ko-KR')}–${to.toLocaleString('ko-KR')}개`;
+  return t('common.paginator.range', { from: fmt.number(from), to: fmt.number(to) });
 });
 
 function goPage(p: number): void {

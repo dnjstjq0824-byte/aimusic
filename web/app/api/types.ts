@@ -1,7 +1,63 @@
 // Domain types mirroring backend/internal/domain/entities.go JSON tags
 // and handler request/response shapes in backend/internal/handler/*.go.
 
-export type Role = 'ADMIN' | 'PARTNER' | 'USER';
+export type Role = 'ADMIN' | 'PARTNER' | 'USER' | 'BUSINESS';
+
+export interface MePrincipal {
+  userId: string;
+  role: Role;
+  roles: Role[];
+  ageConfirmedAt?: string | null;
+  displayName: string;
+  email: string;
+  totpEnabled?: boolean;
+  locale: string;
+  emailVerified: boolean;
+}
+
+export interface BusinessProfile {
+  userId: string;
+  companyName: string;
+  bizNo?: string | null;
+  country: string;
+  industry?: string;
+  status: 'PENDING' | 'APPROVED' | 'SUSPENDED';
+  verifiedBy?: string | null;
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessInquiry {
+  id: string;
+  company: string;
+  country: string;
+  storeCount: number;
+  useCase: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  message: string;
+  status: 'NEW' | 'CONTACTED' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoleGrant {
+  userId: string;
+  email: string;
+  displayName: string;
+  primaryRole: Role;
+  role: Role;
+  grantedAt: string;
+  source: 'backfill' | 'migration' | 'register' | 'admin' | 'manual';
+}
+
+export interface OAuthStats {
+  byProvider: { provider: string; links: number }[];
+  linkedUsers: number;
+  totalLinks: number;
+}
 
 export interface Tokens {
   accessToken: string;
@@ -14,9 +70,12 @@ export interface User {
   email: string;
   role: Role;
   displayName: string;
+  handle?: string | null;
   isActive: boolean;
   birthYear?: number | null;
   ageConfirmedAt?: string | null;
+  locale?: string | null;
+  emailVerifiedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,7 +131,10 @@ export interface Track {
   albumId?: string | null;
   partnerId: string;
   creatorName?: string;
+  creatorHandle?: string | null;
   title: string;
+  shortId?: string;
+  slug?: string;
   genre?: string | null;
   moodTags?: string[];
   durationMs?: number | null;
@@ -152,7 +214,10 @@ export interface Playlist {
   ownerUserId: string;
   ownerName?: string;
   title: string;
+  shortId?: string;
+  slug?: string;
   isPublic: boolean;
+  isOfficialCuration?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -175,6 +240,7 @@ export interface PlaylistTrack {
 export interface StoreBusiness {
   id: string;
   partnerId: string;
+  ownerUserId: string;
   businessNumber: string;
   storeName: string;
   licenseCount: number;
@@ -397,11 +463,16 @@ export interface CertificateView {
 export interface GenerationJob {
   id: string;
   partnerId: string;
+  userId?: string | null;
   prompt: string;
   lyrics?: string | null;
   model: string;
+  modelVersion?: string;
+  seed?: number | null;
   licenseRef?: string;
   paramsJson: string;
+  safetyResult?: string;
+  watermarkId?: string;
   status: string;
   outputObjectKey?: string | null;
   durationMs?: number | null;
@@ -439,6 +510,12 @@ export type TrackSort = 'recent' | 'oldest' | 'popular' | 'title';
 export interface OAuthProviderInfo {
   provider: string;
   enabled: boolean;
+}
+
+export interface OAuthConnection {
+  provider: string;
+  email?: string;
+  createdAt: string;
 }
 
 export interface BillingPlan {

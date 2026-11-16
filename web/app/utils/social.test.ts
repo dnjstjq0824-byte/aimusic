@@ -40,3 +40,19 @@ describe('orderSocialProviders (UI §3.11)', () => {
     expect(kakao).toEqual({ code: 'KAKAO', slug: 'kakao', labelKey: 'auth.social.kakao', short: 'Kakao' });
   });
 });
+
+describe('socialBrand (WI-A1)', () => {
+  it('covers every supported provider with opaque colors', async () => {
+    const { socialBrand } = await import('./social');
+    for (const code of ['GOOGLE', 'APPLE', 'KAKAO', 'NAVER', 'LINE']) {
+      const b = socialBrand(code);
+      expect(b.bg).toMatch(/^#[0-9A-F]{6}$/);
+      expect(b.fg).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
+
+  it('falls back for unknown codes', async () => {
+    const { socialBrand } = await import('./social');
+    expect(socialBrand('WECHAT').bg).toBe('#2A2F3A');
+  });
+});

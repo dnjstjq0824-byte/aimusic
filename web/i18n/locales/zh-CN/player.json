@@ -38,6 +38,11 @@
     "tabLicense": "授权",
     "noLyrics": "暂无歌词。",
     "viewTrack": "在歌曲页面查看",
-    "remove": "删除"
+    "remove": "删除",
+    "errPlayFailed": "无法播放该音乐，请检查网络后重试。",
+    "errStreamLost": "流媒体连接中断：{title}",
+    "errSkipLogin": "播放需要登录。",
+    "errSkipUnplayable": "跳过无法播放的音乐：{title}",
+    "storeErrPlayFailed": "无法播放该音乐，请检查网络。"
   }
 }

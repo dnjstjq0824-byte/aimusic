@@ -155,7 +155,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 	// The three legal warranties are enforced server-side so API clients
 	// cannot bypass the upload wizard checkboxes.
 	if !in.Rights.DeclaresOwnership || !in.Rights.DeclaresNoVoiceClone || !in.Rights.DeclaresTrainingConsent {
-		return nil, fmt.Errorf("%w: 권리 보유·보이스클로닝 부존재·소급음원 부존재 서약이 모두 필요합니다", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: ownership, no-voice-clone, and no-retroactive-source warranties are all required", domain.ErrInvalidInput)
 	}
 	creditParts, err := licensegate.NormalizeAICreditParts(in.AICreditParts)
 	if err != nil {
@@ -171,12 +171,24 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		return nil, fmt.Errorf("%w: collectiveTrustStatus must be NONE|TRUSTED", domain.ErrInvalidInput)
 	}
 	if trust == domain.CollectiveTrusted {
-		return nil, fmt.Errorf("%w: 신탁단체(KOMCA 등) 신탁곡은 현재 접수할 수 없습니다. 미신탁 확인 후 다시 제출해 주세요", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: collecting-society (KOMCA etc.) trusted tracks are not accepted yet; confirm untrusted and resubmit", domain.ErrInvalidInput)
 	}
 	if in.Rights.SourceModel != nil {
 		if err := licensegate.ValidateSourceModel(*in.Rights.SourceModel); err != nil {
 			return nil, err
 		}
+	}
+	// AVIBE-model output ("Born Verified", WI-G0): the gate pass flag is
+	// derived server-side from the SUCCEEDED generation job that staged this
+	// key — similarity verdict passed + watermark recorded. Partner
+	// self-declaration can never set it.
+	avibeOK := false
+	if strings.EqualFold(strings.TrimSpace(in.Provider), domain.ProviderAvibe) {
+		prov, err := s.repos.GenJobs.FindSucceededByOutputKey(ctx, in.PartnerID, in.StagingKey)
+		if err != nil {
+			return nil, err
+		}
+		avibeOK = AvibeProvenanceOK(prov)
 	}
 	if _, err := licensegate.ValidateCommercialEligibility(ctx, s.repos.Gate, licensegate.PreCheckRequest{
 		PartnerID:                   in.PartnerID,
@@ -186,6 +198,7 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 		GeneratedAt:                 in.GeneratedAt,
 		SubscriptionID:              in.SubscriptionID,
 		RequiresActiveSubAtCreation: true,
+		AvibeChecksPassed:           avibeOK,
 	}); err != nil {
 		return nil, err
 	}
@@ -206,7 +219,12 @@ func (s *FinalizeService) Finalize(ctx context.Context, in FinalizeInput) (*Fina
 	}
 	defer tx.Rollback()
 	txRepos := s.repos.WithTx(tx)
+	origin := domain.TrackOriginExternal
+	if strings.EqualFold(strings.TrimSpace(in.Provider), domain.ProviderAvibe) {
+		origin = domain.TrackOriginAvibe
+	}
 	track, err := txRepos.Tracks.Create(ctx, &domain.Track{
+		Origin:            origin,
 		AlbumID:           in.AlbumID,
 		PartnerID:         in.PartnerID,
 		Title:             in.Title,

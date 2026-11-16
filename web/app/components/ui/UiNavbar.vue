@@ -119,19 +119,27 @@
                 <div class="text-caption text-text-muted truncate">{{ auth.email }}</div>
               </div>
               <RouterLink
-                to="/account/security"
+                to="/account"
                 class="block px-3 py-2 text-text-primary hover:bg-surface-3 hover:text-white"
                 @click="userMenuOpen = false"
               >
                 {{ t('common.nav.accountSettings') }}
               </RouterLink>
               <RouterLink
-                v-if="auth.isPartner || auth.isAdmin"
-                to="/partner"
+                v-if="auth.isPartner"
+                to="/studio"
                 class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold"
                 @click="userMenuOpen = false"
               >
-                {{ t('common.nav.partnerStudio') }}
+                {{ t('common.nav.creatorStudio') }}
+              </RouterLink>
+              <RouterLink
+                v-if="auth.isBusiness"
+                to="/business/console"
+                class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold"
+                @click="userMenuOpen = false"
+              >
+                {{ t('common.nav.businessConsole') }}
               </RouterLink>
               <RouterLink
                 v-if="auth.isAdmin"

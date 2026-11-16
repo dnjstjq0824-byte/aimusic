@@ -66,4 +66,22 @@ describe('partnerUploadStore ownership declarations', () => {
     expect(s.aiCreditParts).toEqual([]);
     expect(s.humanContributionTypes).toEqual([]);
   });
+
+  it('gates the R9 4-step flow (file -> precheck -> metadata -> review)', () => {
+    const s = usePartnerUploadStore();
+    expect(s.canLeaveStep1).toBe(false);
+    s.file = new File(['x'], 'a.wav');
+    expect(s.canLeaveStep1).toBe(true);
+    // Step 2 exit needs a passed pre-check.
+    expect(s.step2Blocked).toBe(true);
+    s.gate12 = 'pass';
+    s.grant = { eligible: true, stagingKey: 'k', uploadUrl: 'u', expiresInSecs: 1 };
+    expect(s.step2Blocked).toBe(false);
+    // Step 3 exit needs a title and no collective trust.
+    expect(s.step3Blocked).toBe(true);
+    s.title = 'T';
+    expect(s.step3Blocked).toBe(false);
+    s.collectiveTrust = 'TRUSTED';
+    expect(s.step3Blocked).toBe(true);
+  });
 });

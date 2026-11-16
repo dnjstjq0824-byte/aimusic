@@ -1,5 +1,5 @@
 <template>
-  <div role="tablist" aria-label="탭" class="flex items-center gap-1 rounded-xl bg-surface-0 p-1 border border-surface-border">
+  <div role="tablist" :aria-label="t('common.tabs.list')" class="flex items-center gap-1 rounded-xl bg-surface-0 p-1 border border-surface-border">
     <button
       v-for="(tab, i) in tabs"
       :key="tab.value"
@@ -31,6 +31,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 export interface TabOption {
   label: string;

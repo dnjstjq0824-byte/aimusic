@@ -1,0 +1,35 @@
+# WI-R13 gates (observed 2026-11-16/17 session, Docker-less)
+
+## Web gates (PASS)
+- node scripts/check-i18n.mjs (strict-by-default since R13): check-i18n PASS
+  (HANGUL 0 across web/app; key parity 6 locales OK; ICU OK; backend codes OK;
+   UNUSED-KEYS warn 317 — warning only, namespaces fill in later WIs)
+- npm run typecheck: exit 0 (pre-existing volar sfc-route-blocks plugin warning only)
+- npx vitest run: 113/113 passed (17 files; +9 R13: translator-bridge 4, dateISO 1, locale-detect 4)
+- npm run build (nuxt node): complete in 38.1s
+- NITRO_PRESET=cloudflare-module npm run build: complete in 76s
+- node scripts/worker-grant.test.mjs: pass 14 fail 0
+- cspell on R13-touched files: 0 new words (6 hits are pre-existing toks/linktok
+  in oauth.go lines untouched by R13)
+- node --check on run.mjs + config.mjs: OK
+
+## R13 implementation notes
+- 19 strict-HANGUL files keyed (api/client, refundPolicy, 4 stores, 2 gates,
+  2 legal widgets, 4 ui primitives, 5 pages) + 2 consumers (pricing, studio/upload)
+  + 1 new plugin (i18n-keys) + check-i18n.mjs (allowlist removed) + CI step rename
+- 119 new keys x 6 locales merged (scripts/r13-merge-locales.cjs); ja/zh-CN/th
+  machine-draft, Beta until native review (G-L); en-XA pseudo-generated
+- Store-safe translation bridge: setKeyTranslator/tKey in client.ts, installed by
+  plugins/i18n-keys.ts; unit tests assert English fallback + translator-first
+- Harness language dimension: LANGS (ko/en/ja/zh-cn/th) in config.mjs, lang loop +
+  URL prefix + stored-locale pinning in run.mjs; HARNESS_LANGS subset override
+- Static matrix: 102 route-slots (guest 48 / listener 22 / creator 10 /
+  storePartner 8 / admin 14) x 3 viewports x 5 langs = 1530 screens
+- i18n-review CSVs: ja.csv / zh-CN.csv / th.csv, 1663 rows each
+  (key, ko source, translation, harness screenshot path)
+
+## Environment blocker (NOT TESTED, Docker recovery needed)
+- Docker engine API 500 (v1.56) all session; Start-Process + 5-min poll -> still down.
+- Pending after recovery: E2E full suite (e2e-runner + env-file, T18-T22 incl.) and
+  harness setup -> run (1530 screens) + defect triage to 0 per checklist.
+- R13 PASS verdict requires those two runs; tree is green, status BLOCKED.

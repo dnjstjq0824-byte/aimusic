@@ -18,7 +18,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <RouterLink
-            :to="localePath({ name: 'track-detail', params: { id: track.id } })"
+            :to="localePath({ name: 'track-detail', params: { id: detailParam(track) } })"
             class="block truncate text-sm font-bold text-white transition-colors hover:text-brand-400"
           >
             {{ track.title }}
@@ -50,6 +50,7 @@ import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
 import { useFormat } from '@/composables/useFormat';
 import { providerDisplayName } from '@/utils/providerDisplay';
+import { detailParam } from '@/utils/seo';
 import type { Track } from '@/api/types';
 const localePath = useLocalePath();
 const { t } = useI18n();

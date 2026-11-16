@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { tokenStore } from '@/api/client';
 import { playlistApi, trackApi } from '@/api/endpoints';
+import { trackEvent } from '@/utils/analytics';
 import type { Playlist, PlaylistTrack, Track } from '@/api/types';
 
 export const usePlaylistStore = defineStore('playlist', () => {
@@ -35,6 +36,7 @@ export const usePlaylistStore = defineStore('playlist', () => {
   async function create(title: string, isPublic: boolean): Promise<Playlist> {
     const p = await playlistApi.create(title, isPublic);
     playlists.value.unshift(p);
+    trackEvent({ name: 'playlist_created' });
     return p;
   }
 

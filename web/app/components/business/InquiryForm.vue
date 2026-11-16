@@ -38,9 +38,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { businessApi, type InquiryInput } from '@/api/endpoints';
 import { useApiError } from '@/composables/useApiError';
+import { trackEvent } from '@/utils/analytics';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
@@ -60,6 +61,10 @@ const valid = computed(
     form.value.message.trim() !== '',
 );
 
+onMounted(() => {
+  trackEvent({ name: 'inquiry_opened' });
+});
+
 async function submit(): Promise<void> {
   if (!valid.value || busy.value) return;
   busy.value = true;
@@ -73,6 +78,7 @@ async function submit(): Promise<void> {
       message: form.value.message.trim(),
       storeCount: Number.isFinite(n) && n >= 0 ? n : undefined,
     });
+    trackEvent({ name: 'inquiry_submitted', props: { useCase: form.value.useCase || 'unknown' } });
     done.value = true;
   } catch (err: unknown) {
     error.value = apiError(err);

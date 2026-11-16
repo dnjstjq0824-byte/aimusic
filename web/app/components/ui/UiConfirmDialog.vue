@@ -9,18 +9,21 @@
     <p v-if="body" class="text-xs leading-relaxed text-text-secondary">{{ body }}</p>
     <template #footer>
       <UiButton variant="ghost" size="sm" @click="$emit('update:modelValue', false)">
-        {{ cancelLabel }}
+        {{ cancelLabel || t('common.actions.cancel') }}
       </UiButton>
       <UiButton :variant="danger ? 'danger' : 'brand'" size="sm" :loading="loading" @click="$emit('confirm')">
-        {{ confirmLabel }}
+        {{ confirmLabel || t('common.actions.confirm') }}
       </UiButton>
     </template>
   </UiModal>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import UiModal from './UiModal.vue';
 import UiButton from './UiButton.vue';
+
+const { t } = useI18n();
 
 interface Props {
   modelValue: boolean;
@@ -36,8 +39,8 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   description: '',
   body: '',
-  confirmLabel: '확인',
-  cancelLabel: '취소',
+  confirmLabel: '',
+  cancelLabel: '',
   danger: false,
   loading: false,
 });

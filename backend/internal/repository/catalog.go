@@ -84,10 +84,10 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	var moodsJoined, creditsJoined string
 	var duration, bitrate sql.NullInt64
 	var bpm sql.NullFloat64
-	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title,
+	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title, &t.ShortID, &t.Slug,
 		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
 		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
-		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
+		&t.AIProvider, &t.Origin, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
 		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -113,18 +113,19 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 }
 
 // scanTrackWithCreator scans trackColumns plus the joined creator display
-// name (trackColumnsWithCreator). Queries must include trackCreatorJoin.
+// name and handle (trackColumnsWithCreator). Queries must include
+// trackCreatorJoin.
 func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
-	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, creator sql.NullString
+	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, creator, handle sql.NullString
 	var moodsJoined, creditsJoined string
 	var duration, bitrate sql.NullInt64
 	var bpm sql.NullFloat64
-	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title,
+	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title, &t.ShortID, &t.Slug,
 		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
 		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
-		&t.AIProvider, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
-		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &creator)
+		&t.AIProvider, &t.Origin, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
+		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &creator, &handle)
 	if err != nil {
 		return nil, err
 	}
@@ -148,25 +149,30 @@ func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, e
 	if creator.Valid {
 		t.CreatorName = creator.String
 	}
+	t.CreatorHandle = strPtr(handle)
 	return t, nil
 }
 
-const trackColumns = `id::text, album_id::text, partner_id::text, title,
+const trackColumns = `id::text, album_id::text, partner_id::text, title, short_id, slug,
 	genre, COALESCE(array_to_string(mood_tags, chr(31)), ''), ai_generation_type,
 	COALESCE(array_to_string(ai_credit_parts, chr(31)), ''),
 	ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
 	duration_ms, original_object_key, audio_fingerprint_hash, hls_prefix, waveform_json,
-	ai_provider, ai_generated, ai_disclosure_text,
+	ai_provider, origin, ai_generated, ai_disclosure_text,
 	bitrate_kbps, isrc, bpm, musical_key, status, rejection_reason_ko, play_count, created_at, updated_at`
 
 // trackColumnsQualified mirrors trackColumns for queries joining creator
 // tables (bare names would be ambiguous). Same order + arity.
-const trackColumnsQualified = `tracks.id::text, tracks.album_id::text, tracks.partner_id::text, tracks.title,
+// trackCreatorSelect extends trackColumnsQualified with the joined creator
+// display name + handle for scanTrackWithCreator.
+const trackCreatorSelect = trackColumnsQualified + `, u.display_name, u.handle`
+
+const trackColumnsQualified = `tracks.id::text, tracks.album_id::text, tracks.partner_id::text, tracks.title, tracks.short_id, tracks.slug,
 	tracks.genre, COALESCE(array_to_string(tracks.mood_tags, chr(31)), ''), tracks.ai_generation_type,
 	COALESCE(array_to_string(tracks.ai_credit_parts, chr(31)), ''),
 	tracks.ai_model_version, tracks.ai_prompt, tracks.is_prompt_public, tracks.is_instrumental, tracks.lyrics,
 	tracks.duration_ms, tracks.original_object_key, tracks.audio_fingerprint_hash, tracks.hls_prefix, tracks.waveform_json,
-	tracks.ai_provider, tracks.ai_generated, tracks.ai_disclosure_text,
+	tracks.ai_provider, tracks.origin, tracks.ai_generated, tracks.ai_disclosure_text,
 	tracks.bitrate_kbps, tracks.isrc, tracks.bpm, tracks.musical_key, tracks.status, tracks.rejection_reason_ko, tracks.play_count, tracks.created_at, tracks.updated_at`
 
 func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track, error) {
@@ -177,22 +183,38 @@ func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track,
 	if genType != "AI_ASSISTED_HUMAN" {
 		genType = "FULL_AI"
 	}
+	shortID := t.ShortID
+	if !domain.ValidateShortID(shortID) {
+		var err error
+		shortID, err = domain.NewShortID()
+		if err != nil {
+			return nil, err
+		}
+	}
+	slug := t.Slug
+	if strings.TrimSpace(slug) == "" {
+		slug = domain.Slugify(t.Title, "track")
+	}
+	origin := t.Origin
+	if origin != domain.TrackOriginAvibe {
+		origin = domain.TrackOriginExternal
+	}
 	return scanTrack(r.db.QueryRowContext(ctx, `
-		INSERT INTO tracks (album_id, partner_id, title, genre, mood_tags, ai_generation_type, ai_credit_parts,
+		INSERT INTO tracks (album_id, partner_id, title, short_id, slug, genre, mood_tags, ai_generation_type, ai_credit_parts,
 			ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
-			duration_ms, original_object_key, ai_provider, ai_generated, ai_disclosure_text, bitrate_kbps, status)
-		VALUES ($1::uuid, $2::uuid, $3, $4, string_to_array($5, chr(31)), $6, string_to_array($7, chr(31)),
-			$8, $9, $10, $11, $12,
-			$13, $14, $15, $16, $17, $18, $19)
+			duration_ms, original_object_key, ai_provider, origin, ai_generated, ai_disclosure_text, bitrate_kbps, status)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, string_to_array($7, chr(31)), $8, string_to_array($9, chr(31)),
+			$10, $11, $12, $13, $14,
+			$15, $16, $17, $18, $19, $20, $21, $22)
 		RETURNING `+trackColumns,
-		nullStr(t.AlbumID), t.PartnerID, t.Title, nullStr(t.Genre), joinKeywords(t.MoodTags), genType, joinKeywords(t.AICreditParts),
+		nullStr(t.AlbumID), t.PartnerID, t.Title, shortID, slug, nullStr(t.Genre), joinKeywords(t.MoodTags), genType, joinKeywords(t.AICreditParts),
 		nullStr(t.AIModelVersion), nullStr(t.AIPrompt), t.IsPromptPublic, t.IsInstrumental, nullStr(t.Lyrics),
-		nullInt(t.DurationMs), t.OriginalObjectKey, t.AIProvider, t.AIGenerated, nullStr(t.AIDisclosureText), nullInt(t.BitrateKbps), t.Status))
+		nullInt(t.DurationMs), t.OriginalObjectKey, t.AIProvider, origin, t.AIGenerated, nullStr(t.AIDisclosureText), nullInt(t.BitrateKbps), t.Status))
 }
 
 func (r *TrackRepo) GetByID(ctx context.Context, id string) (*domain.Track, error) {
 	t, err := scanTrackWithCreator(r.db.QueryRowContext(ctx,
-		`SELECT `+trackColumnsQualified+`, u.display_name FROM tracks`+trackCreatorJoin+` WHERE tracks.id = $1::uuid`, id))
+		`SELECT `+trackCreatorSelect+` FROM tracks`+trackCreatorJoin+` WHERE tracks.id = $1::uuid`, id))
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
@@ -245,8 +267,8 @@ func (r *TrackRepo) ListReady(ctx context.Context, limit, offset int) ([]*domain
 // Track sort keys accepted by SearchReady (strict whitelist; unknown sorts
 // are rejected by the handler before reaching SQL).
 const (
-	TrackSortRecent  = "recent"
-	TrackSortOldest  = "oldest"
+	TrackSortRecent   = "recent"
+	TrackSortOldest   = "oldest"
 	TrackSortPopular  = "popular"
 	TrackSortTitle    = "title"
 	TrackSortRelevant = "relevant"
@@ -416,7 +438,7 @@ func (r *TrackRepo) SearchReady(ctx context.Context, f TrackFilter) (*TrackPage,
 		return nil, err
 	}
 	pageArgs := append(append([]any{}, args...), limit, offset)
-	items, err := r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name FROM tracks`+trackCreatorJoin+where+
+	items, err := r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+` FROM tracks`+trackCreatorJoin+where+
 		` ORDER BY `+orderBy+fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(args)+1, len(args)+2),
 		pageArgs...)
 	if err != nil {
@@ -452,7 +474,7 @@ func (r *TrackRepo) ListByStatus(ctx context.Context, status string, limit, offs
 
 // TopByPlays returns READY tracks ordered by play count for curation.
 func (r *TrackRepo) TopByPlays(ctx context.Context, limit int) ([]*domain.Track, error) {
-	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
 		FROM tracks`+trackCreatorJoin+` WHERE tracks.status = 'READY' ORDER BY tracks.play_count DESC, tracks.created_at DESC LIMIT $1`,
 		clampLimit(limit, 20, 100))
 }
@@ -460,7 +482,7 @@ func (r *TrackRepo) TopByPlays(ctx context.Context, limit int) ([]*domain.Track,
 // TopPlayedSince returns READY tracks ranked by counted plays within the
 // window (charts). since bounds streaming_logs.played_at; limit clamps.
 func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, limit int) ([]*domain.Track, error) {
-	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
 		FROM tracks`+trackCreatorJoin+`
 		JOIN (SELECT track_id, COUNT(*) AS plays FROM streaming_logs
 			WHERE counted_as_play AND played_at >= $1 GROUP BY track_id) s ON s.track_id = tracks.id
@@ -470,7 +492,7 @@ func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, limit i
 
 // LikedTracks returns the user's liked tracks, most recently liked first.
 func (r *TrackRepo) LikedTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
-	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
 		FROM track_likes l
 		JOIN tracks ON tracks.id = l.track_id`+trackCreatorJoin+`
 		WHERE l.user_id = $1::uuid
@@ -481,7 +503,7 @@ func (r *TrackRepo) LikedTracks(ctx context.Context, userID string, limit int) (
 // RecentTracks returns the user's recently resumed READY tracks (login home
 // continue-listening), most recent first with each resume position.
 func (r *TrackRepo) RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
-	return r.listTracksWithCreator(ctx, `SELECT `+trackColumnsQualified+`, u.display_name
+	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
 		FROM user_playback_states st
 		JOIN tracks ON tracks.id = st.track_id`+trackCreatorJoin+`
 		WHERE st.user_id = $1::uuid AND tracks.status = 'READY'

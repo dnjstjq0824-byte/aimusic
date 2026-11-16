@@ -144,7 +144,7 @@
             <div v-else class="space-y-2 text-xs text-text-secondary">
               <p><span class="font-bold text-brand-300">{{ player.currentTrack.aiProvider }}</span></p>
               <p v-if="player.currentTrack.aiDisclosureText" class="leading-relaxed">{{ player.currentTrack.aiDisclosureText }}</p>
-              <RouterLink :to="localePath({ name: 'track-detail', params: { id: player.currentTrack.id } })" class="inline-block font-medium text-brand-400 hover:underline" @click="$emit('close')">
+              <RouterLink :to="localePath({ name: 'track-detail', params: { id: player.currentTrack ? detailParam(player.currentTrack) : '' } })" class="inline-block font-medium text-brand-400 hover:underline" @click="$emit('close')">
                 {{ t('player.viewTrack') }}
               </RouterLink>
             </div>
@@ -166,6 +166,7 @@ import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
+import { detailParam } from '@/utils/seo';
 
 const emit = defineEmits<{
   (e: 'close'): void;

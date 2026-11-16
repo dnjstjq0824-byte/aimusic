@@ -69,12 +69,12 @@ func SetupRouter(d *Deps) *gin.Engine {
 		}
 	})
 
-	authH := &AuthHandler{Auth: d.Services.Auth, Resets: d.Services.PasswordReset, OAuth: d.Services.OAuth, FrontendBase: d.Config.OAuth.FrontendBaseURL}
+	authH := &AuthHandler{Auth: d.Services.Auth, Resets: d.Services.PasswordReset, EmailVerify: d.Services.EmailVerify, OAuth: d.Services.OAuth, FrontendBase: d.Config.OAuth.FrontendBaseURL, OAuthSecureCookies: d.Config.OAuth.SecureCookies}
 	legalH := &LegalHandler{Repos: d.Repos}
 	partnerH := &PartnerHandler{Repos: d.Repos, Services: d.Services}
 	trackH := &TrackHandler{Repos: d.Repos, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
 	playbackH := &PlaybackHandler{Playback: d.Services.Playback}
-	playlistH := &PlaylistHandler{Playlists: d.Services.Playlists}
+	playlistH := &PlaylistHandler{Playlists: d.Services.Playlists, SEO: d.Services.SEO}
 	engageH := &EngagementHandler{Engagement: d.Services.Engagement}
 	disputeH := &DisputeHandler{Repos: d.Repos, Disputes: d.Services.Disputes}
 	adminH := &AdminHandler{Repos: d.Repos, Services: d.Services}
@@ -82,6 +82,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	deviceH := &DeviceHandler{Repos: d.Repos, Services: d.Services, Config: d.Config, Storage: d.Storage, Buckets: d.Buckets}
 	certH := &CertificateHandler{Services: d.Services}
 	bizH := &BusinessHandler{Business: d.Services.Business}
+	seoH := &SEOHandler{SEO: d.Services.SEO, Repos: d.Repos, Config: d.Config}
 
 	v1 := r.Group("/api/v1")
 
@@ -89,9 +90,11 @@ func SetupRouter(d *Deps) *gin.Engine {
 	auth.Use(RateLimit(10, 20))
 	auth.POST("/register", authH.Register)
 	auth.POST("/register/partner", authH.RegisterPartner)
+	auth.POST("/register/business", authH.RegisterBusiness)
 	auth.POST("/login", authH.Login)
 	auth.POST("/refresh", authH.Refresh)
 	auth.GET("/me", JWTAuth(d.Services.Auth), authH.Me)
+	auth.PUT("/profile", JWTAuth(d.Services.Auth), authH.UpdateProfile)
 	auth.POST("/age-confirm", JWTAuth(d.Services.Auth), authH.ConfirmAge)
 	auth.GET("/export", JWTAuth(d.Services.Auth), authH.ExportData)
 	auth.POST("/withdraw", JWTAuth(d.Services.Auth), authH.Withdraw)
@@ -101,9 +104,18 @@ func SetupRouter(d *Deps) *gin.Engine {
 	auth.POST("/totp/disable", JWTAuth(d.Services.Auth), authH.DisableTOTP)
 	auth.POST("/password-reset/request", authH.RequestPasswordReset)
 	auth.POST("/password-reset/confirm", authH.ConfirmPasswordReset)
+	auth.POST("/email/verify/request", JWTAuth(d.Services.Auth), RateLimit(1, 5), authH.RequestEmailVerify)
+	auth.POST("/email/verify/confirm", authH.ConfirmEmailVerify)
+	auth.PATCH("/me/locale", JWTAuth(d.Services.Auth), authH.UpdateLocale)
 	auth.GET("/oauth/providers", authH.OAuthProviders)
 	auth.GET("/oauth/:provider/start", authH.OAuthStart)
 	auth.GET("/oauth/:provider/callback", authH.OAuthCallback)
+	auth.POST("/oauth/:provider/callback", authH.OAuthCallback)
+	auth.POST("/oauth/exchange", authH.OAuthExchange)
+	auth.POST("/oauth/complete-email", authH.OAuthCompleteEmail)
+	auth.POST("/oauth/link-token", JWTAuth(d.Services.Auth), authH.OAuthLinkToken)
+	auth.GET("/oauth/connections", JWTAuth(d.Services.Auth), authH.OAuthConnections)
+	auth.DELETE("/oauth/connections/:provider", JWTAuth(d.Services.Auth), authH.OAuthUnlink)
 
 	legal := v1.Group("/legal")
 	legal.GET("/terms", legalH.ListTerms)
@@ -118,17 +130,17 @@ func SetupRouter(d *Deps) *gin.Engine {
 	partner.GET("/license-policies/:provider", partnerH.GetPolicy)
 	partner.GET("/subscriptions", partnerH.ListSubscriptions)
 	partner.POST("/subscriptions", partnerH.CreateSubscription)
-	partner.POST("/pre-check", partnerH.PreCheck)
-	partner.POST("/tracks/pre-check", partnerH.PreCheck)
-	partner.POST("/finalize", partnerH.Finalize)
-	partner.POST("/tracks/finalize", partnerH.Finalize)
+	partner.POST("/pre-check", RequireEmailVerified(d.Repos.Users), partnerH.PreCheck)
+	partner.POST("/tracks/pre-check", RequireEmailVerified(d.Repos.Users), partnerH.PreCheck)
+	partner.POST("/finalize", RequireEmailVerified(d.Repos.Users), partnerH.Finalize)
+	partner.POST("/tracks/finalize", RequireEmailVerified(d.Repos.Users), partnerH.Finalize)
 	partner.POST("/albums", partnerH.CreateAlbum)
 	partner.GET("/albums", partnerH.ListAlbums)
 	partner.GET("/tracks", partnerH.ListMyTracks)
-	partner.POST("/generations", partnerH.SubmitGeneration)
+	partner.POST("/generations", RequireEmailVerified(d.Repos.Users), partnerH.SubmitGeneration)
 	partner.GET("/generations", partnerH.ListGenerations)
 	partner.GET("/generations/:id", partnerH.GetGeneration)
-	partner.POST("/stores", partnerH.RegisterStore)
+	partner.POST("/stores", RequireEmailVerified(d.Repos.Users), partnerH.RegisterStore)
 	partner.GET("/stores", partnerH.ListStores)
 	partner.POST("/stores/:id/devices", partnerH.CreateStoreDevice)
 	partner.GET("/stores/:id/devices", partnerH.ListStoreDevices)
@@ -149,6 +161,19 @@ func SetupRouter(d *Deps) *gin.Engine {
 
 	biz := v1.Group("/business")
 	biz.POST("/inquiries", RateLimit(1, 5), bizH.SubmitInquiry)
+	consoleH := &BusinessConsoleHandler{Repos: d.Repos, Services: d.Services}
+	console := v1.Group("/business")
+	console.Use(JWTAuth(d.Services.Auth), RequireRole(domain.RoleBusiness, domain.RolePartner, domain.RoleAdmin), RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal))
+	console.GET("/profile", consoleH.BusinessProfile)
+	console.POST("/stores", RequireEmailVerified(d.Repos.Users), consoleH.RegisterStore)
+	console.GET("/stores", consoleH.ListStores)
+	console.POST("/stores/:id/devices", consoleH.CreateStoreDevice)
+	console.GET("/stores/:id/devices", consoleH.ListStoreDevices)
+	console.PUT("/stores/:id/devices/:deviceId", consoleH.UpdateStoreDevice)
+	console.POST("/stores/:id/devices/:deviceId/revoke", consoleH.RevokeStoreDevice)
+	console.GET("/stores/:id/schedules", consoleH.ListStoreSchedules)
+	console.POST("/stores/:id/schedules", consoleH.UpsertStoreSchedule)
+	console.GET("/stores/:id/devices/:deviceId/logs", consoleH.StoreDeviceLogs)
 	v1.POST("/waitlist", RateLimit(1, 5), bizH.JoinWaitlist)
 	certs := v1.Group("/certificates")
 	certs.GET("/:number", certH.VerifyCertificate)
@@ -219,8 +244,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	billing.POST("/webhooks/toss", billingH.TossWebhook)
 	billingAuthed := billing.Group("")
 	billingAuthed.Use(JWTAuth(d.Services.Auth))
-	billingAuthed.POST("/orders", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.CreateOrder)
-	billingAuthed.POST("/payments/confirm", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), billingH.ConfirmPayment)
+	billingAuthed.POST("/orders", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), RequireEmailVerified(d.Repos.Users), billingH.CreateOrder)
+	billingAuthed.POST("/payments/confirm", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), RequireEmailVerified(d.Repos.Users), billingH.ConfirmPayment)
 	billingAuthed.GET("/subscriptions/me", billingH.MySubscription)
 	billingAuthed.GET("/subscriptions/me/refund-quote", billingH.RefundQuote)
 	billingAuthed.POST("/subscriptions/cancel", billingH.CancelSubscription)
@@ -263,6 +288,10 @@ func SetupRouter(d *Deps) *gin.Engine {
 	admin.POST("/stores/:id/verify", adminH.VerifyStore)
 	admin.GET("/inquiries", bizH.ListInquiries)
 	admin.PUT("/inquiries/:id", bizH.SetInquiryStatus)
+	admin.GET("/role-grants", adminH.RoleGrants)
+	admin.GET("/oauth/stats", adminH.OAuthStats)
+	admin.GET("/businesses", adminH.ListBusinesses)
+	admin.POST("/businesses/:userId/review", adminH.ReviewBusiness)
 
 	storeDevice := v1.Group("/store/device")
 	storeDevice.POST("/claim", deviceH.ClaimDevice)
@@ -271,6 +300,23 @@ func SetupRouter(d *Deps) *gin.Engine {
 	storeDevice.GET("/queue", deviceH.DeviceQueue)
 	storeDevice.POST("/heartbeat", deviceH.DeviceHeartbeat)
 	storeDevice.GET("/stream/:id", deviceH.DeviceStream)
+
+	// WI-S1~S5 search exposure.
+	seo := v1.Group("/seo")
+	seo.GET("/resolve", seoH.Resolve)
+	seo.GET("/sitemap/:type", seoH.Sitemap)
+	seo.GET("/landing", seoH.Landing)
+	v1.GET("/creators/:handle", seoH.Creator)
+	v1.POST("/events", RateLimit(10, 60), seoH.SubmitEvents)
+	// oEmbed discovery targets the site root; the versioned alias keeps
+	// API clients on one base URL.
+	r.GET("/oembed", seoH.OEmbed)
+	v1.GET("/oembed", seoH.OEmbed)
+	users.POST("/handle", seoH.ClaimHandle)
+
+	admin.GET("/seo/status", seoH.IndexNowStatus)
+	admin.POST("/seo/indexnow", seoH.IndexNowSubmit)
+	admin.POST("/seo/purge", seoH.PurgeCache)
 
 	return r
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -17,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final feed = ref.watch(homeTracksProvider);
     return Scaffold(
       appBar: AppBar(
@@ -24,11 +26,15 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(10),
           child: SvgPicture.asset('assets/logo.svg'),
         ),
-        title: const Text('AVIBE'),
+        title: Text(s.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => context.go('/search'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.go('/settings'),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -41,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
           Expanded(
             child: feed.when(
               data: (tracks) => tracks.isEmpty
-                  ? const Center(child: Text('아직 공개된 곡이 없습니다.'))
+                  ? Center(child: Text(s.homeEmpty))
                   : RefreshIndicator(
                       onRefresh: () async =>
                           ref.invalidate(homeTracksProvider),
@@ -55,8 +61,8 @@ class HomeScreen extends ConsumerWidget {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(e is ApiException
-                    ? friendlyMessage(e)
-                    : '피드를 불러오지 못했습니다.'),
+                    ? friendlyMessage(e, s)
+                    : s.homeFailed),
               ),
             ),
           ),

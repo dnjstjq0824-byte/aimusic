@@ -16,15 +16,26 @@
   },
   "dependencies": {
     "@nuxtjs/i18n": "10.6.0",
+    "@nuxtjs/robots": "7.0.2",
+    "@nuxtjs/sitemap": "9.1.0",
     "@pinia/nuxt": "1.0.3",
+    "@resvg/resvg-js": "2.6.2",
+    "@resvg/resvg-wasm": "2.6.2",
     "@tosspayments/tosspayments-sdk": "^2.10.0",
+    "@unhead/vue": "3.4.3",
     "axios": "^1.7.7",
     "hls.js": "^1.5.13",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "4.6.4",
+    "nuxt-og-image": "7.0.7",
+    "nuxt-schema-org": "7.0.1",
+    "nuxt-site-config": "5.0.3",
     "pinia": "4.1.0",
+    "satori": "0.63.2",
+    "unhead": "3.4.3",
     "vue": "3.5.45",
-    "vue-router": "^4.4.3"
+    "vue-router": "^4.4.3",
+    "web-vitals": "6.2.3"
   },
   "devDependencies": {
     "@nuxt/kit": "4.6.4",

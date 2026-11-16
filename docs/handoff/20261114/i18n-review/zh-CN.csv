@@ -1,0 +1,1664 @@
+key,ko,translation,screenshot
+account.billActive,이용 중,使用中,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billCancel,이용권 해지,取消通行证,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billCancelAt,해지 예정,预计取消,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billEndsOn,{date}에 종료됩니다.,将于{date}结束。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billNone,활성 이용권이 없습니다.,没有生效中的通行证。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billNoneHint,요금제에서 이용권을 구매하면 여기에 표시됩니다.,在套餐页购买后会显示在这里。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billSub,이용권 상태와 해지를 관리합니다.,管理通行证状态和取消。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billTitle,내 이용권,我的通行证,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billValid,유효기간,有效期,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.billViewPlans,요금제 보기,查看套餐,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelClose,닫기,关闭,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDesc,해지 방식을 선택하세요. 해지 후에도 유효기간이 끝나기 전까지는 계속 이용할 수 있습니다.,请选择取消方式，周期结束前可继续使用。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDoEnd,해지 신청하기,申请取消,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDoNow,즉시 해지하기,立即取消,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDoneEnd,해지 신청이 접수되었습니다.,已受理取消申请。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDoneNow,즉시 해지했습니다. {amount}이 환불됩니다.,已立即取消，将退款{amount}。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelDoneNowZero,즉시 해지했습니다. 환불 금액이 없습니다.,已立即取消，无退款。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelEnd,일반해지,到期取消,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelEndDesc,{date}까지 이용하고 종료합니다. 환불은 없습니다.,用到{date}后结束，不退款。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelEndDone,이미 일반해지를 신청했습니다.,已申请到期取消。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelNow,즉시 해지(환불),立即取消(退款),evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelNowUnknown,환불 금액을 계산할 수 없습니다. 잠시 후 다시 시도해 주세요.,无法计算退款金额，请稍后再试。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.cancelTitle,이용권 해지,取消通行证,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connConfirm,정말 해제할까요?,确定要解除吗？,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connConnect,연결하기,关联,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connConnected,연결됨,已关联,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connCurrent,사용 중,使用中,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connDisconnect,연결 해제,解除关联,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connEmail,이메일 로그인,邮箱登录,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connEmailDesc,가입한 이메일로 로그인합니다.,用注册邮箱登录。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connLastNote,마지막 로그인 수단은 해제할 수 없습니다.,最后一个登录方式不可解除。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connLinked,{provider} 계정을 연결했습니다.,已关联{provider}账号。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connSocialT,소셜 로그인,社交登录,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connSub,로그인에 쓰는 계정을 관리합니다.,管理登录方式。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connTitle,연결된 계정,关联账号,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.connUnlinked,{provider} 연결을 해제했습니다.,已解除{provider}关联。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.indexSub,프로필·보안·결제·언어·개인정보·연결된 계정을 관리합니다.,管理个人资料、安全、账单、语言、隐私和关联账号。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.indexTitle,계정 설정,账号设置,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.langNote,약관 등 법률 문서는 한국어 원문이 정본입니다.,法律文件以韩文原版为准。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.langSub,화면에 표시할 언어를 선택하세요.,选择显示语言。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.langTitle,언어,语言,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navBack,계정 설정으로,返回账号设置,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navBilling,결제,账单,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navConnections,연결된 계정,关联账号,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navLabel,계정 설정 메뉴,账号设置菜单,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navLanguage,언어,语言,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navPrivacy,개인정보,隐私,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navProfile,프로필,个人资料,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.navSecurity,보안,安全,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfDeleteLink,계정 탈퇴는 개인정보에서 신청할 수 있습니다.,可在隐私中申请注销。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfEmail,이메일 주소,电子邮箱,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfEmailNote,이메일 변경은 본인 인증과 함께 준비 중입니다.,邮箱变更将随身份验证一起上线。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfName,닉네임 / 활동명,昵称/显示名,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfNamePh,닉네임을 입력하세요,输入昵称,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfNameRequired,닉네임을 입력하세요.,请输入昵称。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfNameTooLong,닉네임은 {max}자까지 입력할 수 있습니다.,昵称最多{max}个字符。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfRole,회원 유형,会员类型,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfSave,저장하기,保存,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfSaved,닉네임을 저장했습니다.,昵称已保存。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfSub,공개 표시 이름과 계정 정보를 관리합니다.,管理显示名称和账号信息。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.pfTitle,프로필,个人资料,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privAgreed,동의일,同意日期,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privConsentUnknown,알 수 없는 약관,未知条款,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privConsentsEmpty,동의 내역이 없습니다.,没有同意记录。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privConsentsT,약관 동의 내역,条款同意记录,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privExportBtn,내보내기,导出,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privExportD,계정 정보와 이용 기록을 파일로 내려받습니다.,下载资料和使用记录。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privExportDone,내 정보를 내려받았습니다.,已下载你的数据。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privExportFail,내보내기 실패,导出失败,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privExportT,내 정보 내보내기,导出我的数据,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privRequired,필수,必填,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privTitle,개인정보,隐私,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.privWithdrawOk,탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.,账号已注销，感谢使用。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.refundFull,결제 후 7일 이내 미이용으로 전액 {amount}을 환불합니다.,支付7天内未使用，全额退款{amount}。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.refundPart,이용 {used}/{total}일분 {deduct}을 뺀 {refund}을 환불합니다.,扣除已用{used}/{total}天{deduct}后退款{refund}。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.refundZero,이용 {days}일분을 빼면 환불 금액이 없습니다. 이용권만 즉시 종료됩니다.,扣除已用{days}天后无退款，仅立即结束通行证。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.roleAdmin,관리자,管理员,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.rolePartner,파트너,合作方,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.roleUser,리스너,听众,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sec2faD,인증 앱(Google Authenticator 등)에 표시되는 6자리 코드로 로그인을 보호합니다.,用验证器App(如 Google Authenticator)中的6位数字保护登录。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sec2faOff,미사용,未使用,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sec2faOn,사용 중,使用中,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sec2faT,2단계 인증,两步验证,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secAdminBack,관리자 콘솔로 돌아가기,返回管理控制台,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secAdminBanner,관리자 계정은 2단계 인증을 등록해야 관리자 콘솔을 쓸 수 있습니다. 아래에서 등록을 마치면 원래 화면으로 돌아갈 수 있습니다.,管理员账号须注册两步验证才能使用管理控制台，在下方完成注册即可返回。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secChecking,확인 중,确认中,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secCode,인증 코드,验证码,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secConfirm,등록 확인,确认注册,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secCopied,클립보드에 복사했습니다.,已复制到剪贴板。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secCopyFail,복사에 실패했습니다. 직접 선택해서 복사해 주세요.,复制失败，请手动选择复制。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secDisable,2단계 인증 해제,关闭两步验证,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secDisableD,비밀번호 확인 후 2단계 인증을 끌 수 있습니다.,确认密码后可关闭两步验证。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secDisablePw,현재 비밀번호,当前密码,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secDisablePwPh,비밀번호 입력,输入密码,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secEnroll,인증 앱 등록,注册验证器,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secLoggedOut,모든 기기에서 로그아웃했습니다. 다시 로그인해 주세요.,已全部登出，请重新登录。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secLogoutAll,모든 기기 로그아웃,全部登出,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secLogoutFail,로그아웃 실패,登出失败,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryCopied,복구 코드를 복사했습니다.,恢复代码已复制。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryCopyAll,전체 복사,复制全部,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryD,인증 앱을 사용할 수 없을 때 이 코드로 로그인할 수 있습니다. 안전한 곳에 보관하세요.,验证器不可用时用它登录，请妥善保管。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryDismiss,보관했습니다,已保管,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryDone,2단계 인증이 켜졌습니다. 아래 복구 코드는 지금 한 번만 표시됩니다. 안전한 곳에 보관하세요.,两步验证已开启，恢复代码仅显示一次，请妥善保管。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRecoveryT,복구 코드,恢复代码,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secRefresh,상태 새로고침,刷新状态,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secSecretCopy,키 복사,复制密钥,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secSecretLabel,인증 앱에 이 키를 직접 입력하세요,在验证器中直接输入此密钥,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secSessD,모든 기기에서 로그아웃합니다.,在所有设备上登出。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secSessT,로그인 세션,登录会话,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secStatus,현재 상태,当前状态,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secSub,2단계 인증과 로그인 세션을 관리합니다.,管理两步验证和登录会话。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secTitle,계정 보안,账号安全,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secTotpOff,2단계 인증을 껐습니다.,已关闭两步验证。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.secUriHelp,직접 입력이 어려운 경우 앱에서 다음 URI를 여세요:,手动输入不便时，在App中打开以下URI:,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sumConsent,이용약관 동의,条款同意,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sumConsentDone,동의 완료,已同意,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sumId,계정 이메일,账号邮箱,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sumRole,회원 유형,会员类型,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.sumTitle,계정 및 보안 정보,账号与安全,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.withdrawBody,탈퇴한 계정은 복구할 수 없습니다.,注销的账号无法恢复。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.withdrawConfirm,탈퇴하기,注销,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.withdrawDesc,"탈퇴하면 계정 정보, 재생 기록, 플레이리스트는 즉시 삭제되며 복구할 수 없습니다. 정산 대기 중인 금액은 약관에 따라 처리됩니다.",注销将立即删除资料、播放记录和歌单且不可恢复，待结算金额按条款处理。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+account.withdrawTitle,회원 탈퇴,注销账号,evidence/r13/harness/d1440-listener-zh-cn-account.png
+auth.ageGate.confirm,만 14세 이상입니다. (필수),我已年满14岁。（必填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.ageGate.desc,소셜 계정으로 처음 로그인했습니다. AVIBE는 만 14세 이상만 이용할 수 있습니다. 스트리밍·결제·업로드를 이용하려면 연령 확인이 필요합니다.,您首次使用社交账号登录。AVIBE 仅限14岁以上使用。使用流媒体、支付和上传需要年龄确认。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.ageGate.done,연령 확인이 완료되었습니다.,年龄确认完成。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.ageGate.start,확인하고 시작하기,确认并开始,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.ageGate.title,만 14세 이상 확인,年满14岁确认,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.bizNo,사업자등록번호,营业执照号,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.bizNoPh,숫자만 입력,仅输入数字,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.company,상호,商号,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.companyPh,예: 카페 AVIBE,例如：AVIBE咖啡馆,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.country,사업 국가,经营国家,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.countryJp,일본,日本,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.countryKr,대한민국,韩国,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.countryOther,기타,其他,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.countryTh,태국,泰国,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.countryUs,미국,美国,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.foreignNote,해외 사업자는 관리자 승인 후 이용할 수 있습니다.,海外企业经管理员批准后可用。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.industry,업종 (선택),行业（选填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.industryPh,"예: 카페, 헬스장, 영상 제작",例如：咖啡馆、健身房、视频制作,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.notice,"비즈니스 콘솔은 준비 중입니다. 지금 제출하시면 도입 문의로 접수되며, 우선 파트너 계정으로 등록됩니다.",商家控制台准备中。现在提交将作为引入咨询受理，并先注册为合作伙伴账号。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.step1,계정,账号,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.step2,사업자 정보,商家信息,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.step3,약관,条款,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.storeConditions,매장 이용 조건,门店使用条件,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.submit,도입 문의로 제출하기,作为咨询提交,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.success,도입 문의가 접수되었습니다. 로그인해 주세요.,已受理您的咨询，请登录。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.termsMid, 및 ,和,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.termsPost,에 동의합니다. (필수),。（必填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.termsPre,,我同意,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.business.title,비즈니스 가입,商家注册,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.ageConfirm,"만 14세 이상입니다. (필수, 만 14세 미만은 가입 불가)",我已满14岁。（必填，未满14岁不可注册）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.backToLogin,로그인으로 돌아가기,返回登录,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.birthYear,출생연도 (선택),出生年份（选填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.birthYearPh,예: 1995,例如：1995,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.contract,파트너 음원유통·면책 계약서,合作伙伴音源发行与免责协议,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.copyright,AI 저작권 준수 확약,AI版权合规承诺,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.email,이메일 주소,电子邮箱,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.emailPh,name{'@'}example.com,name{'@'}example.com,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.invite,초대 코드 (필요 시),邀请码（如需）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.invitePh,초대 코드가 있는 경우 입력,如有邀请码请输入,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.next,다음,下一步,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.password8,비밀번호 (8자 이상),密码（8位以上）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.passwordPh,8자 이상의 안전한 비밀번호,8位以上的安全密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.prev,이전,上一步,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.privacy,개인정보처리방침,隐私政策,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.common.tos,서비스 이용약관,服务条款,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.noTokenBody,소셜 로그인부터 다시 시도해 주세요.,请从社交登录重新开始。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.noTokenTitle,잘못된 접근입니다,无效的访问,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.pendingBody,{email} 주소로 인증 메일을 보냈습니다. 메일의 링크를 누르면 가입이 완료됩니다.,我们已向 {email} 发送了验证邮件。点击邮件中的链接即可完成注册。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.pendingTitle,인증 메일을 보냈습니다,验证邮件已发送,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.submit,계속하기,继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.subtitle,소셜 계정에서 이메일을 제공하지 않아 추가 입력이 필요합니다.,社交账号未提供邮箱，需要补充输入。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.completeEmail.title,이메일 입력,输入邮箱,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.aiPlatform,대표 AI 플랫폼 (선택),主要AI平台（选填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.aiPlatformPh,예: Suno,例如：Suno,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.country,국가 (선택),国家（选填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.countryPh,예: 대한민국,例如：韩国,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.profileNote,추가 프로필 정보는 스튜디오 개통 후 정식 등록됩니다.,补充资料将在Studio上线后正式登记。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.stageName,아티스트 / 프로듀서명,艺人 / 制作人名称,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.stageNamePh,AVIBE Producer,AVIBE Producer,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.step1,계정,账号,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.step2,프로필,资料,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.step3,계약·약관,协议条款,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.submit,파트너 스튜디오 신청하기,申请合作伙伴工作室,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.success,파트너 계정이 등록되었습니다. 로그인해 주세요.,合作伙伴账号已注册，请登录。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.termsMid, 및 ,和,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.termsPost,에 동의합니다. (필수),。（必填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.termsPre,,我同意,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.creator.title,크리에이터 가입,创作者注册,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.forgot.sent,입력한 이메일이 가입되어 있다면 재설정 링크를 발송했습니다. 메일함을 확인하세요. (링크는 30분간 1회만 유효합니다.),如果该邮箱已注册，重置链接已发送，请查收。（链接30分钟内一次性有效。）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.forgot.submit,재설정 링크 보내기,发送重置链接,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.forgot.subtitle,가입한 이메일로 재설정 링크를 보내드립니다.,我们将向您的注册邮箱发送重置链接。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.forgot.title,비밀번호 찾기,忘记密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.name,닉네임 / 활동명,昵称 / 显示名,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.namePh,음악 애호가,音乐爱好者,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.submit,리스너로 시작하기,以听众身份开始,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.subtitle,이메일 하나로 바로 시작합니다.,只需一个邮箱即可开始。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.success,회원가입이 완료되었습니다. 로그인해 주세요.,注册完成，请登录。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.termsMid, 및 ,和,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.termsPost,에 동의합니다. (필수),。（必填）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.termsPre,,我同意,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.listener.title,리스너 가입,听众注册,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.devAdmin,어드민,管理员,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.devListener,일반 리스너,普通听众,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.devPartner,파트너 계정 (즉시 로그인),合作伙伴账号（即时登录）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.devTitle,체험용 빠른 로그인 (1-클릭),体验快速登录（一键）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.forgot,비밀번호 찾기,忘记密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.noAccount,계정이 없나요?,还没有账号？,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.oauthFailTitle,소셜 로그인 실패,社交登录失败,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.orEmail,또는 이메일,或使用邮箱,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.password,비밀번호,密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.passwordPh,비밀번호 입력,请输入密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.registeredBody,로그인한 뒤 메일함의 인증 링크를 눌러 이메일 인증을 완료해 주세요. 인증 전에도 듣기는 바로 가능합니다.,请先登录，然后打开收件箱中的验证链接完成邮箱验证。验证之前也可以立即开始收听。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.registeredTitle,가입해 주셔서 감사합니다,感谢您的注册,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.signupLink,가입하기,注册,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.submit,로그인,登录,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.subtitle,상업 이용 조건 확인 절차를 거친 AI 음악 스트리밍,经过商用条件审核的AI音乐流媒体,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.success,성공적으로 로그인되었습니다.,登录成功。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.title,AVIBE에 오신 것을 환영합니다,欢迎来到 AVIBE,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.totpHint,인증 앱에 표시된 6자리 코드를 입력해 주세요.,请输入验证器中显示的6位数字。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.totpLabel,2단계 인증 코드,两步验证码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.totpPh,인증 앱 6자리 코드 또는 복구 코드,验证器6位数字或恢复代码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.login.totpSubmit,인증하고 로그인,验证并登录,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.back,로그인으로 돌아가기,返回登录,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.failedTitle,소셜 로그인에 실패했습니다,社交登录失败,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.invalidResponse,소셜 로그인 응답이 올바르지 않습니다. 다시 시도해 주세요.,社交登录返回异常，请重试。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.processingBody,잠시만 기다려 주세요. 창을 닫지 마세요.,请稍候，不要关闭窗口。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.processingTitle,소셜 로그인 처리 중…,正在处理社交登录…,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.sessionFailed,소셜 로그인 세션을 확인할 수 없습니다.,无法确认社交登录会话。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.oauth.success,소셜 로그인되었습니다.,社交登录成功。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.confirm,새 비밀번호 확인,确认新密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.confirmPh,다시 입력,再次输入,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.mismatch,두 비밀번호가 일치하지 않습니다.,两次输入的密码不一致。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.newPassword,새 비밀번호 (8자 이상),新密码（8位以上）,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.newPasswordPh,8자 이상의 안전한 비밀번호,8位以上的安全密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.submit,비밀번호 변경하기,修改密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.subtitle,새 비밀번호를 입력하세요.,请输入新密码。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.success,비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.,密码已修改，请用新密码登录。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.reset.title,새 비밀번호 설정,设置新密码,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.businessCta,선택,选择,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.businessDesc,매장·영상 라이선스,门店与视频授权,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.businessTitle,비즈니스,商家,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.creatorCta,선택,选择,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.creatorDesc,곡 올리고 정산받기,发布歌曲并结算收益,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.creatorTitle,크리에이터,创作者,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.hasAccount,이미 계정이 있나요?,已有账号？,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.listenerCta,선택,选择,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.listenerDesc,무료로 듣기,免费收听,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.listenerTitle,리스너,听众,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.loginLink,로그인,登录,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.subtitle,언제든 계정 설정에서 역할을 추가할 수 있습니다.,随时可在账号设置中添加角色。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.signup.title,어떤 계정으로 시작할까요?,您想用哪种账号开始？,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.apple,Apple로 계속하기,使用 Apple 继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.google,Google로 계속하기,使用 Google 继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.kakao,카카오로 계속하기,使用 Kakao 继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.line,LINE으로 계속하기,使用 LINE 继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.naver,네이버로 계속하기,使用 Naver 继续,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.social.sessionErr,소셜 로그인 세션을 확인할 수 없습니다.,无法验证社交登录会话。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.bannerText,이메일 인증이 끝나지 않았습니다. 결제를 이용하려면 메일함의 인증 링크를 눌러 주세요.,您的邮箱尚未完成验证。如需使用付费功能，请打开收件箱中的验证链接。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.continueCta,홈으로 계속하기,返回首页,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.failedBody,링크가 만료되었거나 이미 사용되었습니다. 로그인 후 인증 메일을 다시 요청해 주세요.,链接已过期或已被使用。请登录后重新获取验证邮件。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.failedTitle,인증 링크가 유효하지 않습니다,此验证链接无效,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.noTokenBody,가입할 때 입력한 이메일로 발송된 인증 링크를 눌러 주세요. 링크는 발송 후 24시간 동안 유효합니다.,请打开发送到注册邮箱的验证链接。链接自发送起24小时内有效。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.noTokenTitle,인증 링크를 확인하세요,请确认验证链接,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.resend,인증 메일 다시 보내기,重新发送验证邮件,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.resent,인증 메일을 다시 보냈습니다. 메일함을 확인해 주세요.,验证邮件已重新发送，请查收您的收件箱。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.successBody,{email} 주소가 인증되었습니다. 로그인 상태로 계속합니다.,{email} 已验证通过。您已登录，请继续使用。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.successTitle,이메일 인증 완료,邮箱验证完成,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.title,이메일 인증,邮箱验证,evidence/r13/harness/d1440-guest-zh-cn-login.png
+auth.verify.verifyingTitle,이메일 인증 중…,正在验证您的邮箱…,evidence/r13/harness/d1440-guest-zh-cn-login.png
+business.cCta1,크리에이터로 가입,注册创作者,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cCta2,이용 방식 보기,了解机制,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cHeroSub,AI로 만든 곡을 유통하고 수익을 나누는 크리에이터 플랫폼.,发行AI音乐并分成的内容创作者平台。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cHeroTitle,"곡을 올리고, 인증받고, 정산받으세요",发布、认证、赚钱,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cPayD,유통 순매출의 70%가 크리에이터 몫입니다.,发行净销售额的70%归创作者。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cPayT,투명한 정산,透明结算,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep1D,AI 생성 음원을 업로드하세요.,上传AI生成的歌曲。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep1T,곡 올리기,发布歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep2D,4단계 게이트와 인증서를 통과하세요.,通过4道关卡和认证。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep2T,이용권 확인,通过审核,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep3D,유통 순매출의 70%를 받으세요.,拿走发行净销售额的70%。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cStep3T,정산받기,获得结算,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cTrustCta,인증 방식 보기,查看认证机制,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cTrustD,모든 곡은 인증서를 달고 유통됩니다.,每首歌都带证书发行。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.cTrustT,믿을 수 있는 유통,可信的发行,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.close,닫기,关闭,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.alertEmpty,오프라인 플레이어가 없습니다.,没有离线播放器。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.alertTitle,알림: 오프라인 플레이어,提醒：离线播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biCompany,상호,公司,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biContract,계약 정보,合同信息,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biCountry,국가,国家,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biCta,도입 문의하기 →,咨询引入 →,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biDesc,계약 정보와 청구 기준을 확인하세요.,查看合同信息与计费基准。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biEyebrow,Business Console,Business Console,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biIndustry,업종,行业,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biLicenses,라이선스 합계,授权合计,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biLoadFail,청구 정보를 불러오지 못했습니다,账单信息加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biNoProfile,등록된 사업자 정보가 없습니다. 크리에이터 계정으로 이관된 경우 매장 목록만 표시됩니다.,暂无企业信息，迁移的创作者账户仅显示门店。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biNote,청구는 계약 기준으로 별도 안내됩니다. 온라인 결제는 지원하지 않습니다.,账单按合同另行通知，不支持在线支付。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biStatus,승인 상태,批准状态,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biStores,등록 매장,已注册门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.biTitle,청구,账单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devCode,페어링 코드,配对码,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devDesc,발급된 페어링 코드를 매장 플레이어 화면에 입력하세요. (15분 유효),请在门店播放器画面输入配对码。（15分钟有效）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devFail,기기 추가 실패,添加设备失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devIssue,발급,发放,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devName,기기명,设备名,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devNamePh,예: 카운터 태블릿,例：收银台平板,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.devTitle,플레이어 기기 추가,添加播放设备,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.deviceStatus.ACTIVE,연결됨,已连接,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.deviceStatus.PENDING,페어링 대기,等待配对,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.deviceStatus.REVOKED,해지됨,已解绑,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueDesc,발급된 코드를 매장 플레이어 화면에 입력하세요. (15분 유효),请在门店播放器画面输入该码。（15分钟有效）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueFail,발급 실패,发放失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueHint,매장 플레이어(/store/player) 화면에 입력하세요.,请在门店播放器（/store/player）画面输入。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueName,기기명,设备名,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueNamePh,예: 카운터 태블릿,例：收银台平板,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueStore,매장,门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueStorePh,매장을 선택하세요…,请选择门店…,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.issueTitle,플레이어 연결 코드 발급,发放播放器连接码,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiLicenses,라이선스,授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiPlayers,연결 플레이어,已连接播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiPlayersSub,전체 {n}대,共 {n}台,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiPlays,최근 집계 재생,近期统计播放,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiPlaysSub,최근 기록 50건 기준,按最近50条记录,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiStores,매장,门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.kpiStoresSub,승인 {n}곳,已批准 {n}家,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liCertsDesc,최근 재생 기록 기준 최대 20곡입니다.,按最近播放记录最多20首。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liCertsEmpty,인증된 재생 기록이 없습니다.,暂无认证播放记录。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liCertsTitle,매장 재생 인증 곡,门店播放过的认证歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liColLicenses,라이선스,授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liColStatus,상태,状态,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liColStore,매장,门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liDesc,매장 라이선스와 매장에서 재생된 인증 곡의 인증서를 확인하세요.,查看门店授权与门店播放过的认证歌曲证书。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liEyebrow,Business Console,Business Console,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liLoadFail,라이선스 정보를 불러오지 못했습니다,授权信息加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liStoresEmpty,등록된 매장이 없습니다.,还没有门店。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liStoresTitle,매장별 라이선스,门店授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liTitle,라이선스,授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liVideoCta,도입 문의하기 →,咨询引入 →,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.liVideoNote,영상 라이선스(유튜브·광고 등)는 별도 계약이 필요합니다.,视频授权（YouTube・广告等）需另签合同。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.logsCounted,집계,已统计,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.logsEmpty,기록이 없습니다.,暂无记录。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.logsSecs,{n}초,{n}秒,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.logsTitle,기기 재생 기록,设备播放记录,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.logsUncounted,미집계,未统计,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navBilling,청구,账单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navClose,메뉴 닫기,关闭菜单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navHome,비즈니스 콘솔 홈,商务控制台首页,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navLicenses,라이선스,授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navListenerHome,리스너 홈으로 이동,前往听众首页,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navLogout,로그아웃,退出登录,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navMenu,비즈니스 콘솔 메뉴,商务控制台菜单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navOpen,메뉴 열기,打开菜单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navOverview,개요,概览,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navPlayers,플레이어,播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.navStores,매장,门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.neverSeen,접속 기록 없음,无连接记录,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.officialCuration,공식 큐레이션 자동 편성,官方排歌（自动）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.offline,오프라인,离线,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.online,온라인,在线,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovDesc,매장·플레이어·재생·라이선스 현황을 확인하세요.,查看门店・播放器・播放・授权概况。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovEyebrow,Business Console,Business Console,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovLoadFail,개요를 불러오지 못했습니다,概览加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovPending,사업자 승인이 진행 중입니다. 승인 후 매장 등록·플레이어 연결이 가능합니다.,企业审核中，批准后可注册门店・连接播放器。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovStoresCta,매장 관리,门店管理,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.ovTitle,개요,概览,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plColDevice,기기,设备,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plColLastSeen,마지막 신호,最后信号,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plColNow,현재 곡,当前歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plColStatus,상태,状态,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plColStore,매장,门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plDesc,매장 기기의 연결 상태와 재생 현황을 확인하고 연결 코드를 발급합니다.,查看门店设备连接状态与播放情况，并发放连接码。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plEmpty,등록된 플레이어가 없습니다,还没有播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plEmptyDesc,연결 코드를 발급해 매장 기기를 연결하세요.,发放连接码以连接门店设备。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plEyebrow,Business Console,Business Console,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plIssue,연결 코드 발급,发放连接码,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plLoadFail,플레이어 목록을 불러오지 못했습니다,播放器列表加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.plTitle,플레이어,播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.profileStatus.APPROVED,승인됨,已批准,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.profileStatus.PENDING,승인 대기,待批准,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.profileStatus.SUSPENDED,정지됨,已暂停,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regBizNo,사업자등록번호,营业执照号,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regBizNoPh,예: 123-45-67891,例：123-45-67891,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regDesc,사업자등록번호는 체크섬으로 검증됩니다.,营业执照号将做校验码验证。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regFail,등록 실패,注册失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regLicenses,플레이어 라이선스 수,播放器授权数,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regName,매장명,门店名,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regNamePh,예: 강남 1호점,例：江南1号店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regSubmit,등록 신청,提交申请,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.regTitle,매장 등록,注册门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schClose,폐점 (HH:MM),闭店 (HH:MM),evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schClosed,휴무일 (이날은 재생하지 않음),休息日（当天不播放）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schFail,저장 실패,保存失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schFor,{day} 편성,{day}编排,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schOpen,개점 (HH:MM),开店 (HH:MM),evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schPlaylist,선곡 플레이리스트 (비우면 공식 큐레이션),排歌歌单（留空=官方排歌）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.schTitle,영업시간·선곡 설정,营业时间・排歌设置,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stAddDevice,기기 추가,添加设备,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stClosed,휴무,休息,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stColDay,요일,星期,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stColEdit,편집,编辑,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stColHours,영업시간,营业时间,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stColPlaylist,선곡 플레이리스트,排歌歌单,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stColStatus,상태,状态,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stCollapse,접기,收起,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stDesc,사업자등록번호 단위로 매장을 등록하고 플레이어 기기·영업시간·선곡을 관리합니다. 승인된 매장의 인증 플레이어에서만 재생이 집계됩니다.,按营业执照号注册门店，管理播放设备・营业时间・排歌。仅已批准门店的认证播放器计入播放。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stDetailFail,상세를 불러오지 못했습니다,详情加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stDevices,플레이어 기기,播放设备,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stEmpty,등록된 매장이 없습니다,还没有门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stEmptyDesc,사업자등록번호와 매장명을 등록하면 관리자 승인 후 플레이어를 연결할 수 있습니다.,注册营业执照号与门店名，管理员批准后即可连接播放器。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stExpired,만료됨,已过期,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stEyebrow,Business Console,Business Console,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stLastSeen,마지막 접속: {at},上次连接：{at},evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stLoadFail,매장 목록을 불러오지 못했습니다,门店列表加载失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stLogs,재생 기록,播放记录,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stManage,기기·편성 관리,管理设备・编排,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stMeta,사업자 {bizNo} · 라이선스 {n}대,证号 {bizNo} · {n}个授权,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stMinutes,{n}분,{n}分钟,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stNoDevices,등록된 기기가 없습니다. 기기 추가 후 플레이어 화면에서 페어링 코드를 입력하세요.,还没有设备，添加后请在播放器画面输入配对码。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stOpen,영업,营业,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stPairing,페어링 코드: {code} ({left} 남음),配对码：{code}（剩余{left}）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stRegister,매장 등록,注册门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stRevoke,해지,解绑,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stRevokeConfirm,'{name}' 기기를 해지할까요? 재생이 즉시 중단됩니다.,要解绑“{name}”吗？播放将立即停止。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stSchedule,요일별 영업시간·선곡,按星期营业时间・排歌,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stScheduleHint,선곡을 비워 두면 공식 큐레이션으로 자동 편성됩니다.,排歌留空则自动使用官方排歌。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stSet,설정,设置,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stTitle,매장 관리,门店管理,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stUnset,미설정 (공식 큐레이션),未设置（官方排歌）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stVolume,볼륨 {n},音量 {n},evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.stVolumeAria,{name} 볼륨,{name}音量,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.storeStatus.APPROVED,승인됨,已批准,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.storeStatus.PENDING,승인 대기,待批准,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.storeStatus.SUSPENDED,정지됨,已暂停,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.0,일요일,星期日,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.1,월요일,星期一,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.2,화요일,星期二,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.3,수요일,星期三,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.4,목요일,星期四,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.5,금요일,星期五,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.console.weekday.6,토요일,星期六,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crDoneD,출시 소식을 가장 먼저 알려드리겠습니다.,上线消息将第一时间通知您。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crDoneT,등록되었습니다,登记成功,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crEmail,이메일 주소,电子邮箱,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crEmailPh,name{'@'}example.com,name{'@'}example.com,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crHeroSub,플랫폼 안에서 바로 만드는 AI 음악. 지금은 대기자 등록 중입니다.,在平台内直接创作AI音乐，现正接受排队登记。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crHeroTitle,AVIBE AI 생성,AVIBE AI生成,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crInterest,관심사,兴趣,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crInterestPh,예: 카페 BGM 만들기,例如：做咖啡馆BGM,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crSoon,출시 준비 중,准备上线,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.crSubmit,대기자 등록,排队登记,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fCompany,상호,商号,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fCompanyPh,예: 카페 AVIBE,例如：AVIBE咖啡馆,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fCountry,국가,国家,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fCountryPh,예: 대한민국,例如：韩国,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fEmail,이메일 주소,电子邮箱,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fEmailPh,name{'@'}example.com,name{'@'}example.com,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fMsg,문의 내용,咨询内容,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fMsgPh,필요한 이용 형태를 적어주세요.,请写下您想用的方式。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fName,담당자 이름,负责人姓名,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fNamePh,홍길동,王小明,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fPhone,연락처,电话,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fPhonePh,010-0000-0000,138-0000-0000,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fStores,매장 수,门店数,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fStoresPh,예: 3,例如：3,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fUse,용도,用途,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.fUsePh,"예: 매장 BGM, 유튜브 인트로",例如：门店BGM、YouTube片头,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq1A,모든 곡은 이용권 확인과 곡별 인증서를 거쳐 제공됩니다.,所有歌曲都经过授权审核并附证书。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq1Q,저작권 문제는 없나요?,有版权风险吗?,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq2A,네. 계정의 플레이리스트를 매장에 그대로 틀 수 있습니다.,可以，账号歌单可直接在门店播放。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq2Q,기존 플레이리스트를 쓸 수 있나요?,能用现在的歌单吗?,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq3A,규모에 따라 다르니 도입 문의로 상담해 주세요.,视规模而定，请咨询我们。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faq3Q,요금은 어떻게 되나요?,怎么收费?,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.faqTitle,자주 묻는 질문,常见问题,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g1D,등록된 AI 플랫폼에서 만든 곡인지 확인합니다.,确认是否为已注册AI平台的生成物。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g1T,1단계: AI 생성 확인,第一关：AI来源确认,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g2D,생성자의 상업 이용 권리를 확인합니다.,确认创作者的商用权利。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g2T,2단계: 권리 확인,第二关：权利确认,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g3D,오디오 지문으로 기존 곡과 대조합니다.,用音频指纹对照已有歌曲。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g3T,3단계: 중복·표절 검사,第三关：重复·抄袭检测,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g4D,통과한 곡에만 고유 인증서를 발급합니다.,仅给通过的歌曲发唯一证书。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.g4T,4단계: 인증서 발급,第四关：发放证书,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.heroCta1,도입 문의하기,咨询引入,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.heroCta2,샘플 들어보기,试听示例,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.heroSub,"이용권 확인된 곡만, 곡별 인증서와 함께 제공합니다.",只提供已审核歌曲，每首附证书。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.heroTitle,매장과 영상에 바로 쓰는 AI 음악,门店和视频拿来即用的AI音乐,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.inqSub,남겨주신 연락처로 담당자가 안내해 드립니다.,我们的工作人员将通过您留下的联系方式与您联系。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.inqTitle,도입 문의,商务咨询,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.aiMade,AI 생성음원,AI 生成歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimCode,페어링 코드,配对码,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimCodePh,예: AB3DEF9H,例：AB3DEF9H,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimDesc,비즈니스 콘솔의 매장 관리에서 발급한 8자리 페어링 코드를 입력하세요.,请输入商务控制台发放的8位配对码。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimFail,연결 실패,连接失败,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimGo,연결하기,连接,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claimTitle,플레이어 연결,连接播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.claiming,연결 중…,连接中…,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.next,다음 곡,下一首,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.noPlaylist,편성 없음,无编排,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.noTrack,재생할 곡이 없습니다,暂无可播歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.offline,오프라인,离线,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.offlineSnapshot,오프라인 상태입니다. 마지막으로 저장된 편성을 표시합니다. 서명 URL이 만료되면(5분) 온라인 연결이 필요합니다.,当前离线，显示最后保存的编排。签名链接5分钟后过期，需联网。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.online,온라인,在线,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.open,영업 중,营业中,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.pause,일시정지,暂停,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.play,재생,播放,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.playError,재생 오류,播放错误,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.playing,재생 중,播放中,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.queueClosed,지금은 재생 시간이 아닙니다. ({reason}) 영업시간·편성은 비즈니스 콘솔에서 변경하세요.,当前非播放时间。（{reason}）请在商务控制台更改营业时间。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.queueEmpty,편성된 곡이 없습니다. 비즈니스 콘솔에서 선곡을 등록하세요.,暂无编排，请在商务控制台添加选曲。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.queueLoading,편성을 불러오는 중입니다.,编排加载中…,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.queueTitle,오늘의 편성 {n}곡,今日编排（{n}首）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.closed_day,휴무일,休息日,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.fallback_curation,공식 큐레이션,官方排歌,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.no_playlist_no_curation,선곡 없음,无选曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.no_schedule_no_curation,편성 없음,无编排,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.off_hours,영업시간 외,非营业时间,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.reason.scheduled,예약 편성,预约编排,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.remote,원격 제어 (비즈니스 콘솔),远程控制（商务控制台）,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.retryQueue,큐 새로고침,刷新队列,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.selected,선택됨,已选择,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.unclaim,연결 해제,解除连接,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.unclaimBody,다시 연결하려면 비즈니스 콘솔에서 새 페어링 코드를 발급받아야 합니다.,重新连接请在商务控制台发放新的配对码。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.unclaimDesc,이 태블릿의 매장 페어링을 해제하고 재생을 중지합니다.,解除此平板的门店配对并停止播放。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.unclaimTitle,매장 연결 해제,解除门店连接,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.player.volume,매장 볼륨 {n},门店音量 {n},evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step1D,비즈니스 계정을 만드세요.,创建商家账号。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step1T,가입,注册,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step2D,이용할 매장을 등록하세요.,登记要使用的门店。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step2T,매장 등록,登记门店,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step3D,매장 기기를 연결하세요.,连接门店设备。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step3T,플레이어 연결,连接播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step4D,바로 음악이 나옵니다.,音乐马上响起。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.step4T,재생,播放,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.stepsTitle,도입 방법,引入流程,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.submit,문의 보내기,发送咨询,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.successD,담당자가 영업일 기준 2일 안에 연락드리겠습니다.,我们将在2个工作日内联系您。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.successT,문의가 접수되었습니다,已受理,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.tCta,음원 탐색하기,去发现音乐,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.tHeroSub,모든 곡이 이 과정을 거쳐 공개됩니다.,每首歌都经过这个流程才发布。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.tHeroTitle,상업적 이용권 보유 인증,商用授权认证,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.techCert,곡별 고유 인증서,单曲唯一证书,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.techHash,SHA-256 오디오 지문,SHA-256音频指纹,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.techHls,HLS 적응형 스트리밍,HLS自适应串流,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.techProbe,FFprobe 음원 분석,FFprobe音频分析,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.techTitle,사용 기술,底层技术,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useCafe,카페,咖啡馆,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useGym,헬스장,健身房,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useHotel,숙박,住宿,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.usePlay,샘플 재생,播放示例,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useRetail,리테일,零售,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useTitle,용도별 샘플,按用途试听,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.useVideo,유튜브·숏폼,YouTube·短视频,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val1D,공개 전 4단계 게이트를 통과한 곡만 유통됩니다.,仅通过4道关卡的歌曲才会发行。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val1T,이용권 확인된 곡만,只收录已审核歌曲,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val2D,모든 상업 이용에 진위 확인 가능한 인증서를 제공합니다.,每次商用都有可验证的证明。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val2T,곡별 인증서,单曲证书,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val3D,자동 재생과 이용 집계가 되는 전용 플레이어.,自动播放与用量统计专用播放器。,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+business.val3T,매장 플레이어,门店播放器,evidence/r13/harness/d1440-storePartner-zh-cn-console.png
+checkout.backToPricing,요금제로 돌아가기,返回方案页,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfApproving,결제 승인 중…,正在确认支付…,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfBadResponse,Toss 결제 응답이 올바르지 않습니다. (paymentKey/orderId/amount 누락),Toss 支付响应无效。（缺少 paymentKey/orderId/amount）,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfDone,결제가 완료되었습니다,支付完成,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfDontClose,창을 닫지 마세요.,请勿关闭窗口。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfFailBanner,승인 실패,确认失败,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfFailed,결제 승인 실패,支付确认失败,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfGoLibrary,내 라이브러리로 이동,前往我的音乐库,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfPass,이용권,通行证,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfRefundLabel,환불 기준,退款标准,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.cfRefundNote,해지·환불은 내 라이브러리에서 신청할 수 있습니다.,可在我的音乐库中取消或申请退款。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.consentAgree,위 청약철회·환불 기준을 확인했으며 이에 동의합니다. (필수),我已阅读并同意上述撤回/退款标准。（必填）,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.consentTitle,청약철회 및 환불 기준 동의 (필수),同意撤回与退款标准（必填）,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.desc,선택한 요금제의 주문서를 확인하고 Toss Payments로 안전하게 결제하세요.,请确认所选方案的订单，并通过 Toss Payments 安全支付。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.errNoPlan,요금제 코드가 없습니다. 요금제에서 다시 선택해 주세요.,缺少方案代码，请重新选择方案。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.errPlanNotFound,요금제를 찾을 수 없습니다. 요금제에서 다시 선택해 주세요.,未找到方案，请重新选择。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.fAmount,결제금액,支付金额,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.fItem,상품,商品,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.fOrder,주문번호,订单号,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.fPeriod,유효기간,有效期,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.failTitle,주문 처리 실패,订单处理失败,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.payCancelled,결제가 취소되었거나 실패했습니다. 다시 시도해 주세요.,支付已取消或失败，请重试。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.payCta,Toss로 {amount} 결제하기,使用 Toss 支付 {amount},evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.payWindowErr,결제창 오류,支付窗口错误,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.pending,결제 대기,等待支付,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.periodValue,결제일로부터 1개월 (자동연장 없음),自支付日起1个月（不自动续费）,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.preparing,준비 중,准备中,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.preparingDesc,결제 준비 중입니다. 잠시 후 다시 시도해 주세요.,支付准备中，请稍后重试。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL1,결제 후 7일 이내이고 이용 내역이 없으면 전액 환불됩니다(청약철회).,支付后7日内且无使用记录可全额退款（撤回）。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL2,그 외에는 즉시 해지 시 이용한 일수만큼 일할 계산해 뺀 금액을 환불합니다. 위약금은 없습니다(중도해지).,其他情况立即取消时，按已使用天数比例扣除后退款，无违约金（中途取消）。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL3,"일반해지를 선택하면 만료일까지 이용하고 종료되며, 환불은 없습니다.",选择普通取消可使用至到期后结束，不予退款。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL4,이용 내역은 30초 이상 재생 또는 다운로드 1회를 말합니다.,使用记录指播放30秒以上或下载1次。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL5,이용권은 1개월 단기 패스로 자동 연장되지 않습니다. 해지·환불은 내 이용권에서 직접 신청할 수 있습니다.,通行证为1个月短期有效，不自动续费。可在我的通行证中直接取消或退款。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundL6,환불 금액은 결제 수단에 따라 3~5영업일 안에 반환됩니다.,退款金额将视支付方式在3至5个工作日内返还。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.refundSummary,"7일 이내 미이용 시 전액 환불, 그 외 즉시 해지 시 이용일수 일할 차감 후 환불(위약금 없음), 일반해지 시 만료일까지 이용.",7日内未使用全额退款，其他情况立即取消按使用天数比例退款（无违约金），普通取消使用至到期。,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.sheet,주문서,订单,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+checkout.title,이용권 결제,购买通行证,evidence/r13/harness/d1440-listener-zh-cn-checkout.png
+common.actions.back,뒤로,返回,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.cancel,취소,取消,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.clear,지우기,清除,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.close,닫기,关闭,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.confirm,확인,确认,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.copied,복사됨,已复制,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.copy,복사,复制,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.delete,삭제,删除,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.edit,수정,编辑,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.loading,불러오는 중…,加载中…,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.logout,로그아웃,退出登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.more,더보기,更多,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.next,다음,下一步,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.reload,새로고침,刷新,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.retry,다시 시도,重试,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.save,저장,保存,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.search,검색,搜索,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.share,공유,分享,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.actions.showMore,더 보기,查看更多,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.appName,AVIBE,AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.auth.needAdmin,관리자 전용 페이지입니다.,此页面仅限管理员。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.auth.needBusiness,비즈니스 전용 페이지입니다. 비즈니스 승인 후 이용하세요.,此页面仅限企业用户，企业审核通过后可用。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.auth.needPartner,파트너 전용 페이지입니다. 파트너 승인 후 이용하세요.,此页面仅限合作方，合作方审核通过后可用。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.auth.sessionExpired,세션이 만료되었습니다. 다시 로그인해 주세요.,会话已过期，请重新登录。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.auth.sessionExpiredTitle,로그인 필요,需要登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.banner.dismiss,닫기,关闭,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.banner.suggest,이 페이지를 {language}(으)로 보시겠습니까?,是否使用{language}查看此页?,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.banner.view,보기,查看,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.brand.logoAlt,AVIBE 로고,AVIBE 标志,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.aiBadge,AI 생성 표시 제공,提供AI生成标识,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.address,주소,地址,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.ceo,대표자,法定代表人,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.company,상호,公司名称,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.contact,연락처,联系方式,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.hosting,호스팅 제공자,托管服务商,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.mailOrderNo,통신판매업 신고번호,通信销售申报号,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.biz.regNo,사업자등록번호,营业执照注册号,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.bizInfo,사업자 정보,经营者信息,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.byModel,"AI 모델별 탐색 (Suno, Udio, AIVA)","按AI模型浏览 (Suno, Udio, AIVA)",evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.chill,칠 & 로우파이 라운지,放松 & 低保真休息室,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.colLegal,법적 고지 & 거버넌스,法律声明 & 治理,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.colPartner,파트너 & 크리에이터,合作方 & 创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.colStream,스트리밍 & 탐색,串流 & 发现,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.contract,파트너 음원유통·면책 계약서,合作方发行·免责协议,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.copyright,AI 저작권 및 OSP 면책 정책,AI版权与OSP免责政策,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.disputes,권리침해 신고 & 소명 센터,侵权举报 & 申诉中心,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.focus,집중 & 작업용 사운드,专注 & 工作声音,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.gate,4단계 상업 라이선스 업로드 게이트,四步商用许可上传审核,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.ospContact,저작권 침해 중단 요구(수령인),版权侵权下架请求接收人,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.popular,인기 음원,热门歌曲,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.pricing,요금제,套餐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.privacy,개인정보처리방침,隐私政策,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.proof,유료 AI 구독 증빙 등록,付费AI订阅证明登记,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.rights,© 2026 AVIBE — Beyond Your Music. All rights reserved.,© 2026 AVIBE — Beyond Your Music. All rights reserved.,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.settlement,파트너 정산 대시보드,合作方结算仪表盘,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.tagline,상업 이용 조건 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.,发行经商用条件确认的AI音乐的流媒体平台。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.footer.tos,서비스 이용약관,服务条款,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.httpError.backHome,홈으로 돌아가기,返回首页,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.d404,요청하신 페이지가 삭제되었거나 주소가 변경되었습니다.,页面已删除或地址已变更。,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.d500,서버와의 통신 중 문제가 발생했습니다. 잠시 후 다시 시도해 주시기 바랍니다. 문제가 계속되면 고객센터로 문의해 주세요.,与服务器通信出错，请稍后再试，持续请联系客服。,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.exploreCta,음원 탐색하기,发现音乐,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.home,홈으로,回到首页,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.t404,페이지를 찾을 수 없습니다,找不到页面,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.httpError.t500,일시적인 오류가 발생했습니다,发生了临时错误,evidence/r13/harness/d1440-guest-zh-cn-server-error.png
+common.input.hide,숨김,隐藏,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.input.hidePassword,비밀번호 숨기기,隐藏密码,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.input.openPicker,날짜 선택 달력 열기,打开日期选择器,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.input.show,표시,显示,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.input.showPassword,비밀번호 표시,显示密码,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.beta,Beta,Beta,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.en,English,English,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.ja,日本語,日本語,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.ko,한국어,한국어,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.label,표시 언어,显示语言,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.th,ไทย,ไทย,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.locale.zh-cn,简体中文,简体中文,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.accountSecurity,계정 보안 (2단계 인증),账户安全 (两步验证),evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.accountSettings,계정 설정,账号设置,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.adminConsole,어드민 콘솔,管理控制台,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.business,비즈니스,商家,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.businessConsole,비즈니스 콘솔,商务控制台,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.charts,차트,排行榜,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.creatorStudio,크리에이터 스튜디오,创作者工作室,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.explore,음원 탐색,发现音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.exploreFilter,음원 탐색 & 필터,发现音乐 & 筛选,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.home,홈,首页,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.legal,이용약관 및 법적 정책,条款与政策,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.library,내 라이브러리,我的音乐库,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.login,로그인,登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.logout,로그아웃,退出登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.mainMenu,주 메뉴,主菜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.mobileMenu,모바일 메뉴,移动端菜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.mobileMenuClose,모바일 메뉴 닫기,关闭菜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.mobileMenuOpen,모바일 메뉴 열기,打开菜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.myPlaylistsLibrary,내 플레이리스트 & 라이브러리,我的歌单 & 音乐库,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.partnerStudio,파트너 스튜디오,合作方工作室,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.partnerStudioDashboard,파트너 스튜디오 대시보드,合作方工作室仪表盘,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.playlists,플레이리스트,歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.pricing,요금제,价格方案,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.reviewBench,관리자 검수 워크벤치,审核工作台,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.rightsCenter,권리보호센터,权利保护中心,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.rightsCenterOsp,권리보호센터 (OSP 분쟁),权利保护中心 (OSP纠纷),evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.searchPh,곡·무드·크리에이터,歌曲、心情、创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.security2fa,계정 보안 (2단계 인증),账户安全 (两步验证),evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.signup,회원가입,注册,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.studio,스튜디오,工作室,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.uploadGatekeeper,음원 업로드 (Gatekeeper),上传音乐 (Gatekeeper),evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.uploadWizard,음원 업로드 위저드,上传向导,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.nav.userMenu,사용자 메뉴,账户菜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.paginator.empty,0개,0条,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.label,페이지네이션,分页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.next,다음 페이지,下一页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.nextShort,다음,下一页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.ofTotal,전체 {total}개 중 {range},共{total}条中的{range},evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.pageNum,페이지 {p},第{p}页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.pageOnly,페이지 {page},第{page}页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.prev,이전 페이지,上一页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.prevShort,이전,上一页,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.paginator.range,{from}–{to}개,{from}–{to}条,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+common.seal.full,상업적 이용권 보유 인증,商用使用权持有认证,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.seal.short,이용권 인증,已认证,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.stepper.label,진행 단계,进度步骤,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.account,계정,账号,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.explore,탐색,发现,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.home,홈,首页,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.label,하단 메뉴,底部导航,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.library,라이브러리,音乐库,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.list,탭,选项卡,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tabs.playlists,플레이리스트,歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.tagline,Beyond Your Music,Beyond Your Music,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-billing,내 이용권,我的通行证,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-connections,연결된 계정,关联账号,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-index,계정 설정,账号设置,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-language,언어,语言,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-privacy,개인정보,隐私,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-profile,프로필,个人资料,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.account-security,계정 보안,账户安全,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-audit,감사 로그,审计日志,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-curation,큐레이션,精选,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-disputes,분쟁 처리,纠纷处理,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-distribution,유통,发行,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-inquiries,도입 문의,引入咨询,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-overview,관리자 개요,管理概览,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-policies,라이선스 정책,许可政策,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-reviews,심사,审核,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-role-grants,역할 이관 로그,角色迁移日志,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-settlements,정산,结算,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-social,소셜 현황,社交概览,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-stores,매장 승인,门店审批,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.admin-users,사용자 관리,用户管理,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business,비즈니스,商家,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business-console,비즈니스 콘솔,商务控制台,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business-console-billing,청구,账单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business-console-licenses,라이선스,授权,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business-console-players,플레이어,播放器,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.business-console-stores,매장 관리,门店管理,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.certificate-verify,인증서 확인,验证证书,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.charts,차트,排行榜,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.checkout,결제,结算,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.checkout-confirm,결제 완료,支付完成,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.create,AI 생성,AI生成,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.creators-handle,크리에이터,创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.embed-playlist-shortId,임베드 플레이어,嵌入式播放器,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.embed-track-shortId,임베드 플레이어,嵌入式播放器,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.explore,음원 탐색,发现音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.explore-genre-genre,장르,风格,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.explore-mood-mood,무드,氛围,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.explore-use-useCase,용도별 음악,场景音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.for-creators,크리에이터,创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.forgot-password,비밀번호 찾기,忘记密码,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.guides,가이드,指南,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.guides-slug,가이드,指南,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.home,홈,首页,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.legal-root,약관,条款,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.legal-terms,약관,条款,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.library,라이브러리,音乐库,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.login,로그인,登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.me-playlists,내 플레이리스트,我的歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.my-library,내 라이브러리,我的音乐库,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.not-found,페이지를 찾을 수 없음,页面不存在,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.oauth-callback,소셜 로그인,社交登录,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.playlist-detail,플레이리스트,歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.playlists,플레이리스트,歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.pricing,요금제,价格方案,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.reset-password,비밀번호 찾기,找回密码,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.rights-center,권리보호센터,权利保护中心,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.server-error,오류,出错了,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.signup,가입하기,注册,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.signup-business,비즈니스 가입,商家注册,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.signup-complete-email,이메일 입력,输入邮箱,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.signup-creator,크리에이터 가입,创作者注册,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.signup-listener,리스너 가입,听众注册,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.store-player,매장 플레이어,门店播放器,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-catalog,내 곡,我的歌曲,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-create,AI 생성,AI 创作,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-dashboard,스튜디오 대시보드,工作室仪表盘,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-earnings,정산,结算,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-proofs,AI 구독 증빙,AI订阅证明,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-settings,스튜디오 설정,工作室设置,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.studio-upload,음원 업로드,上传音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.track-detail,음원 상세,歌曲详情,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.trust,인증 방식,认证机制,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.titles.verify-email,이메일 인증,邮箱验证,evidence/r13/harness/d1440-guest-zh-cn-home.png
+common.toast.dismiss,알림 닫기,关闭通知,evidence/r13/harness/d1440-guest-zh-cn-home.png
+errors.EMAIL_NOT_VERIFIED,이메일 인증이 필요합니다. 메일함의 인증 링크를 눌러 주세요.,需要完成邮箱验证。请打开收件箱中的验证链接。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_ACTIVE_PASS_EXISTS,"이미 이용 중인 이용권이 있습니다. 만료 후 구매하거나, 내 라이브러리에서 즉시 해지한 뒤 구매해 주세요.",已有生效中的会员，到期后再购买，或先在音乐库中立即解约。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_AGE_CONFIRM_REQUIRED,만 14세 이상 확인이 필요합니다.,需要年满14岁确认。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_CONSENT_REQUIRED,필수 약관 동의가 필요합니다.,需要同意必要条款。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_DOWNLOAD_QUOTA,일일 다운로드 횟수를 초과했습니다.,已达到每日下载上限。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_DOWNLOAD_REQUIRES_PASS,다운로드는 이용권이 필요합니다.,下载需要生效中的会员。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_DOWNLOAD_UNAVAILABLE,원본 파일을 사용할 수 없습니다.,母带文件不可用。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_DUPLICATE_AUDIO_FILE,이미 등록된 음원 파일(SHA-256 중복)입니다.,该音频文件已登记(重复)。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_EMAIL_TAKEN,이미 등록된 이메일입니다.,该邮箱已注册。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_FALLBACK,요청 처리에 실패했습니다.,请求失败。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_FORBIDDEN,접근 권한이 없습니다.,没有访问权限。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_HANDLE_TAKEN,이미 사용 중인 핸들입니다.,该创作者名已被占用。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_INTERNAL,서버 오류가 발생했습니다.,服务器出错。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_INVALID_CREDENTIALS,이메일 또는 비밀번호가 올바르지 않습니다.,邮箱或密码不正确。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_INVALID_INPUT,입력값을 확인해 주세요.,请检查输入内容。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_NON_COMMERCIAL_TIER,상업용 플랜이 아닙니다. 상업용 구독 증빙을 등록해 주세요.,非商用套餐，请登记商用订阅证明。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_NOT_FOUND,요청한 리소스를 찾을 수 없습니다.,未找到请求的内容。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_NOT_STREAMABLE,재생할 수 없는 음원입니다. (심사/차단 상태),该歌曲无法播放。(审核/屏蔽状态),evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_OAUTH_LAST_METHOD,마지막 로그인 수단은 해제할 수 없습니다.,无法解除最后一种登录方式。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_OAUTH_LINK_LOGIN_REQUIRED,이미 가입된 이메일입니다. 이메일로 로그인한 뒤 연결된 계정에서 소셜 계정을 연결해 주세요.,该邮箱已注册。请先使用邮箱登录，再在已关联账号中关联社交账号。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_OAUTH_LINK_TAKEN,이 소셜 계정은 이미 다른 계정에 연결되어 있습니다.,该社交账号已关联至其他账号。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_PAYMENT_UNAVAILABLE,결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.,支付功能尚未配置，请联系管理员。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_PROVIDER_NOT_ALLOWED,허용 목록에 없는 제공자입니다. 허용 제휴 제공자를 선택해 주세요.,该供应商不在白名单内，请选择允许的合作供应商。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_RATE_LIMITED,요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.,请求过于频繁，请稍后再试。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_RETROACTIVE_GENERATION_DATE,구독 시작일 이전에 생성된 음원은 등록할 수 없습니다.,订阅开始日前生成的歌曲无法登记。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_SYNC_ONLY_LICENSE,이 제공자는 단독 스트리밍이 불가한 Sync-Only 라이선스입니다.,该供应商为Sync-Only许可，不可单独发行串流。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_TOO_MANY_ATTEMPTS,시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요.,尝试次数过多，请稍后再试。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_TOTP_ENROLL_REQUIRED,관리자 계정은 2단계 인증 등록이 필요합니다. 보안 설정에서 등록해 주세요.,管理员账户须绑定两步验证，请前往安全设置绑定。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_TOTP_INVALID,인증 코드가 올바르지 않습니다. 다시 입력해 주세요.,验证码不正确，请重新输入。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_TOTP_REQUIRED,2단계 인증 코드가 필요합니다.,需要两步验证码。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_UNAUTHORIZED,로그인이 필요합니다.,请先登录。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.ERR_USER_INACTIVE,비활성화된 계정입니다.,该账户已停用。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+errors.LOGIN_LOCKED,로그인 시도가 너무 많습니다. 15분 후 다시 시도해 주세요.,登录尝试过多，请15分钟后再试。,evidence/r13/harness/d1440-guest-zh-cn-login.png
+explore.bpmAny,전체,全部,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.bpmFast,120 초과,120以上,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.bpmLabel,BPM,BPM,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.bpmMid,90–120,90–120,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.bpmSlow,90 미만,90以下,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.certAny,전체,全部,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.certLabel,인증서,证书,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.certOnly,인증서 발급곡만,仅看已认证,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.durAny,전체,全部,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.durLabel,길이,时长,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.durLong,5분 이상,5分钟以上,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.durMid,3–5분,3–5分钟,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.durShort,3분 미만,3分钟以内,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.emptyDesc,다른 검색어나 필터를 선택해 보세요.,换个关键词或筛选条件试试。,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.emptyTitle,일치하는 음원이 없습니다,没有符合的歌曲,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.enterHint,검색어를 입력해 주세요. 비워 두면 전체 음원이 표시됩니다.,请输入关键词，留空则显示全部。,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.genreAll,모든 장르,全部风格,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.genreLabel,장르,风格,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.moodAll,모든 무드,全部心情,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.moodLabel,무드,心情,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.playAll,전체 재생,全部播放,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.providerAll,모든 AI 플랫폼,全部平台,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.providerLabel,AI 플랫폼,AI平台,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.resetFilters,필터 초기화,重置筛选,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.results,결과 {count}곡,共{count}首,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.searchLabel,검색,搜索,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.searchPh,"곡 제목, 아티스트, 키워드 검색…",歌名、艺人、关键词…,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortLabel,정렬,排序,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortOldest,오래된 등록순,最早发布,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortPopular,인기 재생순,播放最多,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortRecent,최신 등록순,最新发布,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortRelevant,관련도순,按相关度,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sortTitle,제목순,按标题,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.sub,무드·장르·AI 플랫폼으로 확인된 음원을 찾아보세요.,按心情、风格和AI平台查找已审核歌曲。,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.title,음원 탐색,发现音乐,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.viewGrid,그리드 보기,网格视图,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+explore.viewList,리스트 보기,列表视图,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+home.chartMore,전체 차트,完整榜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.chartTitle,인기 차트,热门榜单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.continueEmpty,아직 재생 기록이 없어요. 첫 곡을 들어보세요.,还没有播放记录，先听第一首吧。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.continueResume,이어서 재생,继续播放,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.continueTitle,이어 듣기,继续收听,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custBizC,도입 문의하기,咨询引入,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custBizD,매장 BGM과 영상에 쓰는 라이선스.,门店BGM与视频授权。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custBizT,비즈니스,商家,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custCreatorC,크리에이터 되기,成为创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custCreatorD,곡을 올리고 인증받아 정산받으세요.,发布歌曲、通过认证并获得结算。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custCreatorT,크리에이터,创作者,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custListenerC,무료로 시작하기,免费开始,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custListenerD,확인된 AI 음악을 무료로 듣고 모아보세요.,免费收听并收藏已审核的AI音乐。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.custListenerT,리스너,听众,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroBadge,상업적 이용권 보유 인증을 거친 AI 음악,经过商用授权审核的AI音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroBiz,비즈니스 라이선스 보기,查看商业授权,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroCreateMode,만들기,创作,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroCreateNote,AI 생성은 준비 중입니다,AI生成功能准备中,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroListen,지금 듣기,立即收听,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroSearchGo,검색,搜索,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroSearchPh,듣고 싶은 무드·장르·용도를 입력하세요,输入想听的心情、风格或用途,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroSub,"모든 곡은 이용권 확인을 거쳐 공개됩니다. 무료로 듣고, 매장과 영상에는 라이선스로 쓰세요.",所有歌曲都经过授权审核后发布。免费收听，门店和视频请使用授权。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.heroTitle,바로 써도 되는 AI 음악,拿来即用的AI音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.listenMore,전체 탐색,浏览全部,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.listenNow,바로 듣기,立即收听,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.moodsLabel,무드 바로가기,心情快捷入口,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.myPlTitle,내 플레이리스트,我的歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.recEmpty,아직 추천 플레이리스트가 없습니다.,暂无推荐歌单。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.recMore,플레이리스트 더보기,更多歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.recTitle,추천 플레이리스트,推荐歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.recentTitle,최근 재생,最近播放,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.strip1,공개 전 이용권 확인,发布前授权审核,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.strip2,곡별 인증서,单曲证书,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.strip3,AI 생성 표시,AI生成标识,evidence/r13/harness/d1440-guest-zh-cn-home.png
+home.stripHow,어떻게 확인하나요?,如何审核?,evidence/r13/harness/d1440-guest-zh-cn-home.png
+legal.aiBadge.aiTitle,AI 생성 음원,AI 生成音乐,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.aiBadge.certLabel,상업적 이용권 보유 인증,商业使用权认证,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.aiBadge.certTitle,상업 라이선스 검증 완료 (Gate1-3 통과 + 심사 승인),商业许可验证完成（Gate1-3 通过＋审核批准）,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.cert.desc,인증서 번호로 진위를 확인합니다. 인쇄 버튼으로 PDF 보관이 가능합니다.,可凭证书编号验证真伪，可使用打印按钮保存 PDF。,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.errNoNumber,인증서 번호가 없습니다.,缺少证书编号。,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.errNotFound,인증서를 찾을 수 없습니다. 번호를 확인해 주세요.,未找到证书，请确认编号。,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fGates,게이트 통과,已通过网关,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fGenerated,생성일,生成日期,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fIssued,발급일,签发日期,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fProvider,AI 플랫폼,AI 平台,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fTier,사용 요금제,使用的方案,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.fTitle,곡명,歌曲,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.gatesPartial,일부 미통과,部分未通过,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.gatesPass,Gate 1-3 통과,Gate 1-3 通过,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.loadFail,인증서를 확인하지 못했습니다,无法验证证书,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.na,미기재,未填写,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.notice,"본 인증은 생성 시점의 유료 상업 플랜 보유, 당시 정책상 상업 이용 허용, 중복·재등록 아님을 파트너 신고와 자동 검사에 근거해 확인한 절차이며, 권리 관계를 보증하지 않습니다.",本认证基于合作方申报与自动检查，确认生成时持有付费商业方案、当时政策允许商业使用且非重复/重新注册，不保证权利关系。,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.print,인쇄 / PDF 저장,打印 / 保存 PDF,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.cert.verified,진위 확인됨,已验证真伪,evidence/r13/harness/d1440-guest-zh-cn-cert.png
+legal.consent,본 약관 동의하기,同意本条款,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.consentFail,약관 동의 실패,同意失败,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.consentGate.consent,동의하기,同意,evidence/r13/harness/d1440-listener-zh-cn-account.png
+legal.consentGate.desc,개정된 필수 약관이 있습니다. 스트리밍·결제·업로드를 계속 이용하려면 아래 약관에 동의해 주세요.,必填条款已更新，请同意以下条款以继续使用流媒体、支付和上传。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+legal.consentGate.done,약관 동의가 완료되었습니다.,条款同意完成。,evidence/r13/harness/d1440-listener-zh-cn-account.png
+legal.consentGate.title,필수 약관 동의,必填条款同意,evidence/r13/harness/d1440-listener-zh-cn-account.png
+legal.consentGate.viewDoc,전문 보기,查看全文,evidence/r13/harness/d1440-listener-zh-cn-account.png
+legal.consentOk,약관에 동의하셨습니다.,已同意条款。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.consented,동의 완료됨,已同意,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.docCOPYRIGHT,AI 저작권 & OSP 면책,AI版权与OSP免责,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.docPARTNER,파트너 음원유통 계약서,合作方音源发行协议,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.docPRIVACY,개인정보처리방침,隐私政策,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.docTOS,서비스 이용약관,服务条款,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.emptyBody,내용이 등록되지 않았습니다.,暂无内容。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.loadFail,약관 조회 실패,条款加载失败,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.loginToConsent,로그인 후 동의하기,登录后同意,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.mdCancel,취소,取消,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdDesc,상세 설명,详细说明,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdDescPh,권리 관계를 구체적으로 적어 주세요,请具体写明权利关系,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdR1,비상업·무료 요금제 생성물 의심,疑似非商业/免费套餐生成物,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdR2,음성·퍼블리시티권 침해 (무단 딥보이스),声音·形象权侵害(未经授权的深度声音),evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdR3,저작권 침해·무단 샘플링,版权侵害·未经授权采样,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdR4,기타 (상표권·불법 유해 콘텐츠 등),其他(商标权·违法有害内容等),evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdReason,신고 사유,举报理由,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdSubmit,신고하기,举报,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.mdTitle,저작권 분쟁 신고,版权争议举报,evidence/r13/harness/d1440-listener-zh-cn-track.png
+legal.meta,최종 개정일: {date} · 버전: {version},最后修订: {date} · 版本: {version},evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.notFoundD,위 목록에서 문서를 선택해 주세요.,请从上方列表选择文件。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.notFoundT,요청한 약관 문서를 찾을 수 없습니다.,找不到所请求的文件。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.pickDoc,약관 문서 선택,选择文件,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.precheck.checking,라이선스 사전검사 진행 중,许可预检进行中,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.precheck.checkingDesc,상업 라이선스 적격성을 확인하고 있습니다.,正在检查商业许可资格。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.precheck.fail,업로드 차단,上传被拦截,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.precheck.failDesc,검사에 실패했습니다.,检查失败。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.precheck.pass,Gate1-2 통과,Gate1-2 通过,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.precheck.passDesc,상업용 구독·생성일·제공자 정책 검사를 통과했습니다. 다음 단계로 진행하세요.,付费订阅、生成日期和提供方政策检查已通过，请继续。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+legal.rcBlockedPartner,차단 파트너,已屏蔽合作方,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcBlocksEmptyD,원치 않는 파트너 아티스트를 차단하면 해당 아티스트의 모든 음원이 재생 큐 및 추천에서 자동으로 제외됩니다.,屏蔽不想要的合作方艺人后，其全部音源将自动从播放队列和推荐中排除。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcBlocksEmptyT,차단된 아티스트가 없습니다,没有屏蔽的艺人,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcBlocksN,{n}명,{n}个,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcBlocksT,내가 차단한 파트너(아티스트) 목록,我屏蔽的合作方(艺人),evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcDesc,저작권법 제103조(복제·전송의 중단) 및 부정경쟁방지법(보이스 클로닝 방지) 전용 창구입니다.,著作权法第103条(停止复制·传输)与反不正当竞争(防声音克隆)专用窗口。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcEyebrow,Rights Protection,Rights Protection,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoReason,사유 미기재,未填写理由,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoResult,검색 결과가 없습니다. 음원 상세 페이지에서도 신고할 수 있습니다.,没有结果，也可在音源详情页举报。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoticeA,신고가 접수되면 해당 AI 음원의 복제·전송이 즉시 중단됩니다.,举报受理后，相关AI音源立即停止复制与传输。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoticeB,저작권법 제103조에 따라 스트리밍 및 검색에서 차단됩니다. 파트너는 재개 요구(소명)를 제출할 수 있으며 접수 후 7영업일 내 검토를 원칙으로 합니다.,依著作权法第103条屏蔽播放与搜索。合作方可提交恢复要求(说明)，原则上受理后7个工作日内审核。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoticeC,허위 신고 또는 허위 등록 시 법적 손해배상 책임이 부과될 수 있습니다.,虚假举报或虚假登记可能承担法定赔偿责任。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcNoticeT,OSP 책임제한(Notice & Takedown) 즉시 조치 원칙,OSP责任限制(Notice & Takedown)立即处置原则,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcReason,사유: {r},理由: {r},evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcReportBtn,신고하기,举报,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcReportT,권리침해 신고서 작성,填写侵权举报,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcReported,신고가 접수되었습니다. (ID: {id}),举报已受理。(ID: {id}),evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcSearch,검색,搜索,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcSearchHint,신고할 음원을 먼저 검색하세요. 음원 상세 페이지에서도 바로 신고할 수 있습니다.,先搜索要举报的音源，也可直接在音源详情页举报。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcSearchPh,신고할 음원 제목으로 검색…,按要举报的音源标题搜索…,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcTitle,권리보호센터,权利保护中心,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcToastBlocksFail,차단 목록 불러오기 실패,屏蔽列表加载失败,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcToastSearchFail,음원 검색 실패,音源搜索失败,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcToastUnblockFail,해제 실패,解除失败,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcToastUnblocked,아티스트 차단이 해제되었습니다.,已解除艺人屏蔽。,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.rcUnblock,차단 해제,解除屏蔽,evidence/r13/harness/d1440-listener-zh-cn-rights-center.png
+legal.retry,다시 시도,重试,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.sub,AVIBE 서비스 약관 및 정책 문서입니다.,AVIBE服务条款与政策文件。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.title,법적 고지 및 약관,法律声明与条款,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.transPendingD,이 문서는 한국어 원문이 정본입니다. 번역이 준비되는 대로 제공합니다.,本文以韩文原版为准，译文备好后提供。,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+legal.transPendingT,번역 준비 중,翻译准备中,evidence/r13/harness/d1440-guest-zh-cn-legal.png
+library.follow,팔로우하기,关注,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.followsCreatorsT,팔로우한 크리에이터,关注的创作者,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.followsEmptyD,좋아하는 크리에이터와 플레이리스트를 팔로우해 보세요.,关注喜欢的创作者和歌单吧。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.followsEmptyT,아직 팔로우가 없어요,还没有关注,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.followsPlaylistsT,팔로우한 플레이리스트,关注的歌单,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.likeAria,좋아요 누르기,点赞,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.likedEmptyCta,탐색하기,去发现,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.likedEmptyD,탐색에서 마음에 드는 곡에 ♡를 눌러보세요.,在发现里给喜欢的歌点♡吧。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.likedEmptyT,아직 좋아요한 곡이 없어요,还没有喜欢的歌曲,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.myPlCard,내 플레이리스트 {count}개,我的歌单{count}个,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.playAll,전체 재생,全部播放,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.recentEmptyD,첫 곡을 들어보세요.,先听第一首吧。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.recentEmptyT,최근 재생 기록이 없어요,暂无播放记录,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.savedEmptyD,마음에 드는 플레이리스트를 저장해 보세요.,收藏喜欢的歌单吧。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.savedEmptyT,저장한 플레이리스트가 없어요,还没有收藏的歌单,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.tabFollows,팔로우 중,我的关注,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.tabLiked,좋아요한 곡,喜欢的歌曲,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.tabRecent,최근 재생,最近播放,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.tabSaved,저장한 플레이리스트,收藏的歌单,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.title,라이브러리,音乐库,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.toastFollowed,팔로우했습니다.,已关注。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.toastLiked,좋아요를 눌렀습니다.,已点赞。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.toastUnfollowed,언팔로우했습니다.,已取消关注。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.toastUnliked,좋아요를 취소했습니다.,已取消点赞。,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.unfollow,언팔로우,取消关注,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.unlikeAria,좋아요 취소하기,取消点赞,evidence/r13/harness/d1440-listener-zh-cn-library.png
+library.unsave,저장 해제,取消收藏,evidence/r13/harness/d1440-listener-zh-cn-library.png
+player.close,닫기,关闭,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.coverArt,{title} 커버 아트,{title}封面,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.errPlayFailed,음원을 재생할 수 없습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.,无法播放该音乐，请检查网络后重试。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.errSkipLogin,재생하려면 로그인이 필요합니다.,播放需要登录。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.errSkipUnplayable,재생할 수 없는 음원을 건너뜁니다: {title},跳过无法播放的音乐：{title},evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.errStreamLost,스트리밍 연결이 끊겼습니다: {title},流媒体连接中断：{title},evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.expand,전체화면으로 열기,全屏打开,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.idle,재생 대기 중,待播放,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.idleHint,원하는 음원을 선택하세요,选择想听的歌曲,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.loginLink,로그인하기,去登录,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.mosaic,{title} 커버 모자이크,{title}封面拼贴,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.next,다음 곡,下一首,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.noLyrics,등록된 가사가 없습니다.,暂无歌词。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.nowPlaying,재생 중,正在播放,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.pause,일시정지,暂停,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.play,재생,播放,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.previous,이전 곡,上一首,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.qualityHq,고음질 256k (이용권),高音质 256k (会员),evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.qualitySq,표준 음질 128k (무료),标准音质 128k (免费),evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queue,큐,队列,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueClear,비우기,清空,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueClose,닫기,关闭,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueEmptyHint,음원 목록에서 곡을 담으면 여기에 표시됩니다.,从歌曲列表添加的歌曲会显示在这里。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueEmptyTitle,대기열이 비어 있습니다,队列是空的,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueOpen,재생 대기열 열기,打开播放队列,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueOpenCount,재생 대기열 열기 ({count}곡),打开播放队列 ({count}首),evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queuePlay,「{title}」 재생,播放「{title}」,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueRemove,「{title}」 대기열에서 제거,将「{title}」移出队列,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.queueTitle,재생 대기열 ({count}),播放队列 ({count}),evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.remove,삭제,删除,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.repeat,반복 재생: {mode},循环: {mode},evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.repeatAll,전체 반복,循环全部,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.repeatOff,끔,关,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.repeatOne,한 곡 반복,单曲循环,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.seekLabel,재생 위치,播放位置,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.shuffle,셔플 재생,随机播放,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.skipped,재생할 수 없는 음원 {count}곡을 재생 큐에서 건너뛰었습니다.,已跳过队列中{count}首无法播放的歌曲。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.storeErrPlayFailed,음원을 재생할 수 없습니다. 네트워크 상태를 확인해 주세요.,无法播放该音乐，请检查网络。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.tabLicense,라이선스,授权,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.tabLyrics,가사,歌词,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.tabQueue,큐,播放队列,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.timeMin,{m}분 {s}초,{m}分{s}秒,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.verified,이용조건 확인됨,已确认使用条件,evidence/r13/harness/d1440-listener-zh-cn-track.png
+player.viewTrack,이 곡 페이지에서 보기,在歌曲页面查看,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.createCancel,취소,取消,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.createName,플레이리스트 이름,歌单名称,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.createNamePh,예: 심야 코딩용 믹스,例如：深夜代码混音,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.createPublic,공개 플레이리스트로 만들기,设为公开歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.createSubmit,만들기,创建,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.createTitle,새 플레이리스트,新建歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.delBody,삭제된 플레이리스트는 복구할 수 없습니다. 정말 삭제하시겠습니까?,删除的歌单无法恢复，确定删除吗?,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.delConfirm,삭제하기,删除,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.delTitle,플레이리스트 삭제,删除歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.detailPrivate,비공개 플레이리스트,私密歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.detailPublic,공개 플레이리스트,公开歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editCancel,취소,取消,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editInfo,정보 수정,编辑信息,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editSave,저장하기,保存,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editTitle,제목,标题,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editVisibility,공개 플레이리스트로 설정,设为公开,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.editorTitle,에디터 큐레이션,编辑精选,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.emptyD,첫 번째 믹스를 만들어 공유해 보세요.,来制作并分享第一份混音吧。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.emptyT,아직 공개된 플레이리스트가 없습니다,暂无公开歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.errTitle,플레이리스트를 불러오지 못했습니다,无法加载这个歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.gridTitle,공개 플레이리스트,公开歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meDelete,삭제,删除,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meEmptyCta,첫 플레이리스트 만들기,创建第一个歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meEmptyD,나만의 분위기와 취향에 맞는 믹스를 만들어 보세요.,按自己的心情品味做一份混音吧。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meEmptyT,아직 만든 플레이리스트가 없어요,你还没有歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meGrid,그리드,网格,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meList,리스트,列表,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meMakePrivate,비공개로 전환,设为私密,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meMakePublic,공개로 전환,设为公开,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meNew,새 플레이리스트,新建歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meRename,이름 변경,重命名,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meSort,정렬,排序,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meSortRecent,최근 수정순,最近更新,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meSortTitle,제목순,按标题,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.meTitle,내 플레이리스트,我的歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.metaHM,{count}곡 · {h}시간 {m}분,{count}首 · {h}小时{m}分,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.metaM,{count}곡 · {m}분,{count}首 · {m}分钟,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.metaTracks,{count}곡,{count}首,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.picker.add,담기 →,添加 →,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.create,생성,创建,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.createMore,+ 새로 만들기,+ 新建,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.createNew,새 플레이리스트 만들기,新建播放列表,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.desc,보관할 플레이리스트를 선택하세요.,请选择要保存到的播放列表。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.descWithTrack,「{title}」을(를) 보관할 플레이리스트를 선택하세요.,请选择要保存「{title}」的播放列表。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.empty,생성된 플레이리스트가 없습니다.,还没有播放列表。,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.namePh,새 플레이리스트 제목,新播放列表标题,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.private,비공개,私密,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.public,공개,公开,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.picker.title,플레이리스트에 담기,添加到播放列表,evidence/r13/harness/d1440-listener-zh-cn-track.png
+playlist.playAll,전체 재생,全部播放,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.save,저장,收藏,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.share,공유,分享,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.shuffle,셔플,随机播放,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.sub,에디터 큐레이션과 공개 믹스를 발견해 보세요.,发现编辑精选和公开混音。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.tabFeatured,추천,推荐,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.tabLatest,최신,最新,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.tabMine,내 플레이리스트,我的歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.title,플레이리스트,歌单,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastCreated,플레이리스트를 만들었습니다.,歌单已创建。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastDeleted,플레이리스트를 삭제했습니다.,歌单已删除。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastNeedLogin,로그인하면 이용할 수 있어요.,请登录后使用。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastRemoved,트랙이 제거되었습니다.,歌曲已移除。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastReordered,순서가 저장되었습니다.,顺序已保存。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastSaved,플레이리스트를 저장했습니다.,歌单已收藏。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastShared,링크를 복사했습니다.,链接已复制。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastUnsaved,저장을 해제했습니다.,已取消收藏。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.toastUpdated,플레이리스트 정보가 수정되었습니다.,歌单已更新。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackDown,아래로 이동,下移,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackEmptyCta,음원 탐색하러 가기,去发现,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackEmptyD,음원 탐색 화면에서 좋아하는 AI 음악을 담아보세요.,去发现里添加喜欢的AI音乐吧。,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackEmptyT,플레이리스트가 비어 있습니다,歌单是空的,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackRemove,이 플레이리스트에서 제거,从歌单中移除,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.trackUp,위로 이동,上移,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.tracksTitle,트랙 목록,歌曲列表,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+playlist.unsave,저장 해제,取消收藏,evidence/r13/harness/d1440-listener-zh-cn-me-playlists.png
+pricing.alreadyUsing,이미 이용 중인 요금제입니다.,已在使用该套餐。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz1D,매장에서 틀어주는 AI 음악 이용권,门店用AI音乐授权,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz1L1,이용권 확인된 곡만 재생,只播放已审核歌曲,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz1L2,매장 플레이어 자동 재생·집계,门店播放器自动播放·统计,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz1L3,월 단위 라이선스,按月授权,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz1T,매장 BGM,门店BGM,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz2D,유튜브·숏폼·광고에 쓰는 음원,YouTube·短视频·广告用曲,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz2L1,곡별 인증서 제공,单曲证书,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz2L2,상업적 이용 범위 명시,明确商用范围,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz2L3,분쟁 시 소명 지원,纠纷支持,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz2T,영상 라이선스,视频授权,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz3D,여러 매장과 대규모 이용,多门店与大规模使用,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz3L1,여러 매장 일괄 관리,多门店统一管理,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz3L2,이용량 집계 리포트,用量统计报告,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz3L3,도입 상담 지원,引入咨询支持,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.biz3T,엔터프라이즈,企业版,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.bizCta,도입 문의하기,咨询引入,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.buyCta,이용권 구매하기,购买通行证,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpH,기능,功能,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR1,스트리밍 음질,播放音质,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR1Free,SQ 128k,SQ 128k,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR1Plus,HQ 256k,HQ 256k,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR1Studio,HQ 256k,HQ 256k,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR2,다운로드,下载,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR2Free,—,—,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR2Plus,이용권 포함,通行证含,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR2Studio,이용권 포함,通行证含,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR3,곡 업로드·유통,发布·发行,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR3Free,—,—,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR3Plus,—,—,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR3Studio,가능,支持,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR4,유통 정산,发行结算,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR4Free,—,—,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR4Plus,—,—,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpR4Studio,유통 순매출 70%,净销售额70%,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.cmpTitle,플랜 비교,套餐对比,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.creatorFreeDesc,곡을 올리고 인증받아 유통을 시작하세요.,发布歌曲、通过认证并开始发行。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.creatorFreeName,기본 무료,免费起步,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.creditSoon,G 트랙 출시 후 생성 크레딧 요금 안내,G计划上线后公布生成点数价格,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.errTitle,요금제를 불러오지 못했습니다,无法加载套餐,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq1A,아니요. 이용권은 1개월 단기 패스로 자동 연장되지 않습니다.,不会，通行证1个月有效且不自动续费。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq1Q,자동으로 연장되나요?,会自动续费吗?,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq2A,"결제 후 7일 이내 미이용 시 전액, 그 외에는 이용일수 일할 차감 후 환불됩니다.",7天内未使用全额退款，其余按使用天数比例退款。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq2Q,환불이 되나요?,可以退款吗?,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq3A,Toss Payments 결제창에서 직접 처리되며 카드 정보는 보관하지 않습니다.,在Toss Payments窗口直接支付，不保存卡信息。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq3Q,어떻게 결제하나요?,怎么支付?,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq4A,내 이용권 페이지에서 직접 신청할 수 있습니다.,随时在我的通行证申请。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faq4Q,해지는 어디서 하나요?,在哪里取消?,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.faqTitle,자주 묻는 질문,常见问题,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeCta,무료로 듣기,免费收听,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeDesc,무료 가입 후 확인 절차를 거친 음원 스트리밍과 플레이리스트를 이용하세요.,免费注册即可收听已审核歌曲并使用歌单。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeF1,전체 확인 음원 스트리밍 (표준 음질 128k),全部已审核歌曲(标准128k),evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeF2,플레이리스트 무제한 생성,歌单无限制,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeF3,모바일·웹 동기화,手机·网页同步,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.freeName,Free,免费版,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.inUse,이용 중,使用中,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.needLogin,구매하려면 먼저 로그인하세요.,请先登录再购买。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.payPass,이용권은 구매일로부터 1개월간 유효한 단기 패스로 자동 연장되지 않습니다.,通行证自购买日起1个月有效，不自动续费。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.payTitle,결제 안내,支付说明,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.payToss,"결제는 Toss Payments 결제창에서 직접 처리되며, AVIBE 서버는 카드 정보를 보관하지 않습니다.",支付在Toss Payments窗口直接处理，不保存卡信息。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.perMonth,/ 1개월,/ 1个月,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.plusF1,Free의 모든 혜택,免费版全部权益,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.plusF2,HQ 256k 고음질 스트리밍,HQ 256k高音质,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.popularBadge,인기,热门,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.studioF1,Free의 모든 혜택,免费版全部权益,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.studioF2,HQ 256k 고음질 스트리밍,HQ 256k高音质,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.studioF3,파트너 스튜디오 프로 도구,合作伙伴工作室专业工具,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.sub,"이용권은 1개월 단기 패스입니다. 자동결제 없이, 필요할 때만 결제하세요. 결제는 Toss Payments로 안전하게 처리됩니다.",通行证是1个月短期通行证，不自动续费，有需要再买，通过Toss Payments安全支付。,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.tabBiz,비즈니스,商家,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.tabCreator,크리에이터,创作者,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.tabListener,리스너,听众,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+pricing.title,요금제,套餐,evidence/r13/harness/d1440-guest-zh-cn-pricing.png
+seo.cdDesc,{name} 크리에이터의 AI 음악 {count}곡. 이용권 인증 곡을 듣고 팔로우하세요.,{name}的{count}首AI音乐，收听已认证作品并关注。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorAbout,{name} 크리에이터는 현재 {tracks}곡의 AI 음악을 공개했습니다.,{name}已发布{tracks}首AI音乐。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorAboutRights,공개된 곡은 상업적 이용권 확인을 거쳤습니다. 자세한 권리 정보는 각 곡 페이지에서 확인하세요.,已发布作品均通过商用使用权核验，详情请见各曲目页面。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorNoPlaylists,아직 공개 플레이리스트가 없습니다.,暂无公开歌单。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorNoTracks,아직 공개된 곡이 없습니다.,暂无公开作品。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorNotFound,크리에이터를 찾을 수 없습니다.,未找到创作者。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorStats,곡 {tracks} · 누적 재생 {plays},{tracks}首 · {plays}次播放,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorTabAbout,소개,简介,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorTabAll,전체 곡,全部歌曲,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorTabPlaylists,플레이리스트,歌单,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorTabTop,인기 곡,热门歌曲,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.creatorTitle,{name} – 크리에이터 {'|'} AVIBE,{name} – 创作者 {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.embedDescription,AVIBE 임베드 플레이어.,AVIBE嵌入式播放器。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.embedMissing,재생할 수 없는 음원입니다.,该音频无法播放。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.embedOpen,AVIBE에서 듣기,在AVIBE收听,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.embedPlay,재생,播放,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.embedTrackCount,{count}곡,{count}首,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.exploreDescription,무드·장르·용도별 AI 음악 탐색. 이용권 확인을 거친 곡을 검색하고 필터하세요.,按氛围、风格、场景搜索AI音乐，筛选已核验作品。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideDraftNotice,번역 준비 중입니다. 한국어 원문이 정본입니다.,翻译准备中，以韩语原文为准。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideEmpty,가이드를 찾을 수 없습니다.,未找到指南。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideFaqTitle,자주 묻는 질문,常见问题,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideHubDescription,"AI 음악의 상업적 이용, 라이선스, 권리 확인에 대한 안내.",AI音乐商用、授权与权利核验指南。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideHubTitle,AVIBE 가이드,AVIBE指南,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideRelated,함께 보기,相关阅读,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideSources,근거,依据,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideTitle,{headline} {'|'} AVIBE 가이드,{headline} {'|'} AVIBE指南,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.guideUpdated,업데이트 {date},更新于{date},evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.landingCount,{count}곡 수록,收录{count}首,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.landingMore,탐색에서 더 보기,去探索发现更多,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.landingTitle,{label} AI 음악 – 상업적 이용권 확인 {'|'} AVIBE,{label} AI音乐 – 商用使用权确认 {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.ldDesc,{label} {kindWord} AI 음악 {count}곡 이상. 상업적 이용권 확인을 거친 곡만 모아 매장·영상용으로 바로 쓰세요.,{count}首以上{label}{kindWord}AI音乐，仅收录已核验商用使用权的作品。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.ldKindGenre,장르,风格,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.ldKindMood,무드,氛围,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.ldKindUse,용도,场景,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.pdDesc,"{title} – {owner}: {count}곡 수록 플레이리스트. 이용권 확인을 거친 AI 음악을 무료로 듣고, 비즈니스에는 라이선스로 이용하세요.",{title} – {owner}: 收录{count}首的歌单，免费收听已核验AI音乐。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.pdDescBare,"{title}: {count}곡 수록 플레이리스트. 이용권 확인을 거친 AI 음악을 무료로 듣고, 비즈니스에는 라이선스로 이용하세요.",{title}: 收录{count}首的歌单，免费收听已核验AI音乐。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.playlistTitle,{title} – {owner}의 플레이리스트 {'|'} AVIBE,{title} – {owner}的歌单 {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.playlistTitleBare,{title} {'|'} AVIBE,{title} {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.copied,복사됨,已复制,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.copy,링크 복사,复制链接,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.facebook,페이스북,Facebook,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.kakao,카카오,Kakao,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.label,공유,分享,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.line,LINE,LINE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.share.x,X,X,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.siteDescription,AVIBE는 상업적 이용권 확인 절차를 거친 AI 음원을 유통하는 스트리밍 플랫폼입니다.,AVIBE是通过商用使用权核验的AI音乐流媒体平台。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdBpm,BPM {bpm},{bpm} BPM,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdCreatorPart, – {creator}, – {creator},evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdDur,{dur} 길이,{dur},evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdFactJoin, · , · ,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdFactsWrap, ({facts}),（{facts}）,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdGenre,{genre} 장르,{genre}风格,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdHeadJoin,", ",、,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdKey,{key},{key},evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdMood,{moods} 무드,{moods}氛围,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdMusicBare,AI 음악,AI音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdMusicHead,{head}의 AI 음악,{head}的AI音乐,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdSep,. ,。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.tdTail,". 상업적 이용권 확인을 거쳐 공개된 곡으로, 매장과 영상에 라이선스로 이용할 수 있습니다.",。已通过商用使用权核验并公开，可授权用于门店与视频。,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.trackTitle,{title} – {creator} {'|'} AVIBE,{title} – {creator} {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+seo.trackTitleBare,{title} {'|'} AVIBE,{title} {'|'} AVIBE,evidence/r13/harness/d1440-guest-zh-cn-home.png
+studio.catalog.certIssued,발급일: {at},发放日期：{at},evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.colCert,인증서,证书,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.colPlays,재생,播放,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.colStatus,상태,状态,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.colTitle,제목,标题,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.colUpdated,수정일,更新日期,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.desc,등록한 곡의 심사 상태와 인증서를 확인하세요. 행을 클릭하면 심사 타임라인이 열립니다.,查看歌曲审核状态与证书，点击行可打开审核时间线。,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.drawerDesc,제출부터 인증까지의 진행 상황입니다.,从提交到认证的进展情况。,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.empty,등록된 음원이 없습니다,还没有歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.emptyDesc,첫 음원을 등록해 보세요.,注册第一首歌曲吧。,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.filter,상태 필터,状态筛选,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.filterAll,전체,全部,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.listTitle,내 음원 목록,歌曲列表,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.loadFail,내 곡 목록을 불러오지 못했습니다,歌曲列表加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.title,내 곡,我的歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.tlApproved,승인됨 (재생 가능),已批准（可播放）,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.tlCertPending,인증서 발급 대기,等待发放证书,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.tlCertified,인증서 발급됨,证书已发放,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.tlReviewing,심사 진행 중,审核中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.tlSubmitted,제출됨,已提交,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.uploadCta,새 음원 업로드,上传新歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.catalog.viewTrack,트랙 상세 보기,查看歌曲详情,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.create.attempts,시도 {n}회,已尝试 {n}次,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.backendDown,음악 생성 서버가 연결되지 않았습니다. 관리자에게 생성 서버 연결을 요청하세요.,音乐生成服务器未连接，请联系管理员。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.collapse,접기 ▲,收起 ▲,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.count,{n}개,{n}项,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.desc,음악 생성을 요청하고 작업 상태를 확인합니다. 일일 할당량과 금지 프롬프트 필터가 적용됩니다.,请求音乐生成并查看任务状态。适用每日配额与禁用提示词过滤。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.detailFail,상세 조회 실패,详情加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.empty,생성 작업이 없습니다,暂无生成任务,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.emptyDesc,프롬프트를 입력해 첫 AI 음악 생성을 요청해 보세요.,输入提示词，请求第一首 AI 歌曲吧。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.expand,상세 ▼,详情 ▼,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fLicense,라이선스 참조 (선택),授权参照（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fLicensePh,예: 구독/계약 참조 번호,例：订阅/合同编号,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fLyrics,가사 (선택),歌词（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fLyricsPh,가사가 있는 곡이면 입력하세요,有人声的歌曲请填写,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fModel,모델,模型,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fPrompt,프롬프트,提示词,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.fPromptPh,"예: 잔잔한 피아노와 스트링의 시네마틱 인트로, 90 BPM",例：宁静的钢琴与弦乐电影感前奏，90 BPM,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.failReason,실패 사유: {reason},失败原因：{reason},evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.jobId,작업 ID: {id},任务 ID：{id},evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.licenseRef,라이선스 참조: {ref},授权参照：{ref},evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.listTitle,내 생성 작업,我的生成任务,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.loadFail,생성 작업을 불러오지 못했습니다,生成任务加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.modalDesc,프롬프트와 가사(선택)를 입력하면 생성 큐에 등록됩니다.,输入提示词和歌词（可选）即可加入生成队列。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.modalTitle,새 AI 생성 요청,新建 AI 生成请求,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.new,새 생성 요청,新建请求,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.output,출력: {key},输出：{key},evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.queued,생성 작업이 큐에 등록되었습니다.,生成任务已加入队列。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.refresh,새로고침,刷新,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.seconds,{n}초,{n}秒,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.submit,생성 요청,请求生成,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.submitFail,생성 요청 실패,请求失败,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.title,AI 생성,AI 创作,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.certCta,인증 요청,申请认证,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.continueCta,이어 만들기,继续创作,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.generateCta,생성 요청,开始生成,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.lengthLabel,길이,时长,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.lyricsLabel,가사,歌词,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.lyricsPh,가사가 있는 곡이면 입력하세요,有人声的歌曲请输入歌词,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.panelDesc,자체 생성 모델 출시 전 미리보기입니다. 요청은 기존 생성 큐로 들어갑니다.,自研生成模型上线前的预览。请求将进入现有生成队列。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.panelTitle,새 생성 패널 (준비 중),新建创作面板（预览）,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.promptHint,2000자 이내. 실존 가수 모방·목소리 복제 요청은 차단됩니다.,2000字以内。模仿现实歌手、克隆声音的请求会被拦截。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.promptLabel,프롬프트,提示词,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.promptPh,"예: 잔잔한 피아노와 스트링의 시네마틱 인트로, 90 BPM",例如：平静的钢琴与弦乐电影感前奏，90 BPM,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.seedLabel,시드 (선택),种子（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.seedPh,예: 42 — 같은 시드는 같은 결과를 재현합니다,例如：42 — 相同种子可复现相同结果,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.stemsCta,스템 내보내기,导出分轨,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.styleHint,최대 {n}개까지 선택할 수 있습니다.,最多可选择{n}个。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.styleLabel,스타일 태그,风格标签,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.variationEmpty,생성을 요청하면 첫 번째 변형이 여기에 표시됩니다.,发起生成后，第一个变体将显示在这里。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.variationSoon,두 번째 변형은 정식 출시 후 제공됩니다.,第二个变体将在正式上线后提供。,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.variationSoonBadge,준비 중,准备中,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.variationTitle,변형 {n},变体{n},evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.create.v2.variationsTitle,변형,变体,evidence/r13/harness/d1440-creator-zh-cn-studio-create.png
+studio.dash.catalogCta,내 곡 보기,查看我的歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.desc,내 곡의 재생·인증·심사 현황과 할 일을 확인하세요.,查看播放、认证、审核状态和待办事项。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiCertified,인증 곡,已认证歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiCertifiedSub,인증서 발급 완료,证书已发放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiCertifiedValue,{n}곡,{n}首,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiPlays,누적 유효 재생,有效播放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiPlaysSub,30초 이상 재생 집계,统计30秒以上播放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiPlaysValue,{n}회,{n}次,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiReviewing,심사 중,审核中,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiReviewingSub,업로드·변환·심사 대기,上传・转码・待审,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiReviewingValue,{n}곡,{n}首,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiSettlement,예상 정산,预计结算,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiSettlementSub,유통 순매출 70:30,发行净收入 70:30,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.kpiSettlementValue,정산 주기에 확정,按结算周期确定,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.loadFail,대시보드를 불러오지 못했습니다,仪表盘加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.recentAll,전체 보기,查看全部,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.recentEmpty,등록된 음원이 없습니다,还没有歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.recentEmptyDesc,유료 상업 플랜에서 생성한 음원을 업로드해 보세요.,上传在付费商用套餐中生成的歌曲吧。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.recentTitle,최근 업로드,最近上传,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.settleCta,정산 화면으로 →,前往结算页 →,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.settleDesc,총 누적 유효 재생 {plays}회 · 파트너 귀속 70% (매장 구독료 풀은 30초 이상 매장 재생 시간 비례 배분 · 직접 판매·라이선스는 직접 귀속 · 소득세 원천징수 후 지급 · 정산 주기에 확정),累计有效播放 {plays}次 · 合作方分成 70%（门店订阅池按30秒以上门店播放时长分配 · 直接销售・授权直接归属 · 代扣所得税后支付 · 按结算周期确定）,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.settleTitle,정산 기준 (유통 순매출 70:30),结算基准（发行净收入 70:30）,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.title,대시보드,仪表盘,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.todoGo,이동,前往,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.todoProof,증빙 만료 임박 {n}건,即将到期凭证 {n}项,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.todoRejected,반려된 곡 {n}곡,被驳回歌曲 {n}首,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.todosEmpty,처리할 일이 없습니다.,暂无待办事项。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.todosTitle,할 일,待办,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.topEmpty,아직 재생 기록이 없습니다.,暂无播放记录。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.topPlays,{n}회,{n}次,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.topTitle,인기 곡 Top 5,热门歌曲 Top 5,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.dash.uploadCta,새 음원 업로드,上传新歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.colPlays,재생,播放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.colShare,내 곡 비중,我的占比,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.colTitle,제목,标题,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.contract,정산 계약 규정 확인 →,查看结算条款 →,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.desc,재생 현황과 정산 기준을 확인하세요. 정산금은 정산 주기에 확정됩니다.,查看播放表现与结算基准，结算金按结算周期确定。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.empty,등록된 곡이 없습니다.,还没有注册歌曲。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiPlays,누적 유효 재생,有效播放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiPlaysSub,30초 이상 재생 집계,统计30秒以上播放,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiShare,파트너 귀속 비율,合作方分成比,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiShareSub,유통 순매출 기준,按发行净收入,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiShareValue,70%,70%,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiTracks,재생 가능 곡,可播放歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.kpiTracksSub,READY 상태,READY 状态,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.loadFail,정산 정보를 불러오지 못했습니다,结算信息加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.ruleDesc,"매장 구독료 풀은 30초 이상 매장 재생 시간 비례로 나누고, 직접 판매·라이선스는 해당 파트너에 직접 귀속한 뒤 원천징수를 차감합니다.",门店订阅池按30秒以上门店播放时长分配，直接销售・授权直接归属该合作方，再扣除代扣税。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.ruleNote,일반 스트리밍 재생은 정산금을 만들지 않습니다.,普通流媒体播放不产生结算金。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.ruleTitle,정산 기준 (유통 순매출 70:30),结算基准（发行净收入 70:30）,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.tableTitle,곡별 재생 현황,歌曲播放情况,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.earnings.title,정산,结算,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.genStatus.FAILED,실패,失败,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.genStatus.QUEUED,대기 중,排队中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.genStatus.RUNNING,생성 중,生成中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.genStatus.SUCCEEDED,완료,已完成,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.genType.AI_ASSISTED_HUMAN,AI 어시스트,AI 辅助,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.genType.FULL_AI,순수 AI 생성,纯 AI 生成,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.nav.catalog,내 곡,我的歌曲,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.close,메뉴 닫기,关闭菜单,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.create,생성,创作,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.dashboard,대시보드,仪表盘,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.earnings,정산,结算,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.home,스튜디오 홈,工作室首页,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.listenerHome,리스너 홈으로 이동,前往听众首页,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.logout,로그아웃,退出登录,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.menu,스튜디오 메뉴,工作室菜单,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.open,메뉴 열기,打开菜单,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.proofs,증빙,凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.settings,설정,设置,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.nav.upload,업로드,上传,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.count,{n}개,{n}项,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.createFail,등록 실패,注册失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.created,구독 증빙이 등록되었습니다. 관리자가 검증 후 활성화됩니다.,凭证已注册，管理员验证后生效。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.desc,유료 상업 플랜 결제 영수증을 등록하면 관리자 확인 후 음원 업로드에 사용할 수 있습니다.,注册付费商用套餐收据，管理员确认后可用于上传。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.empty,등록된 구독 증빙이 없습니다,暂无订阅凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.emptyDesc,유료 상업용 구독 인보이스를 등록해 주세요.,请注册付费商用订阅发票。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.expires,구독 유효기간: {at}까지,有效期至 {at},evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fPlan,구독 플랜명,套餐名称,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fPlanPh,"예: Pro, Premier, Studio","例：Pro, Premier, Studio",evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fProof,인보이스 파일 키 / 영수증 문서 번호 (선택),发票文件 key / 收据编号（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fProofPh,예: invoices/pro_202611.pdf,例：invoices/pro_202611.pdf,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fProvider,AI 플랫폼,AI 平台,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.fProviderPh,플랫폼을 선택하세요…,请选择平台…,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.listTitle,등록된 AI 플랫폼 구독 증빙,已注册的订阅凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.loadFail,구독 증빙을 불러오지 못했습니다,订阅凭证加载失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.modalDesc,상업용 요금제 인보이스/영수증 정보를 입력하세요.,填写商用套餐发票/收据信息。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.modalTitle,AI 유료 구독 증빙 등록,注册付费订阅凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.new,새 증빙 등록,注册凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.pending,관리자 검증 대기중,等待管理员验证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.proofId,증빙 ID: {id},凭证 ID：{id},evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.subStatus.EXPIRED,만료됨,已过期,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.subStatus.PENDING,검증 대기,待验证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.subStatus.REJECTED,반려됨,已驳回,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.subStatus.VERIFIED,검증 완료,已验证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.submit,등록 완료,完成注册,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.title,AI 구독 증빙,AI 订阅凭证,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.proofs.usable,업로드 사용 가능,可用于上传,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.claim,등록,注册,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.desc,활동명·크리에이터 주소·정산 계좌를 관리합니다.,管理艺名・创作者地址・结算账户。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fAccount,계좌번호,账号,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fAccountPh,숫자만 입력,仅数字,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fBank,은행명,银行名称,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fBankPh,예: AVIBE은행,例：AVIBE 银行,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fHandle,핸들,Handle,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fName,활동명,艺名,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.fNamePh,예: Neon Producer,例：Neon Producer,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.handleDesc,영문 소문자·숫자·밑줄 3~30자. 등록 후 크리에이터 페이지 주소로 사용됩니다.,小写英文・数字・下划线 3~30 字，将用作创作者页面地址。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.handleFail,핸들 등록 실패,Handle 注册失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.handleSaved,핸들이 등록되었습니다.,Handle 已注册。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.handleTitle,크리에이터 주소,创作者地址,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.nameDesc,곡에 표시되는 크리에이터 이름입니다.,显示在歌曲上的创作者名称。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.nameFail,활동명 저장 실패,艺名保存失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.nameSaved,활동명이 저장되었습니다.,艺名已保存。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.nameTitle,활동명,艺名,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.payoutDesc,정산금을 받을 계좌입니다. 암호화되어 보관됩니다.,结算金收款账户，将加密保存。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.payoutFail,정산 계좌 저장 실패,结算账户保存失败,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.payoutSaved,정산 계좌가 저장되었습니다.,结算账户已保存。,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.payoutTitle,정산 계좌,结算账户,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.settings.title,스튜디오 설정,工作室设置,evidence/r13/harness/d1440-creator-zh-cn-studio.png
+studio.status.LICENSE_GATE_PENDING,심사 대기,审核中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.LICENSE_GATE_REJECTED,게이트 반려,网关驳回,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.PROCESSING,처리 중,处理中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.READY,재생 가능,可播放,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.REJECTED,반려됨,已驳回,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.TAKEN_DOWN,임시조치 중,临时下架中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.TRANSCODING,변환 중,转码中,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.status.UPLOADED,업로드됨,已上传,evidence/r13/harness/d1440-creator-zh-cn-studio-catalog.png
+studio.upload.blockBase,선택하신 요금제 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다.,所选方案或生成时的音乐无法作为商业独立流媒体发行，因此无法上传。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.blockBasePlan,선택하신 요금제({plan}) 또는 생성 시점의 음원은 상업적 단독 음원 스트리밍 유통이 불가하여 업로드할 수 없습니다.,所选方案（{plan}）或生成时的音乐无法作为商业独立流媒体发行，因此无法上传。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.blockExpired,유료 구독 만료 이후 생성된 음원: {code},生成于付费订阅到期之后：{code},evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.blockRetro,유료 구독 시작일 이전에 생성된 음원 소급 적용 불가: {code},生成早于付费订阅开始日，无法追溯适用：{code},evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.blockSyncOnly,영상 배경음악 Sync 전용 라이선스 차단: {code},视频BGM Sync专用许可拦截：{code},evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.blockTier,비상업/무료 요금제 차단: {code},非商业/免费方案拦截：{code},evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.commercialOk,(상업 유통 허용),（允许商用发行）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribArrange,편곡,编曲,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribDesc,저작권 등록·분쟁 대응의 증빙 기초가 되며 인증 스냅샷에 기록됩니다.,作为版权登记・纠纷应对依据，并记入认证快照。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribLyrics,작사,作词,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribMelody,멜로디 입력,旋律输入,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribMix,믹스·선별,混音与筛选,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribPerform,실연,表演,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.contribTitle,인간 창작 기여 항목 (해당 항목 전부 선택),人类创作贡献（全选适用项）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.creditDesc,유통사 공개 기준과 동일한 구분입니다.,与发行商披露口径一致。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.creditInstrumental,반주,伴奏,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.creditLyrics,가사,歌词,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.creditTitle,AI 생성 범위 선언 (해당 항목 전부 선택),AI 生成范围声明（全选适用项）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.creditVocals,보컬,人声,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.desc,상업 이용 조건 확인 절차를 통과한 AI 음원만 등록할 수 있습니다.,仅可注册通过商用条件验证的 AI 歌曲。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.discAssist,AI_ASSISTED_HUMAN: 본 음원은 인간 창작자가 AI 보조 도구를 사용해 제작한 음원입니다.,AI_ASSISTED_HUMAN：本音乐由人类创作者使用 AI 辅助工具制作。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.discFull,FULL_AI: 본 음원은 AI가 전곡 생성한 음원입니다.,FULL_AI：本音乐由 AI 全曲生成。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.disclosureAssisted,AI + 인간 공동 창작,AI＋人类共同创作,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.disclosureFull,순수 AI 생성물 (Full AI),纯 AI 生成,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.eyebrow,Studio Console,Studio Console,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fContribDesc,인간 창작 기여 내역 설명 (해당 시),人类创作贡献说明（如有）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fContribDescPh,"직접 작사, 마스터링 EQ 조정 등",原创歌词、母带 EQ 调整等,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fDisclosure,AI 생성 유형,AI 生成类型,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fFile,오디오 파일 선택,选择音频文件,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fGeneratedAt,음원 최초 생성일시,歌曲最初生成时间,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fGenre,음악 장르,流派,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fGenrePh,Synthwave / Lo-Fi / Cinematic,Synthwave / Lo-Fi / Cinematic,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fLyrics,가사 (선택),歌词（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fLyricsPh,가사가 있는 곡이면 입력하세요,有人声的歌曲请填写,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fMoods,무드 / 분위기 태그 (쉼표로 구분),情绪标签（逗号分隔）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fMoodsPh,"Focus, Cyberpunk, Night","Focus, Cyberpunk, Night",evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fPrompt,사용된 생성 프롬프트 (선택 공개),使用的生成提示词（可选・公开）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fPromptPh,예: cinematic synthwave retro arpeggio 120bpm,例：cinematic synthwave retro arpeggio 120bpm,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fProvider,AI 작곡 플랫폼,AI 作曲平台,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fProviderPh,플랫폼을 선택하세요…,请选择平台…,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fSub,등록된 유료 구독 영수증 증빙,已注册的付费订阅收据,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fSubPh,구독 증빙을 선택하세요…,请选择订阅凭证…,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTier,생성 당시 사용 요금제,生成时使用的套餐,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTierPh,요금제를 선택하세요…,请选择套餐…,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTitle,음원 제목,歌曲标题,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTitlePh,예: Cyber Neon Horizon,例：Cyber Neon Horizon,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTrackUrl,AI 플랫폼 원본 트랙 공유 URL (선택),平台原始歌曲链接（可选）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTrust,신탁단체 신탁 여부 (필수 신고),著作权集体管理信托情况（必填）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.fTrustName,신탁단체명 (신탁곡인 경우),协会名称（如已信托）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.loadFail,업로드 준비 실패,上传准备失败,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.needFile,음원 파일을 먼저 선택해 주세요.,请先选择音频文件。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.next,다음 단계로,下一步,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.pickedFile,선택된 파일:,已选文件：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.precheckFail,사전 검증에 통과하지 못했습니다.,预检未通过。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.precheckPass,상업 라이선스 사전 검증을 통과했습니다.,商用授权预检通过。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.prev,이전 단계,上一步,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revFile,선택된 파일:,已选文件：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revOrigin,생성 출처:,生成来源：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revPass,통과,通过,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revPrecheck,사전 검증:,预检：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revSha,파일 고유 SHA-256:,文件 SHA-256：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revShaWait,계산 대기,计算中,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.revTitle,음원 제목:,歌曲标题：,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.runPrecheck,사전 검증 실행,运行预检,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s1Desc,"무손실 WAV, FLAC 또는 192k 이상 MP3를 선택하세요.",请选择无损 WAV、FLAC 或 192k 以上 MP3。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s1Title,1단계 — 오디오 파일,第 1 步 — 音频文件,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s2Desc,"제작에 사용한 AI 플랫폼과 플랜, 음원 생성 일시를 검증합니다.",验证制作使用的 AI 平台、套餐与生成时间。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s2Title,2단계 — 생성 출처·플랜·증빙,第 2 步 — 生成来源・套餐・凭证,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s3Desc,곡 정보와 AI 생성 범위를 입력하세요.,填写歌曲信息与 AI 生成范围。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s3Title,3단계 — 메타데이터,第 3 步 — 元数据,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s4Desc,입력 내용을 확인하고 필수 서약에 동의한 뒤 제출하세요.,核对内容并同意必备保证后提交。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.s4Title,4단계 — 사전 확인 및 제출,第 4 步 — 确认并提交,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.stagedDone,스테이징 업로드 완료. 파일 무결성/형식 검사가 finalize 단계에서 진행됩니다.,暂存上传完成，完整性/格式检查将在 finalize 阶段进行。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.step1,파일,文件,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.step2,출처·플랜·증빙,来源・套餐・凭证,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.step3,메타데이터,元数据,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.step4,확인·제출,确认・提交,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.submit,최종 제출 및 검수 요청,最终提交并请求审核,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.submitDone,음원 등록이 완료되었습니다. 관리자 승인 후 대외 서비스됩니다.,歌曲已注册，管理员批准后对外发布。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.submitFail,제출 실패,提交失败,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.syncOnly,(Sync-only 영상BGM 전용),（仅限 Sync 影像 BGM）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.title,AI 음원 업로드,AI 歌曲上传,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.trustNone,미신탁 (신탁단체에 맡기지 않음),未信托,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.trustTrusted,신탁됨 (신탁단체 등록곡),已信托（协会登记作品）,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.trustedBlock,신탁단체 신탁곡은 사용료 정산 체계가 마련될 때까지 접수할 수 없습니다. 미신탁 확인 후 다시 제출해 주세요.,已信托作品在版税结算机制建立前暂不受理，请确认未信托后重新提交。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.uploadFail,업로드에 실패했습니다.,上传失败。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.wIndemnify,[면책 및 허위 등록 시 제재 동의] 허위 진술 시 플랫폼에 대한 민·형사상 면책 및 발생 수익 전액 몰수 조치에 동의합니다.,［免责与虚假处罚同意］同意虚假陈述时免除平台责任并没收全部相关收益。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.wNoClone,[보이스 클로닝 및 무단 샘플링 부존재 확약] 타인의 음성을 무단 복제하거나 기성 저작물을 표절하지 않았음을 보증합니다.,［无声音克隆与盗采］保证未擅自复制他人声音或剽窃既有作品。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.wNoRetro,[무료 생성 소급 음원 부존재 확약] 무료 플랜 사용 중 생성한 뒤 사후에 유료 전환한 소급 적용 불가 음원이 아님을 보증합니다.,［无免费追溯］保证并非免费套餐生成、事后付费追溯的不可用歌曲。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.wOwn,"[소유권 보유 확약] 본인은 해당 음원의 적법한 권리자이며, 단독 스트리밍 유통이 허용된 유료 플랜의 유효 구독 기간 내에 본인이 생성·다운로드한 음원임을 보증합니다.",［所有权］本人保证为该歌曲合法权利人，且为付费套餐有效期内由本人生成・下载、可独立流媒体发行的歌曲。,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+studio.upload.warrantyTitle,4대 필수 법적 보증 서약서,四项必备法律保证,evidence/r13/harness/d1440-creator-zh-cn-studio-upload.png
+tags.ambient,앰비언트,氛围,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.cafe,카페,咖啡馆,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.chill,휴식,放松,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.cinematic,시네마틱,电影感,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.classical,클래식,古典,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.cyberpunk,사이버펑크,赛博朋克,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.drive,드라이브,驾驶,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.electronic,일렉트로닉,电子,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.focus,집중,专注,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.gym,헬스장,健身房,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.hiphop,힙합,嘻哈,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.jazz,재즈,爵士,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.party,파티,派对,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.pop,팝,流行,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.rock,록,摇滚,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.sleep,수면,睡眠,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.work,작업,工作,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.workout,운동,运动,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+tags.youtube,유튜브,YouTube,evidence/r13/harness/d1440-guest-zh-cn-explore.png
+track.addToPlaylist,플레이리스트에 담기,加入歌单,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiAssisted,AI+인간 공동 창작,AI+人类共创,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCreditAll,전체 AI 생성,全部AI生成,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCreditINSTRUMENTAL,반주,伴奏,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCreditLYRICS,가사,歌词,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCreditPart,부분 AI 생성,部分AI生成,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCreditVOCALS,보컬,人声,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiCredits,AI 생성 범위,AI生成范围,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiFull,순수 AI 생성물,纯AI生成,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiGenType,생성 유형,生成类型,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiPlatformModel,AI 생성 플랫폼 및 모델,AI平台与模型,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiPrompt,생성 프롬프트,生成提示词,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiSub,인공지능기본법 제31조의 취지에 따른 표시입니다,依据AI基本法第31条精神展示,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.aiTitle,AI 생성 표시,AI生成标识,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.back,목록으로 돌아가기,返回列表,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.blockAction,이 아티스트 차단,拉黑这位艺人,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.blockBody,차단한 아티스트의 모든 음원이 재생 큐에서 제외됩니다. 차단은 권리보호센터에서 언제든 해제할 수 있습니다.,这位艺人的所有歌曲将移出播放队列，可随时在权利中心解除。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.blockConfirm,차단하기,拉黑,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.blockTitle,아티스트 차단,拉黑艺人,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.bpm,BPM,BPM,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.certIssued,곡별 인증서가 발급되었습니다.,单曲证书已发放。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.chartAll,전체,总榜,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.chartMonth,월간,月榜,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.chartWeek,주간,周榜,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.chartsEmpty,아직 집계된 재생이 없습니다.,暂无统计到的播放。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.chartsTitle,인기 차트,热门榜单,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.downloadPaid,다운로드 (유료),下载 (付费),evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.duration,시간,时长,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.emptySection,아직 항목이 없습니다.,这里还是空的。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.enqueue,재생 큐에 담기,加入播放队列,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.errTitle,음원을 불러오지 못했습니다,无法加载这首歌,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.inPlaylists,이 곡이 담긴 플레이리스트,收录这首歌的歌单,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.isrc,ISRC,ISRC,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licBgm,매장 BGM,门店BGM,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licCertNumber,인증서 번호,证书编号,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licCertified,상업적 이용권 보유 인증,商用授权已认证,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licCopyId,ID 복사,复制ID,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licCta,도입 문의하기,咨询引入,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licIssue,곡별 인증서 발급,发放单曲证书,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licPassed,확인 절차 통과,已通过审核,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licPending,권리 확인 상태,权利确认状态,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licPendingBody,곡별 인증서 발급 전입니다. 이 음원은 플랫폼 확인 절차를 거쳐 재생 가능 상태로 등록되었습니다.,单曲证书尚未发放。这首歌已通过平台审核并可播放。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licStatus,검증 상태,验证状态,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licTitle,이 곡을 비즈니스에 쓰기,将这首歌用于商业,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licTrackId,트랙 ID,歌曲ID,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.licVideo,영상 라이선스,视频授权,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.lyrics,가사,歌词,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.moreActions,더 보기,更多操作,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.musicalKey,키,调,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.platform,플랫폼,平台,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.playNow,바로 재생,立即播放,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.plays,재생 {count}회,播放{count}次,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.ready,재생 가능,可播放,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.reportAction,권리침해 신고,举报侵权,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.reportBody,타인의 목소리를 무단 합성했거나 기존 저작물을 표절한 경우 임시조치를 요청할 수 있습니다. 신고는 검토 후 처리됩니다.,未经授权的声音合成或抄袭可申请下架，举报将经过审核处理。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.reportTitle,권리자 보호 및 UGC 안전,权利保护与UGC安全,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.retry,다시 시도,重试,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.sameCreator,같은 크리에이터의 곡,这位创作者的更多歌曲,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.similar,비슷한 곡,相似歌曲,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastAddFailed,추가 실패,添加失败,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastAdded,플레이리스트에 추가되었습니다.,已加入歌单。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastCopied,트랙 ID를 복사했습니다.,歌曲ID已复制。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastCopyFailed,클립보드 복사에 실패했습니다.,复制失败。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastDlFailed,다운로드 실패,下载失败,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastDlStarted,다운로드가 시작되었습니다.,开始下载。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastLinkCopied,링크를 복사했습니다.,链接已复制。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastNeedLogin,음원을 들으려면 먼저 로그인하세요.,请先登录再收听。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastNeedPass,다운로드는 유료 이용권이 필요합니다.,下载需要付费通行证。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastQueued,재생 대기열에 추가했습니다.,已加入播放队列。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastQuota,일일 다운로드 한도를 초과했습니다.,已超出每日下载上限。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.toastReported,신고가 접수되었습니다.,举报已受理。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.waveEmpty,이 음원의 파형 데이터가 아직 없습니다.,这首歌暂无波形数据。,evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.waveQuality,스트리밍 SQ 128k · HQ 256k(이용권),串流 SQ 128k · HQ 256k (通行证),evidence/r13/harness/d1440-guest-zh-cn-track.png
+track.waveTitle,오디오 파형,音频波形,evidence/r13/harness/d1440-guest-zh-cn-track.png

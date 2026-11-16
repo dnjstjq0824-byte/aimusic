@@ -7,6 +7,8 @@ import type {
   BillingOrder,
   BillingPlan,
   BillingSubscription,
+  BusinessInquiry,
+  BusinessProfile,
   CertificateView,
   CopyrightDispute,
   DeviceQueue,
@@ -16,7 +18,10 @@ import type {
   GenerationJob,
   HeartbeatOutput,
   LegalTerm,
+  MePrincipal,
+  OAuthConnection,
   OAuthProviderInfo,
+  OAuthStats,
   PartnerAISubscription,
   PartnerProfile,
   PartnerSettlement,
@@ -26,6 +31,7 @@ import type {
   PrecheckOutput,
   ReviewQueues,
   Role,
+  RoleGrant,
   StoreBusiness,
   StoreDevice,
   StorePlayLog,
@@ -63,6 +69,9 @@ export const authApi = {
   registerPartner(input: RegisterInput & { company: string; contactEmail?: string }) {
     return unwrap<{ user: User; partner: PartnerProfile }>(api.post('/auth/register/partner', input));
   },
+  registerBusiness(input: RegisterInput & { company: string; bizNo?: string; country?: string; industry?: string }) {
+    return unwrap<{ user: User; business: BusinessProfile }>(api.post('/auth/register/business', input));
+  },
   login(email: string, password: string, totpCode?: string) {
     return unwrap<{ tokens: Tokens; user: User }>(
       api.post('/auth/login', totpCode ? { email, password, totpCode } : { email, password }),
@@ -84,7 +93,21 @@ export const authApi = {
     return unwrap<Record<string, unknown>>(api.get('/auth/export'));
   },
   me() {
-    return unwrap<{ userId: string; role: Role; ageConfirmedAt?: string | null; displayName: string; email: string; totpEnabled?: boolean }>(api.get('/auth/me'));
+    return unwrap<MePrincipal>(api.get('/auth/me'));
+  },
+  updateProfile(displayName: string) {
+    return unwrap<{ userId: string; displayName: string }>(api.put('/auth/profile', { displayName }));
+  },
+  updateLocale(locale: string) {
+    return unwrap<{ userId: string; locale: string }>(api.patch('/auth/me/locale', { locale }));
+  },
+  requestEmailVerify() {
+    return unwrap<{ requested: boolean }>(api.post('/auth/email/verify/request', {}));
+  },
+  confirmEmailVerify(token: string) {
+    return unwrap<{ verified: boolean; tokens: Tokens; user: { id: string; email: string; displayName: string } }>(
+      api.post('/auth/email/verify/confirm', { token }),
+    );
   },
   confirmAge(ageConfirmed: boolean, birthYear?: number) {
     return unwrap<{ confirmed: boolean }>(api.post('/auth/age-confirm', { ageConfirmed, birthYear }));
@@ -98,8 +121,29 @@ export const authApi = {
   confirmPasswordReset(token: string, newPassword: string) {
     return unwrap<{ reset: boolean }>(api.post('/auth/password-reset/confirm', { token, newPassword }));
   },
-  oauthProviders() {
-    return unwrap<OAuthProviderInfo[]>(api.get('/auth/oauth/providers'));
+  oauthProviders(locale?: string) {
+    return unwrap<OAuthProviderInfo[]>(
+      api.get('/auth/oauth/providers', { params: locale ? { locale } : undefined }),
+    );
+  },
+  oauthExchange(code: string) {
+    return unwrap<{ tokens: Tokens }>(api.post('/auth/oauth/exchange', { code }));
+  },
+  oauthCompleteEmail(token: string, email: string, locale?: string) {
+    return unwrap<{ provider: string; email: string; emailVerificationRequired: boolean }>(
+      api.post('/auth/oauth/complete-email', locale ? { token, email, locale } : { token, email }),
+    );
+  },
+  oauthLinkToken() {
+    return unwrap<{ linkToken: string }>(api.post('/auth/oauth/link-token'));
+  },
+  oauthConnections() {
+    return unwrap<OAuthConnection[]>(api.get('/auth/oauth/connections'));
+  },
+  oauthUnlink(provider: string) {
+    return unwrap<{ unlinked: boolean }>(
+      api.delete(`/auth/oauth/connections/${encodeURIComponent(provider)}`),
+    );
   },
 };
 
@@ -271,6 +315,60 @@ export const partnerApi = {
         params: { limit },
       }),
     );
+  },
+  updateSettlementAccount(bank: string, accountNumber: string) {
+    return unwrap<{ updated: boolean }>(api.put('/partner/settlement', { bank, accountNumber }));
+  },
+};
+
+/** Owner-keyed business console (R10): same shapes as the partner store path. */
+export const consoleApi = {
+  profile() {
+    return unwrap<BusinessProfile>(api.get('/business/profile'));
+  },
+  registerStore(input: { businessNumber: string; storeName: string; licenseCount?: number }) {
+    return unwrap<StoreBusiness>(api.post('/business/stores', input));
+  },
+  listStores() {
+    return unwrap<StoreBusiness[]>(api.get('/business/stores'));
+  },
+  createStoreDevice(storeId: string, deviceName: string) {
+    return unwrap<StoreDevice>(api.post(`/business/stores/${encodeURIComponent(storeId)}/devices`, { deviceName }));
+  },
+  listStoreDevices(storeId: string) {
+    return unwrap<StoreDevice[]>(api.get(`/business/stores/${encodeURIComponent(storeId)}/devices`));
+  },
+  updateStoreDevice(storeId: string, deviceId: string, input: { deviceName: string; volume: number }) {
+    return unwrap<StoreDevice>(
+      api.put(`/business/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}`, input),
+    );
+  },
+  revokeStoreDevice(storeId: string, deviceId: string) {
+    return unwrap<{ revoked: boolean }>(
+      api.post(`/business/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}/revoke`),
+    );
+  },
+  listStoreSchedules(storeId: string) {
+    return unwrap<StoreSchedule[]>(api.get(`/business/stores/${encodeURIComponent(storeId)}/schedules`));
+  },
+  upsertStoreSchedule(
+    storeId: string,
+    input: { weekday: number; openTime: string; closeTime: string; playlistId?: string | null; isClosed?: boolean },
+  ) {
+    return unwrap<StoreSchedule>(api.post(`/business/stores/${encodeURIComponent(storeId)}/schedules`, input));
+  },
+  storeDeviceLogs(storeId: string, deviceId: string, limit = 50) {
+    return unwrap<StorePlayLog[]>(
+      api.get(`/business/stores/${encodeURIComponent(storeId)}/devices/${encodeURIComponent(deviceId)}/logs`, {
+        params: { limit },
+      }),
+    );
+  },
+};
+
+export const seoApi = {
+  claimHandle(handle: string) {
+    return unwrap<{ handle: string }>(api.post('/users/handle', { handle }));
   },
 };
 
@@ -559,6 +657,26 @@ export const adminApi = {
   },
   setTrackISRC(id: string, isrc: string) {
     return unwrap<Track>(api.put(`/admin/tracks/${encodeURIComponent(id)}/isrc`, { isrc }));
+  },
+  listInquiries(status?: string, limit = 50) {
+    return unwrap<BusinessInquiry[]>(
+      api.get('/admin/inquiries', { params: status ? { status, limit } : { limit } }),
+    );
+  },
+  setInquiryStatus(id: string, status: string) {
+    return unwrap<BusinessInquiry>(api.put(`/admin/inquiries/${encodeURIComponent(id)}`, { status }));
+  },
+  roleGrants(limit = 50) {
+    return unwrap<RoleGrant[]>(api.get('/admin/role-grants', { params: { limit } }));
+  },
+  oauthStats() {
+    return unwrap<OAuthStats>(api.get('/admin/oauth/stats'));
+  },
+  listBusinesses(status: string, limit = 50) {
+    return unwrap<BusinessProfile[]>(api.get('/admin/businesses', { params: { status, limit } }));
+  },
+  reviewBusiness(userId: string, approve: boolean) {
+    return unwrap<BusinessProfile>(api.post(`/admin/businesses/${encodeURIComponent(userId)}/review`, { approve }));
   },
   listStores(status = 'PENDING', limit = 20, offset = 0) {
     return unwrap<StoreBusiness[]>(api.get('/admin/stores', { params: { status, limit, offset } }));

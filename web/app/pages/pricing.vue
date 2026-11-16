@@ -187,7 +187,7 @@
             <p class="mt-1">{{ t('pricing.payToss') }}</p>
             <p class="mt-1">{{ t('pricing.payPass') }}</p>
             <ul class="mt-2 list-disc space-y-1 pl-5">
-              <li v-for="line in REFUND_POLICY_LINES" :key="line">{{ line }}</li>
+              <li v-for="key in REFUND_POLICY_LINE_KEYS" :key="key">{{ t(key) }}</li>
             </ul>
           </div>
         </div>
@@ -206,7 +206,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { billingApi } from '@/api/endpoints';
-import { REFUND_POLICY_LINES } from '@/api/refundPolicy';
+import { REFUND_POLICY_LINE_KEYS } from '@/api/refundPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';

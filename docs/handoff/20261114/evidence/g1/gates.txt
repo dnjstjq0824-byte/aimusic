@@ -1,0 +1,26 @@
+# WI-G1 증거 (생성 계약 v2 + 스키마)
+
+## Go 클라이언트 — TESTED
+- `go test ./internal/pkg/generator/` 통과 (기존 5 + 신규 4):
+  - v2 왕복: contractVersion 2 + watermark:true + 핀 에코 송신,
+    provenance(modelVersion/seed/weightsHash/safety/watermarkId) 수신.
+  - v1 호환: bare audioBase64 응답 디코드 + provenance 공란.
+  - safety passed:false → 작업 실패.
+  - audioUrl 대용량: URL fetch 후 Audio 채움 + 워터마크 유지.
+
+## Python 참조 서버 — TESTED (오프라인 검증 스크립트, $env:TEMP 보관)
+- `g1-check.py` 8/8 PASS: v1 기본 버전, v2 버전 확인, v2 watermark:false→400,
+  버전 3→400, variations 0/5→400, 음수 seed→400, 가중치 없이→503,
+  healthz에 contractVersions [1,2] + weightsHash.
+- v2 성공 경로는 가중치·워터마크 라이브러리 없이 503 fail-closed.
+
+## 스키마 — TESTED (JSON 파싱)
+- `docs/generation/model-card.schema.json`: G-MODEL 8항목 대응
+  (weightsHash/manifestHash/eval/human/redteam/watermark/legalClearedAt).
+- `docs/generation/dataset-manifest.schema.json`: 원장 스냅샷
+  (허용 출처 6종, TRAIN/EVAL/DEMO, 철회 감사보존).
+- 3종 스키마(ab_schema 포함) JSON 유효성 확인.
+
+## 워커 연결 — TESTED (컴파일 + 단위 범위)
+- `backend/cmd/worker/main.go`: 핀 전달 + UpdateResult 증거 저장
+  (served 우선, v1은 요청 핀 유지). `go build ./...` 통과.

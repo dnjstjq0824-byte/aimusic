@@ -34,4 +34,12 @@ describe('useFormat', () => {
     const { date } = useFormat();
     expect(date('not-a-date')).toBe('');
   });
+
+  it('dateISO stays Gregorian (certs/legal/receipts, R-2)', () => {
+    const { dateISO } = useFormat();
+    localeRef.value = 'th';
+    expect(dateISO('2026-03-15T00:00:00Z')).toBe('2026-03-15');
+    localeRef.value = 'ko';
+    expect(dateISO('2026-03-15T00:00:00Z')).toBe('2026-03-15');
+  });
 });

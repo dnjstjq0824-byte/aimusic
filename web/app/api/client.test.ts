@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders } from 'axios';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ERR_MESSAGES, errCodeOf, errMessageOf, tokenStore, unwrap } from './client';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ERR_MESSAGES, errCodeOf, errMessageOf, setKeyTranslator, tKey, tokenStore, unwrap } from './client';
 import type { ApiErrorBody } from './types';
 
 function axiosErrorWith(code: string, message: string): AxiosError<ApiErrorBody> {
@@ -31,10 +31,17 @@ describe('errCodeOf', () => {
 });
 
 describe('errMessageOf', () => {
-  it('maps known codes to Korean copy', () => {
+  afterEach(() => setKeyTranslator(null));
+
+  it('maps known codes to the English fallback without a translator', () => {
     expect(errMessageOf(axiosErrorWith('ERR_INVALID_CREDENTIALS', 'bad'))).toBe(
-      '이메일 또는 비밀번호가 올바르지 않습니다.',
+      'The email or password is incorrect.',
     );
+  });
+
+  it('prefers the installed app-locale translator (R13)', () => {
+    setKeyTranslator((key) => (key === 'errors.ERR_INVALID_CREDENTIALS' ? 'KO-COPY' : null));
+    expect(errMessageOf(axiosErrorWith('ERR_INVALID_CREDENTIALS', 'bad'))).toBe('KO-COPY');
   });
 
   it('passes through unknown backend messages', () => {
@@ -42,11 +49,11 @@ describe('errMessageOf', () => {
   });
 
   it('maps opaque errors to the generic server message', () => {
-    expect(errMessageOf(new Error('boom'))).toBe('서버 오류가 발생했습니다.');
+    expect(errMessageOf(new Error('boom'))).toBe('A server error occurred.');
   });
 
   it('uses the fallback for unknown codes without a backend message', () => {
-    expect(errMessageOf(axiosErrorWith('ERR_SOME_NEW_CODE', ''))).toBe('요청 처리에 실패했습니다.');
+    expect(errMessageOf(axiosErrorWith('ERR_SOME_NEW_CODE', ''))).toBe('The request failed.');
     expect(errMessageOf(axiosErrorWith('ERR_SOME_NEW_CODE', ''), 'custom')).toBe('custom');
   });
 
@@ -54,6 +61,12 @@ describe('errMessageOf', () => {
     for (const code of Object.keys(ERR_MESSAGES)) {
       expect(errMessageOf(axiosErrorWith(code, 'x'))).toBe(ERR_MESSAGES[code]);
     }
+  });
+
+  it('tKey interpolates params into the fallback', () => {
+    expect(tKey('player.errStreamLost', 'Stream interrupted: {title}', { title: 'T' })).toBe(
+      'Stream interrupted: T',
+    );
   });
 });
 

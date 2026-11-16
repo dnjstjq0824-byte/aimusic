@@ -1,12 +1,12 @@
 <template>
   <div class="space-y-6">
     <UiPageHeader
-      eyebrow="Audit Console"
-      title="매장 사업자 승인"
-      description="사업자등록번호가 검증된 매장 신청을 승인하거나 정지합니다. 승인된 매장에서만 플레이어 등록·재생 집계가 가능합니다."
+      :eyebrow="t('admin.st.eyebrow')"
+      :title="t('admin.st.title')"
+      :description="t('admin.st.desc')"
     />
 
-    <UiErrorBanner :message="error" title="매장 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+    <UiErrorBanner :message="error" :title="t('admin.st.loadFail')" :retry-label="t('common.actions.retry')" @retry="load" />
 
     <UiTabs v-model="status" :tabs="statusTabs" @update:model-value="load" />
 
@@ -16,7 +16,7 @@
     </div>
 
     <div v-else-if="stores.length === 0">
-      <UiEmptyState title="해당 상태의 매장이 없습니다" description="다른 상태 탭을 선택해 보세요." />
+      <UiEmptyState :title="t('admin.st.empty')" :description="t('admin.st.emptyDesc')" />
     </div>
 
     <UiCard v-else padding="none">
@@ -26,19 +26,19 @@
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-sm font-bold text-white">{{ s.storeName }}</span>
               <UiBadge :variant="s.status === 'APPROVED' ? 'success' : s.status === 'SUSPENDED' ? 'danger' : 'warning'" size="xs">
-                {{ s.status }}
+                {{ storeStatus(s.status) }}
               </UiBadge>
             </div>
             <p class="mt-1 font-mono text-caption text-text-muted">
-              {{ s.businessNumber }} · 라이선스 {{ s.licenseCount }}대 · 신청 {{ new Date(s.createdAt).toLocaleDateString() }}
+              {{ t('admin.st.meta', { bizNo: s.businessNumber, n: s.licenseCount, at: fmtDate(s.createdAt) }) }}
             </p>
           </div>
           <div class="flex shrink-0 gap-2">
             <UiButton v-if="s.status !== 'APPROVED'" variant="brand" size="sm" :disabled="busyId === s.id" @click="verify(s, true)">
-              승인
+              {{ t('admin.st.approve') }}
             </UiButton>
             <UiButton v-if="s.status !== 'SUSPENDED'" variant="ghost" size="sm" :disabled="busyId === s.id" @click="verify(s, false)">
-              정지
+              {{ t('admin.st.suspend') }}
             </UiButton>
           </div>
         </li>
@@ -49,9 +49,10 @@
 
 <script setup lang="ts">
 defineI18nRoute(false);
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { adminApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { useApiError } from '@/composables/useApiError';
 import type { StoreBusiness } from '@/api/types';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
@@ -60,13 +61,27 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
-import UiTabs from '@/components/ui/UiTabs.vue';
+import UiTabs, { type TabOption } from '@/components/ui/UiTabs.vue';
 
-const statusTabs = [
-  { value: 'PENDING', label: '승인 대기' },
-  { value: 'APPROVED', label: '승인됨' },
-  { value: 'SUSPENDED', label: '정지됨' },
-];
+const { t, te, locale } = useI18n();
+const apiError = useApiError();
+
+const statusTabs = computed<TabOption[]>(() => [
+  { value: 'PENDING', label: t('admin.st.tabPending') },
+  { value: 'APPROVED', label: t('admin.st.tabApproved') },
+  { value: 'SUSPENDED', label: t('admin.st.tabSuspended') },
+]);
+
+function storeStatus(status: string): string {
+  const key = `admin.st.storeStatus.${status}`;
+  return te(key) ? String(t(key)) : status;
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'ko-KR');
+}
 
 const status = ref('PENDING');
 const stores = ref<StoreBusiness[]>([]);
@@ -92,7 +107,7 @@ async function verify(s: StoreBusiness, approve: boolean): Promise<void> {
     await adminApi.verifyStore(s.id, approve);
     await load();
   } catch (err: unknown) {
-    error.value = errMessageOf(err);
+    error.value = apiError(err);
   } finally {
     busyId.value = null;
   }

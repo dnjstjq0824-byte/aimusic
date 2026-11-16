@@ -63,6 +63,19 @@
     "toastSaved": "⟦Plàylìst sàvèd.～～～～～～⟧",
     "toastUnsaved": "⟦Sàvè rèmòvèd.～～～～～～⟧",
     "toastShared": "⟦Lìnk còpìèd.～～～～～⟧",
-    "toastNeedLogin": "⟦Lòg ìn tò ùsè thìs.～～～～～～～～⟧"
+    "toastNeedLogin": "⟦Lòg ìn tò ùsè thìs.～～～～～～～～⟧",
+    "picker": {
+      "title": "⟦Àdd tò plàylìst～～～～～～⟧",
+      "descWithTrack": "⟦Chòòsè à plàylìst tò sàvè \"{title}\" tò.～～～～～～～～～～～～～～～～⟧",
+      "desc": "⟦Chòòsè à plàylìst tò sàvè tò.～～～～～～～～～～～～⟧",
+      "empty": "⟦Nò plàylìsts yèt.～～～～～～～⟧",
+      "createNew": "⟦Nèw plàylìst～～～～～⟧",
+      "public": "⟦Pùblìc～～⟧",
+      "private": "⟦Prìvàtè～～～⟧",
+      "add": "⟦Àdd →～～⟧",
+      "createMore": "⟦+ Nèw～～⟧",
+      "namePh": "⟦Nèw plàylìst tìtlè～～～～～～～⟧",
+      "create": "⟦Crèàtè～～⟧"
+    }
   }
 }

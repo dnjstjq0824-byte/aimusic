@@ -1,13 +1,13 @@
 <template>
   <UiModal
     :model-value="modelValue"
-    title="플레이리스트에 담기"
-    :description="trackTitle ? `「${trackTitle}」을(를) 보관할 플레이리스트를 선택하세요.` : '보관할 플레이리스트를 선택하세요.'"
+    :title="t('playlist.picker.title')"
+    :description="trackTitle ? t('playlist.picker.descWithTrack', { title: trackTitle }) : t('playlist.picker.desc')"
     @close="$emit('update:modelValue', false)"
   >
     <div v-if="playlists.length === 0 && !creating" class="py-4 text-center">
-      <p class="mb-3 text-xs text-text-secondary">생성된 플레이리스트가 없습니다.</p>
-      <UiButton variant="brand" size="sm" @click="creating = true">새 플레이리스트 만들기</UiButton>
+      <p class="mb-3 text-xs text-text-secondary">{{ t('playlist.picker.empty') }}</p>
+      <UiButton variant="brand" size="sm" @click="creating = true">{{ t('playlist.picker.createNew') }}</UiButton>
     </div>
     <div v-else class="space-y-2">
       <button
@@ -19,9 +19,9 @@
       >
         <span class="min-w-0">
           <span class="block truncate font-bold text-white">{{ p.title }}</span>
-          <span class="mt-0.5 block text-caption text-text-muted">{{ p.isPublic ? '공개' : '비공개' }}</span>
+          <span class="mt-0.5 block text-caption text-text-muted">{{ p.isPublic ? t('playlist.picker.public') : t('playlist.picker.private') }}</span>
         </span>
-        <span class="shrink-0 text-text-secondary">담기 →</span>
+        <span class="shrink-0 text-text-secondary">{{ t('playlist.picker.add') }}</span>
       </button>
       <button
         v-if="!creating"
@@ -29,17 +29,17 @@
         class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-surface-border p-3 text-xs font-semibold text-text-secondary transition-colors hover:border-brand-500/50 hover:text-brand-300"
         @click="creating = true"
       >
-        + 새로 만들기
+        {{ t('playlist.picker.createMore') }}
       </button>
       <form v-else class="flex items-center gap-2 rounded-xl border border-brand-500/40 bg-brand-950/20 p-2" @submit.prevent="submitCreate">
         <UiInput
           v-model="newTitle"
-          placeholder="새 플레이리스트 제목"
+          :placeholder="t('playlist.picker.namePh')"
           :maxlength="80"
           class="flex-1"
         />
         <UiButton variant="brand" size="sm" type="submit" :loading="createLoading" :disabled="newTitle.trim() === ''">
-          생성
+          {{ t('playlist.picker.create') }}
         </UiButton>
       </form>
     </div>
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import UiModal from './UiModal.vue';
 import UiButton from './UiButton.vue';
 import UiInput from './UiInput.vue';
@@ -70,6 +71,8 @@ const emit = defineEmits<{
   (e: 'select', playlistId: string): void;
   (e: 'create', title: string): void;
 }>();
+
+const { t } = useI18n();
 
 const creating = ref(false);
 const newTitle = ref('');

@@ -35,14 +35,54 @@ erDiagram
   partner_profiles ||--o{ partner_settlements : "CASCADE"
   users ||--o{ user_blocks : "CASCADE"
   users ||--o{ user_blocks : "blocked_by SET NULL"
+  users ||--o{ email_verifications : "nullable, CASCADE"
+  users ||--o{ user_roles : "grants, CASCADE"
+  users ||--o| business_profiles : "user_id PK, CASCADE"
+  users ||--o{ store_businesses : "owner_user_id, CASCADE"
+  partner_profiles ||--o{ generation_jobs : "CASCADE"
+  partner_profiles ||--o{ training_consents : "CASCADE"
+  tracks ||--o{ training_consents : "track scope, CASCADE"
+  training_consents ||--o{ data_provenance_ledger : "consent SET NULL"
+  users ||--o{ credit_ledger : "CASCADE"
+  generation_jobs ||--o{ credit_ledger : "job SET NULL"
+  generation_models ||--o| dataset_manifests : "manifest_hash"
 
   users {
     uuid id PK
     text email "unique"
     text password_hash "bcrypt"
-    text role "ADMIN|PARTNER|USER"
+    text role "ADMIN|PARTNER|USER|BUSINESS"
     text display_name
     bool is_active
+    text locale "ko|en|ja|zh-cn|th, 000024"
+    timestamptz email_verified_at "nullable, 000024"
+    text handle "nullable unique, creator page, 000025"
+  }
+  analytics_events {
+    uuid id PK
+    text name "§1.4 allowlist + web_vital"
+    text locale "nullable"
+    text path "nullable"
+    text session_hash "nullable, per-tab random"
+    jsonb props "PII-stripped"
+  }
+  indexnow_log {
+    uuid id PK
+    text url
+    text status "queued|sent|failed|skipped_*"
+    int attempts
+    text last_error "nullable"
+    timestamptz sent_at "nullable"
+  }
+  email_verifications {
+    uuid id PK
+    uuid user_id FK "nullable, OAUTH rows"
+    text email
+    text purpose "VERIFY|OAUTH"
+    text token_hash "unique, SHA-256"
+    text ref_token "nullable, A1 signup token"
+    timestamptz expires_at
+    timestamptz used_at "nullable"
   }
   partner_profiles {
     uuid id PK
@@ -53,7 +93,7 @@ erDiagram
   }
   ai_provider_policies {
     uuid id PK
-    text provider "unique, 7 values"
+    text provider "unique, 9 values incl AVIBE 000027"
     bool allows_standalone_streaming
     int min_bitrate_kbps
     text_array blocked_metadata_keywords
@@ -71,11 +111,57 @@ erDiagram
     uuid partner_id FK
     uuid album_id FK "nullable"
     text title
+    text short_id "unique base62-8, 000025"
+    text slug "lowered title, 000025"
     text original_object_key "embeds SHA-256"
     text hls_prefix "nullable, READY only"
     text ai_provider
+    text origin "EXTERNAL_AI|AVIBE_MODEL, 000027"
     text status "UPLOADED|LICENSE_GATE_PENDING|LICENSE_GATE_REJECTED|TRANSCODING|READY|TAKEN_DOWN"
     bigint play_count
+  }
+  generation_models {
+    text id PK
+    text version
+    text weights_hash
+    text license
+    text manifest_hash FK
+    text model_card_url
+    text status "DRAFT|EVALUATING|APPROVED|RETIRED"
+  }
+  generation_jobs {
+    uuid id PK
+    uuid partner_id FK
+    text model_version "repro pin, 000027"
+    bigint seed "nullable repro pin, 000027"
+    text safety_result "verdict JSON, 000027"
+    text watermark_id "000027"
+    uuid user_id FK "nullable, 000027"
+    text status "QUEUED|RUNNING|SUCCEEDED|FAILED"
+  }
+  training_consents {
+    uuid id PK
+    uuid partner_id FK
+    text scope "CATALOG|TRACK"
+    boolean consented "default off"
+  }
+  data_provenance_ledger {
+    uuid id PK "append-only trigger"
+    text file_hash
+    text source "COMMISSIONED|LICENSED_CATALOG|CREATOR_OPTIN|PUBLIC_DOMAIN_RERECORD|CC0|SYNTHETIC"
+    text rights_holder
+    text license_doc_id
+    text_array allowed_uses "TRAIN|EVAL|DEMO"
+  }
+  dataset_manifests {
+    text manifest_hash PK "append-only trigger"
+    int entry_count
+  }
+  credit_ledger {
+    uuid id PK "append-only trigger"
+    uuid user_id FK
+    int delta_credits "nonzero"
+    text reason "PLAN_GRANT|GENERATION_HOLD|GENERATION_REFUND|GENERATION_SPEND|ADMIN_ADJUST"
   }
   transcoding_jobs {
     uuid id PK
@@ -109,10 +195,12 @@ erDiagram
 ## Tables (all 17)
 
 ### 1. `users`
-`id, email UNIQUE, password_hash (bcrypt), role CHECK(ADMIN|PARTNER|USER) DEFAULT USER,`
+`id, email UNIQUE, password_hash (bcrypt), role CHECK(ADMIN|PARTNER|USER|BUSINESS) DEFAULT USER (000026),`
 `display_name, is_active DEFAULT TRUE, birth_year? (C9 optional), age_confirmed_at? (C9 14+ evidence),`
+`locale CHECK(ko|en|ja|zh-cn|th) DEFAULT 'ko' (000024), email_verified_at? (000024; pre-A2 rows backfilled),`
+`handle? UNIQUE CHECK(lowercase alnum+_ 3-30, 000025; partners auto-assigned at register, backfilled),`
 `created_at, updated_at`.
-Repo: `UserRepo` (`Create/CreateWithProfile/GetByID/GetByEmail/SetActive`).
+Repo: `UserRepo` (`Create/CreateWithProfile/GetByID/GetByEmail/SetActive/SetLocale/MarkEmailVerified`).
 
 ### 2. `partner_profiles`
 `id, user_id UNIQUE FK users CASCADE, company_name, business_number?,`
@@ -158,7 +246,8 @@ Repo: `LegalRepo.CreateConsent` is `ON CONFLICT DO NOTHING` (idempotent).
 `released_at?, created_at, updated_at`, index `(partner_id)`.
 
 ### 8. `tracks`
-`id, album_id? FK SET NULL, partner_id FK CASCADE, title, duration_ms? CHECK>0,`
+`id, album_id? FK SET NULL, partner_id FK CASCADE, title, short_id UNIQUE base62-8 (000025),`
+`slug lowered-title (000025), duration_ms? CHECK>0,`
 `original_object_key NOT NULL (staging key embeds client SHA-256; duplicate check is`
 `LIKE '%sha%' in `GateStore.AudioHashExists` / `TrackRepo.ExistsByHash`),`
 `hls_prefix? (set on transcode, `hls/<trackId>`), ai_provider CHECK(7),`
@@ -202,8 +291,8 @@ indexes `(track_id)`, `(status)`.
 status/strike/resolver/`resolved_at=NOW()` + resume/notice stamps; `CountUpheldByPartner` drives settlement forfeiture.
 
 ### 12. `playlists`
-`id, owner_user_id FK CASCADE, title, is_public DEFAULT FALSE, created_at, updated_at,`
-index `(owner_user_id)`.
+`id, owner_user_id FK CASCADE, title, short_id UNIQUE (000025), slug (000025),`
+`is_public DEFAULT FALSE, created_at, updated_at,` index `(owner_user_id)`.
 
 ### 13. `playlist_tracks`
 `id, playlist_id FK CASCADE, track_id FK CASCADE, position CHECK>=0, added_at,`
@@ -253,10 +342,12 @@ Repo: `GenerationJobRepo` (Create/GetByID/ListByPartner/Mark*); queue `generatio
 runs normal PreCheck/Finalize.
 
 ### 19. `store_businesses` (WI-05 #19)
-`id, partner_id FK CASCADE, business_number UNIQUE (10-digit, checksum-validated),`
+`id, partner_id? FK CASCADE NULLABLE (000026 legacy link; "" for business-created),`
+`owner_user_id FK users CASCADE NOT NULL (000026 authority, backfilled),`
+`business_number UNIQUE (10-digit, checksum-validated),`
 `store_name, license_count DEFAULT 1 CHECK>=1, status CHECK(PENDING|APPROVED|SUSPENDED) DEFAULT PENDING,`
 `verified_by? FK SET NULL, verified_at?, created_at, updated_at`,
-indexes `(partner_id)`, `(status)`.
+indexes `(partner_id)`, `(status)`, `(owner_user_id)`.
 
 ### 20. `store_devices` (WI-05 #20)
 `id, business_id FK CASCADE, device_name, pairing_code? + pairing_expires_at? (15min, cleared on claim),`
@@ -291,9 +382,21 @@ indexes `(device_id, played_at)`, `(track_id, played_at)`.
 
 - `password_reset_tokens`: `id, user_id FK CASCADE, token_hash UNIQUE (SHA-256),`
   `expires_at (send +15min), used_at?, created_at`. Single-use: confirm marks `used_at`.
-- `oauth_accounts`: `id, user_id FK CASCADE, provider CHECK(GOOGLE|KAKAO),`
+- `email_verifications` (000024): `id, user_id? FK CASCADE (NULL for OAUTH), email,`
+  `purpose CHECK(VERIFY|OAUTH), token_hash UNIQUE (SHA-256), ref_token? (A1 signup token),`
+  `expires_at (send +24h), used_at?, created_at`. Single-use: confirm marks `used_at`,
+  stamps `users.email_verified_at`, and logs in; OAUTH confirm also creates+links
+  the social account (`OAuthService.FinishVerifiedSignup`).
+- `oauth_accounts`: `id, user_id FK CASCADE, provider CHECK(GOOGLE|KAKAO|APPLE|NAVER|LINE) (000023),`
   `provider_user_id, email?, created_at, UNIQUE(provider,provider_user_id)`.
 - `oauth_states`: `id, state UNIQUE, provider, redirect_uri, created_at, expires_at (+10min)`.
+- `user_roles` (000026, R10): `user_id FK CASCADE, role CHECK(ADMIN|PARTNER|USER|BUSINESS),`
+  `granted_at, source CHECK(backfill|migration|register|admin|manual), PK(user_id,role)`, index `(role)`.
+  Backfilled from `users.role`; store-owning PARTNERs gain `BUSINESS` (`source='migration'`).
+- `business_profiles` (000026, R10): `user_id PK FK CASCADE, company_name, biz_no?,`
+  `country DEFAULT 'KR', industry DEFAULT '', status CHECK(PENDING|APPROVED|SUSPENDED) DEFAULT PENDING,`
+  `verified_by? FK SET NULL, verified_at?, created_at, updated_at`, index `(status)`.
+  KR signups with a checksum-valid `biz_no` start `APPROVED`; others start `PENDING`.
 - `billing_plans`: `id, code UNIQUE, name_ko, amount_krw, duration_days, is_active`.
   Seed: `LISTENER_PLUS_MONTHLY` 5900 KRW / 30d.
 - `billing_orders`: `id, user_id FK, plan_id FK, order_id UNIQUE (AVIBE-*) , amount_krw,`

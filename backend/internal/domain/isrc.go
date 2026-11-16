@@ -15,7 +15,7 @@ var isrcCanonical = regexp.MustCompile(`^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$`)
 func NormalizeISRC(raw string) (string, error) {
 	clean := strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(raw), "-", ""), " ", ""))
 	if !isrcCanonical.MatchString(clean) {
-		return "", fmt.Errorf("ISRC 형식 오류 (예: KR-A12-26-00001): %w", ErrInvalidInput)
+		return "", fmt.Errorf("ISRC format invalid (e.g. KR-A12-26-00001): %w", ErrInvalidInput)
 	}
 	return clean, nil
 }

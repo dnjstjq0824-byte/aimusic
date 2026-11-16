@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import type Hls from 'hls.js';
 import { computed, ref } from 'vue';
 import { playbackApi, trackApi } from '@/api/endpoints';
-import { errCodeOf } from '@/api/client';
+import { errCodeOf, tKey } from '@/api/client';
+import { trackEvent } from '@/utils/analytics';
 import type { Track } from '@/api/types';
 
 export type RepeatMode = 'off' | 'all' | 'one';
@@ -74,6 +75,9 @@ export const usePlayerStore = defineStore('player', () => {
   let loadSeq = 0;
   /** Track id whose media is currently attached to the audio element. */
   let loadedTrackId: string | null = null;
+  /** S5: per-track analytics flags (play_started once, play_30s at 30s). */
+  let analyticTrackId: string | null = null;
+  let analyticSent30 = false;
 
   const currentTrack = computed<Track | null>(() => {
     if (queue.value.length === 0 || order.value.length === 0) return null;
@@ -221,12 +225,21 @@ export const usePlayerStore = defineStore('player', () => {
     el.addEventListener('timeupdate', () => {
       positionMs.value = el.currentTime * 1000;
       if (Number.isFinite(el.duration)) durationMs.value = el.duration * 1000;
+      if (!analyticSent30 && loadedTrackId && el.currentTime >= 30) {
+        analyticSent30 = true;
+        trackEvent({ name: 'play_30s' });
+      }
     });
     el.addEventListener('loadedmetadata', () => {
       if (Number.isFinite(el.duration)) durationMs.value = el.duration * 1000;
     });
     el.addEventListener('play', () => {
       isPlaying.value = true;
+      if (loadedTrackId && loadedTrackId !== analyticTrackId) {
+        analyticTrackId = loadedTrackId;
+        analyticSent30 = false;
+        trackEvent({ name: 'play_started' });
+      }
     });
     el.addEventListener('pause', () => {
       isPlaying.value = false;
@@ -250,7 +263,13 @@ export const usePlayerStore = defineStore('player', () => {
       // reports here. Never silently jump to a different song on a transport
       // error: surface it so the listener knows what happened.
       if (hls || !el.getAttribute('src')) return;
-      failPlayback(loadSeq, '음원을 재생할 수 없습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.');
+      failPlayback(
+        loadSeq,
+        tKey(
+          'player.errPlayFailed',
+          "Can't play this track. Check your connection and try again.",
+        ),
+      );
     });
   }
 
@@ -309,7 +328,12 @@ export const usePlayerStore = defineStore('player', () => {
             instance.recoverMediaError();
             return;
           }
-          failPlayback(seq, `스트리밍 연결이 끊겼습니다: ${track.title}`);
+          failPlayback(
+            seq,
+            tKey('player.errStreamLost', 'Stream interrupted: {title}', {
+              title: track.title,
+            }),
+          );
         });
         instance.loadSource(url);
         instance.attachMedia(el);
@@ -338,12 +362,14 @@ export const usePlayerStore = defineStore('player', () => {
       if (code === 'ERR_NOT_STREAMABLE' || code === 'ERR_FORBIDDEN') {
         // Takedown / blocked track: skip it explicitly and say so.
         skippedIds.value.push(track.id);
-        error.value = `재생할 수 없는 음원을 건너뜁니다: ${track.title}`;
+        error.value = tKey('player.errSkipUnplayable', 'Skipping unplayable track: {title}', {
+          title: track.title,
+        });
         await advance(true);
         return;
       }
       if (code === 'ERR_UNAUTHORIZED') {
-        error.value = '재생하려면 로그인이 필요합니다.';
+        error.value = tKey('player.errSkipLogin', 'Log in to play.');
         isPlaying.value = false;
         return;
       }

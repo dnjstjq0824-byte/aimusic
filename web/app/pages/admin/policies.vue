@@ -1,25 +1,25 @@
 <template>
   <div class="space-y-6">
     <UiPageHeader
-      eyebrow="Policy Matrix"
-      title="AI 플랫폼별 상업 라이선스 정책 매트릭스"
-      description="각 AI 서비스별 단독 스트리밍 허용 여부, 허용 플랜, 차단 플랜을 실시간으로 관리합니다."
+      :eyebrow="t('admin.po.eyebrow')"
+      :title="t('admin.po.title')"
+      :description="t('admin.po.desc')"
     >
       <template #actions>
-        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">새로고침</UiButton>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">{{ t('admin.po.refresh') }}</UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="정책 매트릭스를 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+    <UiErrorBanner :message="error" :title="t('admin.po.loadFail')" :retry-label="t('common.actions.retry')" @retry="load" />
 
     <UiCard class="text-xs text-text-primary space-y-1.5">
-      <div class="font-bold text-white text-sm">미등록·차단 플랫폼 사유 (소유권 원칙)</div>
+      <div class="font-bold text-white text-sm">{{ t('admin.po.guideTitle') }}</div>
       <ul class="list-disc pl-5 space-y-1 leading-relaxed">
-        <li>Soundraw·Mubert: 작곡권·배포권이 플랫폼에 귀속 — 전면 차단.</li>
-        <li>Boomy·Loudly·Soundful: 저작권 플랫폼 보유, 라이선스에 불과 — 불등록.</li>
-        <li>Beatoven·Ecrett: Sync 전용, 단독 배포 금지 — 불등록.</li>
-        <li>Splash: 양도 문구 없음 — 불등록(양도 입증 시 재심).</li>
-        <li>신규 제공자는 약관 원문에서 양도·이전·보유 중 하나가 확인될 때만 등록.</li>
+        <li>{{ t('admin.po.guide1') }}</li>
+        <li>{{ t('admin.po.guide2') }}</li>
+        <li>{{ t('admin.po.guide3') }}</li>
+        <li>{{ t('admin.po.guide4') }}</li>
+        <li>{{ t('admin.po.guide5') }}</li>
       </ul>
     </UiCard>
 
@@ -29,16 +29,15 @@
       <UiSkeleton height="h-12" width="w-full" />
     </div>
 
-    <!-- Policies Table -->
     <UiTable v-if="!loading">
       <template #header>
-        <th class="p-3.5">제공자 (Provider)</th>
-        <th class="p-3.5">단독 스트리밍 유통</th>
-        <th class="p-3.5">생성 컷오프</th>
-        <th class="p-3.5">허용 플랜 (Allowed)</th>
-        <th class="p-3.5">영상 BGM 전용 (Sync-Only)</th>
-        <th class="p-3.5">차단 플랜 (Blocked)</th>
-        <th class="p-3.5 text-right">관리</th>
+        <th class="p-3.5">{{ t('admin.po.colProvider') }}</th>
+        <th class="p-3.5">{{ t('admin.po.colStandalone') }}</th>
+        <th class="p-3.5">{{ t('admin.po.colCutoff') }}</th>
+        <th class="p-3.5">{{ t('admin.po.colAllowed') }}</th>
+        <th class="p-3.5">{{ t('admin.po.colSync') }}</th>
+        <th class="p-3.5">{{ t('admin.po.colBlocked') }}</th>
+        <th class="p-3.5 text-right">{{ t('admin.po.colManage') }}</th>
       </template>
 
       <tr
@@ -54,15 +53,15 @@
             :variant="p.allowsStandaloneStreaming ? 'commercial' : 'syncOnly'"
             size="xs"
           >
-            {{ p.allowsStandaloneStreaming ? '허용 (Standalone)' : '불허 (Sync-Only)' }}
+            {{ p.allowsStandaloneStreaming ? t('admin.po.allowYes') : t('admin.po.allowNo') }}
           </UiBadge>
         </td>
         <td class="p-3.5 text-xs">
-          <span v-if="p.maxGeneratedAt" class="text-amber-300">{{ fmtDate(p.maxGeneratedAt) }} 이후 거부</span>
-          <span v-else class="text-text-muted">없음</span>
+          <span v-if="p.maxGeneratedAt" class="text-accent-amber">{{ t('admin.po.cutoffAfter', { at: fmtDate(p.maxGeneratedAt) }) }}</span>
+          <span v-else class="text-text-muted">{{ t('admin.po.cutoffNone') }}</span>
         </td>
         <td class="p-3.5 font-mono text-text-primary">
-          {{ (p.allowedPlanTiers ?? []).join(', ') || '전체 허용' }}
+          {{ (p.allowedPlanTiers ?? []).join(', ') || t('admin.po.allAllowed') }}
         </td>
         <td class="p-3.5 font-mono text-accent-amber">
           {{ (p.syncOnlyPlanTiers ?? []).join(', ') || '–' }}
@@ -72,65 +71,64 @@
         </td>
         <td class="p-3.5 text-right">
           <UiButton variant="outline" size="xs" @click="openEdit(p)">
-            정책 편집
+            {{ t('admin.po.edit') }}
           </UiButton>
         </td>
       </tr>
     </UiTable>
 
-    <!-- Edit Policy Modal -->
     <UiModal
       v-model="editModalOpen"
-      :title="`${editingPolicy?.provider} 상업 정책 수정`"
-      description="플랫폼의 상업 이용 약관 변경 시 즉시 반영합니다."
+      :title="t('admin.po.modalTitle', { provider: editingPolicy?.provider ?? '' })"
+      :description="t('admin.po.modalDesc')"
       @close="editModalOpen = false"
     >
       <form v-if="editingPolicy" class="space-y-4 text-xs" @submit.prevent="savePolicy">
         <div>
           <UiCheckbox v-model="formAllowsStreaming">
-            <strong>단독 음원 스트리밍 유통 허용</strong> (체크 해제 시 해당 플랫폼의 모든 음원이 Sync-only로 분류됨)
+            <strong>{{ t('admin.po.fAllow') }}</strong> {{ t('admin.po.fAllowHint') }}
           </UiCheckbox>
         </div>
 
         <UiInput
           v-model="formAllowedTiers"
-          label="상업 유통 허용 요금제 (쉼표로 구분)"
+          :label="t('admin.po.fAllowed')"
           placeholder="Pro, Premier, Studio"
         />
 
         <UiInput
           v-model="formSyncOnlyTiers"
-          label="영상 BGM 전용(Sync-Only) 요금제 (쉼표로 구분)"
+          :label="t('admin.po.fSync')"
           placeholder="Standard, Creator"
         />
 
         <UiInput
           v-model="formBlockedTiers"
-          label="비상업 차단 요금제 (쉼표로 구분)"
+          :label="t('admin.po.fBlocked')"
           placeholder="Free, Basic, Trial"
         />
 
         <UiInput
           v-model="formRejectionMsg"
-          label="업로드 반려 시 파트너에게 노출할 사유"
-          placeholder="해당 플랫폼의 요금제는 단독 음원 유통이 불가합니다."
+          :label="t('admin.po.fReason')"
+          :placeholder="t('admin.po.fReasonPh')"
         />
 
         <UiInput
           v-model="formMaxGeneratedAt"
-          label="생성 컷오프 (선택, RFC3339 — 이후 생성분 거부)"
-          placeholder="예: 2025-10-30T00:00:00Z (비우면 미적용)"
+          :label="t('admin.po.fCutoff')"
+          :placeholder="t('admin.po.fCutoffPh')"
         />
 
         <UiInput
           v-model="formTermsSnapshotUrl"
-          label="약관 스냅샷 URL (선택)"
-          placeholder="제공자 약관 PDF/캡처 보관 경로"
+          :label="t('admin.po.fSnapshot')"
+          :placeholder="t('admin.po.fSnapshotPh')"
         />
 
         <div class="flex justify-end gap-2 pt-2 border-t border-surface-border">
-          <UiButton variant="ghost" size="sm" @click="editModalOpen = false">취소</UiButton>
-          <UiButton variant="brand" size="sm" type="submit" :loading="saving">저장하기</UiButton>
+          <UiButton variant="ghost" size="sm" @click="editModalOpen = false">{{ t('common.actions.cancel') }}</UiButton>
+          <UiButton variant="brand" size="sm" type="submit" :loading="saving">{{ t('admin.po.save') }}</UiButton>
         </div>
       </form>
     </UiModal>
@@ -143,6 +141,7 @@ import { onMounted, ref } from 'vue';
 import { adminApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
+import { useApiError } from '@/composables/useApiError';
 import type { AIProviderPolicy } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -155,7 +154,9 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiTable from '@/components/ui/UiTable.vue';
 import UiModal from '@/components/ui/UiModal.vue';
 
+const { t, locale } = useI18n();
 const toast = useToast();
+const apiError = useApiError();
 
 const policies = ref<AIProviderPolicy[]>([]);
 const loading = ref(true);
@@ -174,7 +175,8 @@ const saving = ref(false);
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ko-KR');
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'ko-KR');
 }
 
 async function load() {
@@ -213,16 +215,16 @@ async function savePolicy() {
       blockedPlanTiers: parse(formBlockedTiers.value),
       minBitrateKbps: editingPolicy.value.minBitrateKbps || 192,
       blockedMetadataKeywords: editingPolicy.value.blockedMetadataKeywords || [],
-      rejectionMessageKo: formRejectionMsg.value || '단독 유통 불가',
+      rejectionMessageKo: formRejectionMsg.value || t('admin.po.fallbackReject'),
       commercialTermsUrl: editingPolicy.value.commercialTermsUrl || null,
       maxGeneratedAt: formMaxGeneratedAt.value.trim() || editingPolicy.value.maxGeneratedAt || null,
       termsSnapshotUrl: formTermsSnapshotUrl.value.trim() || editingPolicy.value.termsSnapshotUrl || null,
     });
-    toast.success('정책이 갱신되었습니다.');
+    toast.success(t('admin.po.saved'));
     editModalOpen.value = false;
     await load();
   } catch (err) {
-    toast.error(errMessageOf(err), '수정 실패');
+    toast.error(apiError(err), t('admin.po.saveFail'));
   } finally {
     saving.value = false;
   }

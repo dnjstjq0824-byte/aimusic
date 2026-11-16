@@ -53,5 +53,25 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- WI-R12: OAuth app-link return (avibe://oauth/callback). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>ai.music.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>avibe</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ko</string>
+		<string>en</string>
+		<string>ja</string>
+		<string>zh</string>
+		<string>th</string>
+	</array>
 </dict>
 </plist>

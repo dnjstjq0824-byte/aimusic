@@ -38,6 +38,11 @@
     "tabLicense": "라이선스",
     "noLyrics": "등록된 가사가 없습니다.",
     "viewTrack": "이 곡 페이지에서 보기",
-    "remove": "삭제"
+    "remove": "삭제",
+    "errPlayFailed": "음원을 재생할 수 없습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.",
+    "errStreamLost": "스트리밍 연결이 끊겼습니다: {title}",
+    "errSkipLogin": "재생하려면 로그인이 필요합니다.",
+    "errSkipUnplayable": "재생할 수 없는 음원을 건너뜁니다: {title}",
+    "storeErrPlayFailed": "음원을 재생할 수 없습니다. 네트워크 상태를 확인해 주세요."
   }
 }

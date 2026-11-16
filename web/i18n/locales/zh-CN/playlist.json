@@ -63,6 +63,19 @@
     "toastSaved": "歌单已收藏。",
     "toastUnsaved": "已取消收藏。",
     "toastShared": "链接已复制。",
-    "toastNeedLogin": "请登录后使用。"
+    "toastNeedLogin": "请登录后使用。",
+    "picker": {
+      "title": "添加到播放列表",
+      "descWithTrack": "请选择要保存「{title}」的播放列表。",
+      "desc": "请选择要保存到的播放列表。",
+      "empty": "还没有播放列表。",
+      "createNew": "新建播放列表",
+      "public": "公开",
+      "private": "私密",
+      "add": "添加 →",
+      "createMore": "+ 新建",
+      "namePh": "新播放列表标题",
+      "create": "创建"
+    }
   }
 }

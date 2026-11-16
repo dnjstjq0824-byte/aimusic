@@ -363,6 +363,56 @@ if [ "$BATCH22_EXISTS" != "t" ]; then
 else
   echo "[start-local] batch22 schema already present; skipping 000022_business.up.sql"
 fi
+BATCH23_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM pg_constraint WHERE conname='oauth_accounts_provider_check' AND pg_get_constraintdef(oid) LIKE '%LINE%';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH23_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000023_oauth_providers.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000023_oauth_providers.up.sql
+  echo "[start-local] batch23 oauth providers applied"
+else
+  echo "[start-local] batch23 schema already present; skipping 000023_oauth_providers.up.sql"
+fi
+BATCH24_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.email_verifications') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH24_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000024_email_verification.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000024_email_verification.up.sql
+  echo "[start-local] batch24 email verification applied"
+else
+  echo "[start-local] batch24 schema already present; skipping 000024_email_verification.up.sql"
+fi
+BATCH25_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='short_id';" 2>/dev/null | tr -d ' \r\n' || echo "0")"
+if [ "$BATCH25_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000025_seo_slugs.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000025_seo_slugs.up.sql
+  echo "[start-local] batch25 seo slugs applied"
+else
+  echo "[start-local] batch25 schema already present; skipping 000025_seo_slugs.up.sql"
+fi
+BATCH26_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.user_roles') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH26_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000026_business_roles.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000026_business_roles.up.sql
+  echo "[start-local] batch26 business roles applied"
+else
+  echo "[start-local] batch26 schema already present; skipping 000026_business_roles.up.sql"
+fi
+BATCH27_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A \
+  -c "SELECT to_regclass('public.generation_models') IS NOT NULL;" 2>/dev/null | tr -d ' \r\n' || echo "f")"
+if [ "$BATCH27_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000027_generation_ai.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" \
+    < backend/migrations/000027_generation_ai.up.sql
+  echo "[start-local] batch27 generation AI applied"
+else
+  echo "[start-local] batch27 schema already present; skipping 000027_generation_ai.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

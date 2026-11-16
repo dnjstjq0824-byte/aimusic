@@ -1,0 +1,50 @@
+# WI-S2 evidence — meta/hreflang/JSON-LD/OG (2026-11-16, Docker-less)
+
+## Implementation
+- Modules (exact): @nuxtjs/sitemap 9.1.0, @nuxtjs/robots 7.0.2,
+  nuxt-schema-org 7.0.1, nuxt-og-image 7.0.7, nuxt-site-config 5.0.3,
+  web-vitals 6.2.3, satori 0.63.2, @resvg/resvg-js 2.6.2,
+  @resvg/resvg-wasm 2.12.0 (CF dual-build), unhead/@unhead/vue 3.4.3
+  (top-level hoist; install used --legacy-peer-deps: root vite5 vs
+  unhead peerOptional vite>=6 only).
+- utils/seo.ts: canonical/hreflang(5+x-default=/en), titles/descriptions via
+  seo.json templates (compositional, t()-driven), describeTrack per-locale
+  sentences from mood/genre/BPM/key/duration (§3.1), ISO durations, share
+  links (utm), embed/oembed URLs, JSON-LD builders (recording ISRC+license,
+  playlist cap 50, person/profile, breadcrumb, article, FAQ).
+- composables/usePublicSeo.ts: reactive title/desc/canonical/hreflang/OG+
+  music/twitter/robots/oembed-discovery; image:null defers to og-image.
+- Tracks/playlists pages: useAsyncData SSR (guest view), canonical 301 on
+  uuid/short/stale-slug, private playlists CSR fallback (403->authed
+  reload, noindex), MusicRecording/MusicPlaylist+Breadcrumb schema, AvibeOg
+  define (plain on CJK/Thai), ShareButtons, creator-handle links.
+- Explore: ?q= noindex,follow (reactive); layouts/app.vue fallback head for
+  static pages; routeRules robots noindex on all CSR + embed + /library.
+- OG: OgImage/AvibeOg.satori.vue (1200x630, cover+title+creator+VERIFIED;
+  plain=textless brand for CJK/Thai). Default Inter (no config) for Latin.
+- i18n: seo.json x6 (ko/en/ja/zh-CN/th/machine-draft + en-XA pseudo),
+  common.titles +8 routes x6, errors.ERR_HANDLE_TAKEN x6, files[] wired.
+- BUGFIX (verified in dev): bare "|" in title templates triggers vue-i18n
+  plural parsing (title rendered suffix-less); escaped to {'|'} in all
+  locales + checker ICU exception (R3 '@' precedent).
+- BUGFIX: guides hub OG hardcoded plain:false with Korean title -> now
+  needsCjkThaiFont-driven.
+
+## Gates (observed)
+- nuxt typecheck: exit 0 (volar warnings only, pre-existing)
+- vitest: 94/94 (seo.test.ts 19 new: locales/slugs/titles/5-locale
+  distinctness/share/JSON-LD incl. playlist-50 cap)
+- check-i18n: PASS (UNUSED 213 warn, +1 vs A2)
+- nuxt build node-server: 34.0s PASS; cloudflare-module: 45.4s PASS
+- Dev probes (curl, API down): guide ko/en title|desc|canonical|hreflang6|
+  OG music/article|twitter|robots|JSON-LD(Article+FAQPage+Breadcrumb)|
+  share utm — ALL PRESENT in SSR HTML (see progress log excerpts).
+- OG renders: og-en.png (Latin text, viewed ✓), og-ko-plain.png
+  (textless fallback, viewed ✓). Thai/Japanese/Chinese share the plain
+  path (needsCjkThaiFont unit + identical boolean branch).
+- Embed ?lang=th: html lang=th + Thai strings (SSR locale switch ✓).
+- Guide /th + /ja: ko body + draft notice + locale canonical ✓.
+
+## Deferred (Docker recovery)
+- Track/playlist/creator full-SSR spot (needs engine), 5-lang PNG capture
+  set, Thai-title OG end-to-end pixels (same plain path as ko-verified).

@@ -5,10 +5,19 @@ Runs on a GPU machine (your home PC). Nothing here runs a model by itself.
 
 ## Contract
 
-- `GET /healthz` → `{"status":"ok","modelLoaded":bool,"model":str}`
-- `POST /generate` with `{"jobId","prompt","lyrics","model","params"}`
+- `GET /healthz` → `{"status":"ok","modelLoaded":bool,"model":str,"contractVersions":[1,2],"weightsHash":str}`
+- v1 `POST /generate` with `{"jobId","prompt","lyrics","model","params"}`
   → `{"audioBase64","mimeType","durationMs"}` (WAV bytes, base64)
+- v2 (WI-G1) adds `contractVersion:2`, `modelVersion`, `seed`,
+  `durationSec` (1..600), `variations` (1..4), `stems`, `watermark:true`
+  (forced — `false` is a 400), and `delivery:{"uploadUrl"}` for large
+  payloads → `{"contractVersion":2,"audioBase64"|"audioUrl","mimeType",
+  "durationMs","modelVersion","seed","weightsHash","safety","watermarkId"}`
+  with `safety={"passed":bool,"checks":[...]}`.
 - Without weights: `503` with a clear message (job fails, never fake audio).
+  v2 without a watermark library is likewise `503` (fail closed).
+- New env: `GENERATOR_MODEL_VERSION`, `GENERATOR_WEIGHTS_HASH` (echoed back
+  on v2 replies; empty until the WI-G2 PoC pins a weight set).
 
 ## Bring-up on the GPU machine
 

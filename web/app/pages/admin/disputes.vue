@@ -1,18 +1,17 @@
 <template>
   <div class="space-y-6">
     <UiPageHeader
-      eyebrow="OSP Governance"
-      title="저작권법 제103조 분쟁 관리 &amp; 임시조치"
-      description="신고 접수된 음원에 대해 스트리밍 차단(임시조치), 소명 심사, 원상 복구를 처리합니다."
+      :eyebrow="t('admin.dp.eyebrow')"
+      :title="t('admin.dp.title')"
+      :description="t('admin.dp.desc')"
     >
       <template #actions>
-        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">새로고침</UiButton>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="load">{{ t('admin.dp.refresh') }}</UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="분쟁 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="load" />
+    <UiErrorBanner :message="error" :title="t('admin.dp.loadFail')" :retry-label="t('common.actions.retry')" @retry="load" />
 
-    <!-- Disputes List -->
     <div v-if="loading" class="space-y-3">
       <UiSkeleton height="h-24" width="w-full" />
       <UiSkeleton height="h-24" width="w-full" />
@@ -20,8 +19,8 @@
 
     <div v-else-if="disputes.length === 0" class="py-12">
       <UiEmptyState
-        title="접수된 권리침해 분쟁이 없습니다"
-        description="현재 진행 중인 저작권 침해 또는 보이스 클로닝 신고가 없습니다."
+        :title="t('admin.dp.empty')"
+        :description="t('admin.dp.emptyDesc')"
       />
     </div>
 
@@ -33,36 +32,36 @@
       >
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-3">
           <div class="flex items-center gap-2">
-            <span class="font-bold text-white text-sm">신고 ID: {{ d.id }}</span>
+            <span class="font-bold text-white text-sm">{{ t('admin.dp.reportId', { id: d.id }) }}</span>
             <UiBadge
               :variant="disputeVariant(d.status)"
               size="xs"
             >
-              {{ disputeStatusKo(d.status) }}
+              {{ disputeStatus(d.status) }}
             </UiBadge>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-caption text-text-secondary">
-            <span>신고 접수: <strong>{{ d.reporterUserId ? `회원(${d.reporterUserId.slice(0, 8)})` : '외부/익명 접수' }}</strong></span>
+            <span>{{ t('admin.dp.reporter', { who: d.reporterUserId ? t('admin.dp.member', { id: d.reporterUserId.slice(0, 8) }) : t('admin.dp.external') }) }}</span>
             <UiBadge :variant="slaBreached(d) ? 'danger' : 'neutral'" size="xs">
-              {{ slaBreached(d) ? `SLA 초과 · ${slaLabel(d)}` : slaLabel(d) }}
+              {{ slaBreached(d) ? t('admin.dp.slaOver', { label: slaLabel(d) }) : slaLabel(d) }}
             </UiBadge>
-            <span v-if="d.slaNotifiedAt" class="text-text-muted">SLA 알림 발송됨</span>
+            <span v-if="d.slaNotifiedAt" class="text-text-muted">{{ t('admin.dp.slaNotified') }}</span>
           </div>
         </div>
 
         <div class="grid gap-2 text-xs sm:grid-cols-2">
           <div>
-            <span class="text-text-muted text-caption uppercase font-bold block">대상 트랙 ID</span>
+            <span class="text-text-muted text-caption uppercase font-bold block">{{ t('admin.dp.trackId') }}</span>
             <span class="font-mono text-text-primary">{{ d.trackId }}</span>
           </div>
           <div>
-            <span class="text-text-muted text-caption uppercase font-bold block">신고 사유 / 침해 유형</span>
-            <span class="text-text-primary font-semibold">{{ disputeReasonKo(d.reason) }}</span>
+            <span class="text-text-muted text-caption uppercase font-bold block">{{ t('admin.dp.reason') }}</span>
+            <span class="text-text-primary font-semibold">{{ disputeReason(d.reason) }}</span>
           </div>
         </div>
 
         <div v-if="d.description" class="rounded-xl bg-surface-0 p-3 text-xs border border-surface-border">
-          <span class="text-accent-amber font-bold text-caption uppercase block">신고 상세 소명 및 진술</span>
+          <span class="text-accent-amber font-bold text-caption uppercase block">{{ t('admin.dp.detail') }}</span>
           <p class="text-text-primary mt-1 whitespace-pre-wrap">{{ d.description }}</p>
         </div>
 
@@ -72,14 +71,14 @@
             size="xs"
             @click="askResolve(d.id, true)"
           >
-            침해 인정 (임시조치 &amp; 스트라이크)
+            {{ t('admin.dp.uphold') }}
           </UiButton>
           <UiButton
             variant="success"
             size="xs"
             @click="askResolve(d.id, false)"
           >
-            신고 기각 / 소명 인용 (정상 유지)
+            {{ t('admin.dp.dismiss') }}
           </UiButton>
         </div>
       </UiCard>
@@ -87,11 +86,9 @@
 
     <UiConfirmDialog
       :model-value="pendingResolve !== null"
-      :title="pendingResolve?.uphold ? '침해 인정 및 임시조치' : '신고 기각'"
-      :description="pendingResolve?.uphold
-        ? '해당 음원을 즉시 임시조치하고 파트너에게 스트라이크를 부과합니다.'
-        : '신고를 기각하고 음원을 정상 상태로 유지/복원합니다.'"
-      :confirm-label="pendingResolve?.uphold ? '인정하고 조치하기' : '기각하기'"
+      :title="pendingResolve?.uphold ? t('admin.dp.confirmUpholdTitle') : t('admin.dp.confirmDismissTitle')"
+      :description="pendingResolve?.uphold ? t('admin.dp.confirmUpholdDesc') : t('admin.dp.confirmDismissDesc')"
+      :confirm-label="pendingResolve?.uphold ? t('admin.dp.confirmUpholdGo') : t('admin.dp.confirmDismissGo')"
       :danger="pendingResolve?.uphold ?? false"
       :loading="resolving"
       @update:model-value="onResolveDialogToggle"
@@ -106,6 +103,7 @@ import { onMounted, ref } from 'vue';
 import { adminApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
+import { useApiError } from '@/composables/useApiError';
 import type { CopyrightDispute } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -116,7 +114,9 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 
+const { t, te } = useI18n();
 const toast = useToast();
+const apiError = useApiError();
 
 const disputes = ref<CopyrightDispute[]>([]);
 const loading = ref(true);
@@ -124,26 +124,14 @@ const error = ref<string | null>(null);
 const pendingResolve = ref<{ id: string; uphold: boolean } | null>(null);
 const resolving = ref(false);
 
-const DISPUTE_STATUS_KO: Record<string, string> = {
-  OPEN: '접수됨',
-  UNDER_REVIEW: '심사 중',
-  UPHELD_TAKEDOWN: '침해 인정·임시조치',
-  DISMISSED: '기각됨',
-};
-
-const DISPUTE_REASON_KO: Record<string, string> = {
-  AI_POLICY_VIOLATION: '비상업·무료 요금제 생성물 의심',
-  VOICE_CLONE: '음성·퍼블리시티권 침해',
-  UNAUTHORIZED_SAMPLE: '저작권 침해·무단 샘플링',
-  OTHER: '기타',
-};
-
-function disputeStatusKo(status: string): string {
-  return DISPUTE_STATUS_KO[status] ?? status;
+function disputeStatus(status: string): string {
+  const key = `admin.dp.status.${status}`;
+  return te(key) ? String(t(key)) : status;
 }
 
-function disputeReasonKo(reason: string): string {
-  return DISPUTE_REASON_KO[reason] ?? reason;
+function disputeReason(reason: string): string {
+  const key = `admin.dp.reasons.${reason}`;
+  return te(key) ? String(t(key)) : reason;
 }
 
 function disputeVariant(status: string): 'danger' | 'success' | 'warning' | 'neutral' {
@@ -167,9 +155,9 @@ function slaBreached(d: CopyrightDispute): boolean {
 
 function slaLabel(d: CopyrightDispute): string {
   const h = Math.floor(slaElapsedHours(d));
-  if (h < 1) return '접수 1시간 이내';
-  if (h < 24) return `접수 후 ${h}시간 경과`;
-  return `접수 후 ${Math.floor(h / 24)}일 ${h % 24}시간 경과`;
+  if (h < 1) return t('admin.dp.slaFresh');
+  if (h < 24) return t('admin.dp.slaHours', { n: h });
+  return t('admin.dp.slaDays', { d: Math.floor(h / 24), h: h % 24 });
 }
 
 function askResolve(id: string, uphold: boolean): void {
@@ -198,11 +186,11 @@ async function doResolve() {
   resolving.value = true;
   try {
     await adminApi.resolveDispute(id, uphold);
-    toast.success(uphold ? '침해 인정: 즉시 임시조치 및 스트라이크가 부과되었습니다.' : '신고 기각: 정상 상태로 유지/복원되었습니다.');
+    toast.success(t(uphold ? 'admin.dp.upheld' : 'admin.dp.dismissed'));
     pendingResolve.value = null;
     await load();
   } catch (err) {
-    toast.error(errMessageOf(err), '조치 실패');
+    toast.error(apiError(err), t('admin.dp.resolveFail'));
   } finally {
     resolving.value = false;
   }

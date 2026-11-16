@@ -63,6 +63,19 @@
     "toastSaved": "플레이리스트를 저장했습니다.",
     "toastUnsaved": "저장을 해제했습니다.",
     "toastShared": "링크를 복사했습니다.",
-    "toastNeedLogin": "로그인하면 이용할 수 있어요."
+    "toastNeedLogin": "로그인하면 이용할 수 있어요.",
+    "picker": {
+      "title": "플레이리스트에 담기",
+      "descWithTrack": "「{title}」을(를) 보관할 플레이리스트를 선택하세요.",
+      "desc": "보관할 플레이리스트를 선택하세요.",
+      "empty": "생성된 플레이리스트가 없습니다.",
+      "createNew": "새 플레이리스트 만들기",
+      "public": "공개",
+      "private": "비공개",
+      "add": "담기 →",
+      "createMore": "+ 새로 만들기",
+      "namePh": "새 플레이리스트 제목",
+      "create": "생성"
+    }
   }
 }

@@ -38,6 +38,11 @@
     "tabLicense": "⟦Lìcènsè～～～⟧",
     "noLyrics": "⟦Nò lyrìcs règìstèrèd.～～～～～～～～～⟧",
     "viewTrack": "⟦Vìèw òn tràck pàgè～～～～～～～⟧",
-    "remove": "⟦Rèmòvè～～～⟧"
+    "remove": "⟦Rèmòvè～～～⟧",
+    "errPlayFailed": "⟦Càn't plày thìs tràck. Chèck yòùr cònnèctìòn ànd try àgàìn.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "errStreamLost": "⟦Strèàm ìntèrrùptèd: {title}～～～～～～～～～～～⟧",
+    "errSkipLogin": "⟦Lòg ìn tò plày.～～～～～～⟧",
+    "errSkipUnplayable": "⟦Skìppìng ùnplàyàblè tràck: {title}～～～～～～～～～～～～～～⟧",
+    "storeErrPlayFailed": "⟦Càn't plày thìs tràck. Chèck thè nètwòrk.～～～～～～～～～～～～～～～～⟧"
   }
 }

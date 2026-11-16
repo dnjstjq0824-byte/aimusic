@@ -4,31 +4,57 @@ import type { ApiErrorBody } from './types';
 // URIs match backend/internal/handler/router.go (/api/v1/...) exactly.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
-// Stable backend ERR codes (middleware.go AbortError + domain GateError).
+// Store-safe translation bridge (R13): plain TS (stores, api) cannot call
+// useI18n, so a Nuxt plugin installs the app-locale translator at startup
+// (web/app/plugins/i18n-keys.ts). Outside the app (unit tests) the English
+// fallbacks below apply.
+export type KeyTranslator = (key: string, params?: Record<string, string | number>) => string | null;
+
+let keyTranslator: KeyTranslator | null = null;
+
+export function setKeyTranslator(fn: KeyTranslator | null): void {
+  keyTranslator = fn;
+}
+
+export function tKey(key: string, fallback: string, params?: Record<string, string | number>): string {
+  const hit = keyTranslator?.(key, params);
+  if (hit) return hit;
+  if (!params) return fallback;
+  return fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? ''));
+}
+
+// English fallbacks mirroring errors.en.json (stable backend ERR codes from
+// middleware.go AbortError + domain GateError). The app resolves errors.*
+// in the active locale first via the translator above.
 export const ERR_MESSAGES: Record<string, string> = {
-  ERR_INVALID_INPUT: '입력값을 확인해 주세요.',
-  ERR_UNAUTHORIZED: '로그인이 필요합니다.',
-  ERR_FORBIDDEN: '접근 권한이 없습니다.',
-  ERR_NOT_FOUND: '요청한 리소스를 찾을 수 없습니다.',
-  ERR_EMAIL_TAKEN: '이미 등록된 이메일입니다.',
-  ERR_INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다.',
-  ERR_USER_INACTIVE: '비활성화된 계정입니다.',
-  ERR_NOT_STREAMABLE: '재생할 수 없는 음원입니다. (심사/차단 상태)',
-  ERR_RATE_LIMITED: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
-  ERR_AGE_CONFIRM_REQUIRED: '만 14세 이상 확인이 필요합니다.',
-  ERR_CONSENT_REQUIRED: '필수 약관 동의가 필요합니다.',
-  ERR_TOTP_REQUIRED: '2단계 인증 코드가 필요합니다.',
-  ERR_TOTP_INVALID: '인증 코드가 올바르지 않습니다. 다시 입력해 주세요.',
-  LOGIN_LOCKED: '로그인 시도가 너무 많습니다. 15분 후 다시 시도해 주세요.',
-  ERR_NON_COMMERCIAL_TIER: '상업용 플랜이 아닙니다. 상업용 구독 증빙을 등록해 주세요.',
-  ERR_RETROACTIVE_GENERATION_DATE: '구독 시작일 이전에 생성된 음원은 등록할 수 없습니다.',
-  ERR_SYNC_ONLY_LICENSE: '이 제공자는 단독 스트리밍이 불가한 Sync-Only 라이선스입니다.',
-  ERR_DUPLICATE_AUDIO_FILE: '이미 등록된 음원 파일(SHA-256 중복)입니다.',
-  ERR_PROVIDER_NOT_ALLOWED: '허용 목록에 없는 제공자입니다. 허용 제휴 제공자를 선택해 주세요.',
-  ERR_PAYMENT_UNAVAILABLE: '결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.',
-  ERR_ACTIVE_PASS_EXISTS: '이미 이용 중인 이용권이 있습니다. 만료 후 구매하거나, 내 라이브러리에서 즉시 해지한 뒤 구매해 주세요.',
-  ERR_TOTP_ENROLL_REQUIRED: '관리자 계정은 2단계 인증 등록이 필요합니다. 보안 설정에서 등록해 주세요.',
-  ERR_INTERNAL: '서버 오류가 발생했습니다.',
+  ERR_INVALID_INPUT: 'Please check your input.',
+  ERR_UNAUTHORIZED: 'Please log in.',
+  ERR_FORBIDDEN: "You don't have permission to do that.",
+  ERR_NOT_FOUND: 'The requested item was not found.',
+  ERR_EMAIL_TAKEN: 'This email is already registered.',
+  ERR_INVALID_CREDENTIALS: 'The email or password is incorrect.',
+  ERR_USER_INACTIVE: 'This account is deactivated.',
+  ERR_NOT_STREAMABLE: "This track can't be played. (review/blocked status)",
+  ERR_RATE_LIMITED: 'Too many requests. Please try again later.',
+  ERR_AGE_CONFIRM_REQUIRED: 'Age confirmation (14+) is required.',
+  ERR_CONSENT_REQUIRED: 'Required terms consent is missing.',
+  ERR_TOTP_REQUIRED: 'A 2-step verification code is required.',
+  ERR_TOTP_INVALID: 'The code is incorrect. Please try again.',
+  LOGIN_LOCKED: 'Too many login attempts. Please try again in 15 minutes.',
+  ERR_NON_COMMERCIAL_TIER: 'Not a commercial plan. Please register commercial subscription proof.',
+  ERR_RETROACTIVE_GENERATION_DATE: "Tracks generated before your subscription started can't be registered.",
+  ERR_SYNC_ONLY_LICENSE: "This provider's license is sync-only and can't be streamed standalone.",
+  ERR_DUPLICATE_AUDIO_FILE: 'This audio file is already registered (duplicate).',
+  ERR_PROVIDER_NOT_ALLOWED: 'This provider is not allowlisted. Please pick an allowed partner provider.',
+  ERR_PAYMENT_UNAVAILABLE: "Payments aren't set up yet. Please contact support.",
+  ERR_ACTIVE_PASS_EXISTS: 'You already have an active pass. Buy again after it expires, or cancel it immediately in your library first.',
+  ERR_TOTP_ENROLL_REQUIRED: 'Admin accounts must enroll 2-step verification. Please enroll in security settings.',
+  ERR_OAUTH_LINK_LOGIN_REQUIRED: 'This email is already registered. Sign in with email first, then link the social account under Connected accounts.',
+  ERR_OAUTH_LINK_TAKEN: 'This social account is already linked to another account.',
+  ERR_OAUTH_LAST_METHOD: "You can't unlink your last sign-in method.",
+  EMAIL_NOT_VERIFIED: 'Email verification is required. Open the verification link in your inbox.',
+  ERR_INTERNAL: 'A server error occurred.',
+  ERR_FALLBACK: 'The request failed.',
 };
 
 export function errCodeOf(err: unknown): string {
@@ -39,14 +65,15 @@ export function errCodeOf(err: unknown): string {
   return 'ERR_INTERNAL';
 }
 
-export function errMessageOf(err: unknown, fallback = '요청 처리에 실패했습니다.'): string {
+export function errMessageOf(err: unknown, fallback?: string): string {
   const code = errCodeOf(err);
-  if (code in ERR_MESSAGES) return ERR_MESSAGES[code] as string;
+  if (code in ERR_MESSAGES) return tKey(`errors.${code}`, ERR_MESSAGES[code] as string);
   if (axios.isAxiosError(err)) {
     const msg = (err as AxiosError<ApiErrorBody>).response?.data?.error?.message;
     if (msg) return msg;
   }
-  return fallback;
+  if (fallback !== undefined) return fallback;
+  return tKey('errors.ERR_FALLBACK', ERR_MESSAGES.ERR_FALLBACK as string);
 }
 
 const ACCESS_KEY = 'avibe.accessToken';

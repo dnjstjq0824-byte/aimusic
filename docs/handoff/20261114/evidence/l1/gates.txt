@@ -1,0 +1,24 @@
+# WI-L1 gates (2026-11-16)
+
+## Deliverable
+- `docs/legal/drafts/privacy-terms-amendment-l1.md` (new, 1 file): privacy +
+  ToS amendment comparison draft covering spec §8 items (5 social providers +
+  collected fields, email verification, locale setting, business inquiries,
+  waitlist, cross-border transfer incl. Cloudflare edge + LINE Japan,
+  cookieless analytics). D7 kept as a separate doc (referenced, not merged).
+
+## Publish ban (verified via git status 2026-11-16)
+- `docs/legal/terms-of-service.md`: UNMODIFIED.
+- `docs/legal/privacy-policy.md`: UNMODIFIED.
+- `backend/migrations/seed.sql`: UNMODIFIED.
+- No L1 migration; local/prod DB untouched (Docker never booted).
+- Only `docs/legal/drafts/privacy-terms-amendment-l1.md` added under docs/legal/.
+
+## Checks
+- `npx cspell@10.5.1` on the L1 draft + OAUTH_SETUP.md: 0 issues
+  (18 initial hits resolved via 5 dictionary words; see draft §5).
+- No code/screen/test changes by L1: no executable gate applies (same
+  rationale as D7 §7).
+
+## Gate
+- G-3 (legal review + PO approval) required before any publish; out of scope.

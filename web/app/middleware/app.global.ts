@@ -3,20 +3,27 @@ import { computed } from 'vue';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { safeRedirect } from '@/utils/redirect';
+import { shouldApplyServerLocale } from '@/utils/locale';
 
 const AUTH_REQUIRED = new Set([
   'library',
   'me-playlists',
   'checkout',
   'checkout-confirm',
-  'dispute-center',
+  'account-index',
+  'account-profile',
   'account-security',
   'account-billing',
+  'account-language',
+  'account-privacy',
+  'account-connections',
 ]);
 
 function layoutFor(path: string): string | false {
-  if (path.startsWith('/partner')) return 'partner';
+  if (path.startsWith('/studio')) return 'studio';
+  if (path.startsWith('/business/console')) return 'business';
   if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/embed')) return 'embed';
   if (path === '/store/player' || path === '/500') return false;
   if (
     path === '/login' || path.startsWith('/signup') || path === '/forgot-password' ||
@@ -55,7 +62,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // [...slug] catch-all renders bare.
   const layout = name === 'not-found' ? false : layoutFor(to.path);
   if (layout === false) setPageLayout(false);
-  else setPageLayout(layout as 'app' | 'partner' | 'admin' | 'auth');
+  else setPageLayout(layout as 'app' | 'studio' | 'business' | 'admin' | 'auth' | 'embed');
 
   // Legacy tab URLs keep working (R3 split): single-URL 3-tab login is gone.
   if (name === 'login' && typeof to.query.tab === 'string') {
@@ -71,29 +78,56 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path === '/my-library') {
     return navigateTo('/library', { redirectCode: 301 });
   }
+  // R8 split: the disputes page lives at /rights-center now.
+  if (to.path === '/disputes') {
+    return navigateTo('/rights-center', { redirectCode: 301 });
+  }
+  // R9/R10 split: the partner console moved to /studio/** (creator) and
+  // /business/console/** (stores). Old bookmarks keep working (R-3, R-S).
+  if (to.path === '/partner' || to.path.startsWith('/partner/')) {
+    const rest = to.path === '/partner' ? '' : to.path.slice('/partner'.length);
+    const map: Record<string, string> = {
+      '': '/studio',
+      '/upload': '/studio/upload',
+      '/subscriptions': '/studio/proofs',
+      '/stores': '/business/console/stores',
+      '/generations': '/studio/create',
+    };
+    const target = map[rest] ?? `/studio${rest}`;
+    const q = to.fullPath.slice(to.path.length);
+    return navigateTo(`${target}${q}`, { redirectCode: 301 });
+  }
 
   const localePath = useLocalePath();
   const auth = useAuthStore();
-  if (!auth.initialized && import.meta.client) await auth.hydrate();
+  if (!auth.initialized && import.meta.client) {
+    await auth.hydrate();
+    // A2: a fresh principal applies the server locale (detection order ①).
+    const { $i18n } = useNuxtApp();
+    const apply = shouldApplyServerLocale(auth.locale, $i18n.locale.value, to.path, name);
+    if (apply) await $i18n.setLocale(apply);
+  }
   // Already signed in: never show entry forms again; continue to the target.
   if (GUEST_ONLY.has(name) && auth.isAuthenticated) {
     const redirect = safeRedirect(to.query.redirect);
     return redirect === to.fullPath ? localePath({ name: 'home' }) : redirect;
   }
-  const needsAuth = AUTH_REQUIRED.has(name) || to.path.startsWith('/partner') || to.path.startsWith('/admin');
+  const needsAuth = AUTH_REQUIRED.has(name) || to.path.startsWith('/studio') || to.path.startsWith('/business/console') || to.path.startsWith('/admin');
   if (needsAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } };
   }
-  const roles = to.path.startsWith('/admin')
-    ? ['ADMIN']
-    : to.path.startsWith('/partner')
-      ? ['PARTNER', 'ADMIN']
-      : undefined;
-  if (roles && auth.role && !roles.includes(auth.role)) {
-    const needAdmin = roles.length === 1 && roles[0] === 'ADMIN';
+  // R-3: listeners reach neither console; migrated accounts hold both grants.
+  const guard = to.path.startsWith('/admin')
+    ? { roles: ['ADMIN'], key: 'common.auth.needAdmin' }
+    : to.path.startsWith('/studio')
+      ? { roles: ['PARTNER', 'ADMIN'], key: 'common.auth.needPartner' }
+      : to.path.startsWith('/business/console')
+        ? { roles: ['BUSINESS', 'ADMIN'], key: 'common.auth.needBusiness' }
+        : undefined;
+  if (guard && auth.role && !guard.roles.some((r) => auth.hasRole(r as 'ADMIN' | 'PARTNER' | 'BUSINESS'))) {
     if (import.meta.client) {
       const { $i18n } = useNuxtApp();
-      useToast().warning($i18n.t(needAdmin ? 'common.auth.needAdmin' : 'common.auth.needPartner'));
+      useToast().warning($i18n.t(guard.key));
     }
     return localePath({ name: 'home' });
   }

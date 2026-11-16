@@ -43,6 +43,9 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { writeStoredLocale } from '@/utils/locale';
+import { trackEvent } from '@/utils/analytics';
+import { authApi } from '@/api/endpoints';
+import { useAuthStore } from '@/stores/authStore';
 
 // Locale switcher (v2 §4.5): globe + self-name, no flags. ja/zh-cn/th carry Beta (G-L).
 const LANGS = [
@@ -57,6 +60,7 @@ const { t, locale, setLocale } = useI18n();
 const switchLocalePath = useSwitchLocalePath();
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const open = ref(false);
 const buttonRef = ref<HTMLElement | null>(null);
@@ -67,8 +71,13 @@ type LocaleCode = (typeof LANGS)[number]['code'];
 async function select(code: LocaleCode): Promise<void> {
   open.value = false;
   if (code === locale.value) return;
+  trackEvent({ name: 'locale_changed', props: { locale: code } });
   writeStoredLocale(code);
-  // TODO(A2): persist to users.locale when logged in.
+  // A2: signed-in users persist to users.locale (detection order ①),
+  // fire-and-forget so the switch stays instant.
+  if (auth.isAuthenticated) {
+    void authApi.updateLocale(code).catch(() => {});
+  }
   const first = route.path.split('/')[1];
   const prefixed = ['en', 'ja', 'zh-cn', 'th'].includes(first ?? '');
   if (prefixed) {

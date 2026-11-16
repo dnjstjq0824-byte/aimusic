@@ -24,6 +24,7 @@ type Services struct {
 	Playback      *PlaybackService
 	Settlement    *SettlementService
 	PasswordReset *PasswordResetService
+	EmailVerify   *EmailVerifyService
 	OAuth         *OAuthService
 	Billing       *BillingService
 	Overview      *OverviewService
@@ -31,6 +32,7 @@ type Services struct {
 	Distribution  *DistributionService
 	Store         *StoreService
 	Certificates  *CertificateService
+	SEO           *SEOService
 }
 
 // New builds the service aggregate.
@@ -51,6 +53,7 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 			cfg.Mail.SMTPUser, cfg.Mail.SMTPPass, cfg.Mail.From, cfg.Mail.FromName)
 	}
 	auth := NewAuthService(repos, cfg)
+	oauth := NewOAuthService(repos, auth, cfg, nil)
 	return &Services{
 		Auth:          auth,
 		Precheck:      &PrecheckService{repos: repos, storage: st, stagingBucket: buckets.Staging},
@@ -63,12 +66,14 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 		Playback:      &PlaybackService{repos: repos},
 		Settlement:    &SettlementService{repos: repos, cipher: settlementCipher},
 		PasswordReset: NewPasswordResetService(repos, mailer, cfg),
-		OAuth:         NewOAuthService(repos, auth, cfg, nil),
+		EmailVerify:   NewEmailVerifyService(repos, auth, mailer, oauth, cfg),
+		OAuth:         oauth,
 		Billing:       NewBillingService(repos, cfg),
 		Overview:      NewOverviewService(repos),
 		Generation:    NewGenerationService(repos, cfg.Generation.DailyCapPerPartner, cfg.Generation.BannedKeywordsExtra),
 		Distribution:  NewDistributionService(repos, st, buckets.Staging),
 		Store:         NewStoreService(repos),
 		Certificates:  NewCertificateService(repos),
+		SEO:           NewSEOService(repos, cfg.SEO, nil),
 	}
 }

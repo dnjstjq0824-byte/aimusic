@@ -63,6 +63,19 @@
     "toastSaved": "プレイリストを保存しました。",
     "toastUnsaved": "保存を外しました。",
     "toastShared": "リンクをコピーしました。",
-    "toastNeedLogin": "ログインしてご利用ください。"
+    "toastNeedLogin": "ログインしてご利用ください。",
+    "picker": {
+      "title": "プレイリストに入れる",
+      "descWithTrack": "「{title}」を保存するプレイリストを選んでください。",
+      "desc": "保存するプレイリストを選んでください。",
+      "empty": "プレイリストがありません。",
+      "createNew": "新しいプレイリスト",
+      "public": "公開",
+      "private": "非公開",
+      "add": "入れる →",
+      "createMore": "+ 新規作成",
+      "namePh": "新しいプレイリスト名",
+      "create": "作成"
+    }
   }
 }

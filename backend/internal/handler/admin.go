@@ -87,8 +87,8 @@ func (h *AdminHandler) SetUserRole(c *gin.Context) {
 	}
 	id := c.Param("id")
 	role := strings.ToUpper(strings.TrimSpace(req.Role))
-	if role != domain.RoleAdmin && role != domain.RolePartner && role != domain.RoleUser {
-		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "role must be ADMIN|PARTNER|USER")
+	if !domain.ValidRole(role) {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "role must be ADMIN|PARTNER|USER|BUSINESS")
 		return
 	}
 	if id == CurrentUserID(c) {
@@ -115,6 +115,12 @@ func (h *AdminHandler) SetUserRole(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
+	// The new primary also becomes a grant; older grants stay so a role
+	// switch (e.g. PARTNER -> BUSINESS) keeps both consoles reachable.
+	if err := h.Repos.Users.GrantRole(c.Request.Context(), id, role, "admin"); err != nil {
+		AbortError(c, err)
+		return
+	}
 	h.recordAudit(c, "USER_SET_ROLE", "user", id, map[string]any{"role": role, "via": "console"})
 	updated, err := h.Repos.Users.GetByID(c.Request.Context(), id)
 	if err != nil {
@@ -122,6 +128,57 @@ func (h *AdminHandler) SetUserRole(c *gin.Context) {
 		return
 	}
 	ok(c, updated)
+}
+
+// RoleGrants returns the newest-first role grant log (R11).
+func (h *AdminHandler) RoleGrants(c *gin.Context) {
+	grants, err := h.Repos.Users.ListRoleGrants(c.Request.Context(), queryInt(c, "limit", 50))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	okList(c, grants)
+}
+
+// OAuthStats returns social-connection counts per provider (R11).
+func (h *AdminHandler) OAuthStats(c *gin.Context) {
+	stats, err := h.Repos.OAuth.Stats(c.Request.Context())
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, stats)
+}
+
+// ListBusinesses returns company profiles by status (admin).
+func (h *AdminHandler) ListBusinesses(c *gin.Context) {
+	items, err := h.Services.Business.ListBusinessProfiles(c.Request.Context(),
+		strings.ToUpper(strings.TrimSpace(c.Query("status"))), queryInt(c, "limit", 50))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	okList(c, items)
+}
+
+type reviewBusinessRequest struct {
+	Approve bool `json:"approve"`
+}
+
+// ReviewBusiness approves or suspends a company profile (admin manual).
+func (h *AdminHandler) ReviewBusiness(c *gin.Context) {
+	var req reviewBusinessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	p, err := h.Services.Business.ReviewBusiness(c.Request.Context(), c.Param("userId"), req.Approve, CurrentUserID(c))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	h.recordAudit(c, "BUSINESS_REVIEW", "business", p.UserID, map[string]any{"approve": req.Approve, "via": "console"})
+	ok(c, p)
 }
 
 type setUserActiveRequest struct {
@@ -210,6 +267,7 @@ func (h *AdminHandler) ReviewTrack(c *gin.Context) {
 		return
 	}
 	h.recordAudit(c, "TRACK_REVIEW", "track", trackID, map[string]any{"approve": approve, "reason": req.Reason})
+	notifySearchAsync(h.Services.SEO, []string{domain.CanonicalTrackPath(track.Slug, track.ShortID)})
 	ok(c, track)
 }
 
@@ -499,6 +557,7 @@ func (h *AdminHandler) Takedown(c *gin.Context) {
 		return
 	}
 	h.recordAudit(c, "TRACK_TAKEDOWN", "track", req.TrackID, map[string]any{"reason": req.Reason})
+	notifySearchAsync(h.Services.SEO, []string{domain.CanonicalTrackPath(track.Slug, track.ShortID)})
 	ok(c, track)
 }
 

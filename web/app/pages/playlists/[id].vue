@@ -49,6 +49,9 @@
               @select="toggleFollow"
             />
           </div>
+          <div v-if="isPublicView" class="mt-4 border-t border-surface-border pt-4">
+            <ShareButtons :url="shareUrl" :title="playlist?.title ?? ''" />
+          </div>
         </div>
       </section>
 
@@ -150,7 +153,20 @@ import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
 import { useFormat } from '@/composables/useFormat';
-import type { Track, Playlist } from '@/api/types';
+import { usePublicSeo } from '@/composables/usePublicSeo';
+import { fetchPublic } from '@/utils/publicApi';
+import {
+  breadcrumbLd,
+  canonicalFor,
+  canonicalPlaylistPath,
+  describePlaylist,
+  musicPlaylistLd,
+  needsCjkThaiFont,
+  oembedDiscoveryUrl,
+  playlistTitle,
+} from '@/utils/seo';
+import { trackEvent } from '@/utils/analytics';
+import type { Track, Playlist, PlaylistTrack } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
@@ -162,9 +178,10 @@ import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import CoverMosaic from '@/components/ui/CoverMosaic.vue';
 import TrackRow from '@/components/TrackRow.vue';
+import ShareButtons from '@/components/seo/ShareButtons.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const route = useRoute();
 const router = useRouter();
@@ -178,7 +195,7 @@ const fmt = useFormat();
 const playlist = ref<Playlist | null>(null);
 const tracks = ref<Track[]>([]);
 const seeds = ref<string[]>([]);
-const loading = ref(true);
+const clientLoading = ref(false);
 const busy = ref(false);
 const error = ref<string | null>(null);
 const saved = ref(false);
@@ -225,34 +242,120 @@ function onRowMenu(tr: Track, index: number, menuIndex: number): void {
   else void removeTrack(tr.id);
 }
 
+const param = computed(() => String(route.params.id ?? ''));
+
+// WI-S2: public playlists render server-side (guest view). Private lists 403
+// for guests and load client-side for the owner (spec: owner-only CSR).
+const { data: pageData, pending, error: pageError } = await useAsyncData(
+  () => `playlist-${param.value}`,
+  async () => {
+    const enc = encodeURIComponent(param.value);
+    const [pl, entries] = await Promise.all([
+      fetchPublic<Playlist>(`/playlists/${enc}`),
+      fetchPublic<PlaylistTrack[]>(`/playlists/${enc}/tracks`),
+    ]);
+    const resolved = (
+      await Promise.all(
+        (entries ?? []).slice(0, 50).map((e) => fetchPublic<Track>(`/tracks/${encodeURIComponent(e.trackId)}`).catch((): null => null)),
+      )
+    ).filter((x): x is Track => x !== null);
+    return { playlist: pl, entries: entries ?? [], tracks: resolved };
+  },
+);
+const loading = computed(() => pending.value || clientLoading.value);
+let needsClientLoad = false;
+function syncPageData(): void {
+  if (!pageData.value) return;
+  playlist.value = pageData.value.playlist;
+  editTitle.value = pageData.value.playlist.title;
+  editPublic.value = pageData.value.playlist.isPublic;
+  tracks.value = pageData.value.tracks;
+  seeds.value = pageData.value.tracks.slice(0, 4).map((x) => x.id);
+}
+syncPageData();
+if (pageError.value) {
+  const st = (pageError.value as { statusCode?: number }).statusCode ?? 0;
+  if (st === 404) {
+    throw showError({ statusCode: 404, statusMessage: 'Playlist not found' });
+  }
+  // 403 (private) or transport failure: retry client-side with auth.
+  needsClientLoad = true;
+}
+// WI-S1: legacy uuid / bare short ID / stale slug → canonical 301.
+if (playlist.value?.slug && playlist.value?.shortId) {
+  const canon = `${playlist.value.slug}-${playlist.value.shortId}`;
+  if (param.value !== canon) {
+    await navigateTo(localePath({ name: 'playlist-detail', params: { id: canon } }), { redirectCode: 301 });
+  }
+}
+const pagePath = computed(() =>
+  playlist.value?.slug && playlist.value?.shortId
+    ? canonicalPlaylistPath(playlist.value.slug, playlist.value.shortId)
+    : `/playlists/${param.value}`,
+);
+const shareUrl = computed(() => canonicalFor(pagePath.value, locale.value));
+const isPublicView = computed(() => !!playlist.value && (playlist.value.isPublic || playlist.value.isOfficialCuration));
+if (playlist.value && !pageError.value) {
+  const pl = playlist.value;
+  const pub = pl.isPublic || pl.isOfficialCuration;
+  usePublicSeo({
+    title: playlistTitle(t, pl.title, pl.ownerName ?? ''),
+    description: describePlaylist(t, pl, tracks.value.length),
+    path: pagePath.value,
+    locale: locale.value,
+    ogType: 'music.playlist',
+    image: null,
+    noindex: !pub,
+    oembedUrl: pub ? oembedDiscoveryUrl(shareUrl.value) : null,
+  });
+  if (pub) {
+    useSchemaOrg([
+      musicPlaylistLd({
+        playlist: pl,
+        pageUrl: shareUrl.value,
+        tracks: tracks.value.map((x) => ({
+          title: x.title,
+          url: canonicalFor(`/tracks/${x.slug && x.shortId ? `${x.slug}-${x.shortId}` : x.id}`, locale.value),
+          durationMs: x.durationMs,
+        })),
+        trackCount: tracks.value.length,
+      }),
+      breadcrumbLd([
+        { name: 'AVIBE', url: canonicalFor('/', locale.value) },
+        { name: pl.title, url: shareUrl.value },
+      ]),
+    ]);
+    defineOgImageComponent('AvibeOg', {
+      title: pl.title,
+      creator: pl.ownerName ?? '',
+      verified: false,
+      plain: needsCjkThaiFont(`${pl.title} ${pl.ownerName ?? ''}`),
+    });
+  }
+}
+
 async function load(): Promise<void> {
-  const id = route.params.id as string;
+  const id = param.value;
   if (!id) return;
-  loading.value = true;
+  clientLoading.value = true;
   error.value = null;
   try {
-    const [pl, entries] = await Promise.all([
-      playlistApi.get(id),
-      playlistApi.listTracks(id),
-    ]);
-    playlist.value = pl;
-    editTitle.value = pl.title;
-    editPublic.value = pl.isPublic;
-    const resolved: Track[] = [];
-    for (const entry of entries ?? []) {
-      try {
-        resolved.push(await trackApi.get(entry.trackId));
-      } catch {
-        // Skip entries whose track vanished.
-      }
-    }
-    tracks.value = resolved;
-    seeds.value = resolved.slice(0, 4).map((x) => x.id);
+    const [pl, entries] = await Promise.all([playlistApi.get(id), playlistApi.listTracks(id)]);
+    pageData.value = {
+      playlist: pl,
+      entries: entries ?? [],
+      tracks: (
+        await Promise.all(
+          (entries ?? []).slice(0, 50).map((e) => trackApi.get(e.trackId).catch((): null => null)),
+        )
+      ).filter((x): x is Track => x !== null),
+    };
+    syncPageData();
     if (auth.isAuthenticated && !isOwner.value) {
       try {
-        saved.value = (await playlistApi.saveState(id)).saved;
+        saved.value = (await playlistApi.saveState(pl.id)).saved;
         const mine = await engagementApi.follows('playlist', 100);
-        following.value = (mine ?? []).some((f) => f.targetId === id);
+        following.value = (mine ?? []).some((f) => f.targetId === pl.id);
       } catch {
         saved.value = false;
         following.value = false;
@@ -261,7 +364,7 @@ async function load(): Promise<void> {
   } catch (err: unknown) {
     error.value = apiError(err);
   } finally {
-    loading.value = false;
+    clientLoading.value = false;
   }
 }
 
@@ -331,7 +434,8 @@ async function toggleFollow(): Promise<void> {
 
 async function sharePlaylist(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(window.location.href);
+    await navigator.clipboard.writeText(shareUrl.value);
+    trackEvent({ name: 'share_clicked', props: { channel: 'copy' } });
     toast.success(t('playlist.toastShared'));
   } catch {
     toast.error(t('track.toastCopyFailed'));
@@ -450,7 +554,25 @@ async function persistOrder(): Promise<void> {
 
 onMounted(() => {
   ready.value = true;
-  void load();
+  // Private lists (403 guest) and SSR transport failures reload with auth.
+  if (needsClientLoad) {
+    needsClientLoad = false;
+    void load();
+  } else if (playlist.value && auth.isAuthenticated && !isOwner.value) {
+    const id = playlist.value.id;
+    void playlistApi
+      .saveState(id)
+      .then((s) => {
+        saved.value = s.saved;
+      })
+      .catch(() => false);
+    void engagementApi
+      .follows('playlist', 100)
+      .then((mine) => {
+        following.value = (mine ?? []).some((f) => f.targetId === id);
+      })
+      .catch(() => false);
+  }
   if (auth.isAuthenticated) {
     void playlists.fetchMine();
   }

@@ -94,6 +94,11 @@ if (!ready) throw new Error('no tracks in local DB');
 const pl = await api('POST', '/playlists', listener.tokens.accessToken, { title: `Harness Pub ${STAMP}`, isPublic: true });
 if (![200, 201].includes(pl.status)) throw new Error(`playlist create: ${pl.status}`);
 const cert = psql('SELECT cert_number FROM track_certificates LIMIT 1;');
+// S1 canonical params (slug-shortId) + bare short IDs for embeds.
+const trackRow = psql(`SELECT slug || '|' || short_id FROM tracks WHERE id = '${ready.id}'::uuid;`).split('|');
+const plRow = psql(`SELECT slug || '|' || short_id FROM playlists WHERE id = '${pl.json.data.id}'::uuid;`).split('|');
+const creatorHandle = psql(`SELECT handle FROM users WHERE email = '${creator.email}';`);
+if (!creatorHandle) throw new Error('creator handle missing (S1 auto-assign)');
 
 const auth = {
   createdAt: new Date().toISOString(),
@@ -103,7 +108,14 @@ const auth = {
     storePartner: { email: storePartner.email, ...storePartner.tokens },
     admin: { email: admin.email, ...admin.tokens },
   },
-  ids: { track: ready.id, playlist: pl.json.data.id, cert: cert || 'AVB-0000' },
+  ids: {
+    track: `${trackRow[0]}-${trackRow[1]}`,
+    trackShort: trackRow[1],
+    playlist: `${plRow[0]}-${plRow[1]}`,
+    playlistShort: plRow[1],
+    creator: creatorHandle,
+    cert: cert || 'AVB-0000',
+  },
 };
 fs.writeFileSync(OUT, JSON.stringify(auth, null, 1));
-console.log(`auth written: 4 roles, track=${auth.ids.track.slice(0, 8)} playlist=${auth.ids.playlist.slice(0, 8)} cert=${auth.ids.cert}`);
+console.log(`auth written: 4 roles, track=${auth.ids.track} playlist=${auth.ids.playlist} creator=${auth.ids.creator} cert=${auth.ids.cert}`);

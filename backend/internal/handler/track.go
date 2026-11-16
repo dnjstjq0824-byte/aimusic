@@ -175,7 +175,13 @@ func (h *TrackHandler) Charts(c *gin.Context) {
 //
 //	GET /tracks/:id/playlists
 func (h *TrackHandler) TrackPlaylists(c *gin.Context) {
-	items, err := h.Repos.Playlists.ListPublicContaining(c.Request.Context(), c.Param("id"))
+	// S1: resolve slug params to the uuid before the join lookup.
+	track, _, _, err := h.Repos.SEO.TrackByParam(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	items, err := h.Repos.Playlists.ListPublicContaining(c.Request.Context(), track.ID)
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -187,7 +193,8 @@ func (h *TrackHandler) TrackPlaylists(c *gin.Context) {
 // READY tracks through the public view (B-05); the owning partner and
 // admins see every status with full fields. Requires JWTOptional.
 func (h *TrackHandler) GetTrack(c *gin.Context) {
-	track, err := h.Repos.Tracks.GetByID(c.Request.Context(), c.Param("id"))
+	// S1: detail params may be uuid, short ID, or slug-shortID.
+	track, _, _, err := h.Repos.SEO.TrackByParam(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		AbortError(c, err)
 		return

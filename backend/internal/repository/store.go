@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"avibe-platform/backend/internal/domain"
@@ -12,14 +13,14 @@ import (
 // store_play_logs (WI-05 #19/#20/#21).
 type StoreRepo struct{ db DBTX }
 
-const storeBusinessColumns = `id::text, partner_id::text, business_number, store_name,
+const storeBusinessColumns = `id::text, COALESCE(partner_id::text, ''), owner_user_id::text, business_number, store_name,
 	license_count, status, verified_by::text, verified_at, created_at, updated_at`
 
 func scanStoreBusiness(row interface{ Scan(...any) error }) (*domain.StoreBusiness, error) {
 	b := &domain.StoreBusiness{}
 	var verifiedBy sql.NullString
 	var verifiedAt sql.NullTime
-	err := row.Scan(&b.ID, &b.PartnerID, &b.BusinessNumber, &b.StoreName,
+	err := row.Scan(&b.ID, &b.PartnerID, &b.OwnerUserID, &b.BusinessNumber, &b.StoreName,
 		&b.LicenseCount, &b.Status, &verifiedBy, &verifiedAt, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -30,11 +31,25 @@ func scanStoreBusiness(row interface{ Scan(...any) error }) (*domain.StoreBusine
 }
 
 // CreateBusiness registers a store business as PENDING verification.
+// The owner resolves from the legacy partner link (partner path).
 func (r *StoreRepo) CreateBusiness(ctx context.Context, partnerID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error) {
 	b, err := scanStoreBusiness(r.db.QueryRowContext(ctx, `
-		INSERT INTO store_businesses (partner_id, business_number, store_name, license_count)
-		VALUES ($1::uuid, $2, $3, $4)
+		INSERT INTO store_businesses (partner_id, owner_user_id, business_number, store_name, license_count)
+		SELECT $1::uuid, user_id, $2, $3, $4 FROM partner_profiles WHERE id = $1::uuid
 		RETURNING `+storeBusinessColumns, partnerID, businessNumber, storeName, licenseCount))
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	return b, err
+}
+
+// CreateBusinessForOwner registers a store business owned directly by a
+// user (business-console path, R10). The legacy partner link stays NULL.
+func (r *StoreRepo) CreateBusinessForOwner(ctx context.Context, ownerUserID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error) {
+	b, err := scanStoreBusiness(r.db.QueryRowContext(ctx, `
+		INSERT INTO store_businesses (owner_user_id, business_number, store_name, license_count)
+		VALUES ($1::uuid, $2, $3, $4)
+		RETURNING `+storeBusinessColumns, ownerUserID, businessNumber, storeName, licenseCount))
 	return b, err
 }
 
@@ -52,6 +67,22 @@ func (r *StoreRepo) GetBusinessByID(ctx context.Context, id string) (*domain.Sto
 func (r *StoreRepo) ListBusinessesByPartner(ctx context.Context, partnerID string) ([]*domain.StoreBusiness, error) {
 	return r.listBusinesses(ctx,
 		`SELECT `+storeBusinessColumns+` FROM store_businesses WHERE partner_id = $1::uuid ORDER BY created_at DESC`, partnerID)
+}
+
+// ListBusinessesByOwner returns a user's store businesses (R10 console path).
+func (r *StoreRepo) ListBusinessesByOwner(ctx context.Context, ownerUserID string) ([]*domain.StoreBusiness, error) {
+	return r.listBusinesses(ctx,
+		`SELECT `+storeBusinessColumns+` FROM store_businesses WHERE owner_user_id = $1::uuid ORDER BY created_at DESC`, ownerUserID)
+}
+
+// GetBusinessForOwner returns one store business when the user owns it.
+func (r *StoreRepo) GetBusinessForOwner(ctx context.Context, ownerUserID, id string) (*domain.StoreBusiness, error) {
+	b, err := scanStoreBusiness(r.db.QueryRowContext(ctx,
+		`SELECT `+storeBusinessColumns+` FROM store_businesses WHERE id = $1::uuid AND owner_user_id = $2::uuid`, id, ownerUserID))
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+	return b, err
 }
 
 // ListBusinessesByStatus returns store businesses filtered by status.

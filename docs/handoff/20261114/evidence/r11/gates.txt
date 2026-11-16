@@ -1,0 +1,19 @@
+# WI-R11 gates (2026-11-16, Docker-less; engine API 500 blocker)
+Branch: feat/redesign-20261114 (no commits/pushes/merges, no prod writes)
+
+## Observed green
+- web typecheck : exit 0
+- check-i18n : PASS (admin allowlist 11 entries + store/player removed; admin.* parity exempt outside ko/en; UNUSED warn only)
+- vitest : 98/98
+- nuxt build : node + cloudflare-module both complete
+- worker-grant 14/14; cspell 0 new
+
+## R11 scope implemented
+- layouts/admin.vue + 10 admin pages keyed to admin.* (ko/en only, ~230 keys)
+- New: admin/inquiries.vue, admin/role-grants.vue, admin/social.vue; nav 13 menus
+- users.vue: business approve/suspend buttons (PENDING/APPROVED lookup)
+- Admin layout forces ko/en locale (en fallback); dates locale-aware; toasts via useApiError
+- Token v2: text-amber-300 -> text-accent-amber (1 site; rest already tokenized)
+
+## NOT TESTED (environment blocker)
+- Docker engine API 500 (same session probe). Admin 13-page harness + ko/en captures NOT TESTED.

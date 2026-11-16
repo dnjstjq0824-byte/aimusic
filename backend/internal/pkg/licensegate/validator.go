@@ -39,6 +39,10 @@ func ParseStagingKey(key string) (partnerID, audioSHA256, fileName string, ok bo
 }
 
 // PreCheckRequest carries the inputs for commercial eligibility validation.
+//
+// AvibeChecksPassed is server-derived, never client input: the finalize path
+// resolves it from the SUCCEEDED generation job's safety verdict + watermark
+// before calling ValidateCommercialEligibility (WI-G0).
 type PreCheckRequest struct {
 	PartnerID                   string
 	Provider                    string
@@ -47,6 +51,7 @@ type PreCheckRequest struct {
 	GeneratedAt                 time.Time
 	SubscriptionID              string
 	RequiresActiveSubAtCreation bool
+	AvibeChecksPassed           bool
 }
 
 // Policy is the license-gate view of an AI provider policy row.
@@ -142,7 +147,7 @@ func ValidateSourceModel(sourceModel string) error {
 		if strings.Contains(m, blocked) {
 			return &domain.GateError{
 				Code:    domain.CodeNonCommercialTier,
-				Message: fmt.Sprintf("비상업 라이선스 모델(%s) 생성물은 인증할 수 없습니다", strings.TrimSpace(sourceModel)),
+				Message: fmt.Sprintf("non-commercial-license model (%s) output cannot be certified", strings.TrimSpace(sourceModel)),
 			}
 		}
 	}
@@ -240,7 +245,10 @@ func ParseCertSnapshot(raw string) (*CertSnapshot, error) {
 //  3. when RequiresActiveSubAtCreation, subscription window check
 //     (start <= generated <= end, status not REJECTED).
 //
-// Failures map to 403 gate codes (duplicate maps to 409).
+// Provider AVIBE short-circuits after the policy lookup: pass requires
+// AvibeChecksPassed (server-verified similarity + watermark evidence) and
+// skips tiers/cutoff/subscription. Failures map to 403 gate codes
+// (duplicate maps to 409).
 func ValidateCommercialEligibility(ctx context.Context, store Store, req PreCheckRequest) (*EligibilityResult, error) {
 	provider := strings.ToUpper(strings.TrimSpace(req.Provider))
 	if provider == "" {
@@ -249,7 +257,7 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 	if !domain.ValidProvider(provider) {
 		return nil, &domain.GateError{
 			Code:    domain.CodeProviderNotAllowlisted,
-			Message: fmt.Sprintf("지원하지 않는 AI 제공자입니다: %s", strings.TrimSpace(req.Provider)),
+			Message: fmt.Sprintf("unsupported AI provider: %s", strings.TrimSpace(req.Provider)),
 		}
 	}
 	if req.AudioSHA256 != "" {
@@ -269,8 +277,21 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 	if policy == nil {
 		return nil, &domain.GateError{
 			Code:    domain.CodeProviderNotAllowlisted,
-			Message: fmt.Sprintf("%s 제공자 정책이 등록되어 있지 않습니다", provider),
+			Message: fmt.Sprintf("no policy registered for provider %s", provider),
 		}
+	}
+	// AVIBE-model output ("Born Verified", WI-G0): no external plan tiers,
+	// generation cutoff, or subscription window applies. The pass condition
+	// is server-verified provenance — similarity + watermark checks passed
+	// on the generation job — resolved by the caller (finalize path).
+	if provider == domain.ProviderAvibe {
+		if !req.AvibeChecksPassed {
+			return nil, &domain.GateError{
+				Code:    domain.CodeNonCommercialTier,
+				Message: "AVIBE-model output requires verified similarity and watermark checks",
+			}
+		}
+		return &EligibilityResult{Policy: policy}, nil
 	}
 	msg := "provider license does not allow standalone streaming"
 	if policy != nil && policy.RejectionMessageKo != "" {

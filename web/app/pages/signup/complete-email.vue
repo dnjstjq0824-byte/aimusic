@@ -9,7 +9,21 @@
     </div>
 
     <UiCard class="shadow-2xl">
-      <form class="space-y-4" @submit.prevent="submit">
+      <div v-if="noToken" class="space-y-4 text-center">
+        <h2 class="text-base font-bold text-white">{{ t('auth.completeEmail.noTokenTitle') }}</h2>
+        <p class="text-xs leading-relaxed text-text-secondary">{{ t('auth.completeEmail.noTokenBody') }}</p>
+        <RouterLink :to="localePath('/login')">
+          <UiButton variant="brand" size="md" full-width>{{ t('auth.common.backToLogin') }}</UiButton>
+        </RouterLink>
+      </div>
+      <div v-else-if="submittedEmail" class="space-y-4 text-center">
+        <h2 class="text-base font-bold text-white">{{ t('auth.completeEmail.pendingTitle') }}</h2>
+        <p class="text-xs leading-relaxed text-text-secondary">{{ t('auth.completeEmail.pendingBody', { email: submittedEmail }) }}</p>
+        <RouterLink :to="localePath('/login')">
+          <UiButton variant="brand" size="md" full-width>{{ t('auth.common.backToLogin') }}</UiButton>
+        </RouterLink>
+      </div>
+      <form v-else class="space-y-4" @submit.prevent="submit">
         <UiInput
           v-model="email"
           type="email"
@@ -18,7 +32,8 @@
           autocomplete="email"
           required
         />
-        <UiButton variant="brand" size="md" full-width type="submit">
+        <UiErrorBanner v-if="formError" :message="formError" />
+        <UiButton variant="brand" size="md" full-width type="submit" :loading="busy">
           {{ t('auth.completeEmail.submit') }}
         </UiButton>
         <div class="text-center">
@@ -34,20 +49,39 @@
 <script setup lang="ts">
 defineI18nRoute(false);
 import { ref } from 'vue';
-import { useToast } from '@/composables/useToast';
+import { useRoute } from 'vue-router';
+import { authApi } from '@/api/endpoints';
+import { useApiError } from '@/composables/useApiError';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const localePath = useLocalePath();
-const toast = useToast();
+const route = useRoute();
+const apiError = useApiError();
+
+const tokenQuery = route.query.token;
+const noToken = typeof tokenQuery !== 'string' || tokenQuery === '';
 
 const email = ref('');
+const busy = ref(false);
+const formError = ref<string | null>(null);
+const submittedEmail = ref<string | null>(null);
 
-function submit(): void {
-  // TODO(WI-A1): wire to the social-link endpoint when the engine lands it.
-  toast.info(t('auth.completeEmail.comingSoon'));
+async function submit(): Promise<void> {
+  if (noToken || busy.value) return;
+  busy.value = true;
+  formError.value = null;
+  try {
+    const res = await authApi.oauthCompleteEmail(tokenQuery as string, email.value.trim(), locale.value);
+    submittedEmail.value = res.email;
+  } catch (err) {
+    formError.value = apiError(err);
+  } finally {
+    busy.value = false;
+  }
 }
 </script>

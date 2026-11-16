@@ -47,6 +47,63 @@ func TestValidateNonProdSkips(t *testing.T) {
 	}
 }
 
+func TestOAuthCredentialsFromEnv(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("GOOGLE_CLIENT_ID", "")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "")
+	t.Setenv("KAKAO_CLIENT_ID", "")
+	t.Setenv("KAKAO_CLIENT_SECRET", "")
+	t.Setenv("APPLE_SERVICES_ID", "")
+	t.Setenv("APPLE_TEAM_ID", "")
+	t.Setenv("APPLE_KEY_ID", "")
+	t.Setenv("APPLE_PRIVATE_KEY", "")
+	t.Setenv("NAVER_CLIENT_ID", "")
+	t.Setenv("NAVER_CLIENT_SECRET", "")
+	t.Setenv("LINE_CHANNEL_ID", "")
+	t.Setenv("LINE_CHANNEL_SECRET", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.OAuth.GoogleClientID != "" || cfg.OAuth.AppleTeamID != "" || cfg.OAuth.LineChannelSecret != "" {
+		t.Fatalf("oauth creds leak across env: %+v", cfg.OAuth)
+	}
+	if cfg.OAuth.SecureCookies {
+		t.Fatalf("test env must not set Secure cookies")
+	}
+	t.Setenv("APPLE_SERVICES_ID", "com.example.signin")
+	t.Setenv("APPLE_TEAM_ID", "TEAM1")
+	t.Setenv("APPLE_KEY_ID", "KEY1")
+	t.Setenv("APPLE_PRIVATE_KEY", "p8-pem")
+	t.Setenv("LINE_CHANNEL_ID", "lc")
+	t.Setenv("LINE_CHANNEL_SECRET", "ls")
+	if cfg, _ = Load(); cfg.OAuth.AppleServicesID != "com.example.signin" || cfg.OAuth.LineChannelSecret != "ls" {
+		t.Fatalf("oauth creds not loaded: %+v", cfg.OAuth)
+	}
+	if cfg.OAuth.GoogleTokenURL != "https://oauth2.googleapis.com/token" || cfg.OAuth.AppleJWKSURL != "https://appleid.apple.com/auth/keys" || cfg.OAuth.LineJWKSURL != "https://api.line.me/oauth2/v2.1/certs" {
+		t.Fatalf("oauth endpoint defaults: %+v", cfg.OAuth)
+	}
+	t.Setenv("APP_ENV", "prod")
+	if cfg, _ = Load(); !cfg.OAuth.SecureCookies {
+		t.Fatalf("prod must set Secure cookies")
+	}
+}
+
+func TestEmailVerifyTTLFromEnv(t *testing.T) {
+	t.Setenv("EMAIL_VERIFY_TTL_HOURS", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Verify.TokenTTLHours != 24 {
+		t.Fatalf("default ttl = %d, want 24", cfg.Verify.TokenTTLHours)
+	}
+	t.Setenv("EMAIL_VERIFY_TTL_HOURS", "48")
+	if cfg, _ = Load(); cfg.Verify.TokenTTLHours != 48 {
+		t.Fatalf("ttl = %d, want 48", cfg.Verify.TokenTTLHours)
+	}
+}
+
 func TestAdminTOTPRequiredDefaults(t *testing.T) {
 	t.Setenv("ADMIN_TOTP_REQUIRED", "")
 	t.Setenv("APP_ENV", "local")

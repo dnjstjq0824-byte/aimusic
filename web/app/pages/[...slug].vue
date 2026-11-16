@@ -7,17 +7,17 @@
         NOT FOUND
       </div>
     </div>
-    <h1 class="text-xl font-bold text-white mb-2">페이지를 찾을 수 없습니다</h1>
+    <h1 class="text-xl font-bold text-white mb-2">{{ t('common.httpError.t404') }}</h1>
     <p class="text-xs text-text-secondary leading-relaxed mb-2 max-w-sm">
-      요청하신 페이지가 삭제되었거나 주소가 변경되었습니다.
+      {{ t('common.httpError.d404') }}
     </p>
     <p class="text-caption font-mono text-text-muted mb-6 max-w-sm break-all">{{ attemptedPath }}</p>
     <div class="flex items-center gap-3">
       <RouterLink to="/">
-        <UiButton variant="brand" size="md">홈으로 돌아가기</UiButton>
+        <UiButton variant="brand" size="md">{{ t('common.httpError.backHome') }}</UiButton>
       </RouterLink>
       <RouterLink to="/explore">
-        <UiButton variant="secondary" size="md">음원 탐색하기</UiButton>
+        <UiButton variant="secondary" size="md">{{ t('common.httpError.exploreCta') }}</UiButton>
       </RouterLink>
     </div>
   </div>
@@ -26,9 +26,12 @@
 <script setup lang="ts">
 defineI18nRoute(false);
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import UiButton from '@/components/ui/UiButton.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
+
+const { t } = useI18n();
 
 const route = useRoute();
 const attemptedPath = computed(() => route.fullPath);

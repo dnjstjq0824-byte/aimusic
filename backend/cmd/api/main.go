@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -49,6 +50,17 @@ func main() {
 	}
 	repos := repository.New(db, rdb)
 	services := service.New(repos, st, buckets, cfg)
+	if enabled := services.OAuth.EnabledProviders(); len(enabled) == 0 {
+		log.Print("oauth providers: none enabled (social buttons hidden)")
+	} else {
+		log.Printf("oauth providers enabled: %s", strings.Join(enabled, ","))
+	}
+	for _, w := range services.OAuth.StartupWarnings() {
+		log.Printf("warn: %s", w)
+	}
+	for _, w := range services.SEO.StartupWarnings() {
+		log.Printf("warn: %s", w)
+	}
 	router := handler.SetupRouter(&handler.Deps{
 		Config: cfg, Repos: repos, Services: services, Storage: st, Buckets: buckets,
 	})

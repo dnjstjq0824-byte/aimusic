@@ -26,7 +26,12 @@
     "ERR_DOWNLOAD_REQUIRES_PASS": "⟦Dòwnlòàds rèqùìrè àn àctìvè pàss.～～～～～～～～～～～～～～⟧",
     "ERR_DOWNLOAD_QUOTA": "⟦Yòù'vè rèàchèd thè dàìly dòwnlòàd lìmìt.～～～～～～～～～～～～～～～～⟧",
     "ERR_DOWNLOAD_UNAVAILABLE": "⟦Thè màstèr fìlè ìs ùnàvàìlàblè.～～～～～～～～～～～～～⟧",
+    "ERR_OAUTH_LINK_LOGIN_REQUIRED": "⟦Thìs èmàìl ìs àlrèàdy règìstèrèd. Sìgn ìn wìth èmàìl fìrst, thèn lìnk thè sòcìàl àccòùnt ùndèr Còññèctèd àccòùnts.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_OAUTH_LINK_TAKEN": "⟦Thìs sòcìàl àccòùnt ìs àlrèàdy lìnkèd tò ànòthèr àccòùnt.～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+    "ERR_OAUTH_LAST_METHOD": "⟦Yòù cànn't ùnlìnk yòùr làst sìgn-ìn mèthòd.～～～～～～～～～～～～～～～～～～～⟧",
+    "EMAIL_NOT_VERIFIED": "⟦Èmàìl vèrìfìcàtìòn ìs rèqùìrèd. Òpèn thè vèrìfìcàtìòn lìnk ìn yòùr ìnbòx.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
     "ERR_INTERNAL": "⟦À sèrvèr èrròr òccùrrèd.～～～～～～～～～～⟧",
-    "ERR_FALLBACK": "⟦Thè rèqùèst fàìlèd.～～～～～～～～⟧"
+    "ERR_FALLBACK": "⟦Thè rèqùèst fàìlèd.～～～～～～～～⟧",
+    "ERR_HANDLE_TAKEN": "⟦Thìs hàndlè ìs àlrèàdy tàkèn.～～～～～～～～～⟧"
   }
 }

@@ -192,11 +192,9 @@ ApiException toApiException(Object e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.connectionError) {
-      return ApiException(
-          ApiCodes.internal, '네트워크 연결에 실패했습니다.', statusCode: status);
+      return ApiException(ApiCodes.networkError, '', statusCode: status);
     }
-    return ApiException(ApiCodes.internal, '요청에 실패했습니다.',
-        statusCode: status);
+    return ApiException(ApiCodes.requestFailed, '', statusCode: status);
   }
   if (e is ApiException) return e;
   return ApiException(ApiCodes.internal, e.toString());

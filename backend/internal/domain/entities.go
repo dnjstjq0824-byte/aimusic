@@ -4,10 +4,45 @@ import "time"
 
 // Roles (users.role).
 const (
-	RoleAdmin   = "ADMIN"
-	RolePartner = "PARTNER"
-	RoleUser    = "USER"
+	RoleAdmin    = "ADMIN"
+	RolePartner  = "PARTNER"
+	RoleUser     = "USER"
+	RoleBusiness = "BUSINESS"
 )
+
+// ValidRole reports whether r is a known primary or grant role (R10).
+func ValidRole(r string) bool {
+	switch r {
+	case RoleAdmin, RolePartner, RoleUser, RoleBusiness:
+		return true
+	}
+	return false
+}
+
+// UserRole is one additive capability grant (user_roles, R10 decision b).
+// users.role stays the primary role; grants open extra consoles.
+type UserRole struct {
+	UserID    string    `json:"userId"`
+	Role      string    `json:"role"`
+	GrantedAt time.Time `json:"grantedAt"`
+	Source    string    `json:"source"`
+}
+
+// BusinessProfile mirrors business_profiles: the B2B account behind the
+// business console (R10). KR accounts verify by biz_no checksum at signup;
+// other countries stay PENDING for manual approval.
+type BusinessProfile struct {
+	UserID      string     `json:"userId"`
+	CompanyName string     `json:"companyName"`
+	BizNo       *string    `json:"bizNo,omitempty"`
+	Country     string     `json:"country"`
+	Industry    string     `json:"industry,omitempty"`
+	Status      string     `json:"status"`
+	VerifiedBy  *string    `json:"verifiedBy,omitempty"`
+	VerifiedAt  *time.Time `json:"verifiedAt,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+}
 
 // AI providers shared by policies, subscriptions, and tracks.
 const (
@@ -19,17 +54,28 @@ const (
 	ProviderMubert     = "MUBERT"
 	ProviderElevenLabs = "ELEVENLABS"
 	ProviderCustomOpen = "CUSTOM_OPEN_MODEL"
+	// ProviderAvibe is AVIBE's own generation model family (Track G).
+	// Certified only through the AVIBE gate branch: similarity + watermark
+	// checks must pass (licensegate), never by partner self-declaration.
+	ProviderAvibe = "AVIBE"
 )
 
 // ValidProvider reports whether p is a known AI provider.
 func ValidProvider(p string) bool {
 	switch p {
 	case ProviderSuno, ProviderUdio, ProviderAiva, ProviderStable,
-		ProviderSoundraw, ProviderMubert, ProviderElevenLabs, ProviderCustomOpen:
+		ProviderSoundraw, ProviderMubert, ProviderElevenLabs, ProviderCustomOpen,
+		ProviderAvibe:
 		return true
 	}
 	return false
 }
+
+// Track origins: external AI output vs AVIBE-model "Born Verified" output.
+const (
+	TrackOriginExternal = "EXTERNAL_AI"
+	TrackOriginAvibe    = "AVIBE_MODEL"
+)
 
 // Partner profile statuses.
 const (
@@ -162,10 +208,17 @@ type User struct {
 	IsActive       bool       `json:"isActive"`
 	BirthYear      *int       `json:"birthYear,omitempty"`
 	AgeConfirmedAt *time.Time `json:"ageConfirmedAt,omitempty"`
-	TokenVersion   int        `json:"-"`
-	TOTPEnabled    bool       `json:"totpEnabled"`
-	TOTPEnrolledAt *time.Time `json:"totpEnrolledAt,omitempty"`
-	TOTPSecret     string     `json:"-"`
+	// Locale is the user's display language (ko|en|ja|zh-cn|th, WI-A2).
+	Locale string `json:"locale"`
+	// Handle is the creator page address /creators/{handle} (S1, nullable).
+	Handle *string `json:"handle,omitempty"`
+	// EmailVerifiedAt is set once the account email is verified (WI-A2);
+	// accounts created before verification count as verified.
+	EmailVerifiedAt *time.Time `json:"emailVerifiedAt,omitempty"`
+	TokenVersion    int        `json:"-"`
+	TOTPEnabled     bool       `json:"totpEnabled"`
+	TOTPEnrolledAt  *time.Time `json:"totpEnrolledAt,omitempty"`
+	TOTPSecret      string     `json:"-"`
 	// TOTPRecoveryLeft counts unused recovery codes (hashes stay server-side).
 	TOTPRecoveryLeft int       `json:"totpRecoveryLeft"`
 	CreatedAt        time.Time `json:"createdAt"`
@@ -258,37 +311,43 @@ type Album struct {
 
 // Track mirrors tracks.
 type Track struct {
-	ID                   string    `json:"id"`
-	AlbumID              *string   `json:"albumId,omitempty"`
-	PartnerID            string    `json:"partnerId"`
-	CreatorName          string    `json:"creatorName,omitempty"`
-	Title                string    `json:"title"`
-	Genre                *string   `json:"genre,omitempty"`
-	MoodTags             []string  `json:"moodTags,omitempty"`
-	AIGenerationType     string    `json:"aiGenerationType"`
-	AICreditParts        []string  `json:"aiCreditParts,omitempty"`
-	AIModelVersion       *string   `json:"aiModelVersion,omitempty"`
-	AIPrompt             *string   `json:"aiPrompt,omitempty"`
-	IsPromptPublic       bool      `json:"isPromptPublic"`
-	IsInstrumental       bool      `json:"isInstrumental"`
-	Lyrics               *string   `json:"lyrics,omitempty"`
-	DurationMs           *int      `json:"durationMs,omitempty"`
-	OriginalObjectKey    string    `json:"originalObjectKey,omitempty"`
-	AudioFingerprintHash *string   `json:"audioFingerprintHash,omitempty"`
-	HLSPrefix            *string   `json:"hlsPrefix,omitempty"`
-	WaveformJSON         *string   `json:"waveformJson,omitempty"`
-	AIProvider           string    `json:"aiProvider"`
-	AIGenerated          bool      `json:"aiGenerated"`
-	AIDisclosureText     *string   `json:"aiDisclosureText,omitempty"`
-	BitrateKbps          *int      `json:"bitrateKbps,omitempty"`
-	ISRC                 *string   `json:"isrc,omitempty"`
-	BPM                  *float64  `json:"bpm,omitempty"`
-	MusicalKey           *string   `json:"musicalKey,omitempty"`
-	Status               string    `json:"status"`
-	RejectionReasonKo    *string   `json:"rejectionReasonKo,omitempty"`
-	PlayCount            int64     `json:"playCount"`
-	CreatedAt            time.Time `json:"createdAt"`
-	UpdatedAt            time.Time `json:"updatedAt"`
+	ID            string  `json:"id"`
+	AlbumID       *string `json:"albumId,omitempty"`
+	PartnerID     string  `json:"partnerId"`
+	CreatorName   string  `json:"creatorName,omitempty"`
+	CreatorHandle *string `json:"creatorHandle,omitempty"`
+	Title         string  `json:"title"`
+	// ShortID/Slug form the canonical page address /tracks/{slug}-{shortId} (S1).
+	ShortID              string   `json:"shortId"`
+	Slug                 string   `json:"slug"`
+	Genre                *string  `json:"genre,omitempty"`
+	MoodTags             []string `json:"moodTags,omitempty"`
+	AIGenerationType     string   `json:"aiGenerationType"`
+	AICreditParts        []string `json:"aiCreditParts,omitempty"`
+	AIModelVersion       *string  `json:"aiModelVersion,omitempty"`
+	AIPrompt             *string  `json:"aiPrompt,omitempty"`
+	IsPromptPublic       bool     `json:"isPromptPublic"`
+	IsInstrumental       bool     `json:"isInstrumental"`
+	Lyrics               *string  `json:"lyrics,omitempty"`
+	DurationMs           *int     `json:"durationMs,omitempty"`
+	OriginalObjectKey    string   `json:"originalObjectKey,omitempty"`
+	AudioFingerprintHash *string  `json:"audioFingerprintHash,omitempty"`
+	HLSPrefix            *string  `json:"hlsPrefix,omitempty"`
+	WaveformJSON         *string  `json:"waveformJson,omitempty"`
+	AIProvider           string   `json:"aiProvider"`
+	// Origin is EXTERNAL_AI or AVIBE_MODEL (WI-G0; Born Verified).
+	Origin            string    `json:"origin"`
+	AIGenerated       bool      `json:"aiGenerated"`
+	AIDisclosureText  *string   `json:"aiDisclosureText,omitempty"`
+	BitrateKbps       *int      `json:"bitrateKbps,omitempty"`
+	ISRC              *string   `json:"isrc,omitempty"`
+	BPM               *float64  `json:"bpm,omitempty"`
+	MusicalKey        *string   `json:"musicalKey,omitempty"`
+	Status            string    `json:"status"`
+	RejectionReasonKo *string   `json:"rejectionReasonKo,omitempty"`
+	PlayCount         int64     `json:"playCount"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
 // PublicView returns a copy safe for anonymous and listener responses (B-05):
@@ -367,14 +426,22 @@ type TranscodingJob struct {
 
 // GenerationJob mirrors generation_jobs (WI-03). Statuses reuse the
 // transcoding job constants (QUEUED/RUNNING/SUCCEEDED/FAILED).
+// ModelVersion/Seed make runs reproducible; SafetyResult (JSON
+// {"passed":bool,...}) and WatermarkID are the evidence the AVIBE gate
+// branch requires; UserID anticipates non-partner creators.
 type GenerationJob struct {
 	ID              string    `json:"id"`
 	PartnerID       string    `json:"partnerId"`
+	UserID          *string   `json:"userId,omitempty"`
 	Prompt          string    `json:"prompt"`
 	Lyrics          *string   `json:"lyrics,omitempty"`
 	Model           string    `json:"model"`
+	ModelVersion    string    `json:"modelVersion,omitempty"`
+	Seed            *int64    `json:"seed,omitempty"`
 	LicenseRef      string    `json:"licenseRef,omitempty"`
 	ParamsJSON      string    `json:"paramsJson"`
+	SafetyResult    string    `json:"safetyResult,omitempty"`
+	WatermarkID     string    `json:"watermarkId,omitempty"`
 	Status          string    `json:"status"`
 	OutputObjectKey *string   `json:"outputObjectKey,omitempty"`
 	DurationMs      *int      `json:"durationMs,omitempty"`
@@ -382,6 +449,76 @@ type GenerationJob struct {
 	Attempts        int       `json:"attempts"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
+// GenerationModel mirrors generation_models: one servable weight set pinned
+// to a dataset manifest hash (WI-G0). Statuses: DRAFT/EVALUATING/APPROVED/
+// RETIRED; only APPROVED serves production traffic (G-MODEL).
+type GenerationModel struct {
+	ID           string    `json:"id"`
+	Version      string    `json:"version"`
+	WeightsHash  string    `json:"weightsHash"`
+	License      string    `json:"license,omitempty"`
+	ManifestHash string    `json:"manifestHash,omitempty"`
+	ModelCardURL string    `json:"modelCardUrl,omitempty"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+// TrainingConsent mirrors training_consents: the creator's separate,
+// default-off opt-in to AI training use (WI-G0; feature OFF).
+type TrainingConsent struct {
+	ID              string     `json:"id"`
+	PartnerID       string     `json:"partnerId"`
+	Scope           string     `json:"scope"`
+	TrackID         *string    `json:"trackId,omitempty"`
+	Consented       bool       `json:"consented"`
+	ConsentedAt     *time.Time `json:"consentedAt,omitempty"`
+	RevokedAt       *time.Time `json:"revokedAt,omitempty"`
+	RevenueShareBps *int       `json:"revenueShareBps,omitempty"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+}
+
+// ProvenanceEntry mirrors one append-only data_provenance_ledger row (WI-G0).
+type ProvenanceEntry struct {
+	ID           string     `json:"id"`
+	FileHash     string     `json:"fileHash"`
+	Fingerprint  string     `json:"fingerprint,omitempty"`
+	Source       string     `json:"source"`
+	RightsHolder string     `json:"rightsHolder,omitempty"`
+	LicenseDocID string     `json:"licenseDocId,omitempty"`
+	ConsentID    *string    `json:"consentId,omitempty"`
+	AllowedUses  []string   `json:"allowedUses,omitempty"`
+	Region       string     `json:"region,omitempty"`
+	ValidFrom    *time.Time `json:"validFrom,omitempty"`
+	ValidUntil   *time.Time `json:"validUntil,omitempty"`
+	RevokedAt    *time.Time `json:"revokedAt,omitempty"`
+	Supersedes   *string    `json:"supersedes,omitempty"`
+	EntryHash    string     `json:"entryHash,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+}
+
+// DatasetManifest mirrors dataset_manifests: an immutable snapshot of ledger
+// entries. Every model version points at one manifest hash (WI-G0).
+type DatasetManifest struct {
+	ManifestHash string    `json:"manifestHash"`
+	EntryIDs     []string  `json:"entryIds,omitempty"`
+	EntryCount   int       `json:"entryCount"`
+	Notes        string    `json:"notes,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+// CreditEntry mirrors one append-only credit_ledger row (WI-G0; unused until
+// PO prices generation credits).
+type CreditEntry struct {
+	ID           string    `json:"id"`
+	UserID       string    `json:"userId"`
+	DeltaCredits int       `json:"deltaCredits"`
+	Reason       string    `json:"reason"`
+	JobID        *string   `json:"jobId,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 // Store business/device statuses (WI-05).
@@ -396,8 +533,11 @@ const (
 
 // StoreBusiness mirrors store_businesses: one store = one license.
 type StoreBusiness struct {
-	ID             string     `json:"id"`
-	PartnerID      string     `json:"partnerId"`
+	ID        string `json:"id"`
+	PartnerID string `json:"partnerId"`
+	// OwnerUserID is the store authority since R10 (legacy partner_id link
+	// reads "" for business-created stores).
+	OwnerUserID    string     `json:"ownerUserId"`
 	BusinessNumber string     `json:"businessNumber"`
 	StoreName      string     `json:"storeName"`
 	LicenseCount   int        `json:"licenseCount"`
@@ -482,10 +622,13 @@ type AuditEvent struct {
 
 // Playlist mirrors playlists.
 type Playlist struct {
-	ID                 string    `json:"id"`
-	OwnerUserID        string    `json:"ownerUserId"`
-	OwnerName          string    `json:"ownerName,omitempty"`
-	Title              string    `json:"title"`
+	ID          string `json:"id"`
+	OwnerUserID string `json:"ownerUserId"`
+	OwnerName   string `json:"ownerName,omitempty"`
+	Title       string `json:"title"`
+	// ShortID/Slug form the canonical page address /playlists/{slug}-{shortId} (S1).
+	ShortID            string    `json:"shortId"`
+	Slug               string    `json:"slug"`
 	Description        *string   `json:"description,omitempty"`
 	IsPublic           bool      `json:"isPublic"`
 	IsOfficialCuration bool      `json:"isOfficialCuration"`

@@ -101,6 +101,36 @@ func (s *BusinessService) SetInquiryStatus(ctx context.Context, id, status strin
 	}
 }
 
+// BusinessProfile returns the caller's company profile (R10 console).
+func (s *BusinessService) BusinessProfile(ctx context.Context, userID string) (*domain.BusinessProfile, error) {
+	if userID == "" {
+		return nil, domain.ErrInvalidCredentials
+	}
+	return s.repos.Business.GetBusinessProfileByUser(ctx, userID)
+}
+
+// ListBusinessProfiles returns company profiles by status (admin).
+func (s *BusinessService) ListBusinessProfiles(ctx context.Context, status string, limit int) ([]*domain.BusinessProfile, error) {
+	switch status {
+	case domain.PartnerPending, domain.PartnerApproved, domain.PartnerSuspended:
+		return s.repos.Business.ListBusinessProfilesByStatus(ctx, status, limit)
+	default:
+		return nil, fmt.Errorf("%w: status must be PENDING|APPROVED|SUSPENDED", domain.ErrInvalidInput)
+	}
+}
+
+// ReviewBusiness approves or suspends a company profile (admin manual).
+func (s *BusinessService) ReviewBusiness(ctx context.Context, userID string, approve bool, verifierID string) (*domain.BusinessProfile, error) {
+	if userID == "" || verifierID == "" {
+		return nil, domain.ErrInvalidCredentials
+	}
+	status := domain.PartnerSuspended
+	if approve {
+		status = domain.PartnerApproved
+	}
+	return s.repos.Business.ReviewBusinessProfile(ctx, userID, status, verifierID)
+}
+
 // JoinWaitlist registers an email (idempotent).
 func (s *BusinessService) JoinWaitlist(ctx context.Context, email, interest, locale string) (*domain.WaitlistEntry, bool, error) {
 	email = strings.TrimSpace(email)

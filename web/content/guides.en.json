@@ -1,0 +1,168 @@
+{
+  "metas": [
+    {
+      "slug": "store-music-license",
+      "updated": "2026-11-16"
+    },
+    {
+      "slug": "suno-paid-commercial-use",
+      "updated": "2026-11-16"
+    },
+    {
+      "slug": "ai-music-youtube-checklist",
+      "updated": "2026-11-16"
+    }
+  ],
+  "bodies": {
+    "store-music-license": {
+      "headline": "Can I play AI-made music in my store?",
+      "description": "In-store playback counts as commercial use. A checklist covering plan terms, rights assignment, and AVIBE certificate verification before you adopt store BGM.",
+      "updated": "2026-11-16",
+      "sections": [
+        {
+          "h": "Short answer",
+          "ps": [
+            "Yes, when the track qualifies. Playing music in a store is commercial use, so check that the track (1) comes from a paid plan that allows commercial use, (2) assigns, transfers, or retains rights to the creator, and (3) was generated during the subscription and downloaded through official channels.",
+            "Tracks published on AVIBE pass a rights-verification process covering these conditions and receive a certificate you can check on the track page."
+          ]
+        },
+        {
+          "h": "Terms differ by platform",
+          "ps": [
+            "As of the 2026-11-11 survey, Suno assigns rights in outputs to Pro and Premier subscribers for downloads made during the subscription, permanently. AIVA transfers copyright to the user on the Pro plan.",
+            "Udio, by contrast, is non-commercial on all plans since 2025-11-12, and Soundraw, Mubert, and similar services carry sync-only licenses that do not allow standalone streaming or distribution. Judge by the assignment, transfer, or retention wording in the original terms, not by the plan name."
+          ]
+        },
+        {
+          "h": "Pre-adoption checklist",
+          "ps": [
+            "First, verify the track origin and plan: AVIBE tracks show the generation source and certificate on the track page. Second, define your scope (store count, store BGM vs. video licensing). Third, request a license sized to that scope through the AVIBE inquiry form.",
+            "Fourth, play through the store player so plays are metered for settlement and rights-holder distribution. Playing a personal streaming account in a store may fall outside the licensed scope."
+          ]
+        },
+        {
+          "h": "Common mistakes",
+          "ps": [
+            "Typical mistakes: playing free-plan generations in stores, using tracks generated after the subscription ended, or ripping streams and captures. Suno terms prohibit stream ripping and removing fingerprints or watermarks.",
+            "Terms change frequently. Platform conditions here reflect the 2026-11-11 survey; re-check each platform original before use. This is a process guide, not legal advice."
+          ]
+        }
+      ],
+      "faqs": [
+        {
+          "q": "Can I play free-plan AI music in my cafe?",
+          "a": "Generally no. Surveyed platforms keep free plans non-commercial or retain rights. For stores, use tracks whose paid-plan commercial terms and rights assignment are verified."
+        },
+        {
+          "q": "Does an AVIBE certificate let me play a track in-store right away?",
+          "a": "The certificate verifies the track-level rights check. In-store playback additionally needs a store license (via inquiry) and a connected store player."
+        },
+        {
+          "q": "Do multiple branches need separate coverage?",
+          "a": "Scope is normally set per place of business. Tell us the branch count and use case in the inquiry and we will size the license."
+        }
+      ],
+      "sourcesNote": "Sources: AVIBE generative-music platform commercial-use survey v3 (2026-11-11), including Suno Terms of Service (eff. 2026-09-03), AIVA pricing, and ElevenLabs Music Terms (2026-10-09)."
+    },
+    "suno-paid-commercial-use": {
+      "headline": "Can I use Suno paid-plan tracks commercially?",
+      "description": "Rights assignment, perpetuity, and prohibitions for Pro and Premier plans under the Suno Terms of Service (eff. 2026-09-03), plus AVIBE registration requirements.",
+      "updated": "2026-11-16",
+      "sections": [
+        {
+          "h": "Short answer",
+          "ps": [
+            "Yes for tracks generated in compliance with the terms on Pro or Premier and downloaded through the plan download allocation. The Suno terms assign to you all of Suno right, title, and interest in qualifying outputs.",
+            "Free and Basic generations remain Suno-owned and non-commercial, and Remix is non-commercial on every tier. Check per-plan conditions rather than assuming every paid plan qualifies."
+          ]
+        },
+        {
+          "h": "Assignment and perpetuity",
+          "ps": [
+            "The assignment clause reads \"Suno hereby assigns to you all of its right, title and interest in and to any Output owned by Suno and generated from Submissions made by you\", subject to the ToS and commercial-use limits.",
+            "Permitted downloads are perpetual and unaffected by subscription expiry, cancellation, downgrade, or suspension. Suno separately states it makes no representation that copyright will vest in any output, so note that vesting limit."
+          ]
+        },
+        {
+          "h": "Prohibitions",
+          "ps": [
+            "Commercial use is limited to permitted downloads within the tier download allocation. Commercializing stream rips or recordings, or removing fingerprints and watermarks, is prohibited.",
+            "AVIBE registration accordingly requires generation within the subscription period plus official download evidence."
+          ]
+        },
+        {
+          "h": "Registering on AVIBE",
+          "ps": [
+            "Register as a partner, submit AI subscription evidence (Pro or Premier), and attach generation origin, plan, and evidence at upload. Review gates verify plan terms, generation timing, and metadata before issuing a certificate.",
+            "Terms checked 2026-11-11 (Suno ToS eff. 2026-09-03, verified in the original). Re-check the original before use, as terms can change."
+          ]
+        }
+      ],
+      "faqs": [
+        {
+          "q": "Does the Pro plan qualify, or only Premier?",
+          "a": "Both qualify. The assignment clause covers Pro and Premier. AVIBE review allows Pro and Premier and blocks Free, Basic, and Trial."
+        },
+        {
+          "q": "Can I keep using tracks after cancelling?",
+          "a": "Downloads permitted during the subscription stay usable under the perpetuity clause. Tracks generated after cancellation fall outside those plan terms."
+        },
+        {
+          "q": "Are Remix generations commercially usable?",
+          "a": "No. Remix is non-commercial on every tier under the Suno terms."
+        }
+      ],
+      "sourcesNote": "Sources: AVIBE generative-music platform commercial-use survey v3 (2026-11-11). Suno Terms of Service (eff. 2026-09-03) verified in the original."
+    },
+    "ai-music-youtube-checklist": {
+      "headline": "Checklist for using AI music in YouTube videos",
+      "description": "Before using AI music as video BGM: rights checks, the sync-only trap, monetization limits, AVIBE certificates, and license inquiries.",
+      "updated": "2026-11-16",
+      "sections": [
+        {
+          "h": "Short answer",
+          "ps": [
+            "Music in videos is commercial use. Verify in order: whether rights are assigned, transferred, or retained to the creator; whether the plan allows video and monetization; and whether evidence (subscription, download) exists.",
+            "AVIBE-certified tracks have passed track-level verification. Request a video license through inquiry when you need one."
+          ]
+        },
+        {
+          "h": "Watch the sync-only trap",
+          "ps": [
+            "Some paid plans allow only sync (combined with video) and forbid standalone distribution. In the 2026-11-11 survey, Soundraw was conditional on Artist, while Mubert, Beatoven.ai, Ecrett Music, and others were sync-only or unlisted. Even for video use, allowed scope differs by plan, so confirm video and monetization permission in the original terms.",
+            "AIVA Standard keeps copyright with AIVA and limits monetization to YouTube, Twitch, TikTok, and Instagram. Conditions split by plan within a single platform."
+          ]
+        },
+        {
+          "h": "Monetization and dispute checklist",
+          "ps": [
+            "First, keep rights paperwork (plan, evidence, certificate). Second, credit title, source, and certificate number in the video description to support claims. Third, check distributor, MCN, and advertiser music policies in advance.",
+            "Fourth, re-check license scope once revenue starts. Using non-commercial tracks in monetized videos is a classic dispute trigger."
+          ]
+        },
+        {
+          "h": "Using AVIBE tracks",
+          "ps": [
+            "Check the generation source and certificate on the track page, then tell us the use case (YouTube, Shorts, and channel scale) in the inquiry when you need a video license. We will size it to your scope.",
+            "Platform conditions reflect the 2026-11-11 survey and terms change often. Re-check originals before use; this is not legal advice."
+          ]
+        }
+      ],
+      "faqs": [
+        {
+          "q": "Do non-monetized videos need a license?",
+          "a": "Terms apply regardless of revenue. Non-commercial tracks are off-limits even without revenue; commercial tracks are usable once you complete the process (evidence, license)."
+        },
+        {
+          "q": "Same rules for Shorts and Reels?",
+          "a": "Yes, unless the terms grant a length-based exception. Also check each short-form platform music policy."
+        },
+        {
+          "q": "I want BGM but cannot identify its origin.",
+          "a": "Do not use unidentified tracks. Find certified tracks in AVIBE search or get direct permission from the rights holder."
+        }
+      ],
+      "sourcesNote": "Sources: AVIBE generative-music platform commercial-use survey v3 (2026-11-11), including AIVA pricing and Soundraw, Mubert, Beatoven.ai, Ecrett Music, Loudly, Soundful, and Splash findings."
+    }
+  }
+}

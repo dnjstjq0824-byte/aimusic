@@ -14,12 +14,12 @@ import (
 // PlaylistRepo accesses playlists and playlist_tracks.
 type PlaylistRepo struct{ db *sql.DB }
 
-const playlistColumns = `id::text, owner_user_id::text, title, description, is_public, is_official_curation, created_at, updated_at`
+const playlistColumns = `id::text, owner_user_id::text, title, short_id, slug, description, is_public, is_official_curation, created_at, updated_at`
 
 func scanPlaylist(row interface{ Scan(...any) error }) (*domain.Playlist, error) {
 	p := &domain.Playlist{}
 	var desc sql.NullString
-	err := row.Scan(&p.ID, &p.OwnerUserID, &p.Title, &desc, &p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.ID, &p.OwnerUserID, &p.Title, &p.ShortID, &p.Slug, &desc, &p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -32,22 +32,26 @@ func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, isPubl
 }
 
 func (r *PlaylistRepo) CreateFull(ctx context.Context, ownerID, title string, description *string, isPublic, isOfficial bool) (*domain.Playlist, error) {
+	shortID, err := domain.NewShortID()
+	if err != nil {
+		return nil, err
+	}
 	return scanPlaylist(r.db.QueryRowContext(ctx, `
-		INSERT INTO playlists (owner_user_id, title, description, is_public, is_official_curation)
-		VALUES ($1::uuid, $2, $3, $4, $5)
+		INSERT INTO playlists (owner_user_id, title, short_id, slug, description, is_public, is_official_curation)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7)
 		RETURNING `+playlistColumns,
-		ownerID, title, nullStr(description), isPublic, isOfficial))
+		ownerID, title, shortID, domain.Slugify(title, "playlist"), nullStr(description), isPublic, isOfficial))
 }
 
 func (r *PlaylistRepo) GetByID(ctx context.Context, id string) (*domain.Playlist, error) {
 	p := &domain.Playlist{}
 	var desc, owner sql.NullString
 	err := r.db.QueryRowContext(ctx, `
-		SELECT p.id::text, p.owner_user_id::text, u.display_name, p.title, p.description,
+		SELECT p.id::text, p.owner_user_id::text, u.display_name, p.title, p.short_id, p.slug, p.description,
 			p.is_public, p.is_official_curation, p.created_at, p.updated_at
 		FROM playlists p JOIN users u ON u.id = p.owner_user_id
 		WHERE p.id = $1::uuid`, id).Scan(
-		&p.ID, &p.OwnerUserID, &owner, &p.Title, &desc,
+		&p.ID, &p.OwnerUserID, &owner, &p.Title, &p.ShortID, &p.Slug, &desc,
 		&p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
@@ -127,7 +131,7 @@ func (r *PlaylistRepo) ListPublic(ctx context.Context, limit int) ([]*domain.Pla
 // ListPublicContaining returns discoverable playlists holding a track.
 func (r *PlaylistRepo) ListPublicContaining(ctx context.Context, trackID string) ([]*domain.Playlist, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT p.id::text, p.owner_user_id::text, p.title, p.description, p.is_public, p.is_official_curation, p.created_at, p.updated_at
+		SELECT p.id::text, p.owner_user_id::text, p.title, p.short_id, p.slug, p.description, p.is_public, p.is_official_curation, p.created_at, p.updated_at
 		FROM playlists p JOIN playlist_tracks pt ON pt.playlist_id = p.id
 		WHERE pt.track_id = $1::uuid AND (p.is_official_curation = TRUE OR p.is_public = TRUE)
 		ORDER BY p.created_at DESC`, trackID)
@@ -149,7 +153,7 @@ func (r *PlaylistRepo) ListPublicContaining(ctx context.Context, trackID string)
 // SavedPlaylists returns playlists the user saved, most recently saved first.
 func (r *PlaylistRepo) SavedPlaylists(ctx context.Context, userID string, limit int) ([]*domain.Playlist, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT playlists.id::text, playlists.owner_user_id::text, playlists.title, playlists.description,
+		SELECT playlists.id::text, playlists.owner_user_id::text, playlists.title, playlists.short_id, playlists.slug, playlists.description,
 			playlists.is_public, playlists.is_official_curation, playlists.created_at, playlists.updated_at
 		FROM playlist_saves s JOIN playlists ON playlists.id = s.playlist_id
 		WHERE s.user_id = $1::uuid ORDER BY s.created_at DESC LIMIT $2`,

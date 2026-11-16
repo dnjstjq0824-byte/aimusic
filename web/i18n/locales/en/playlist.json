@@ -63,6 +63,19 @@
     "toastSaved": "Playlist saved.",
     "toastUnsaved": "Save removed.",
     "toastShared": "Link copied.",
-    "toastNeedLogin": "Log in to use this."
+    "toastNeedLogin": "Log in to use this.",
+    "picker": {
+      "title": "Add to playlist",
+      "descWithTrack": "Choose a playlist to save \"{title}\" to.",
+      "desc": "Choose a playlist to save to.",
+      "empty": "No playlists yet.",
+      "createNew": "New playlist",
+      "public": "Public",
+      "private": "Private",
+      "add": "Add →",
+      "createMore": "+ New",
+      "namePh": "New playlist title",
+      "create": "Create"
+    }
   }
 }

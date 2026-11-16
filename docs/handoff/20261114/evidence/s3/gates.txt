@@ -1,0 +1,41 @@
+# WI-S3 evidence — sitemap/robots/IndexNow/llms.txt (2026-11-16, Docker-less)
+
+## Implementation
+- Engine: GET /seo/sitemap/{tracks|playlists|creators|landings|guides|
+  static} (READY/public only, cursor (updated_at,id), ≤2000, 1h cache);
+  landings/guide/static served from registry + fixed lists.
+- Web: server/routes/__sitemap__/engine-urls.ts (cursor walk ≤25 pages,
+  local guides/static without engine, 1h cached, explicit 5-locale
+  expansion + ko-KR/en-US/ja-JP/zh-CN/th-TH + x-default=/en alternates).
+- sitemap: sitemap_index.xml + 6 children (verified: index 200, children
+  200; guides 15 urls, static 50 urls, full alternates; DB types empty
+  without engine as designed).
+- robots: @nuxtjs/robots from SEO §2+§6.2 union (Allow / + 17 disallows,
+  locale-auto-expanded x5, Sitemap line absolute). /embed deliberately
+  crawlable (noindex via meta). AI bots allowed (blockAiBots false).
+- Dev serves disallow-all (module default); prod rules verified via
+  ?mockProductionEnv (full text in progress log).
+- IndexNow: engine queue (indexnow_log) + 5-locale fan-out + daily cap
+  10000 + retry x1 + /{key}.txt via server middleware (INDEXNOW_KEY).
+  Review/takedown/playlist-update auto-submit (background). Verified:
+  no-key path logs skipped_no_key x5 (unit: validation; E2E T20 runtime
+  deferred). Key file probe: /testkey123.txt -> testkey123 (dev).
+- llms.txt (static, fact-first + 5-locale links + endpoints + survey date).
+- Search-console slots: runtimeConfig verify{Google,Bing,Naver,Daum} ->
+  meta plugin (empty = renders nothing); Daum file slot documented.
+- GOTCHAS (verified): (1) explicit sitemapName:'sitemap_index.xml' WITH
+  `sitemaps` causes a self-302 loop -> OMITTED (multi-index default);
+  (2) /api/** proxy swallows server routes -> source moved to
+  /__sitemap__/engine-urls; (3) module auto-i18n emits ko-only + ko
+  x-default for custom sources -> explicit alternates in endpoint.
+
+## Gates (observed)
+- Dev probes: robots.txt (dev disallow-all + prod-mock full rules),
+  sitemap_index.xml 200 (6 children), /sitemap.xml 307->index,
+  guides/static children 200 with real lastmod + 6 alternates each,
+  llms.txt 200, key file 200, engine-urls 400 on bogus type.
+- E2E T20 sitemap/indexnow asserts: bash -n PASS, runtime DEFERRED.
+
+## Deferred (external/Docker)
+- Search Console registrations, IndexNow key issuance (PO), sitemap
+  validity re-check with engine data, Naver/Daum/Bing submissions.

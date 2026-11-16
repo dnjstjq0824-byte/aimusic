@@ -97,13 +97,8 @@ func (s *PasswordResetService) Request(ctx context.Context, email string) error 
 		return err
 	}
 	link := BuildResetLink(s.linkBase, token)
-	body := "AVIBE 비밀번호 재설정 링크입니다 (" + ttlMinutes(s.ttl) + "분 유효, 1회용):\n" + link +
-		"\n\n본인이 요청하지 않았다면 이 메일을 무시하세요."
-	return s.mailer.Send(ctx, u.Email, "[AVIBE] 비밀번호 재설정", body)
-}
-
-func ttlMinutes(d time.Duration) string {
-	return strings.TrimSpace(fmt.Sprintf("%d", int(d.Minutes())))
+	subject, body := mail.RenderReset(u.Locale, link, int(s.ttl.Minutes()))
+	return s.mailer.Send(ctx, u.Email, subject, body)
 }
 
 // Confirm consumes a reset token and sets a new password.

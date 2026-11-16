@@ -2,11 +2,11 @@
   <div class="mx-auto max-w-2xl space-y-6">
     <UiPageHeader
       eyebrow="Checkout"
-      title="이용권 결제"
-      description="선택한 요금제의 주문서를 확인하고 Toss Payments로 안전하게 결제하세요."
+      :title="t('checkout.title')"
+      :description="t('checkout.desc')"
     />
 
-    <UiErrorBanner :message="error" title="주문 처리 실패" retry-label="다시 시도" @retry="init" />
+    <UiErrorBanner :message="error" :title="t('checkout.failTitle')" :retry-label="t('common.actions.retry')" @retry="init" />
 
     <div v-if="loading" class="space-y-3">
       <UiSkeleton height="h-40" width="w-full" rounded="xl" />
@@ -15,55 +15,55 @@
     <template v-else-if="plan">
       <UiCard class="space-y-4">
         <div class="flex items-center justify-between border-b border-surface-border pb-3">
-          <h2 class="text-sm font-bold text-white">주문서</h2>
-          <UiBadge variant="warning" size="sm">결제 대기</UiBadge>
+          <h2 class="text-sm font-bold text-white">{{ t('checkout.sheet') }}</h2>
+          <UiBadge variant="warning" size="sm">{{ t('checkout.pending') }}</UiBadge>
         </div>
         <dl class="space-y-2.5 text-xs">
           <div class="flex justify-between">
-            <dt class="text-text-muted">상품</dt>
+            <dt class="text-text-muted">{{ t('checkout.fItem') }}</dt>
             <dd class="font-bold text-white">{{ plan.nameKo }}</dd>
           </div>
           <div v-if="order" class="flex justify-between">
-            <dt class="text-text-muted">주문번호</dt>
+            <dt class="text-text-muted">{{ t('checkout.fOrder') }}</dt>
             <dd class="font-mono text-text-primary">{{ order.orderId }}</dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-text-muted">유효기간</dt>
-            <dd class="text-text-primary">결제일로부터 1개월 (자동연장 없음)</dd>
+            <dt class="text-text-muted">{{ t('checkout.fPeriod') }}</dt>
+            <dd class="text-text-primary">{{ t('checkout.periodValue') }}</dd>
           </div>
           <div class="flex justify-between border-t border-surface-border pt-2.5">
-            <dt class="font-bold text-white">결제금액</dt>
-            <dd class="text-lg font-black text-brand-400">₩{{ plan.amountKrw.toLocaleString('ko-KR') }}</dd>
+            <dt class="font-bold text-white">{{ t('checkout.fAmount') }}</dt>
+            <dd class="text-lg font-black text-brand-400">{{ fmt.currencyKRW(plan.amountKrw) }}</dd>
           </div>
         </dl>
       </UiCard>
 
       <!-- C6: withdrawal/refund consent gate (required before the order exists) -->
       <UiCard class="space-y-3">
-        <h2 class="text-sm font-bold text-white">청약철회 및 환불 기준 동의 (필수)</h2>
+        <h2 class="text-sm font-bold text-white">{{ t('checkout.consentTitle') }}</h2>
         <ul class="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-text-primary">
-          <li v-for="line in REFUND_POLICY_LINES" :key="line">{{ line }}</li>
+          <li v-for="key in REFUND_POLICY_LINE_KEYS" :key="key">{{ t(key) }}</li>
         </ul>
         <UiCheckbox v-model="refundAgreed" required>
-          위 청약철회·환불 기준을 확인했으며 이에 동의합니다. (필수)
+          {{ t('checkout.consentAgree') }}
         </UiCheckbox>
       </UiCard>
 
       <UiCard v-if="!tossReady">
         <div class="flex items-start gap-3">
-          <UiBadge variant="neutral" size="sm">준비 중</UiBadge>
+          <UiBadge variant="neutral" size="sm">{{ t('checkout.preparing') }}</UiBadge>
           <p class="text-xs leading-relaxed text-text-secondary">
-            결제 준비 중입니다. 잠시 후 다시 시도해 주세요.
+            {{ t('checkout.preparingDesc') }}
           </p>
         </div>
       </UiCard>
 
       <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <RouterLink to="/pricing">
-          <UiButton variant="ghost" size="md">요금제로 돌아가기</UiButton>
+          <UiButton variant="ghost" size="md">{{ t('checkout.backToPricing') }}</UiButton>
         </RouterLink>
         <UiButton variant="brand" size="md" :loading="paying" :disabled="!tossReady || !refundAgreed" @click="pay">
-          Toss로 {{ plan.amountKrw.toLocaleString('ko-KR') }}원 결제하기
+          {{ t('checkout.payCta', { amount: fmt.currencyKRW(plan.amountKrw) }) }}
         </UiButton>
       </div>
     </template>
@@ -73,13 +73,16 @@
 <script setup lang="ts">
 defineI18nRoute(false);
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
 import { billingApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
-import { REFUND_POLICY_LINES } from '@/api/refundPolicy';
+import { REFUND_POLICY_LINE_KEYS } from '@/api/refundPolicy';
 import { useAuthStore } from '@/stores/authStore';
+import { useFormat } from '@/composables/useFormat';
 import { useToast } from '@/composables/useToast';
+import { trackEvent } from '@/utils/analytics';
 import type { BillingOrder, BillingPlan } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
@@ -92,6 +95,8 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 const route = useRoute();
 const auth = useAuthStore();
 const toast = useToast();
+const { t } = useI18n();
+const fmt = useFormat();
 
 const plan = ref<BillingPlan | null>(null);
 const order = ref<BillingOrder | null>(null);
@@ -106,7 +111,7 @@ const tossReady = tossClientKey !== '';
 async function init(): Promise<void> {
   const code = route.query.plan;
   if (typeof code !== 'string' || code === '') {
-    error.value = '요금제 코드가 없습니다. 요금제에서 다시 선택해 주세요.';
+    error.value = t('checkout.errNoPlan');
     loading.value = false;
     return;
   }
@@ -118,7 +123,7 @@ async function init(): Promise<void> {
     const plans = await billingApi.plans();
     const found = plans.find((p) => p.code === code);
     if (!found) {
-      error.value = '요금제를 찾을 수 없습니다. 요금제에서 다시 선택해 주세요.';
+      error.value = t('checkout.errPlanNotFound');
       return;
     }
     plan.value = found;
@@ -138,6 +143,7 @@ async function pay(): Promise<void> {
       plan.value = res.plan;
       order.value = res.order;
     }
+    trackEvent({ name: 'checkout_started', props: { plan: plan.value.code } });
     const toss = await loadTossPayments(tossClientKey);
     const payment = toss.payment({ customerKey: auth.userId ?? 'guest' });
     const origin = window.location.origin;
@@ -151,7 +157,7 @@ async function pay(): Promise<void> {
     });
   } catch (err: unknown) {
     // User-cancelled windows surface here too; keep the order for retry.
-    toast.error(errMessageOf(err), '결제창 오류');
+    toast.error(errMessageOf(err), t('checkout.payWindowErr'));
   } finally {
     paying.value = false;
   }
@@ -159,7 +165,7 @@ async function pay(): Promise<void> {
 
 onMounted(() => {
   if (route.query.fail === '1') {
-    toast.warning('결제가 취소되었거나 실패했습니다. 다시 시도해 주세요.');
+    toast.warning(t('checkout.payCancelled'));
   }
   void init();
 });

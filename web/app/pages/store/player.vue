@@ -10,10 +10,10 @@
         </div>
         <div class="flex items-center gap-2 text-xs">
           <UiBadge :variant="player.isOnline ? 'success' : 'danger'" size="xs">
-            {{ player.isOnline ? '온라인' : '오프라인' }}
+            {{ player.isOnline ? t('business.player.online') : t('business.player.offline') }}
           </UiBadge>
           <UiBadge v-if="player.queue" :variant="player.queue.open ? 'success' : 'warning'" size="xs">
-            {{ player.queue.open ? '영업 중' : queueReasonKo }}
+            {{ player.queue.open ? t('business.player.open') : queueReason }}
           </UiBadge>
           <button
             v-if="player.claimed"
@@ -21,7 +21,7 @@
             class="text-text-muted hover:text-text-primary"
             @click="unclaimConfirmOpen = true"
           >
-            연결 해제
+            {{ t('business.player.unclaim') }}
           </button>
         </div>
       </div>
@@ -30,22 +30,22 @@
     <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6">
       <div v-if="!player.claimed || player.needsClaim" class="mx-auto w-full max-w-md flex-1 content-center">
         <UiCard padding="md">
-          <h1 class="text-lg font-bold text-white">플레이어 연결</h1>
+          <h1 class="text-lg font-bold text-white">{{ t('business.player.claimTitle') }}</h1>
           <p class="mt-1 text-xs text-text-secondary">
-            파트너 콘솔의 매장 관리에서 발급한 8자리 페어링 코드를 입력하세요.
+            {{ t('business.player.claimDesc') }}
           </p>
           <form class="mt-4 space-y-3" @submit.prevent="doClaim">
             <UiInput
               v-model="pairingCode"
-              label="페어링 코드"
-              placeholder="예: AB3DEF9H"
+              :label="t('business.player.claimCode')"
+              :placeholder="t('business.player.claimCodePh')"
               :maxlength="8"
               autocapitalize="characters"
               required
             />
-            <UiErrorBanner :message="claimError" title="연결 실패" />
+            <UiErrorBanner :message="claimError" :title="t('business.player.claimFail')" />
             <UiButton variant="brand" size="md" type="submit" :disabled="claiming" class="w-full">
-              {{ claiming ? '연결 중…' : '연결하기' }}
+              {{ claiming ? t('business.player.claiming') : t('business.player.claimGo') }}
             </UiButton>
           </form>
         </UiCard>
@@ -55,12 +55,12 @@
         <UiErrorBanner
           v-if="player.error && player.error !== 'OFFLINE_SNAPSHOT'"
           :message="player.error"
-          title="재생 오류"
-          retry-label="큐 새로고침"
+          :title="t('business.player.playError')"
+          :retry-label="t('business.player.retryQueue')"
           @retry="player.refreshQueue()"
         />
         <div v-if="player.error === 'OFFLINE_SNAPSHOT'" class="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
-          오프라인 상태입니다. 마지막으로 저장된 편성을 표시합니다. 서명 URL이 만료되면(5분) 온라인 연결이 필요합니다.
+          {{ t('business.player.offlineSnapshot') }}
         </div>
 
         <section class="rounded-2xl border border-surface-border bg-surface-1 p-5 sm:p-6">
@@ -68,11 +68,11 @@
             <UiCoverArt :seed="nowTitle" :title="nowTitle" size="lg" />
             <div class="min-w-0 flex-1">
               <p class="text-caption font-semibold uppercase tracking-wider text-text-muted">
-                {{ player.queue?.playlistName || '편성 없음' }}
+                {{ player.queue?.playlistName || t('business.player.noPlaylist') }}
               </p>
               <h1 class="mt-1 truncate text-xl font-bold text-white sm:text-2xl">{{ nowTitle }}</h1>
               <div class="mt-2 flex flex-wrap items-center gap-2 text-caption">
-                <UiBadge variant="info" size="xs">AI 생성음원</UiBadge>
+                <UiBadge variant="info" size="xs">{{ t('business.player.aiMade') }}</UiBadge>
                 <span v-if="player.currentDetail?.aiProvider" class="text-text-secondary">
                   {{ player.currentDetail.aiProvider }}
                 </span>
@@ -83,40 +83,40 @@
             </div>
             <div class="flex shrink-0 items-center gap-2">
               <UiButton variant="secondary" size="md" :disabled="!canPlay" @click="togglePlay">
-                {{ player.isPlaying ? '일시정지' : '재생' }}
+                {{ player.isPlaying ? t('business.player.pause') : t('business.player.play') }}
               </UiButton>
-              <UiButton variant="ghost" size="md" :disabled="!canPlay" @click="player.advance()">다음 곡</UiButton>
+              <UiButton variant="ghost" size="md" :disabled="!canPlay" @click="player.advance()">{{ t('business.player.next') }}</UiButton>
             </div>
           </div>
           <div class="mt-4 flex items-center gap-3 text-caption text-text-secondary">
-            <span>매장 볼륨 {{ player.queue?.volume ?? 70 }}</span>
+            <span>{{ t('business.player.volume', { n: player.queue?.volume ?? 70 }) }}</span>
             <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
               <div class="h-full rounded-full bg-brand-500" :style="{ width: `${player.queue?.volume ?? 70}%` }" />
             </div>
-            <span class="shrink-0">원격 제어 (파트너 콘솔)</span>
+            <span class="shrink-0">{{ t('business.player.remote') }}</span>
           </div>
         </section>
 
         <section>
           <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-text-secondary">
-            오늘의 편성 {{ queueCount }}곡
+            {{ t('business.player.queueTitle', { n: queueCount }) }}
           </h2>
           <div v-if="!player.queue || player.queue.tracks.length === 0" class="rounded-lg border border-dashed border-surface-border px-4 py-6 text-center text-xs text-text-muted">
             {{ queueEmptyText }}
           </div>
           <ol v-else class="divide-y divide-surface-border overflow-hidden rounded-lg border border-surface-border">
             <li
-              v-for="(t, i) in player.queue.tracks"
-              :key="t.trackId"
+              v-for="(trk, i) in player.queue.tracks"
+              :key="trk.trackId"
               class="flex items-center gap-3 px-4 py-2.5 text-xs"
               :class="i === player.trackIndex ? 'bg-brand-950/60 font-bold text-white' : 'text-text-primary hover:bg-surface-2/50'"
             >
               <span class="w-6 shrink-0 font-mono text-text-muted">{{ String(i + 1).padStart(2, '0') }}</span>
               <button type="button" class="min-w-0 flex-1 truncate text-left hover:text-white" @click="player.playIndex(i)">
-                {{ t.title }}
+                {{ trk.title }}
               </button>
               <span v-if="i === player.trackIndex" class="shrink-0 text-brand-300">
-                {{ player.isPlaying ? '재생 중' : '선택됨' }}
+                {{ player.isPlaying ? t('business.player.playing') : t('business.player.selected') }}
               </span>
             </li>
           </ol>
@@ -126,10 +126,10 @@
 
     <UiConfirmDialog
       v-model="unclaimConfirmOpen"
-      title="매장 연결 해제"
-      description="이 태블릿의 매장 페어링을 해제하고 재생을 중지합니다."
-      body="다시 연결하려면 파트너 콘솔에서 새 페어링 코드를 발급받아야 합니다."
-      confirm-label="연결 해제"
+      :title="t('business.player.unclaimTitle')"
+      :description="t('business.player.unclaimDesc')"
+      :body="t('business.player.unclaimBody')"
+      :confirm-label="t('business.player.unclaim')"
       danger
       @confirm="player.unclaim()"
     />
@@ -151,6 +151,8 @@ import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 
+const { t, te, locale, setLocale } = useI18n();
+const route = useRoute();
 const player = useStorePlayerStore();
 const listenerPlayer = usePlayerStore();
 const pairingCode = ref('');
@@ -158,25 +160,21 @@ const claiming = ref(false);
 const claimError = ref<string | null>(null);
 const unclaimConfirmOpen = ref(false);
 
-const nowTitle = computed(() => player.currentTrack?.title ?? '재생할 곡이 없습니다');
+const nowTitle = computed(() => player.currentTrack?.title ?? t('business.player.noTrack'));
 const canPlay = computed(() => (player.queue?.tracks.length ?? 0) > 0);
 const queueCount = computed(() => player.queue?.tracks.length ?? 0);
 
-const reasonKo: Record<string, string> = {
-  closed_day: '휴무일',
-  off_hours: '영업시간 외',
-  no_schedule_no_curation: '편성 없음',
-  no_playlist_no_curation: '선곡 없음',
-  scheduled: '예약 편성',
-  fallback_curation: '공식 큐레이션',
-};
+function reasonLabel(reason: string): string {
+  const key = `business.player.reason.${reason}`;
+  return te(key) ? String(t(key)) : reason;
+}
 
-const queueReasonKo = computed(() => reasonKo[player.queue?.reason ?? ''] ?? player.queue?.reason ?? '');
+const queueReason = computed(() => reasonLabel(player.queue?.reason ?? ''));
 
 const queueEmptyText = computed(() => {
-  if (!player.queue) return '편성을 불러오는 중입니다.';
-  if (!player.queue.open) return `지금은 재생 시간이 아닙니다. (${queueReasonKo.value}) 영업시간·편성은 파트너 콘솔에서 변경하세요.`;
-  return '편성된 곡이 없습니다. 파트너 콘솔에서 선곡을 등록하세요.';
+  if (!player.queue) return t('business.player.queueLoading');
+  if (!player.queue.open) return t('business.player.queueClosed', { reason: queueReason.value });
+  return t('business.player.queueEmpty');
 });
 
 function togglePlay(): void {
@@ -197,9 +195,41 @@ async function doClaim(): Promise<void> {
   }
 }
 
+// R-B: the store player follows the device language (?lang= override first),
+// falling back to the saved locale. Supported: ko/en/ja/zh-cn/th.
+type PlayerLocale = 'ko' | 'en' | 'ja' | 'zh-cn' | 'th';
+function resolvePlayerLocale(): PlayerLocale | null {
+  const q = route.query.lang;
+  const raw = Array.isArray(q) ? q[0] : q;
+  const pick = (code: string): PlayerLocale | null => {
+    const c = code.toLowerCase();
+    if (c.startsWith('ko')) return 'ko';
+    if (c.startsWith('ja')) return 'ja';
+    if (c.startsWith('zh')) return 'zh-cn';
+    if (c.startsWith('th')) return 'th';
+    if (c.startsWith('en')) return 'en';
+    return null;
+  };
+  if (typeof raw === 'string' && raw !== '') {
+    const forced = pick(raw);
+    if (forced) return forced;
+  }
+  if (typeof navigator !== 'undefined') {
+    for (const lang of navigator.languages ?? [navigator.language]) {
+      const found = pick(lang ?? '');
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 onMounted(() => {
   // Never play listener audio and store audio at once on one device.
   listenerPlayer.pause();
+  const resolved = resolvePlayerLocale();
+  if (resolved && resolved !== locale.value) {
+    void setLocale(resolved);
+  }
   if (player.claimed) {
     void player.refreshQueue().then(() => player.startQueueRefresh());
   }

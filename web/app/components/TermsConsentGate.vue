@@ -2,42 +2,42 @@
   <UiModal
     v-if="auth.needsTermsConsent && !auth.needsAgeConfirm"
     :model-value="true"
-    title="필수 약관 동의"
+    :title="t('legal.consentGate.title')"
     @update:model-value="noop"
   >
     <div class="space-y-4">
       <p class="text-xs leading-relaxed text-text-primary">
-        개정된 필수 약관이 있습니다. 스트리밍·결제·업로드를 계속 이용하려면 아래 약관에 동의해 주세요.
+        {{ t('legal.consentGate.desc') }}
       </p>
       <ul class="space-y-2">
         <li
-          v-for="t in auth.pendingConsents"
-          :key="t.id"
+          v-for="term in auth.pendingConsents"
+          :key="term.id"
           class="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2"
         >
           <div class="min-w-0">
-            <div class="truncate text-sm font-semibold text-white">{{ t.titleKo }}</div>
-            <div class="text-caption text-text-secondary">{{ t.code }} · {{ t.version }}</div>
+            <div class="truncate text-sm font-semibold text-white">{{ term.titleKo }}</div>
+            <div class="text-caption text-text-secondary">{{ term.code }} · {{ term.version }}</div>
           </div>
           <div class="flex shrink-0 gap-2">
-            <RouterLink :to="`/legal/${t.code}`" target="_blank">
-              <UiButton variant="secondary" size="xs" type="button">전문 보기</UiButton>
+            <RouterLink :to="`/legal/${term.code}`" target="_blank">
+              <UiButton variant="secondary" size="xs" type="button">{{ t('legal.consentGate.viewDoc') }}</UiButton>
             </RouterLink>
             <UiButton
               variant="brand"
               size="xs"
               type="button"
-              :loading="busyId === t.id"
-              @click="consentOne(t.id)"
+              :loading="busyId === term.id"
+              @click="consentOne(term.id)"
             >
-              동의하기
+              {{ t('legal.consentGate.consent') }}
             </UiButton>
           </div>
         </li>
       </ul>
       <UiErrorBanner :message="error" />
       <UiButton variant="secondary" size="md" type="button" full-width @click="auth.logout()">
-        로그아웃
+        {{ t('common.actions.logout') }}
       </UiButton>
     </div>
   </UiModal>
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
@@ -54,6 +55,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 
 const auth = useAuthStore();
 const toast = useToast();
+const { t } = useI18n();
 
 const busyId = ref<string | null>(null);
 const error = ref<string | null>(null);
@@ -67,7 +69,7 @@ async function consentOne(termsId: string): Promise<void> {
   try {
     await auth.consentTerms(termsId);
     if (auth.pendingConsents.length === 0) {
-      toast.success('약관 동의가 완료되었습니다.');
+      toast.success(t('legal.consentGate.done'));
     }
   } catch (err: unknown) {
     error.value = errMessageOf(err);

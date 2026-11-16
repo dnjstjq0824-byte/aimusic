@@ -101,7 +101,7 @@
           <RouterLink
             v-for="pl in playlists.playlists.slice(0, 8)"
             :key="pl.id"
-            :to="localePath({ name: 'playlist-detail', params: { id: pl.id } })"
+            :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
             class="group w-40 shrink-0 snap-start"
           >
             <CoverMosaic :seeds="[pl.id]" :title="pl.title" size="md" />
@@ -200,7 +200,7 @@
         <RouterLink
           v-for="pl in recPlaylists"
           :key="pl.id"
-          :to="localePath({ name: 'playlist-detail', params: { id: pl.id } })"
+          :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
           class="group"
         >
           <CoverMosaic :seeds="plSeeds[pl.id] ?? [pl.id]" :title="pl.title" size="md" />
@@ -265,6 +265,7 @@ import CoverMosaic from '@/components/ui/CoverMosaic.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import TrackRow from '@/components/TrackRow.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+import { detailParam } from '@/utils/seo';
 
 const { t, te } = useI18n();
 const localePath = useLocalePath();

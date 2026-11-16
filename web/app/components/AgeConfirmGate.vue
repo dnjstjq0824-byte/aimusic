@@ -2,27 +2,26 @@
   <UiModal
     v-if="auth.needsAgeConfirm"
     :model-value="true"
-    title="만 14세 이상 확인"
+    :title="t('auth.ageGate.title')"
     @update:model-value="noop"
   >
     <div class="space-y-4">
       <p class="text-xs leading-relaxed text-text-primary">
-        소셜 계정으로 처음 로그인했습니다. AVIBE는 만 14세 이상만 이용할 수 있습니다.
-        스트리밍·결제·업로드를 이용하려면 연령 확인이 필요합니다.
+        {{ t('auth.ageGate.desc') }}
       </p>
       <UiCheckbox v-model="confirmed" required>
-        <span class="text-xs text-text-primary">만 14세 이상입니다. (필수)</span>
+        <span class="text-xs text-text-primary">{{ t('auth.ageGate.confirm') }}</span>
       </UiCheckbox>
       <UiInput
         v-model="birthYear"
-        label="출생연도 (선택)"
-        placeholder="예: 1995"
+        :label="t('auth.common.birthYear')"
+        :placeholder="t('auth.common.birthYearPh')"
         inputmode="numeric"
       />
       <UiErrorBanner :message="error" />
       <div class="flex gap-2">
         <UiButton variant="secondary" size="md" type="button" @click="auth.logout()">
-          로그아웃
+          {{ t('common.actions.logout') }}
         </UiButton>
         <UiButton
           variant="brand"
@@ -33,7 +32,7 @@
           :disabled="!confirmed"
           @click="submit"
         >
-          확인하고 시작하기
+          {{ t('auth.ageGate.start') }}
         </UiButton>
       </div>
     </div>
@@ -42,6 +41,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { errMessageOf } from '@/api/client';
@@ -53,6 +53,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 
 const auth = useAuthStore();
 const toast = useToast();
+const { t } = useI18n();
 
 const confirmed = ref(false);
 const birthYear = ref('');
@@ -68,7 +69,7 @@ async function submit(): Promise<void> {
   try {
     const year = Number.parseInt(birthYear.value.trim(), 10);
     await auth.confirmAge(Number.isFinite(year) ? year : undefined);
-    toast.success('연령 확인이 완료되었습니다.');
+    toast.success(t('auth.ageGate.done'));
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {

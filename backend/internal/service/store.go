@@ -30,8 +30,10 @@ const (
 // storeStore is the store persistence surface.
 type storeStore interface {
 	CreateBusiness(ctx context.Context, partnerID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error)
+	CreateBusinessForOwner(ctx context.Context, ownerUserID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error)
 	GetBusinessByID(ctx context.Context, id string) (*domain.StoreBusiness, error)
 	ListBusinessesByPartner(ctx context.Context, partnerID string) ([]*domain.StoreBusiness, error)
+	ListBusinessesByOwner(ctx context.Context, ownerUserID string) ([]*domain.StoreBusiness, error)
 	VerifyBusiness(ctx context.Context, id, status, verifierID string) error
 	CreateDevice(ctx context.Context, businessID, deviceName, pairingCode string, pairingExpiry time.Time) (*domain.StoreDevice, error)
 	GetDeviceByID(ctx context.Context, id string) (*domain.StoreDevice, error)
@@ -91,23 +93,49 @@ func (s *StoreService) clock() time.Time {
 
 // RegisterBusiness files a store business for admin verification.
 func (s *StoreService) RegisterBusiness(ctx context.Context, partnerID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error) {
-	bizNo, err := domain.NormalizeBusinessNumber(businessNumber)
+	bizNo, name, licenses, err := validateStoreBusiness(businessNumber, storeName, licenseCount)
 	if err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(storeName)
-	if name == "" || len([]rune(name)) > MaxStoreNameChars {
-		return nil, fmt.Errorf("%w: 매장명 1..60자", domain.ErrInvalidInput)
-	}
-	if licenseCount < 1 || licenseCount > MaxStoreLicenses {
-		return nil, fmt.Errorf("%w: 라이선스 1..100", domain.ErrInvalidInput)
-	}
-	return s.store.CreateBusiness(ctx, partnerID, bizNo, name, licenseCount)
+	return s.store.CreateBusiness(ctx, partnerID, bizNo, name, licenses)
 }
 
 // ListBusinesses returns the partner's store businesses.
 func (s *StoreService) ListBusinesses(ctx context.Context, partnerID string) ([]*domain.StoreBusiness, error) {
 	return s.store.ListBusinessesByPartner(ctx, partnerID)
+}
+
+// RegisterBusinessForOwner files a store business owned directly by a user
+// (business-console path, R10). Validation mirrors the partner path.
+func (s *StoreService) RegisterBusinessForOwner(ctx context.Context, ownerUserID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error) {
+	bizNo, name, licenses, err := validateStoreBusiness(businessNumber, storeName, licenseCount)
+	if err != nil {
+		return nil, err
+	}
+	if ownerUserID == "" {
+		return nil, domain.ErrInvalidCredentials
+	}
+	return s.store.CreateBusinessForOwner(ctx, ownerUserID, bizNo, name, licenses)
+}
+
+// ListBusinessesByOwner returns a user's store businesses (R10 console path).
+func (s *StoreService) ListBusinessesByOwner(ctx context.Context, ownerUserID string) ([]*domain.StoreBusiness, error) {
+	return s.store.ListBusinessesByOwner(ctx, ownerUserID)
+}
+
+func validateStoreBusiness(businessNumber, storeName string, licenseCount int) (string, string, int, error) {
+	bizNo, err := domain.NormalizeBusinessNumber(businessNumber)
+	if err != nil {
+		return "", "", 0, err
+	}
+	name := strings.TrimSpace(storeName)
+	if name == "" || len([]rune(name)) > MaxStoreNameChars {
+		return "", "", 0, fmt.Errorf("%w: storeName 1..60 chars", domain.ErrInvalidInput)
+	}
+	if licenseCount < 1 || licenseCount > MaxStoreLicenses {
+		return "", "", 0, fmt.Errorf("%w: licenseCount 1..100", domain.ErrInvalidInput)
+	}
+	return bizNo, name, licenseCount, nil
 }
 
 // VerifyBusiness approves or suspends a store business (admin).
@@ -133,17 +161,42 @@ func (s *StoreService) ownBusiness(ctx context.Context, partnerID, businessID st
 	return b, nil
 }
 
+// ownBusinessByOwner resolves a business by owning user (R10 console path).
+func (s *StoreService) ownBusinessByOwner(ctx context.Context, ownerUserID, businessID string) (*domain.StoreBusiness, error) {
+	b, err := s.store.GetBusinessByID(ctx, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if ownerUserID == "" || b.OwnerUserID != ownerUserID {
+		return nil, domain.ErrForbidden
+	}
+	return b, nil
+}
+
 // CreateDevice registers a player device and returns it with a pairing code.
 func (s *StoreService) CreateDevice(ctx context.Context, partnerID, businessID, deviceName string) (*domain.StoreDevice, error) {
 	b, err := s.ownBusiness(ctx, partnerID, businessID)
 	if err != nil {
 		return nil, err
 	}
+	return s.createDevice(ctx, b, deviceName)
+}
+
+// CreateDeviceForOwner is the console-path CreateDevice (R10).
+func (s *StoreService) CreateDeviceForOwner(ctx context.Context, ownerUserID, businessID, deviceName string) (*domain.StoreDevice, error) {
+	b, err := s.ownBusinessByOwner(ctx, ownerUserID, businessID)
+	if err != nil {
+		return nil, err
+	}
+	return s.createDevice(ctx, b, deviceName)
+}
+
+func (s *StoreService) createDevice(ctx context.Context, b *domain.StoreBusiness, deviceName string) (*domain.StoreDevice, error) {
 	name := strings.TrimSpace(deviceName)
 	if name == "" || len([]rune(name)) > MaxDeviceNameChars {
-		return nil, fmt.Errorf("%w: 기기명 1..40자", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: deviceName 1..40 chars", domain.ErrInvalidInput)
 	}
-	devices, err := s.store.ListDevicesByBusiness(ctx, businessID)
+	devices, err := s.store.ListDevicesByBusiness(ctx, b.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,13 +207,13 @@ func (s *StoreService) CreateDevice(ctx context.Context, partnerID, businessID, 
 		}
 	}
 	if live >= b.LicenseCount {
-		return nil, fmt.Errorf("%w: 라이선스 초과(매장당 %d대)", domain.ErrForbidden, b.LicenseCount)
+		return nil, fmt.Errorf("%w: license limit exceeded (%d devices per store)", domain.ErrForbidden, b.LicenseCount)
 	}
 	code, err := randomPairingCode()
 	if err != nil {
 		return nil, err
 	}
-	return s.store.CreateDevice(ctx, businessID, name, code, s.clock().Add(StorePairingTTL))
+	return s.store.CreateDevice(ctx, b.ID, name, code, s.clock().Add(StorePairingTTL))
 }
 
 func randomPairingCode() (string, error) {
@@ -191,7 +244,7 @@ func (s *StoreService) ClaimDevice(ctx context.Context, pairingCode string) (*do
 	dev, err := s.store.GetDeviceByPairingCode(ctx, code)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			return nil, "", fmt.Errorf("%w: 만료되었거나 잘못된 페어링 코드", domain.ErrInvalidInput)
+			return nil, "", fmt.Errorf("%w: expired or invalid pairing code", domain.ErrInvalidInput)
 		}
 		return nil, "", err
 	}
@@ -200,7 +253,7 @@ func (s *StoreService) ClaimDevice(ctx context.Context, pairingCode string) (*do
 		return nil, "", err
 	}
 	if b.Status != domain.StoreApproved {
-		return nil, "", fmt.Errorf("%w: 승인된 매장만 플레이어를 등록할 수 있습니다", domain.ErrForbidden)
+		return nil, "", fmt.Errorf("%w: only approved stores can register players", domain.ErrForbidden)
 	}
 	raw := make([]byte, StoreTokenBytes)
 	if _, err := rand.Read(raw); err != nil {
@@ -240,6 +293,14 @@ func (s *StoreService) ListDevices(ctx context.Context, partnerID, businessID st
 	return s.store.ListDevicesByBusiness(ctx, businessID)
 }
 
+// ListDevicesForOwner is the console-path ListDevices (R10).
+func (s *StoreService) ListDevicesForOwner(ctx context.Context, ownerUserID, businessID string) ([]*domain.StoreDevice, error) {
+	if _, err := s.ownBusinessByOwner(ctx, ownerUserID, businessID); err != nil {
+		return nil, err
+	}
+	return s.store.ListDevicesByBusiness(ctx, businessID)
+}
+
 // UpdateDevice renames or re-volumes a device (remote volume, owner-checked).
 func (s *StoreService) UpdateDevice(ctx context.Context, partnerID, deviceID, deviceName string, volume int) (*domain.StoreDevice, error) {
 	dev, err := s.store.GetDeviceByID(ctx, deviceID)
@@ -249,17 +310,33 @@ func (s *StoreService) UpdateDevice(ctx context.Context, partnerID, deviceID, de
 	if _, err := s.ownBusiness(ctx, partnerID, dev.BusinessID); err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(deviceName)
-	if name == "" || len([]rune(name)) > MaxDeviceNameChars {
-		return nil, fmt.Errorf("%w: 기기명 1..40자", domain.ErrInvalidInput)
-	}
-	if volume < 0 || volume > 100 {
-		return nil, fmt.Errorf("%w: 볼륨 0..100", domain.ErrInvalidInput)
-	}
-	if err := s.store.UpdateDevice(ctx, deviceID, name, volume); err != nil {
+	return s.updateDevice(ctx, dev, deviceName, volume)
+}
+
+// UpdateDeviceForOwner is the console-path UpdateDevice (R10).
+func (s *StoreService) UpdateDeviceForOwner(ctx context.Context, ownerUserID, deviceID, deviceName string, volume int) (*domain.StoreDevice, error) {
+	dev, err := s.store.GetDeviceByID(ctx, deviceID)
+	if err != nil {
 		return nil, err
 	}
-	return s.store.GetDeviceByID(ctx, deviceID)
+	if _, err := s.ownBusinessByOwner(ctx, ownerUserID, dev.BusinessID); err != nil {
+		return nil, err
+	}
+	return s.updateDevice(ctx, dev, deviceName, volume)
+}
+
+func (s *StoreService) updateDevice(ctx context.Context, dev *domain.StoreDevice, deviceName string, volume int) (*domain.StoreDevice, error) {
+	name := strings.TrimSpace(deviceName)
+	if name == "" || len([]rune(name)) > MaxDeviceNameChars {
+		return nil, fmt.Errorf("%w: deviceName 1..40 chars", domain.ErrInvalidInput)
+	}
+	if volume < 0 || volume > 100 {
+		return nil, fmt.Errorf("%w: volume 0..100", domain.ErrInvalidInput)
+	}
+	if err := s.store.UpdateDevice(ctx, dev.ID, name, volume); err != nil {
+		return nil, err
+	}
+	return s.store.GetDeviceByID(ctx, dev.ID)
 }
 
 // RevokeDevice deactivates a device (owner-checked).
@@ -274,12 +351,37 @@ func (s *StoreService) RevokeDevice(ctx context.Context, partnerID, deviceID str
 	return s.store.RevokeDevice(ctx, deviceID)
 }
 
+// RevokeDeviceForOwner is the console-path RevokeDevice (R10).
+func (s *StoreService) RevokeDeviceForOwner(ctx context.Context, ownerUserID, deviceID string) error {
+	dev, err := s.store.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+	if _, err := s.ownBusinessByOwner(ctx, ownerUserID, dev.BusinessID); err != nil {
+		return err
+	}
+	return s.store.RevokeDevice(ctx, deviceID)
+}
+
 // UpsertSchedule sets one weekday row (owner-checked, playlist-checked).
 func (s *StoreService) UpsertSchedule(ctx context.Context, partnerID, businessID string, weekday int, open, closeTime string, playlistID *string, isClosed bool) (*domain.StoreSchedule, error) {
 	b, err := s.ownBusiness(ctx, partnerID, businessID)
 	if err != nil {
 		return nil, err
 	}
+	return s.upsertSchedule(ctx, b, weekday, open, closeTime, playlistID, isClosed)
+}
+
+// UpsertScheduleForOwner is the console-path UpsertSchedule (R10).
+func (s *StoreService) UpsertScheduleForOwner(ctx context.Context, ownerUserID, businessID string, weekday int, open, closeTime string, playlistID *string, isClosed bool) (*domain.StoreSchedule, error) {
+	b, err := s.ownBusinessByOwner(ctx, ownerUserID, businessID)
+	if err != nil {
+		return nil, err
+	}
+	return s.upsertSchedule(ctx, b, weekday, open, closeTime, playlistID, isClosed)
+}
+
+func (s *StoreService) upsertSchedule(ctx context.Context, b *domain.StoreBusiness, weekday int, open, closeTime string, playlistID *string, isClosed bool) (*domain.StoreSchedule, error) {
 	if weekday < 0 || weekday > 6 {
 		return nil, fmt.Errorf("%w: weekday 0..6", domain.ErrInvalidInput)
 	}
@@ -299,24 +401,26 @@ func (s *StoreService) UpsertSchedule(ctx context.Context, partnerID, businessID
 		if err != nil {
 			return nil, err
 		}
-		if !pl.IsPublic && !pl.IsOfficialCuration {
-			prof, err := s.partners.GetByID(ctx, b.PartnerID)
-			if err != nil {
-				return nil, err
-			}
-			if pl.OwnerUserID != prof.UserID {
-				return nil, domain.ErrForbidden
-			}
+		if !pl.IsPublic && !pl.IsOfficialCuration && pl.OwnerUserID != b.OwnerUserID {
+			return nil, domain.ErrForbidden
 		}
 	} else {
 		playlistID = nil
 	}
-	return s.store.UpsertSchedule(ctx, businessID, weekday, openT.Format("15:04"), closeT.Format("15:04"), playlistID, isClosed)
+	return s.store.UpsertSchedule(ctx, b.ID, weekday, openT.Format("15:04"), closeT.Format("15:04"), playlistID, isClosed)
 }
 
 // ListSchedules returns a business's weekly schedule (owner-checked).
 func (s *StoreService) ListSchedules(ctx context.Context, partnerID, businessID string) ([]*domain.StoreSchedule, error) {
 	if _, err := s.ownBusiness(ctx, partnerID, businessID); err != nil {
+		return nil, err
+	}
+	return s.store.ListSchedulesByBusiness(ctx, businessID)
+}
+
+// ListSchedulesForOwner is the console-path ListSchedules (R10).
+func (s *StoreService) ListSchedulesForOwner(ctx context.Context, ownerUserID, businessID string) ([]*domain.StoreSchedule, error) {
+	if _, err := s.ownBusinessByOwner(ctx, ownerUserID, businessID); err != nil {
 		return nil, err
 	}
 	return s.store.ListSchedulesByBusiness(ctx, businessID)
@@ -461,7 +565,7 @@ func (s *StoreService) Heartbeat(ctx context.Context, deviceID, trackID string, 
 		return false, err
 	}
 	if b.Status != domain.StoreApproved {
-		return false, fmt.Errorf("%w: 매장 승인 후 집계됩니다", domain.ErrForbidden)
+		return false, fmt.Errorf("%w: plays count after store approval", domain.ErrForbidden)
 	}
 	track, err := s.tracks.GetByID(ctx, trackID)
 	if err != nil {
@@ -556,6 +660,18 @@ func (s *StoreService) DeviceLogs(ctx context.Context, partnerID, deviceID strin
 		return nil, err
 	}
 	if _, err := s.ownBusiness(ctx, partnerID, dev.BusinessID); err != nil {
+		return nil, err
+	}
+	return s.store.ListPlayLogsByDevice(ctx, deviceID, limit)
+}
+
+// DeviceLogsForOwner is the console-path DeviceLogs (R10).
+func (s *StoreService) DeviceLogsForOwner(ctx context.Context, ownerUserID, deviceID string, limit int) ([]*domain.StorePlayLog, error) {
+	dev, err := s.store.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.ownBusinessByOwner(ctx, ownerUserID, dev.BusinessID); err != nil {
 		return nil, err
 	}
 	return s.store.ListPlayLogsByDevice(ctx, deviceID, limit)

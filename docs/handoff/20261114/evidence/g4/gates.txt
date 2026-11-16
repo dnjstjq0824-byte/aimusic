@@ -1,0 +1,18 @@
+# WI-G4 증거 (평가 하네스 뼈대)
+
+## 자동 지표 실행기 — TESTED (self-test)
+- `generator/eval/run_metrics.py --self-test`: PASS (결정적, n=2).
+- synthetic 백엔드: 하네스 배선 검증용 의사결정 메트릭, 리포트에
+  `syntheticWarning: true` 표기 (G-MODEL 사용 금지).
+- fad/clap 백엔드: GPU PC 스택 없이 실행 시 설치 안내 후 종료 (거짓 측정 없음).
+
+## 쌍대 비교 스키마
+- `generator/eval/ab_schema.json`: 블라인드 A/B 투표 기록
+  (버전 블라인드·TIE 허용·무PII, JSON 유효성 확인).
+
+## 암기 테스트 — TESTED (self-test)
+- `generator/eval/memorization.py --self-test`: PASS
+  (지문 안정·정확일치 1.0·compared=2).
+- 현재 지문: PCM 블록 부호 해시 (정확·근사중복 탐지용 저가 프리필터).
+  스펙트럼 지문은 GPU PC 확장점으로 명시 (numpy 필요).
+- 워커 "similarity" 축 졸업 경로: 본 스크립트 임계값 교정 후 편입 (G0 주석).

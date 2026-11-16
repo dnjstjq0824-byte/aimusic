@@ -103,11 +103,12 @@
 
 <script setup lang="ts">
 defineI18nRoute(false);
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
+import { trackEvent } from '@/utils/analytics';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiCheckbox from '@/components/ui/UiCheckbox.vue';
@@ -147,6 +148,10 @@ function parseBirthYear(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+onMounted(() => {
+  trackEvent({ name: 'signup_started', props: { type: 'creator' } });
+});
+
 async function nextOrSubmit(): Promise<void> {
   if (step.value < 2) {
     if (canProceed.value) step.value++;
@@ -163,8 +168,9 @@ async function nextOrSubmit(): Promise<void> {
       ageConfirmed: ageConfirmed.value,
       inviteCode: inviteCode.value.trim() || undefined,
     });
+    trackEvent({ name: 'signup_completed', props: { type: 'creator' } });
     toast.success(t('auth.creator.success'));
-    await router.push(localePath('/login'));
+    await router.push(localePath('/login?registered=1'));
   } catch (err: unknown) {
     toast.error(apiError(err));
   } finally {

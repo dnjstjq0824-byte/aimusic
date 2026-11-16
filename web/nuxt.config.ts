@@ -5,7 +5,7 @@ const LEGACY_NAMES: Record<string, string> = {
   index: 'home',
   'tracks-id': 'track-detail',
   'playlists-id': 'playlist-detail',
-  'partner-index': 'partner-dashboard',
+  'studio': 'studio-dashboard',
   'admin-index': 'admin-overview',
   'legal-code': 'legal-terms',
   'certificate-number': 'certificate-verify',
@@ -23,7 +23,61 @@ export default defineNuxtConfig({
   srcDir: 'app',
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
-  modules: ['@pinia/nuxt', '@nuxtjs/i18n'],
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/i18n',
+    'nuxt-site-config',
+    '@nuxtjs/sitemap',
+    '@nuxtjs/robots',
+    'nuxt-schema-org',
+    'nuxt-og-image',
+  ],
+  site: {
+    url: 'https://avibemusic.com',
+    name: 'AVIBE',
+    description: 'AVIBE — verified commercial-use AI music streaming.',
+    defaultLocale: 'ko',
+  },
+  // WI-S3: locale x type sitemaps from the engine cursor API (S3 §6.1).
+  sitemap: {
+    autoI18n: true,
+    exclude: ['/api/**', '/login', '/signup/**', '/forgot-password', '/reset-password', '/verify-email', '/oauth/**', '/library', '/me/**', '/account/**', '/rights-center', '/checkout/**', '/partner/**', '/studio/**', '/admin/**', '/store/**', '/business/console/**', '/500', '/dev/**'],
+    sitemaps: {
+      tracks: { sources: ['/__sitemap__/engine-urls?type=tracks'] },
+      playlists: { sources: ['/__sitemap__/engine-urls?type=playlists'] },
+      creators: { sources: ['/__sitemap__/engine-urls?type=creators'] },
+      landings: { sources: ['/__sitemap__/engine-urls?type=landings'] },
+      guides: { sources: ['/__sitemap__/engine-urls?type=guides'] },
+      static: { sources: ['/__sitemap__/engine-urls?type=static'] },
+    },
+  },
+  // WI-S3: SEO §2 + §6.2 union. /embed stays crawlable (noindex via meta).
+  // AI search/answer bots are allowed on public text pages (spec §6.2).
+  robots: {
+    sitemap: ['/sitemap_index.xml'],
+    allow: ['/'],
+    disallow: [
+      '/api/', '/account', '/me/', '/library', '/rights-center', '/studio', '/partner',
+      '/business/console', '/admin', '/store/player', '/checkout', '/login', '/signup',
+      '/forgot-password', '/reset-password', '/verify-email', '/oauth/', '/500',
+    ],
+    blockAiBots: false,
+    blockNonSeoBots: false,
+  },
+  // WI-S2: global WebSite + Organization identity (sameAs deferred to PO SNS).
+  schemaOrg: {
+    identity: {
+      type: 'Organization',
+      name: 'AVIBE',
+      url: 'https://avibemusic.com',
+      logo: 'https://avibemusic.com/favicon.svg',
+    },
+  },
+  // WI-S2: dynamic OG images (Satori + resvg, 1200x630, Thai/CJK textless fallback).
+  ogImage: {
+    enabled: true,
+    defaults: { width: 1200, height: 630, cacheMaxAgeSeconds: 86400 },
+  },
   i18n: {
     strategy: 'prefix_except_default',
     defaultLocale: 'ko',
@@ -31,13 +85,13 @@ export default defineNuxtConfig({
     baseUrl: 'https://avibemusic.com',
     langDir: '../i18n/locales',
     locales: [
-      { code: 'ko', language: 'ko-KR', files: ['ko/common.json', 'ko/errors.json', 'ko/player.json', 'ko/auth.json', 'ko/home.json', 'ko/explore.json', 'ko/track.json', 'ko/tags.json', 'ko/library.json', 'ko/playlist.json', 'ko/pricing.json', 'ko/checkout.json', 'ko/account.json', 'ko/legal.json', 'ko/studio.json', 'ko/business.json', 'ko/generate.json', 'ko/admin.json'] },
-      { code: 'en', language: 'en-US', files: ['en/common.json', 'en/errors.json', 'en/player.json', 'en/auth.json', 'en/home.json', 'en/explore.json', 'en/track.json', 'en/tags.json', 'en/library.json', 'en/playlist.json', 'en/pricing.json', 'en/checkout.json', 'en/account.json', 'en/legal.json', 'en/studio.json', 'en/business.json', 'en/generate.json', 'en/admin.json'] },
-      { code: 'ja', language: 'ja-JP', files: ['ja/common.json', 'ja/errors.json', 'ja/player.json', 'ja/auth.json', 'ja/home.json', 'ja/explore.json', 'ja/track.json', 'ja/tags.json', 'ja/library.json', 'ja/playlist.json', 'ja/pricing.json', 'ja/checkout.json', 'ja/account.json', 'ja/legal.json', 'ja/studio.json', 'ja/business.json', 'ja/generate.json', 'ja/admin.json'] },
-      { code: 'zh-cn', language: 'zh-CN', files: ['zh-CN/common.json', 'zh-CN/errors.json', 'zh-CN/player.json', 'zh-CN/auth.json', 'zh-CN/home.json', 'zh-CN/explore.json', 'zh-CN/track.json', 'zh-CN/tags.json', 'zh-CN/library.json', 'zh-CN/playlist.json', 'zh-CN/pricing.json', 'zh-CN/checkout.json', 'zh-CN/account.json', 'zh-CN/legal.json', 'zh-CN/studio.json', 'zh-CN/business.json', 'zh-CN/generate.json', 'zh-CN/admin.json'] },
-      { code: 'th', language: 'th-TH', files: ['th/common.json', 'th/errors.json', 'th/player.json', 'th/auth.json', 'th/home.json', 'th/explore.json', 'th/track.json', 'th/tags.json', 'th/library.json', 'th/playlist.json', 'th/pricing.json', 'th/checkout.json', 'th/account.json', 'th/legal.json', 'th/studio.json', 'th/business.json', 'th/generate.json', 'th/admin.json'] },
+      { code: 'ko', language: 'ko-KR', files: ['ko/common.json', 'ko/errors.json', 'ko/player.json', 'ko/auth.json', 'ko/home.json', 'ko/explore.json', 'ko/track.json', 'ko/tags.json', 'ko/library.json', 'ko/playlist.json', 'ko/pricing.json', 'ko/checkout.json', 'ko/account.json', 'ko/legal.json', 'ko/studio.json', 'ko/business.json', 'ko/generate.json', 'ko/admin.json', 'ko/seo.json'] },
+      { code: 'en', language: 'en-US', files: ['en/common.json', 'en/errors.json', 'en/player.json', 'en/auth.json', 'en/home.json', 'en/explore.json', 'en/track.json', 'en/tags.json', 'en/library.json', 'en/playlist.json', 'en/pricing.json', 'en/checkout.json', 'en/account.json', 'en/legal.json', 'en/studio.json', 'en/business.json', 'en/generate.json', 'en/admin.json', 'en/seo.json'] },
+      { code: 'ja', language: 'ja-JP', files: ['ja/common.json', 'ja/errors.json', 'ja/player.json', 'ja/auth.json', 'ja/home.json', 'ja/explore.json', 'ja/track.json', 'ja/tags.json', 'ja/library.json', 'ja/playlist.json', 'ja/pricing.json', 'ja/checkout.json', 'ja/account.json', 'ja/legal.json', 'ja/studio.json', 'ja/business.json', 'ja/generate.json', 'ja/admin.json', 'ja/seo.json'] },
+      { code: 'zh-cn', language: 'zh-CN', files: ['zh-CN/common.json', 'zh-CN/errors.json', 'zh-CN/player.json', 'zh-CN/auth.json', 'zh-CN/home.json', 'zh-CN/explore.json', 'zh-CN/track.json', 'zh-CN/tags.json', 'zh-CN/library.json', 'zh-CN/playlist.json', 'zh-CN/pricing.json', 'zh-CN/checkout.json', 'zh-CN/account.json', 'zh-CN/legal.json', 'zh-CN/studio.json', 'zh-CN/business.json', 'zh-CN/generate.json', 'zh-CN/admin.json', 'zh-CN/seo.json'] },
+      { code: 'th', language: 'th-TH', files: ['th/common.json', 'th/errors.json', 'th/player.json', 'th/auth.json', 'th/home.json', 'th/explore.json', 'th/track.json', 'th/tags.json', 'th/library.json', 'th/playlist.json', 'th/pricing.json', 'th/checkout.json', 'th/account.json', 'th/legal.json', 'th/studio.json', 'th/business.json', 'th/generate.json', 'th/admin.json', 'th/seo.json'] },
       ...(process.dev
-        ? [{ code: 'en-XA', language: 'en-XA', files: ['en-XA/common.json', 'en-XA/errors.json', 'en-XA/player.json', 'en-XA/auth.json', 'en-XA/home.json', 'en-XA/explore.json', 'en-XA/track.json', 'en-XA/tags.json', 'en-XA/library.json', 'en-XA/playlist.json', 'en-XA/account.json', 'en-XA/pricing.json', 'en-XA/business.json'] }]
+        ? [{ code: 'en-XA', language: 'en-XA', files: ['en-XA/common.json', 'en-XA/errors.json', 'en-XA/player.json', 'en-XA/auth.json', 'en-XA/home.json', 'en-XA/explore.json', 'en-XA/track.json', 'en-XA/tags.json', 'en-XA/library.json', 'en-XA/playlist.json', 'en-XA/account.json', 'en-XA/legal.json', 'en-XA/pricing.json', 'en-XA/business.json', 'en-XA/studio.json', 'en-XA/seo.json'] }]
         : []),
     ],
     vueI18n: './i18n.config.ts',
@@ -51,9 +105,21 @@ export default defineNuxtConfig({
   },
   devServer: { port: 15173 },
   runtimeConfig: {
+    // Server-only origins (WI-S3/S5): SSR data fetch + IndexNow key proof.
+    apiOrigin: process.env.NUXT_API_PROXY || process.env.VITE_API_PROXY || 'http://localhost:18081',
+    indexnowKey: process.env.INDEXNOW_KEY || '',
     public: {
       apiBaseUrl: process.env.VITE_API_BASE_URL || '/api/v1',
       tossClientKey: process.env.VITE_TOSS_CLIENT_KEY || '',
+      // Search-console verification tokens (public by design, PO-provided).
+      verifyGoogle: process.env.NUXT_PUBLIC_VERIFY_GOOGLE || '',
+      verifyBing: process.env.NUXT_PUBLIC_VERIFY_BING || '',
+      verifyNaver: process.env.NUXT_PUBLIC_VERIFY_NAVER || '',
+      verifyDaum: process.env.NUXT_PUBLIC_VERIFY_DAUM || '',
+      cfWebAnalyticsToken: process.env.NUXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN || '',
+      // WI-G5: studio generation panel v2 (PromptBox/StyleTags/LyricsEditor/
+      // VariationCard). Default OFF — operational screens stay unchanged.
+      generateUi: process.env.NUXT_PUBLIC_GENERATE_UI === '1',
     },
   },
   routeRules: {
@@ -80,25 +146,27 @@ export default defineNuxtConfig({
     '/guides': { swr: 600 },
     '/guides/**': { swr: 600 },
     '/create': { swr: 600 },
-    '/embed/**': { swr: 3600 },
-    '/login': { ssr: false },
-    '/signup/**': { ssr: false },
-    '/forgot-password': { ssr: false },
-    '/reset-password': { ssr: false },
-    '/verify-email': { ssr: false },
-    '/oauth/**': { ssr: false },
-    '/my-library': { ssr: false },
-    '/me/**': { ssr: false },
-    '/account/**': { ssr: false },
-    '/disputes': { ssr: false },
-    '/rights-center': { ssr: false },
-    '/checkout/**': { ssr: false },
-    '/partner/**': { ssr: false },
-    '/studio/**': { ssr: false },
-    '/admin/**': { ssr: false },
-    '/store/**': { ssr: false },
-    '/business/console/**': { ssr: false },
-    '/500': { ssr: false },
+    '/embed/**': { swr: 3600, robots: 'noindex, follow' },
+    '/login': { ssr: false, robots: 'noindex, follow' },
+    '/signup/**': { ssr: false, robots: 'noindex, follow' },
+    '/forgot-password': { ssr: false, robots: 'noindex, follow' },
+    '/reset-password': { ssr: false, robots: 'noindex, follow' },
+    '/verify-email': { ssr: false, robots: 'noindex, follow' },
+    '/oauth/**': { ssr: false, robots: 'noindex, follow' },
+    '/my-library': { ssr: false, robots: 'noindex, follow' },
+    '/library': { robots: 'noindex, follow' },
+    '/me/**': { ssr: false, robots: 'noindex, follow' },
+    '/account/**': { ssr: false, robots: 'noindex, follow' },
+    '/rights-center': { ssr: false, robots: 'noindex, follow' },
+    '/checkout/**': { ssr: false, robots: 'noindex, follow' },
+    '/partner/**': { ssr: false, robots: 'noindex, follow' },
+    '/studio/**': { ssr: false, robots: 'noindex, follow' },
+    '/admin/**': { ssr: false, robots: 'noindex, follow' },
+    '/store/**': { ssr: false, robots: 'noindex, follow' },
+    '/business/console/**': { ssr: false, robots: 'noindex, follow' },
+    '/500': { ssr: false, robots: 'noindex, follow' },
+    // WI-S5: extensionless Apple association file must serve as JSON.
+    '/.well-known/apple-app-site-association': { headers: { 'content-type': 'application/json' } },
     // NOTE: no '/**' catch-all — it overrides specific rules. Default is SSR;
     // every app/console path above is explicitly CSR.
   },

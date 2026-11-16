@@ -55,7 +55,14 @@
                 {{ track.title }}
               </h1>
               <p v-if="track.creatorName" class="mt-1 flex items-center gap-1.5 text-sm text-text-primary">
-                {{ track.creatorName }}
+                <RouterLink
+                  v-if="track.creatorHandle"
+                  :to="localePath({ name: 'creators-handle', params: { handle: track.creatorHandle } })"
+                  class="hover:text-brand-300 hover:underline"
+                >
+                  {{ track.creatorName }}
+                </RouterLink>
+                <span v-else>{{ track.creatorName }}</span>
                 <VerifiedSeal
                   v-if="cert"
                   :size="16"
@@ -102,6 +109,9 @@
               {{ t('common.actions.share') }}
             </UiButton>
             <UiMenu :items="moreItems" :label="t('track.moreActions')" @select="onMoreSelect" />
+          </div>
+          <div class="mt-4 border-t border-surface-border pt-4">
+            <ShareButtons :url="shareUrl" :title="track.title" />
           </div>
         </UiCard>
 
@@ -175,7 +185,7 @@
             <RouterLink
               v-for="pl in inPlaylists"
               :key="pl.id"
-              :to="localePath({ name: 'playlist-detail', params: { id: pl.id } })"
+              :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
               class="truncate rounded-xl border border-surface-border bg-surface-1 px-3 py-2 text-xs font-semibold text-text-primary transition-colors hover:border-brand-500/50 hover:text-brand-300"
             >
               {{ pl.title }}
@@ -331,7 +341,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { trackApi, playlistApi, userBlocksApi, adminApi, engagementApi } from '@/api/endpoints';
 import { errCodeOf } from '@/api/client';
@@ -341,9 +351,23 @@ import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
 import { useFormat } from '@/composables/useFormat';
+import { usePublicSeo } from '@/composables/usePublicSeo';
+import { fetchPublic } from '@/utils/publicApi';
 import { tagDisplayName } from '@/utils/tags';
 import { providerDisplayName } from '@/utils/providerDisplay';
-import type { Track, CertificateView, Playlist } from '@/api/types';
+import {
+  breadcrumbLd,
+  canonicalFor,
+  canonicalTrackPath,
+  describeTrack,
+  detailParam,
+  musicRecordingLd,
+  needsCjkThaiFont,
+  oembedDiscoveryUrl,
+  trackTitle,
+} from '@/utils/seo';
+import { trackEvent } from '@/utils/analytics';
+import type { Track, TrackPage, CertificateView, Playlist } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
@@ -357,9 +381,10 @@ import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 import TrackRow from '@/components/TrackRow.vue';
+import ShareButtons from '@/components/seo/ShareButtons.vue';
 const localePath = useLocalePath();
 
-const { t, te } = useI18n();
+const { t, te, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const player = usePlayerStore();
@@ -371,8 +396,6 @@ const fmt = useFormat();
 
 const tagName = (key: string | null | undefined) => tagDisplayName(key, t, te);
 
-const track = ref<Track | null>(null);
-const loading = ref(true);
 const error = ref<string | null>(null);
 const cert = ref<CertificateView | null>(null);
 const issuingCert = ref(false);
@@ -380,6 +403,119 @@ const downloading = ref(false);
 const similar = ref<Track[]>([]);
 const sameCreator = ref<Track[]>([]);
 const inPlaylists = ref<Playlist[]>([]);
+
+// WI-S2: track + cert + internal-link blocks render server-side (guest view,
+// identical HTML regardless of login). Related fetches are best-effort.
+const param = computed(() => String(route.params.id ?? ''));
+const { data: pageData, pending, error: pageError, refresh } = await useAsyncData(
+  () => `track-${param.value}`,
+  async () => {
+    const enc = encodeURIComponent(param.value);
+    const [track, cert] = await Promise.all([
+      fetchPublic<Track>(`/tracks/${enc}`),
+      fetchPublic<CertificateView | null>(`/tracks/${enc}/certificate`).catch((): null => null),
+    ]);
+    let similar: Track[] = [];
+    let sameCreator: Track[] = [];
+    let inPlaylists: Playlist[] = [];
+    try {
+      const mood = track.moodTags?.[0];
+      const [byMood, byCreator, pls] = await Promise.all([
+        fetchPublic<TrackPage>('/tracks', mood ? { limit: 7, mood } : { limit: 7 }),
+        fetchPublic<TrackPage>('/tracks', { limit: 7, partnerId: track.partnerId }),
+        fetchPublic<Playlist[]>(`/tracks/${encodeURIComponent(track.id)}/playlists`).catch((): Playlist[] => []),
+      ]);
+      similar = (byMood.items ?? []).filter((x) => x.id !== track.id).slice(0, 6);
+      sameCreator = (byCreator.items ?? []).filter((x) => x.id !== track.id).slice(0, 6);
+      inPlaylists = pls ?? [];
+    } catch {
+      // Related rails stay empty; the core page still renders.
+    }
+    return { track, cert, similar, sameCreator, inPlaylists };
+  },
+);
+const track = computed<Track | null>(() => pageData.value?.track ?? null);
+const loading = computed(() => pending.value);
+watch(
+  pageData,
+  (v) => {
+    if (!v) return;
+    cert.value = v.cert;
+    similar.value = v.similar;
+    sameCreator.value = v.sameCreator;
+    inPlaylists.value = v.inPlaylists;
+  },
+  { immediate: true },
+);
+if (pageError.value) {
+  const st = (pageError.value as { statusCode?: number }).statusCode ?? 0;
+  if (st === 404 || st === 403) {
+    throw showError({ statusCode: 404, statusMessage: 'Track not found' });
+  }
+  error.value = apiError(pageError.value);
+}
+// WI-S1: legacy uuid / bare short ID / stale slug → canonical 301.
+if (track.value?.slug && track.value?.shortId) {
+  const canon = `${track.value.slug}-${track.value.shortId}`;
+  if (param.value !== canon) {
+    await navigateTo(localePath({ name: 'track-detail', params: { id: canon } }), { redirectCode: 301 });
+  }
+}
+// WI-S2 head + JSON-LD + OG image (Thai/CJK titles use the textless fallback).
+const pagePath = computed(() =>
+  track.value?.slug && track.value?.shortId
+    ? canonicalTrackPath(track.value.slug, track.value.shortId)
+    : `/tracks/${param.value}`,
+);
+const creatorPageUrl = computed(() =>
+  track.value?.creatorHandle ? canonicalFor(`/creators/${track.value.creatorHandle}`, locale.value) : null,
+);
+const shareUrl = computed(() => canonicalFor(pagePath.value, locale.value));
+if (track.value && !pageError.value) {
+  const tr = track.value;
+  usePublicSeo({
+    title: trackTitle(t, tr.title, tr.creatorName ?? ''),
+    description: describeTrack(
+      t,
+      {
+        title: tr.title,
+        creatorName: tr.creatorName,
+        genre: tr.genre,
+        moodTags: tr.moodTags,
+        bpm: tr.bpm,
+        musicalKey: tr.musicalKey,
+        durationMs: tr.durationMs,
+      },
+      (k) => tagDisplayName(k, t, te),
+    ),
+    path: pagePath.value,
+    locale: locale.value,
+    ogType: 'music.song',
+    image: null,
+    musicDuration: tr.durationMs ? Math.round(tr.durationMs / 1000) : null,
+    musicMusician: creatorPageUrl.value,
+    oembedUrl: oembedDiscoveryUrl(shareUrl.value),
+  });
+  useSchemaOrg([
+    musicRecordingLd({
+      track: tr,
+      pageUrl: shareUrl.value,
+      creatorUrl: creatorPageUrl.value,
+      certNumber: cert.value?.certificate?.certNumber ?? null,
+      datePublished: tr.createdAt.slice(0, 10),
+    }),
+    breadcrumbLd([
+      { name: 'AVIBE', url: canonicalFor('/', locale.value) },
+      { name: tr.title, url: shareUrl.value },
+    ]),
+  ]);
+  defineOgImageComponent('AvibeOg', {
+    title: tr.title,
+    creator: tr.creatorName ?? '',
+    verified: cert.value !== null,
+    plain: needsCjkThaiFont(`${tr.title} ${tr.creatorName ?? ''}`),
+  });
+}
 
 const canIssueCert = computed(
   () => auth.isAdmin && track.value?.status === 'READY' && cert.value === null,
@@ -464,7 +600,8 @@ async function copyTrackId(): Promise<void> {
 
 async function shareTrack(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(window.location.href);
+    await navigator.clipboard.writeText(shareUrl.value);
+    trackEvent({ name: 'share_clicked', props: { channel: 'copy' } });
     toast.success(t('track.toastLinkCopied'));
   } catch {
     toast.error(t('track.toastCopyFailed'));
@@ -478,42 +615,10 @@ function fmtDuration(ms?: number | null): string {
 }
 
 async function loadTrack(): Promise<void> {
-  const id = route.params.id as string;
-  if (!id) return;
-  loading.value = true;
   error.value = null;
-  try {
-    track.value = await trackApi.get(id);
-    cert.value = await trackApi.getCertificate(id).catch(() => null);
-    if (auth.isAuthenticated) {
-      liked.value = await engagementApi.likeState(id).then((s) => s.liked, () => false);
-    }
-    void loadRelated();
-  } catch (err: unknown) {
-    error.value = apiError(err);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function loadRelated(): Promise<void> {
-  const tr = track.value;
-  if (!tr) return;
-  try {
-    const [byMood, byCreator, pls] = await Promise.all([
-      tr.moodTags?.[0]
-        ? trackApi.list(7, 0, { mood: tr.moodTags[0] })
-        : trackApi.list(7, 0, {}),
-      trackApi.list(7, 0, { partnerId: tr.partnerId }),
-      trackApi.trackPlaylists(tr.id).catch((): Playlist[] => []),
-    ]);
-    similar.value = (byMood.items ?? []).filter((x) => x.id !== tr.id).slice(0, 6);
-    sameCreator.value = (byCreator.items ?? []).filter((x) => x.id !== tr.id).slice(0, 6);
-    inPlaylists.value = pls ?? [];
-  } catch {
-    similar.value = [];
-    sameCreator.value = [];
-    inPlaylists.value = [];
+  await refresh();
+  if (pageError.value) {
+    error.value = apiError(pageError.value);
   }
 }
 
@@ -546,6 +651,7 @@ async function toggleLike(): Promise<void> {
     } else {
       await engagementApi.like(track.value.id);
       liked.value = true;
+      trackEvent({ name: 'track_liked' });
       toast.success(t('library.toastLiked'));
     }
   } catch (err: unknown) {
@@ -673,9 +779,17 @@ async function confirmBlockPartner(): Promise<void> {
 }
 
 onMounted(() => {
-  void loadTrack();
+  // Client-only personalization (SSR HTML stays login-agnostic).
   if (auth.isAuthenticated) {
     void playlists.fetchMine();
+    if (track.value) {
+      void engagementApi.likeState(track.value.id).then(
+        (s) => {
+          liked.value = s.liked;
+        },
+        () => false,
+      );
+    }
   }
 });
 </script>

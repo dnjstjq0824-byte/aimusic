@@ -49,7 +49,7 @@
     <template v-else>
       <section v-if="hero" :aria-label="t('playlist.editorTitle')">
         <RouterLink
-          :to="localePath({ name: 'playlist-detail', params: { id: hero.id } })"
+          :to="localePath({ name: 'playlist-detail', params: { id: detailParam(hero) } })"
           class="group flex flex-col gap-4 rounded-2xl border border-surface-border bg-surface-1 p-4 transition-colors hover:border-brand-500/50 sm:flex-row sm:items-center"
         >
           <CoverMosaic :seeds="heroSeeds" :title="hero.title" size="lg" />
@@ -65,7 +65,7 @@
           <RouterLink
             v-for="pl in grid"
             :key="pl.id"
-            :to="localePath({ name: 'playlist-detail', params: { id: pl.id } })"
+            :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
             class="group"
           >
             <CoverMosaic :seeds="[pl.id]" :title="pl.title" size="md" />
@@ -88,6 +88,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import CoverMosaic from '@/components/ui/CoverMosaic.vue';
+import { detailParam } from '@/utils/seo';
 
 const { t } = useI18n();
 const localePath = useLocalePath();

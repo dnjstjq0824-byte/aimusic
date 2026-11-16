@@ -93,7 +93,7 @@
         <div class="min-w-0 flex-1">
           <div v-if="player.currentTrack">
             <RouterLink
-              :to="localePath({ name: 'track-detail', params: { id: player.currentTrack.id } })"
+              :to="localePath({ name: 'track-detail', params: { id: player.currentTrack ? detailParam(player.currentTrack) : '' } })"
               class="block truncate text-xs font-bold text-white hover:text-brand-400 transition-colors"
             >
               {{ player.currentTrack.title }}
@@ -235,6 +235,7 @@ import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import { detailParam } from '@/utils/seo';
 const localePath = useLocalePath();
 
 const player = usePlayerStore();

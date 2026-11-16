@@ -19,7 +19,7 @@
     </button>
     <div class="min-w-0 flex-1">
       <RouterLink
-        :to="localePath({ name: 'track-detail', params: { id: track.id } })"
+        :to="localePath({ name: 'track-detail', params: { id: detailParam(track) } })"
         class="block truncate text-sm font-bold text-white transition-colors hover:text-brand-400"
       >
         {{ track.title }}
@@ -50,6 +50,7 @@ import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import { tagDisplayName } from '@/utils/tags';
+import { detailParam } from '@/utils/seo';
 import type { Track } from '@/api/types';
 const localePath = useLocalePath();
 const { t, te } = useI18n();

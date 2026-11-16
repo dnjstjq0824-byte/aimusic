@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/app_locale.dart';
 import 'store_mode_controller.dart';
 
 /// Dedicated store-tablet mode: claim by pairing code, then play the
@@ -27,38 +28,39 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     final state = ref.watch(storeModeProvider);
     final controller = ref.read(storeModeProvider.notifier);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('매장 모드'),
+        title: Text(s.storeTitle),
         actions: [
           if (!state.needsClaim)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: '큐 새로고침',
+              tooltip: s.storeRefreshQueue,
               onPressed: controller.refreshQueue,
             ),
           if (!state.needsClaim)
             IconButton(
               icon: const Icon(Icons.logout),
-              tooltip: '페어링 해제',
+              tooltip: s.storeUnpair,
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
-                  title: const Text('페어링 해제'),
-                  content: const Text('이 태블릿의 매장 페어링을 해제하고 재생을 중지합니다.'),
+                  title: Text(s.storeUnpairTitle),
+                  content: Text(s.storeUnpairBody),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('취소'),
+                      child: Text(s.storeCancel),
                     ),
                     TextButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop();
                         controller.unclaim();
                       },
-                      child: const Text('해제'),
+                      child: Text(s.storeUnpairConfirm),
                     ),
                   ],
                 ),
@@ -93,6 +95,7 @@ class _ClaimView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -101,17 +104,17 @@ class _ClaimView extends StatelessWidget {
         children: [
           const Icon(Icons.storefront, size: 64),
           const SizedBox(height: 16),
-          const Text(
-            '파트너 콘솔의 매장 관리에서 발급된 8자리 페어링 코드를 입력하세요.',
+          Text(
+            s.storePairGuide,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           TextField(
             controller: codeController,
-            decoration: const InputDecoration(
-              labelText: '페어링 코드',
-              hintText: '예: A1B2C3D4',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: s.storePairCodeLabel,
+              hintText: s.storePairCodeHint,
+              border: const OutlineInputBorder(),
             ),
             textCapitalization: TextCapitalization.characters,
             inputFormatters: [
@@ -137,7 +140,7 @@ class _ClaimView extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('페어링'),
+                : Text(s.storePair),
           ),
         ],
       ),
@@ -152,6 +155,7 @@ class _QueueView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final controller = ref.read(storeModeProvider.notifier);
     final queue = state.queue;
     final current = state.currentTrack;
@@ -166,8 +170,11 @@ class _QueueView extends ConsumerWidget {
                 : Colors.orange.withValues(alpha: 0.12),
             child: Text(
               queue.open
-                  ? '${queue.businessName} · 영업 중${queue.playlistName == null ? '' : ' · ${queue.playlistName}'}'
-                  : '${queue.businessName} · ${queue.reason}',
+                  ? (queue.playlistName == null
+                      ? s.storeOpenNow(queue.businessName)
+                      : s.storeOpenNowPlaylist(
+                          queue.businessName, queue.playlistName!))
+                  : s.storeClosed(queue.businessName, queue.reason),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -187,7 +194,7 @@ class _QueueView extends ConsumerWidget {
           child: queue == null
               ? const Center(child: CircularProgressIndicator())
               : queue.tracks.isEmpty
-                  ? const Center(child: Text('재생할 곡이 없습니다.'))
+                  ? Center(child: Text(s.storeQueueEmpty))
                   : ListView.builder(
                       itemCount: queue.tracks.length,
                       itemBuilder: (context, i) {
@@ -224,7 +231,7 @@ class _QueueView extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    current?.title ?? '선택된 곡 없음',
+                    current?.title ?? s.storeNoSelection,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall,
@@ -232,7 +239,7 @@ class _QueueView extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.skip_previous),
-                  tooltip: '이전 곡',
+                  tooltip: s.storePrev,
                   onPressed:
                       (queue?.tracks.isNotEmpty ?? false) && !state.loading
                           ? controller.previous
@@ -250,7 +257,7 @@ class _QueueView extends ConsumerWidget {
                           ? Icons.pause_circle_filled
                           : Icons.play_circle_filled),
                   iconSize: 40,
-                  tooltip: state.playing ? '일시정지' : '재생',
+                  tooltip: state.playing ? s.storePause : s.storePlay,
                   onPressed:
                       (queue?.tracks.isNotEmpty ?? false) && !state.loading
                           ? controller.togglePlay
@@ -258,7 +265,7 @@ class _QueueView extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.skip_next),
-                  tooltip: '다음 곡',
+                  tooltip: s.storeNext,
                   onPressed:
                       (queue?.tracks.isNotEmpty ?? false) && !state.loading
                           ? controller.next

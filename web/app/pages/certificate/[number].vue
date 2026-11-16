@@ -2,17 +2,17 @@
   <div class="mx-auto max-w-2xl space-y-6 py-8">
     <UiPageHeader
       eyebrow="Certificate Verification"
-      title="상업적 이용권 보유 인증"
-      description="인증서 번호로 진위를 확인합니다. 인쇄 버튼으로 PDF 보관이 가능합니다."
+      :title="t('legal.aiBadge.certLabel')"
+      :description="t('legal.cert.desc')"
     >
       <template #actions>
         <UiButton v-if="view" variant="secondary" size="sm" class="print:hidden" @click="printPage">
-          인쇄 / PDF 저장
+          {{ t('legal.cert.print') }}
         </UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="인증서를 확인하지 못했습니다" />
+    <UiErrorBanner :message="error" :title="t('legal.cert.loadFail')" />
 
     <div v-if="loading" class="space-y-2">
       <UiSkeleton height="h-10" width="w-full" />
@@ -22,36 +22,36 @@
     <UiCard v-else-if="view" class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-surface-border pb-3">
         <div class="font-mono text-lg font-black text-white">{{ view.certificate.certNumber }}</div>
-        <UiBadge variant="success" size="sm">진위 확인됨</UiBadge>
+        <UiBadge variant="success" size="sm">{{ t('legal.cert.verified') }}</UiBadge>
       </div>
       <dl class="grid gap-3 text-xs sm:grid-cols-2">
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">곡명</dt>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fTitle') }}</dt>
           <dd class="mt-0.5 font-semibold text-white">{{ view.title }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">AI 플랫폼</dt>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fProvider') }}</dt>
           <dd class="mt-0.5 text-text-primary">
             {{ view.aiProvider }}<span v-if="view.aiModel"> ({{ view.aiModel }})</span>
           </dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">사용 요금제</dt>
-          <dd class="mt-0.5 text-text-primary">{{ view.planTier ?? '미기재' }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fTier') }}</dt>
+          <dd class="mt-0.5 text-text-primary">{{ view.planTier ?? t('legal.cert.na') }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">생성일</dt>
-          <dd class="mt-0.5 text-text-primary">{{ view.generatedAt ?? '미기재' }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fGenerated') }}</dt>
+          <dd class="mt-0.5 text-text-primary">{{ view.generatedAt ?? t('legal.cert.na') }}</dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">게이트 통과</dt>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fGates') }}</dt>
           <dd class="mt-0.5 font-semibold" :class="view.gatesPassed ? 'text-verified' : 'text-accent-amber'">
-            {{ view.gatesPassed ? 'Gate 1-3 통과' : '일부 미통과' }}
+            {{ view.gatesPassed ? t('legal.cert.gatesPass') : t('legal.cert.gatesPartial') }}
           </dd>
         </div>
         <div>
-          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">발급일</dt>
-          <dd class="mt-0.5 text-text-primary">{{ fmtDate(view.certificate.issuedAt) }}</dd>
+          <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">{{ t('legal.cert.fIssued') }}</dt>
+          <dd class="mt-0.5 text-text-primary">{{ fmt.dateISO(view.certificate.issuedAt) }}</dd>
         </div>
         <div v-if="view.isrc">
           <dt class="font-bold uppercase tracking-wider text-text-muted text-caption">ISRC</dt>
@@ -59,8 +59,7 @@
         </div>
       </dl>
       <p class="border-t border-surface-border pt-3 text-caption leading-relaxed text-text-muted">
-        본 인증은 생성 시점의 유료 상업 플랜 보유, 당시 정책상 상업 이용 허용, 중복·재등록 아님을
-        파트너 신고와 자동 검사에 근거해 확인한 절차이며, 권리 관계를 보증하지 않습니다.
+        {{ t('legal.cert.notice') }}
       </p>
     </UiCard>
   </div>
@@ -68,9 +67,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { trackApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { useFormat } from '@/composables/useFormat';
 import type { CertificateView } from '@/api/types';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
@@ -80,13 +81,11 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
 const route = useRoute();
+const { t } = useI18n();
+const fmt = useFormat();
 const view = ref<CertificateView | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('ko-KR');
-}
 
 function printPage(): void {
   window.print();
@@ -96,13 +95,13 @@ onMounted(async () => {
   const number = route.params.number as string;
   if (!number) {
     loading.value = false;
-    error.value = '인증서 번호가 없습니다.';
+    error.value = t('legal.cert.errNoNumber');
     return;
   }
   try {
     view.value = await trackApi.verifyCertificate(number);
     if (!view.value) {
-      error.value = '인증서를 찾을 수 없습니다. 번호를 확인해 주세요.';
+      error.value = t('legal.cert.errNotFound');
     }
   } catch (err) {
     error.value = errMessageOf(err);

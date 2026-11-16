@@ -104,8 +104,24 @@ describe('usePlayerStore', () => {
     await flush();
 
     expect(store.errorCode).toBe('ERR_UNAUTHORIZED');
-    expect(store.error).toBe('재생하려면 로그인이 필요합니다.');
+    expect(store.error).toBe('Log in to play.');
     expect(store.isPlaying).toBe(false);
+  });
+
+  it('a rejected grant resolves the app locale when a translator is installed', async () => {
+    const { store } = await freshStore();
+    const client = await import('@/api/client');
+    client.setKeyTranslator((key) => (key === 'player.errSkipLogin' ? 'KO-LOGIN-REQ' : null));
+    stream.mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: { code: 'ERR_UNAUTHORIZED', message: 'login required' } } },
+    });
+
+    store.setQueue([track('A')], 'A');
+    await flush();
+
+    expect(store.error).toBe('KO-LOGIN-REQ');
+    client.setKeyTranslator(null);
   });
 
   it('saves the leaving position under the track being left, not the next one', async () => {

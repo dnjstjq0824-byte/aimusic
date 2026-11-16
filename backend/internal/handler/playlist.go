@@ -5,12 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/service"
 )
 
 // PlaylistHandler serves playlist CRUD, entries, and reorder.
 type PlaylistHandler struct {
 	Playlists *service.PlaylistService
+	SEO       *service.SEOService
 }
 
 type playlistRequest struct {
@@ -77,6 +79,7 @@ func (h *PlaylistHandler) Update(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
+	notifySearchAsync(h.SEO, []string{domain.CanonicalPlaylistPath(p.Slug, p.ShortID)})
 	ok(c, p)
 }
 

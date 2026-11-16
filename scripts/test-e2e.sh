@@ -56,6 +56,28 @@
 #   T17  business inquiries + waitlist (R7): submit 201 + row, honeypot 200
 #        without row, invalid 400, admin list/status (+ guest 401, bad status
 #        400), waitlist join + idempotent rejoin + bad email 400
+#   T18  profile nickname (R8): rename 200 + match, empty 400, guest 401
+#   T19  email verification + locale (A2): signup unverified (login ok, me
+#        emailVerified false + locale ko), locale switch ja + bogus 400 +
+#        guest 401, orders/pre-check/stores/generations 403 EMAIL_NOT_VERIFIED,
+#        stream open unverified, request 202 + row, bogus confirm 401,
+#        confirm 200 + login tokens + verified, replay 401, orders open after
+#        verify (503/201), locale CHECK covers 5
+#   T20  search exposure (S1~S5): slug/short resolution + canonical resolve,
+#        creator handle claim/taken guards, sitemap types + cursor, landing
+#        gate, oEmbed track/playlist/foreign/private, events batch + PII
+#        strip, admin seo status/indexnow-no-key/purge-no-token, overview
+#        signupsByLocale + inquiries
+#   T21  business roles + console (R10/R11): 000026 schema + G-ROLE backfill
+#        (store owner, BUSINESS grant), /auth/register/business KR checksum
+#        approve vs foreign PENDING + admin review, /business console store/
+#        device/schedule/log CRUD + cross-owner 403, role guards
+#        (listener/business/partner/guest), admin role-grants/oauth-stats/
+#        businesses, me.roles
+#   T22  generation AI prep (G0/G1/G5 server): 000027 schema + append-only
+#        triggers, AVIBE policy row, multilingual guard (ko/en/ja/th 400 +
+#        strike rows), seed/modelVersion pins (201 + readback + bad seed
+#        400), AVIBE self-declared pre-check 403, tracks.origin default
 #
 # Tooling: curl (API + presigned PUT + HLS GET), psql (state assertions), redis-cli (queue depth).
 # Does NOT require docker itself; the stack must already be up (see scripts/start-local.sh).
@@ -284,7 +306,13 @@ for obj in \
   "SELECT to_regclass('public.generation_violations') IS NOT NULL" \
   "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='track_rights_declarations' AND column_name='cert_snapshot_json'" \
   "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='isrc'" \
-  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='license_ref'" ; do
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='license_ref'" \
+  "SELECT to_regclass('public.email_verifications') IS NOT NULL" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='locale'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='email_verified_at'" \
+  "SELECT to_regclass('public.user_roles') IS NOT NULL" \
+  "SELECT to_regclass('public.business_profiles') IS NOT NULL" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='store_businesses' AND column_name='owner_user_id'" ; do
   case "$obj" in
     SELECT\ to_regclass*) want="t" ;;
     *) want="1" ;;
@@ -351,6 +379,11 @@ PFREE_TOKEN="$(jget "data.tokens.accessToken")"
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "login listener" "200" "$code"
 USER_TOKEN="$(jget "data.tokens.accessToken")"
+
+# A2: fixtures predate email verification; existing users count as verified.
+psql_q "UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE email IN ('$ADMIN_EMAIL','$PARTNER_FREE_EMAIL','$PARTNER_A_EMAIL','$PARTNER_B_EMAIL','$USER_EMAIL');" >/dev/null
+VRFY_COUNT="$(psql_q "SELECT COUNT(*) FROM users WHERE email_verified_at IS NOT NULL AND email IN ('$ADMIN_EMAIL','$PARTNER_FREE_EMAIL','$PARTNER_A_EMAIL','$PARTNER_B_EMAIL','$USER_EMAIL');" | tr -d ' \r\n')"
+assert_eq "fixtures verified (A2 backfill)" "5" "$VRFY_COUNT"
 
 # Terms consent bootstrap: commercial surfaces (stream/orders/pre-check)
 # require consent to the latest required terms; consent every fixture user.
@@ -851,7 +884,10 @@ fi
 seed_ready_track() {
   local partner_id="$1"; local title="$2"
   local tid
-  tid="$(psql_q "INSERT INTO tracks (partner_id,title,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$partner_id'::uuid,'$title','staging/$partner_id/e2e-fallback/dummy.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+  sid="$(printf '%04x%04x' "$RANDOM" "$RANDOM")"
+  slug="$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//')"
+  if [ -z "$slug" ]; then slug="track"; fi
+  tid="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$partner_id'::uuid,'$title','$sid','$slug','staging/$partner_id/e2e-fallback/dummy.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
   psql_q "UPDATE tracks SET hls_prefix='hls/$tid' WHERE id='$tid'::uuid;" >/dev/null
   printf '%s' "$tid"
 }
@@ -903,7 +939,7 @@ if [ "$HAVE_FFMPEG" -eq 1 ] && [ -n "${HAPPY_TRACK_ID:-}" ]; then
 else
   DISPUTE_TRACK_A="$(seed_ready_track "$PA_PARTNER_ID" "E2E Dispute A")"
   HAPPY_TRACK_ID="$DISPUTE_TRACK_A"
-  PLAYLIST_ID="$(psql_q "INSERT INTO playlists (owner_user_id,title,is_public) VALUES ('$USER_ID'::uuid,'E2E Mix',FALSE) RETURNING id::text;" | tr -d ' \r\n')"
+  PLAYLIST_ID="$(psql_q "INSERT INTO playlists (owner_user_id,title,short_id,slug,is_public) VALUES ('$USER_ID'::uuid,'E2E Mix',substr(md5(random()::text),1,8),'e2e-mix',FALSE) RETURNING id::text;" | tr -d ' \r\n')"
   psql_q "INSERT INTO playlist_tracks (playlist_id,track_id,position) VALUES ('$PLAYLIST_ID'::uuid,'$DISPUTE_TRACK_A'::uuid,0) ON CONFLICT DO NOTHING;" >/dev/null
   pass "fallback seeded dispute track A $DISPUTE_TRACK_A"
 fi
@@ -1185,12 +1221,18 @@ code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW
 assert_status "old password rejected" "401" "$code"
 code="$(api POST "/auth/password-reset/confirm" "" "{\"token\":\"$E2E_RAW\",\"newPassword\":\"E2eAgain12!\"}")"
 assert_status "reset token single-use replay -> 401" "401" "$code"
-# OAuth: provider catalog + start guards.
+# OAuth: provider catalog + start guards (A1: 5 providers, exchange guards).
 code="$(api GET "/auth/oauth/providers" "" "")"
 assert_status "oauth providers -> 200" "200" "$code"
 assert_contains "providers list google" '"provider":"GOOGLE"' "$(cat "$BODY")"
 assert_contains "providers list kakao" '"provider":"KAKAO"' "$(cat "$BODY")"
-code="$(api GET "/auth/oauth/apple/start" "" "")"
+assert_contains "providers list apple" '"provider":"APPLE"' "$(cat "$BODY")"
+assert_contains "providers list naver" '"provider":"NAVER"' "$(cat "$BODY")"
+assert_contains "providers list line" '"provider":"LINE"' "$(cat "$BODY")"
+code="$(api GET "/auth/oauth/providers?locale=ko" "" "")"
+assert_status "oauth providers locale -> 200" "200" "$code"
+assert_contains "providers ko order" '"provider":"KAKAO"' "$(cat "$BODY")"
+code="$(api GET "/auth/oauth/wechat/start" "" "")"
 assert_status "oauth unknown provider -> 400" "400" "$code"
 code="$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$API/auth/oauth/google/start")"
 if [ "$code" = "302" ]; then
@@ -1204,6 +1246,34 @@ elif [ "$code" = "400" ]; then
 else
   fail "oauth google start want 302/400 got $code"
 fi
+# A1: callback failures redirect with an error code and never leak tokens.
+loc="$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 20 "$API/auth/oauth/google/callback?code=x&state=y")"
+case "$loc" in
+  *oauthError=*) pass "oauth callback bogus -> oauthError redirect" ;;
+  *) fail "oauth callback redirect: $loc" ;;
+esac
+case "$loc" in
+  *accessToken=*|*refreshToken=*) fail "oauth callback leaks tokens: $loc" ;;
+  *) pass "oauth callback redirect carries no tokens" ;;
+esac
+code="$(api POST "/auth/oauth/exchange" "" '{"code":"bogus"}')"
+assert_status "oauth exchange bogus -> 401" "401" "$code"
+code="$(api POST "/auth/oauth/complete-email" "" '{"token":"bogus","email":"a@example.com"}')"
+assert_status "oauth complete-email bogus -> 401" "401" "$code"
+code="$(api POST "/auth/oauth/complete-email" "" '{"token":"bogus","email":"not-an-email"}')"
+assert_status "oauth complete-email bad email -> 400" "400" "$code"
+code="$(api POST "/auth/oauth/link-token" "" "")"
+assert_status "oauth link-token anonymous -> 401" "401" "$code"
+code="$(api POST "/auth/oauth/link-token" "$USER_TOKEN" "")"
+assert_status "oauth link-token authed -> 200" "200" "$code"
+assert_contains "link-token shape" '"linkToken"' "$(cat "$BODY")"
+code="$(api GET "/auth/oauth/connections" "$USER_TOKEN" "")"
+assert_status "oauth connections -> 200" "200" "$code"
+assert_contains "connections empty list" '"data":[]' "$(cat "$BODY")"
+code="$(api DELETE "/auth/oauth/connections/GOOGLE" "$USER_TOKEN" "")"
+assert_status "oauth unlink absent -> 404" "404" "$code"
+chk="$(psql_q "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname='oauth_accounts_provider_check';" | tr -d ' \r\n')"
+assert_contains "oauth check covers 5 providers" "LINE" "$chk"
 # Billing: seeded catalog always lists; orders fail closed without TOSS keys.
 code="$(api GET "/billing/plans" "" "")"
 assert_status "billing plans -> 200" "200" "$code"
@@ -1264,8 +1334,8 @@ WD2_ID="$(jget "data.id")"
 # Withdraw tx completeness: every step of the single transaction landed.
 wd_sub="$(psql_q "SELECT COUNT(*) FROM billing_subscriptions WHERE user_id='$WD_ID'::uuid AND status='ACTIVE';" | tr -d ' \r\n')"
 assert_eq "withdraw cancels subscription" "0" "$wd_sub"
-wd_left="$(psql_q "SELECT (SELECT COUNT(*) FROM password_reset_tokens WHERE user_id='$WD_ID'::uuid AND used_at IS NULL)+(SELECT COUNT(*) FROM oauth_accounts WHERE user_id='$WD_ID'::uuid)+(SELECT COUNT(*) FROM notifications WHERE user_id='$WD_ID'::uuid);" | tr -d ' \r\n')"
-assert_eq "withdraw clears reset/oauth/notify" "0" "$wd_left"
+wd_left="$(psql_q "SELECT (SELECT COUNT(*) FROM password_reset_tokens WHERE user_id='$WD_ID'::uuid AND used_at IS NULL)+(SELECT COUNT(*) FROM email_verifications WHERE user_id='$WD_ID'::uuid AND used_at IS NULL)+(SELECT COUNT(*) FROM oauth_accounts WHERE user_id='$WD_ID'::uuid)+(SELECT COUNT(*) FROM notifications WHERE user_id='$WD_ID'::uuid);" | tr -d ' \r\n')"
+assert_eq "withdraw clears reset/verify/oauth/notify" "0" "$wd_left"
 wd_ver="$(psql_q "SELECT token_version FROM users WHERE id='$WD_ID'::uuid;" | tr -d ' \r\n')"
 if [ "$wd_ver" -ge 1 ] 2>/dev/null; then pass "withdraw bumps token version ($wd_ver)"; else fail "withdraw token_version=$wd_ver"; fi
 code="$(api GET "/auth/me" "$WD_TOKEN" "")"
@@ -1405,11 +1475,11 @@ assert_eq "T13 cumulative heartbeats stay 1 row" "1" "$T13_ROWS"
 
 section "T14 site search v2 (R5 trgm + creator + tag display names)"
 psql_q "UPDATE users SET display_name='E2E 별빛프로듀서' WHERE id=(SELECT user_id FROM partner_profiles WHERE id='$PA_PARTNER_ID'::uuid);" >/dev/null
-T14_T1="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E Neon Focus Run','electronic','{focus}','staging/t14/1.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T2="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 밤하늘 드라이브','pop','{drive}','staging/t14/2.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T3="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 集中チル','ambient','{chill}','staging/t14/3.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T4="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 专注摇滚','rock','{focus}','staging/t14/4.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T5="$(psql_q "INSERT INTO tracks (partner_id,title,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E โฟกัส','electronic','{focus}','staging/t14/5.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T1="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E Neon Focus Run','T1400001','e2e-neon-focus-run','electronic','{focus}','staging/t14/1.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T2="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 밤하늘 드라이브','T1400002','e2e-밤하늘-드라이브','pop','{drive}','staging/t14/2.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T3="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 集中チル','T1400003','e2e-集中チル','ambient','{chill}','staging/t14/3.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T4="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 专注摇滚','T1400004','e2e-专注摇滚','rock','{focus}','staging/t14/4.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T5="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E โฟกัส','T1400005','e2e-โฟกัส','electronic','{focus}','staging/t14/5.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
 code="$(api GET "/tracks?q=Neon&limit=50" "" "")"
 assert_status "T14 en title search" "200" "$code"
 assert_contains "T14 en match" "$T14_T1" "$(cat "$BODY")"
@@ -1590,6 +1660,400 @@ assert_status "T17 waitlist rejoin idempotent" "200" "$code"
 assert_contains "T17 waitlist existed" '"registered":false' "$(cat "$BODY")"
 code="$(api POST "/waitlist" "" '{"email":"not-an-email"}')"
 assert_status "T17 waitlist bad email -> 400" "400" "$code"
+
+section "T18 profile nickname (R8)"
+code="$(api PUT "/auth/profile" "$USER_TOKEN" "{\"displayName\":\"E2E Renamed $STAMP\"}")"
+assert_status "T18 rename displayName" "200" "$code"
+assert_contains "T18 renamed match" "E2E Renamed $STAMP" "$(cat "$BODY")"
+code="$(api PUT "/auth/profile" "$USER_TOKEN" '{"displayName":""}')"
+assert_status "T18 empty nickname -> 400" "400" "$code"
+code="$(api PUT "/auth/profile" "" '{"displayName":"E2E Ghost"}')"
+assert_status "T18 rename guest -> 401" "401" "$code"
+
+section "T19 email verification + locale (A2)"
+V_EMAIL="e2e-verify-$STAMP@example.com"
+code="$(api POST "/auth/register" "" "{\"email\":\"$V_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-verify\",\"ageConfirmed\":true}")"
+assert_status "T19 register verify-candidate" "201" "$code"
+V_ID="$(jget "data.id")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$V_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T19 login unverified works" "200" "$code"
+V_TOKEN="$(jget "data.tokens.accessToken")"
+code="$(api GET "/auth/me" "$V_TOKEN" "")"
+assert_status "T19 me unverified" "200" "$code"
+assert_contains "T19 me emailVerified false" '"emailVerified":false' "$(cat "$BODY" | tr -d ' ')"
+assert_contains "T19 me locale default ko" '"locale":"ko"' "$(cat "$BODY" | tr -d ' ')"
+code="$(api PATCH "/auth/me/locale" "$V_TOKEN" '{"locale":"ja"}')"
+assert_status "T19 locale switch ja" "200" "$code"
+assert_contains "T19 locale ja echoed" '"locale":"ja"' "$(cat "$BODY")"
+code="$(api GET "/auth/me" "$V_TOKEN" "")"
+assert_contains "T19 me locale ja" '"locale":"ja"' "$(cat "$BODY" | tr -d ' ')"
+code="$(api PATCH "/auth/me/locale" "$V_TOKEN" '{"locale":"xx"}')"
+assert_status "T19 locale bogus -> 400" "400" "$code"
+code="$(api PATCH "/auth/me/locale" "" '{"locale":"en"}')"
+assert_status "T19 locale guest -> 401" "401" "$code"
+# Consent the candidate so only the email gate can fire below.
+consent_all_required "$V_TOKEN" >/dev/null
+code="$(api POST "/billing/orders" "$V_TOKEN" "{\"planCode\":\"LISTENER_PLUS_MONTHLY\",\"refundConsentAt\":\"$GEN_NOW\"}")"
+assert_status "T19 orders unverified -> 403" "403" "$code"
+assert_contains "T19 orders gate code" "EMAIL_NOT_VERIFIED" "$(cat "$BODY")"
+code="$(api GET "/tracks/$HAPPY_TRACK_ID/stream" "$V_TOKEN" "")"
+assert_status "T19 stream unverified -> 200" "200" "$code"
+VP_EMAIL="e2e-vp-$STAMP@example.com"
+code="$(register_partner "$VP_EMAIL" "E2EVP-Music")"
+assert_status "T19 register verify-partner" "201" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$VP_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T19 login verify-partner" "200" "$code"
+VP_TOKEN="$(jget "data.tokens.accessToken")"
+consent_all_required "$VP_TOKEN" >/dev/null
+code="$(api POST "/partner/pre-check" "$VP_TOKEN" '{}')"
+assert_status "T19 pre-check unverified -> 403" "403" "$code"
+assert_contains "T19 pre-check gate code" "EMAIL_NOT_VERIFIED" "$(cat "$BODY")"
+code="$(api POST "/partner/stores" "$VP_TOKEN" '{}')"
+assert_status "T19 stores unverified -> 403" "403" "$code"
+assert_contains "T19 stores gate code" "EMAIL_NOT_VERIFIED" "$(cat "$BODY")"
+code="$(api POST "/partner/generations" "$VP_TOKEN" '{}')"
+assert_status "T19 generations unverified -> 403" "403" "$code"
+assert_contains "T19 generations gate code" "EMAIL_NOT_VERIFIED" "$(cat "$BODY")"
+code="$(api POST "/auth/email/verify/request" "" "")"
+assert_status "T19 verify request guest -> 401" "401" "$code"
+code="$(api POST "/auth/email/verify/request" "$V_TOKEN" "")"
+assert_status "T19 verify request -> 202" "202" "$code"
+assert_contains "T19 verify requested" '"requested":true' "$(cat "$BODY")"
+V_ROWS="$(psql_q "SELECT COUNT(*) FROM email_verifications WHERE user_id='$V_ID'::uuid AND used_at IS NULL;" | tr -d ' \r\n')"
+assert_eq "T19 verify row stored" "1" "$V_ROWS"
+code="$(api POST "/auth/email/verify/confirm" "" '{"token":"bogus-token"}')"
+assert_status "T19 verify confirm bogus -> 401" "401" "$code"
+# Raw tokens never leave the mailer: seed a known link and confirm it.
+V_RAW="e2e-verify-token-$STAMP"
+V_HASH="$(V_RAW="$V_RAW" python3 -c "import hashlib,os; print(hashlib.sha256(os.environ['V_RAW'].encode()).hexdigest())")"
+psql_q "DELETE FROM email_verifications WHERE user_id='$V_ID'::uuid;" >/dev/null
+V_VID="$(psql_q "INSERT INTO email_verifications (user_id,email,purpose,token_hash,expires_at) VALUES ('$V_ID'::uuid,'$V_EMAIL','VERIFY','$V_HASH',NOW()+interval '24 hours') RETURNING id::text;" | tr -d ' \r\n')"
+if [ -z "$V_VID" ]; then fail "T19 verify seed id empty"; else pass "T19 verify seed id $V_VID"; fi
+code="$(api POST "/auth/email/verify/confirm" "" "{\"token\":\"$V_RAW\"}")"
+assert_status "T19 verify confirm -> 200" "200" "$code"
+assert_contains "T19 verify tokens issued" '"accessToken"' "$(cat "$BODY")"
+V_TOKEN2="$(jget "data.tokens.accessToken")"
+code="$(api POST "/auth/email/verify/confirm" "" "{\"token\":\"$V_RAW\"}")"
+assert_status "T19 verify replay -> 401" "401" "$code"
+code="$(api GET "/auth/me" "$V_TOKEN2" "")"
+assert_status "T19 me after verify" "200" "$code"
+assert_contains "T19 me emailVerified true" '"emailVerified":true' "$(cat "$BODY" | tr -d ' ')"
+V_USED="$(psql_q "SELECT COUNT(*) FROM email_verifications WHERE id='$V_VID'::uuid AND used_at IS NOT NULL;" | tr -d ' \r\n')"
+assert_eq "T19 verify row consumed" "1" "$V_USED"
+code="$(api POST "/billing/orders" "$V_TOKEN2" "{\"planCode\":\"LISTENER_PLUS_MONTHLY\",\"refundConsentAt\":\"$GEN_NOW\"}")"
+if [ "$code" = "503" ]; then
+  assert_contains "T19 orders fail closed without keys" "ERR_PAYMENT_UNAVAILABLE" "$(cat "$BODY")"
+elif [ "$code" = "201" ]; then
+  assert_contains "T19 order merchant id" "AVIBE-" "$(cat "$BODY")"
+else
+  fail "T19 verified orders want 503/201 got $code"
+fi
+chk="$(psql_q "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname='users_locale_check';" | tr -d ' \r\n')"
+assert_contains "T19 users locale check covers 5" "zh-cn" "$chk"
+
+section "T20 search exposure slugs/sitemap/creators/oembed/events (S1~S5)"
+S20_TRACK="$(seed_ready_track "$PA_PARTNER_ID" "E2E Sitemap Song")"
+if [ -z "$S20_TRACK" ]; then fail "T20 seed track id empty"; else pass "T20 seed track $S20_TRACK"; fi
+code="$(api GET "/tracks/$S20_TRACK" "" "")"
+assert_status "T20 track uuid resolves" "200" "$code"
+S20_SHORT="$(jget "data.shortId")"
+S20_SLUG="$(jget "data.slug")"
+S20_CANON="/tracks/$S20_SLUG-$S20_SHORT"
+if [ -z "$S20_SHORT" ] || [ -z "$S20_SLUG" ]; then fail "T20 short/slug empty"; else pass "T20 short/slug $S20_SLUG-$S20_SHORT"; fi
+code="$(api GET "/tracks/$S20_SLUG-$S20_SHORT" "" "")"
+assert_status "T20 track slug-short resolves" "200" "$code"
+code="$(api GET "/tracks/$S20_SHORT" "" "")"
+assert_status "T20 track bare short resolves" "200" "$code"
+code="$(api GET "/seo/resolve?path=/tracks/$S20_TRACK" "" "")"
+assert_status "T20 resolve legacy uuid" "200" "$code"
+assert_eq "T20 resolve canonical" "$S20_CANON" "$(jget "data.canonical")"
+assert_contains "T20 resolve redirect flag" '"redirect":true' "$(cat "$BODY" | tr -d ' ')"
+code="$(api GET "/seo/resolve?path=$S20_CANON" "" "")"
+assert_status "T20 resolve canonical stable" "200" "$code"
+assert_contains "T20 resolve no redirect" '"redirect":false' "$(cat "$BODY" | tr -d ' ')"
+code="$(api GET "/seo/resolve?path=/tracks/does-not-exist" "" "")"
+assert_status "T20 resolve unknown -> 404" "404" "$code"
+code="$(api GET "/seo/resolve?path=/my-library" "" "")"
+assert_status "T20 resolve legacy library" "200" "$code"
+assert_eq "T20 resolve library target" "/library" "$(jget "data.canonical")"
+code="$(api GET "/seo/resolve?path=tracks/x" "" "")"
+assert_status "T20 resolve relative -> 400" "400" "$code"
+code="$(api POST "/playlists" "$USER_TOKEN" '{"title":"E2E Sitemap Mix","isPublic":true}')"
+assert_status "T20 playlist create" "201" "$code"
+S20_PL="$(jget "data.id")"
+S20_PSHORT="$(jget "data.shortId")"
+S20_PSLUG="$(jget "data.slug")"
+code="$(api GET "/playlists/$S20_PSLUG-$S20_PSHORT" "" "")"
+assert_status "T20 playlist slug-short resolves" "200" "$code"
+code="$(api GET "/seo/resolve?path=/playlists/$S20_PL" "" "")"
+assert_status "T20 resolve playlist uuid" "200" "$code"
+assert_eq "T20 resolve playlist canonical" "/playlists/$S20_PSLUG-$S20_PSHORT" "$(jget "data.canonical")"
+uniq="$(psql_q "SELECT COUNT(*) FROM pg_constraint WHERE conname IN ('tracks_short_id_unique','playlists_short_id_unique');" | tr -d ' \r\n')"
+assert_eq "T20 short unique constraints" "2" "$uniq"
+phandle="$(psql_q "SELECT handle FROM users WHERE id='$PA_USER_ID'::uuid;" | tr -d ' \r\n')"
+if [[ "$phandle" == creator_* ]]; then pass "T20 partner handle auto-assigned $phandle"; else fail "T20 partner handle auto-assign got '$phandle'"; fi
+S20_HANDLE="e2e_creator_$STAMP"
+S20_HANDLE="$(printf '%s' "$S20_HANDLE" | tr -cs 'a-z0-9_' '_' | cut -c1-30)"
+code="$(api POST "/users/handle" "$PA_TOKEN" "{\"handle\":\"$S20_HANDLE\"}")"
+assert_status "T20 claim handle" "200" "$code"
+code="$(api POST "/users/handle" "$PB_TOKEN" "{\"handle\":\"$S20_HANDLE\"}")"
+assert_status "T20 claim taken handle -> 409" "409" "$code"
+assert_contains "T20 handle taken code" "ERR_HANDLE_TAKEN" "$(cat "$BODY")"
+code="$(api POST "/users/handle" "$PB_TOKEN" '{"handle":"ad"}')"
+assert_status "T20 claim short handle -> 400" "400" "$code"
+code="$(api POST "/users/handle" "$PB_TOKEN" '{"handle":"admin"}')"
+assert_status "T20 claim reserved handle -> 400" "400" "$code"
+code="$(api POST "/users/handle" "" "{\"handle\":\"e2e_guest_handle\"}")"
+assert_status "T20 claim handle guest -> 401" "401" "$code"
+code="$(api GET "/seo/sitemap/tracks?limit=1" "" "")"
+assert_status "T20 sitemap tracks" "200" "$code"
+assert_contains "T20 sitemap track loc" "/tracks/" "$(cat "$BODY")"
+code="$(api GET "/seo/sitemap/bogus" "" "")"
+assert_status "T20 sitemap bogus type -> 400" "400" "$code"
+code="$(api GET "/seo/sitemap/guides" "" "")"
+assert_status "T20 sitemap guides" "200" "$code"
+assert_contains "T20 sitemap guide slug" "store-music-license" "$(cat "$BODY")"
+code="$(api GET "/seo/sitemap/static" "" "")"
+assert_status "T20 sitemap static" "200" "$code"
+code="$(api GET "/seo/landing?mood=cafe" "" "")"
+assert_status "T20 landing mood" "200" "$code"
+assert_contains "T20 landing count field" '"count"' "$(cat "$BODY")"
+code="$(api GET "/seo/landing" "" "")"
+assert_status "T20 landing empty -> 400" "400" "$code"
+code="$(api GET "/seo/landing?mood=cafe&genre=jazz" "" "")"
+assert_status "T20 landing two facets -> 400" "400" "$code"
+code="$(api GET "/seo/landing?mood=nope" "" "")"
+assert_status "T20 landing bogus key -> 400" "400" "$code"
+code="$(api GET "/creators/$S20_HANDLE" "" "")"
+assert_status "T20 creator profile" "200" "$code"
+assert_contains "T20 creator partner id" "$PA_PARTNER_ID" "$(cat "$BODY")"
+code="$(api GET "/creators/no-such-handle" "" "")"
+assert_status "T20 creator unknown -> 404" "404" "$code"
+code="$(api GET "/oembed?url=/tracks/$S20_SLUG-$S20_SHORT" "" "")"
+assert_status "T20 oembed track path" "200" "$code"
+assert_contains "T20 oembed iframe" "/embed/track/$S20_SHORT" "$(cat "$BODY")"
+code="$(api GET "/oembed?url=/playlists/$S20_PSLUG-$S20_PSHORT" "" "")"
+assert_status "T20 oembed playlist versioned alias" "200" "$code"
+code="$(curl -s -o "$BODY" -w "%{http_code}" --max-time 20 "$BASE_URL/oembed?url=/tracks/$S20_SLUG-$S20_SHORT" 2>"$TMP_DIR/curl.err" || echo "000")"
+assert_status "T20 oembed site-root route" "200" "$code"
+code="$(api GET "/oembed?url=https://evil.example.com/tracks/x" "" "")"
+assert_status "T20 oembed foreign host -> 400" "400" "$code"
+code="$(api POST "/playlists" "$USER_TOKEN" '{"title":"E2E Private Mix","isPublic":false}')"
+S20_PRIV="$(jget "data.id")"
+S20_PRIV_S="$(jget "data.shortId")"
+S20_PRIV_SL="$(jget "data.slug")"
+code="$(api GET "/oembed?url=/playlists/$S20_PRIV_SL-$S20_PRIV_S" "" "")"
+assert_status "T20 oembed private -> 404" "404" "$code"
+code="$(api POST "/events" "" '{"events":[{"name":"play_started","locale":"ko","path":"/","props":{"channel":"x"}},{"name":"share_clicked","props":{}}]}')"
+assert_status "T20 events batch -> 202" "202" "$code"
+assert_contains "T20 events accepted 2" '"accepted":2' "$(cat "$BODY" | tr -d ' ')"
+evrows="$(psql_q "SELECT COUNT(*) FROM analytics_events WHERE name IN ('play_started','share_clicked');" | tr -d ' \r\n')"
+if [ "$evrows" -ge 2 ] 2>/dev/null; then pass "T20 events stored $evrows"; else fail "T20 events stored got '$evrows'"; fi
+code="$(api POST "/events" "" '{"events":[{"name":"keystroke"}]}')"
+assert_status "T20 events unknown -> 400" "400" "$code"
+code="$(api POST "/events" "" '{"events":[]}')"
+assert_status "T20 events empty -> 400" "400" "$code"
+code="$(api POST "/events" "" '{"events":[{"name":"play_started","props":{"email":"a@b.c","channel":"copy"}}]}')"
+assert_status "T20 events pii batch -> 202" "202" "$code"
+evprops="$(psql_q "SELECT props::text FROM analytics_events WHERE name='play_started' AND props::text LIKE '%copy%' ORDER BY created_at DESC LIMIT 1;" | tr -d '\r\n')"
+assert_contains "T20 events keeps channel" "copy" "$evprops"
+if [[ "$evprops" == *"a@b.c"* ]]; then fail "T20 events email leaked"; else pass "T20 events email stripped"; fi
+code="$(api GET "/admin/seo/status" "$ADMIN_TOKEN" "")"
+assert_status "T20 admin seo status" "200" "$code"
+assert_contains "T20 indexnow disabled without key" '"indexNowEnabled":false' "$(cat "$BODY" | tr -d ' ')"
+code="$(api POST "/admin/seo/indexnow" "$ADMIN_TOKEN" '{"paths":["/guides"]}')')"
+assert_status "T20 indexnow no-key submit" "200" "$code"
+assert_contains "T20 indexnow queued false" '"queued":false' "$(cat "$BODY" | tr -d ' ')"
+inxrows="$(psql_q "SELECT COUNT(*) FROM indexnow_log WHERE status='skipped_no_key';" | tr -d ' \r\n')"
+if [ "$inxrows" -ge 5 ] 2>/dev/null; then pass "T20 indexnow 5-locale log $inxrows"; else fail "T20 indexnow log got '$inxrows'"; fi
+code="$(api POST "/admin/seo/purge" "$ADMIN_TOKEN" '{"urls":["https://avibemusic.com/guides"]}')')"
+assert_status "T20 purge no-token" "200" "$code"
+assert_contains "T20 purge false" '"purged":false' "$(cat "$BODY" | tr -d ' ')"
+code="$(api GET "/admin/overview" "$ADMIN_TOKEN" "")"
+assert_status "T20 admin overview" "200" "$code"
+assert_contains "T20 overview signupsByLocale" '"signupsByLocale"' "$(cat "$BODY")"
+assert_contains "T20 overview inquiries" '"inquiries"' "$(cat "$BODY")"
+
+section "T21 business roles + console (R10/R11)"
+chk="$(psql_q "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname='users_role_check';" | tr -d ' \r\n')"
+assert_contains "T21 users role check covers BUSINESS" "BUSINESS" "$chk"
+nullable="$(psql_q "SELECT is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='store_businesses' AND column_name='partner_id';" | tr -d ' \r\n')"
+assert_eq "T21 store partner_id nullable" "YES" "$nullable"
+# G-ROLE backfill: T13 store (partnerA) resolves owner + grant.
+t13_owner="$(psql_q "SELECT owner_user_id::text FROM store_businesses WHERE id='$T13_BIZ'::uuid;" | tr -d ' \r\n')"
+assert_eq "T21 T13 store owner backfilled" "$PA_USER_ID" "$t13_owner"
+pa_grant="$(psql_q "SELECT source FROM user_roles WHERE user_id='$PA_USER_ID'::uuid AND role='BUSINESS';" | tr -d ' \r\n')"
+assert_eq "T21 partnerA BUSINESS grant source" "migration" "$pa_grant"
+code="$(api GET "/auth/me" "$PA_TOKEN" "")"
+assert_status "T21 partnerA me" "200" "$code"
+assert_contains "T21 me roles carry BUSINESS" "BUSINESS" "$(cat "$BODY")"
+# Business signup KR: checksum-valid number approves immediately.
+T21_BIZNO="$(python3 -c "import random; w=[1,3,7,1,3,7,1,3]; d=[1,2]+[random.randint(0,9) for _ in range(7)]; s=sum(d[i]*w[i] for i in range(8)); p=d[8]*5; s+=p//10+p%10; d.append((10-s%10)%10); print(''.join(map(str,d)))")"
+T21_EMAIL="e2e-biz-$STAMP@example.com"
+code="$(api POST "/auth/register/business" "" "{\"email\":\"$T21_EMAIL\",\"password\":\"$PW\",\"displayName\":\"E2E Biz\",\"company\":\"E2E Biz Co\",\"bizNo\":\"$T21_BIZNO\",\"country\":\"KR\",\"industry\":\"cafe\",\"ageConfirmed\":true}")"
+assert_status "T21 register business KR" "201" "$code"
+T21_BIZ_ID="$(jget "data.user.id")"
+assert_eq "T21 KR profile APPROVED" "APPROVED" "$(jget "data.business.status")"
+assert_eq "T21 KR role BUSINESS" "BUSINESS" "$(jget "data.user.role")"
+t21_grant="$(psql_q "SELECT source FROM user_roles WHERE user_id='$T21_BIZ_ID'::uuid AND role='BUSINESS';" | tr -d ' \r\n')"
+assert_eq "T21 register grant recorded" "register" "$t21_grant"
+code="$(api POST "/auth/register/business" "" "{\"email\":\"e2e-bad-biz-$STAMP@example.com\",\"password\":\"$PW\",\"company\":\"Bad Co\",\"bizNo\":\"1234567890\",\"ageConfirmed\":true}")"
+assert_status "T21 KR bad checksum -> 400" "400" "$code"
+code="$(api POST "/auth/register/business" "" "{\"email\":\"e2e-no-co-$STAMP@example.com\",\"password\":\"$PW\",\"company\":\"\",\"bizNo\":\"$T21_BIZNO\",\"ageConfirmed\":true}")"
+assert_status "T21 empty company -> 400" "400" "$code"
+code="$(api POST "/auth/register/business" "" "{\"email\":\"$T21_EMAIL\",\"password\":\"$PW\",\"company\":\"Dup Co\",\"bizNo\":\"$T21_BIZNO\",\"ageConfirmed\":true}")"
+assert_status "T21 duplicate business email -> 409" "409" "$code"
+# Foreign signup stays PENDING for manual approval.
+T21_FOREIGN_EMAIL="e2e-biz-foreign-$STAMP@example.com"
+code="$(api POST "/auth/register/business" "" "{\"email\":\"$T21_FOREIGN_EMAIL\",\"password\":\"$PW\",\"company\":\"E2E Foreign\",\"country\":\"US\",\"industry\":\"retail\",\"ageConfirmed\":true}")"
+assert_status "T21 register business foreign" "201" "$code"
+T21_FOREIGN_ID="$(jget "data.user.id")"
+assert_eq "T21 foreign profile PENDING" "PENDING" "$(jget "data.business.status")"
+code="$(api GET "/admin/businesses?status=PENDING" "$ADMIN_TOKEN" "")"
+assert_status "T21 admin pending businesses" "200" "$code"
+assert_contains "T21 pending lists foreign" "$T21_FOREIGN_ID" "$(cat "$BODY")"
+code="$(api POST "/admin/businesses/$T21_FOREIGN_ID/review" "$ADMIN_TOKEN" '{"approve":true}')"
+assert_status "T21 admin approve foreign" "200" "$code"
+assert_contains "T21 foreign APPROVED" '"status":"APPROVED"' "$(cat "$BODY")"
+code="$(api GET "/admin/businesses?status=BOGUS" "$ADMIN_TOKEN" "")"
+assert_status "T21 admin businesses bogus -> 400" "400" "$code"
+code="$(api POST "/admin/businesses/00000000-0000-0000-0000-000000000000/review" "$ADMIN_TOKEN" '{"approve":true}')"
+assert_status "T21 admin review unknown -> 404" "404" "$code"
+# Console auth: login + gates, then profile + store CRUD.
+code="$(api POST "/auth/login" "" "{\"email\":\"$T21_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T21 business login" "200" "$code"
+T21_TOKEN="$(jget "data.tokens.accessToken")"
+consent_all_required "$T21_TOKEN" >/dev/null
+code="$(api GET "/business/profile" "$T21_TOKEN" "")"
+assert_status "T21 console profile" "200" "$code"
+assert_contains "T21 profile company" "E2E Biz Co" "$(cat "$BODY")"
+T21_STORE_BIZNO="$(python3 -c "import random; w=[1,3,7,1,3,7,1,3]; d=[3,4]+[random.randint(0,9) for _ in range(7)]; s=sum(d[i]*w[i] for i in range(8)); p=d[8]*5; s+=p//10+p%10; d.append((10-s%10)%10); print(''.join(map(str,d)))")"
+code="$(api POST "/business/stores" "$T21_TOKEN" "{\"businessNumber\":\"$T21_STORE_BIZNO\",\"storeName\":\"E2E Biz Store\",\"licenseCount\":2}")"
+assert_status "T21 console register store unverified -> 403" "403" "$code"
+assert_contains "T21 store email gate code" "EMAIL_NOT_VERIFIED" "$(cat "$BODY")"
+psql_q "UPDATE users SET email_verified_at=NOW() WHERE id='$T21_BIZ_ID'::uuid;" >/dev/null
+code="$(api POST "/business/stores" "$T21_TOKEN" "{\"businessNumber\":\"$T21_STORE_BIZNO\",\"storeName\":\"E2E Biz Store\",\"licenseCount\":2}")"
+assert_status "T21 console register store" "201" "$code"
+T21_STORE="$(jget "data.id")"
+assert_eq "T21 store owner is business" "$T21_BIZ_ID" "$(jget "data.ownerUserId")"
+t21_plink="$(psql_q "SELECT COALESCE(partner_id::text,'NULL') FROM store_businesses WHERE id='$T21_STORE'::uuid;" | tr -d ' \r\n')"
+assert_eq "T21 business store partner link null" "NULL" "$t21_plink"
+code="$(api GET "/business/stores" "$T21_TOKEN" "")"
+assert_status "T21 console list stores" "200" "$code"
+assert_contains "T21 list has store" "$T21_STORE" "$(cat "$BODY")"
+code="$(api POST "/business/stores/$T21_STORE/devices" "$T21_TOKEN" '{"deviceName":"e2e-console-player"}')"
+assert_status "T21 console create device" "201" "$code"
+T21_DEV="$(jget "data.id")"
+assert_contains "T21 pairing code issued" '"pairingCode"' "$(cat "$BODY")"
+code="$(api GET "/business/stores/$T21_STORE/devices" "$T21_TOKEN" "")"
+assert_status "T21 console list devices" "200" "$code"
+assert_contains "T21 device listed" "$T21_DEV" "$(cat "$BODY")"
+code="$(api PUT "/business/stores/$T21_STORE/devices/$T21_DEV" "$T21_TOKEN" '{"deviceName":"e2e-console-player","volume":42}')"
+assert_status "T21 console update device" "200" "$code"
+code="$(api POST "/business/stores/$T21_STORE/schedules" "$T21_TOKEN" '{"weekday":2,"openTime":"09:00","closeTime":"22:00"}')"
+assert_status "T21 console upsert schedule" "200" "$code"
+code="$(api GET "/business/stores/$T21_STORE/schedules" "$T21_TOKEN" "")"
+assert_status "T21 console list schedules" "200" "$code"
+code="$(api GET "/business/stores/$T21_STORE/devices/$T21_DEV/logs?limit=10" "$T21_TOKEN" "")"
+assert_status "T21 console device logs" "200" "$code"
+code="$(api POST "/business/stores/$T21_STORE/devices/$T21_DEV/revoke" "$T21_TOKEN" "")"
+assert_status "T21 console revoke device" "200" "$code"
+# Cross-owner isolation + role guards.
+code="$(api POST "/auth/login" "" "{\"email\":\"$T21_FOREIGN_EMAIL\",\"password\":\"$PW\"}")"
+T21_FOREIGN_TOKEN="$(jget "data.tokens.accessToken")"
+consent_all_required "$T21_FOREIGN_TOKEN" >/dev/null
+psql_q "UPDATE users SET email_verified_at=NOW() WHERE id='$T21_FOREIGN_ID'::uuid;" >/dev/null
+code="$(api GET "/business/stores/$T21_STORE/devices" "$T21_FOREIGN_TOKEN" "")"
+assert_status "T21 cross-owner devices -> 403" "403" "$code"
+code="$(api GET "/business/stores" "$USER_TOKEN" "")"
+assert_status "T21 listener console -> 403" "403" "$code"
+code="$(api GET "/business/stores" "" "")"
+assert_status "T21 guest console -> 401" "401" "$code"
+code="$(api GET "/partner/tracks" "$T21_TOKEN" "")"
+assert_status "T21 business studio tracks -> 403" "403" "$code"
+code="$(api GET "/partner/tracks" "$PA_TOKEN" "")"
+assert_status "T21 partner tracks still 200" "200" "$code"
+# Admin role management + R11 overviews.
+code="$(api POST "/admin/users/$USER_ID/role" "$ADMIN_TOKEN" '{"role":"BUSINESS"}')"
+assert_status "T21 set role BUSINESS" "200" "$code"
+u_grant="$(psql_q "SELECT COUNT(*) FROM user_roles WHERE user_id='$USER_ID'::uuid AND role='BUSINESS';" | tr -d ' \r\n')"
+assert_eq "T21 admin grant recorded" "1" "$u_grant"
+code="$(api GET "/admin/role-grants?limit=50" "$ADMIN_TOKEN" "")"
+assert_status "T21 admin role grants" "200" "$code"
+assert_contains "T21 grants list" '"grantedAt"' "$(cat "$BODY")"
+code="$(api GET "/admin/oauth/stats" "$ADMIN_TOKEN" "")"
+assert_status "T21 admin oauth stats" "200" "$code"
+assert_contains "T21 oauth byProvider" '"byProvider"' "$(cat "$BODY")"
+
+# ============ T22 Track G server ============
+section "T22 generation AI prep (000027 schema, guard, pins, AVIBE gate)"
+for obj in \
+  "SELECT to_regclass('public.generation_models') IS NOT NULL" \
+  "SELECT to_regclass('public.training_consents') IS NOT NULL" \
+  "SELECT to_regclass('public.data_provenance_ledger') IS NOT NULL" \
+  "SELECT to_regclass('public.dataset_manifests') IS NOT NULL" \
+  "SELECT to_regclass('public.credit_ledger') IS NOT NULL" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='watermark_id'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='safety_result'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='seed'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='model_version'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='generation_jobs' AND column_name='user_id'" \
+  "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='origin'" \
+  "SELECT COUNT(*) FROM pg_trigger WHERE tgname='trg_credit_no_update'" \
+  "SELECT COUNT(*) FROM pg_trigger WHERE tgname='trg_provenance_no_update'" \
+  "SELECT COUNT(*) FROM pg_trigger WHERE tgname='trg_manifests_no_update'" ; do
+  case "$obj" in
+    SELECT\ to_regclass*) want="t" ;;
+    *) want="1" ;;
+  esac
+  got="$(psql_q "$obj;" | tr -d ' \r\n')"
+  assert_eq "T22 schema: $obj" "$want" "$got"
+done
+avibe_pol="$(psql_q "SELECT allows_standalone_streaming FROM ai_provider_policies WHERE provider='AVIBE';" | tr -d ' \r\n')"
+assert_eq "T22 AVIBE policy seeded" "t" "$avibe_pol"
+# Fresh partners keep guard strikes isolated (3rd strike suspends 24h).
+T22_EMAIL="e2e-t22-$STAMP@example.com"
+code="$(register_partner "$T22_EMAIL" "E2E-T22")"
+assert_status "T22 register guard partner" "201" "$code"
+T22_PID="$(jget "data.partner.id")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$T22_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T22 login guard partner" "200" "$code"
+T22_TOKEN="$(jget "data.tokens.accessToken")"
+psql_q "UPDATE users SET email_verified_at=NOW() WHERE email='$T22_EMAIL';" >/dev/null
+code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"BTS 스타일로 불러줘"}')"
+assert_status "T22 ko style imitation -> 400" "400" "$code"
+code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"a ballad in the style of Blackpink"}')"
+assert_status "T22 en style imitation -> 400" "400" "$code"
+t22_strikes="$(psql_q "SELECT COUNT(*) FROM generation_violations WHERE partner_id='$T22_PID'::uuid;" | tr -d ' \r\n')"
+assert_eq "T22 strike rows recorded" "2" "$t22_strikes"
+T22B_EMAIL="e2e-t22b-$STAMP@example.com"
+code="$(register_partner "$T22B_EMAIL" "E2E-T22B")"
+assert_status "T22 register guard partner B" "201" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$T22B_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T22 login guard partner B" "200" "$code"
+T22B_TOKEN="$(jget "data.tokens.accessToken")"
+psql_q "UPDATE users SET email_verified_at=NOW() WHERE email='$T22B_EMAIL';" >/dev/null
+code="$(api POST "/partner/generations" "$T22B_TOKEN" '{"prompt":"あの歌手っぽく歌って"}')"
+assert_status "T22 ja style imitation -> 400" "400" "$code"
+code="$(api POST "/partner/generations" "$T22B_TOKEN" '{"prompt":"เพลงเลียนแบบเสียงนักร้อง"}')"
+assert_status "T22 th voice mimicry -> 400" "400" "$code"
+# Seed/modelVersion pins persist and read back.
+code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"calm guitar loop","params":{"seed":42,"modelVersion":"ace-step-v1.2"}}')"
+assert_status "T22 submit with pins -> 201" "201" "$code"
+T22_JOB="$(jget "data.id")"
+code="$(api GET "/partner/generations/$T22_JOB" "$T22_TOKEN" "")"
+assert_status "T22 get pinned job -> 200" "200" "$code"
+assert_contains "T22 seed persisted" '"seed":42' "$(cat "$BODY")"
+assert_contains "T22 modelVersion persisted" '"modelVersion":"ace-step-v1.2' "$(cat "$BODY")"
+code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"calm guitar loop","params":{"seed":-1}}')"
+assert_status "T22 negative seed -> 400" "400" "$code"
+# AVIBE self-declaration without provenance is refused at pre-check.
+SHA_AVIBE="$(rand_hex 32)"
+code="$(api POST "/partner/pre-check" "$PA_TOKEN" "{\"provider\":\"AVIBE\",\"audioSha256\":\"$SHA_AVIBE\",\"fileName\":\"avibe-demo.wav\",\"generatedAt\":\"$GEN_OK\",\"requiresActiveSub\":true}")"
+assert_status "T22 AVIBE self-declared pre-check -> 403" "403" "$code"
+assert_contains "T22 AVIBE gate message" "similarity and watermark" "$(cat "$BODY")"
+origin_def="$(psql_q "SELECT column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='tracks' AND column_name='origin';" | tr -d ' \r\n')"
+assert_contains "T22 tracks.origin default" "EXTERNAL_AI" "$origin_def"
 
 section "Summary"
 qdepth_final="$(redis_q LLEN transcode:queue 2>/dev/null | tr -d '\r\n')"

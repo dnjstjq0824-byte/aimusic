@@ -2,10 +2,10 @@
   <div class="mx-auto max-w-4xl py-6">
     <UiPageHeader
       eyebrow="Legal"
-      :title="currentTerm?.titleKo || '법적 고지 및 약관'"
+      :title="currentTerm?.titleKo || t('legal.title')"
       :description="currentTerm
-        ? `최종 개정일: ${fmtDate(currentTerm.effectiveAt)} · 버전: ${currentTerm.version}`
-        : 'AVIBE 서비스 약관 및 정책 문서입니다.'"
+        ? t('legal.meta', { date: fmtDate(currentTerm.effectiveAt), version: currentTerm.version })
+        : t('legal.sub')"
     >
       <template #actions>
         <UiButton
@@ -15,17 +15,27 @@
           :loading="consenting"
           @click="consent"
         >
-          본 약관 동의하기
+          {{ t('legal.consent') }}
         </UiButton>
-        <UiBadge v-else-if="consented" variant="success" size="sm">동의 완료됨</UiBadge>
+        <UiBadge v-else-if="consented" variant="success" size="sm">{{ t('legal.consented') }}</UiBadge>
         <RouterLink v-else to="/login">
-          <UiButton variant="secondary" size="sm">로그인 후 동의하기</UiButton>
+          <UiButton variant="secondary" size="sm">{{ t('legal.loginToConsent') }}</UiButton>
         </RouterLink>
       </template>
     </UiPageHeader>
 
+    <!-- Non-Korean readers: the Korean original is binding until translated. -->
+    <div
+      v-if="locale !== 'ko'"
+      class="mt-6 rounded-xl border border-accent-amber/40 bg-amber-950/30 p-4 text-xs text-amber-100"
+      role="status"
+    >
+      <span class="font-bold">{{ t('legal.transPendingT') }}</span>
+      <span class="ml-2">{{ t('legal.transPendingD') }}</span>
+    </div>
+
     <!-- Navigation Pills -->
-    <div class="mt-6 mb-6 flex flex-wrap gap-2" role="tablist" aria-label="약관 문서 선택">
+    <div class="mt-6 mb-6 flex flex-wrap gap-2" role="tablist" :aria-label="t('legal.pickDoc')">
       <button
         v-for="code in termCodes"
         :key="code.id"
@@ -48,11 +58,11 @@
       <UiSkeleton height="h-24" width="w-full" />
     </div>
 
-    <UiErrorBanner v-else-if="error" :message="error" title="약관 조회 실패" retry-label="다시 시도" @retry="loadTerms" />
+    <UiErrorBanner v-else-if="error" :message="error" :title="t('legal.loadFail')" :retry-label="t('legal.retry')" @retry="loadTerms" />
 
     <UiCard v-else-if="notFound" class="text-sm text-text-primary">
-      <p class="font-semibold text-white">요청한 약관 문서를 찾을 수 없습니다.</p>
-      <p class="mt-1">위 목록에서 문서를 선택해 주세요.</p>
+      <p class="font-semibold text-white">{{ t('legal.notFoundT') }}</p>
+      <p class="mt-1">{{ t('legal.notFoundD') }}</p>
     </UiCard>
 
     <!-- Markdown Content Viewer -->
@@ -63,11 +73,11 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ alias: ['/legal'] });
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { legalApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
+import { renderLegalBody } from '@/utils/legalBody';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import type { LegalTerm } from '@/api/types';
@@ -78,17 +88,18 @@ import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const toast = useToast();
 
-const termCodes = [
-  { id: 'TOS', name: '서비스 이용약관' },
-  { id: 'PRIVACY', name: '개인정보처리방침' },
-  { id: 'COPYRIGHT_POLICY', name: 'AI 저작권 & OSP 면책' },
-  { id: 'PARTNER_CONTRACT', name: '파트너 음원유통 계약서' },
-];
+const termCodes = computed(() => [
+  { id: 'TOS', name: t('legal.docTOS') },
+  { id: 'PRIVACY', name: t('legal.docPRIVACY') },
+  { id: 'COPYRIGHT_POLICY', name: t('legal.docCOPYRIGHT') },
+  { id: 'PARTNER_CONTRACT', name: t('legal.docPARTNER') },
+]);
 
 const activeCode = ref<string>((route.params.code as string) || 'TOS');
 const terms = ref<LegalTerm[]>([]);
@@ -99,44 +110,14 @@ const consenting = ref(false);
 const consented = ref(false);
 const notFound = ref(false);
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-const renderedContent = computed(() => {
-  if (!currentTerm.value?.bodyMd) return '<p>내용이 등록되지 않았습니다.</p>';
-  // Stored bodies may carry literal backslash-n sequences (seed.sql uses \n
-  // inside non-escape SQL strings, which PostgreSQL stores verbatim).
-  // Normalize them to real newlines so breaks render; genuine newlines pass
-  // through unchanged. Escape first so stored markup can never execute; then
-  // apply the tiny heading/bold/list transforms on the escaped text.
-  const withBreaks = currentTerm.value.bodyMd.replace(/\\r\\n|\\n/g, '\n');
-  // Render-layer only (stored text untouched): strip internal file-path
-  // references and unfilled business-registration placeholders from the
-  // user-facing view per EV-04 / SC-04.
-  const displayable = withBreaks
-    .replace(/전문은 `docs\/legal\/[^`]+`를 참조하세요\.?/g, '')
-    .replace(/\(사업자 등록 후 기재\)/g, '')
-    .replace(/^\s*\d+\.\s*$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-  return escapeHtml(displayable)
-    .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-white mt-4 mb-2">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-base font-extrabold text-white mt-6 mb-3 border-b border-surface-border pb-1">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h2 class="text-lg font-black text-brand-400 mt-6 mb-4">$1</h2>')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-bold text-white">$1</strong>')
-    .replace(/`([^`]+?)`/g, '<code class="rounded bg-surface-3 px-1 py-px font-mono text-caption text-brand-300">$1</code>')
-    .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-text-primary">$1</li>');
-});
+const renderedContent = computed(() =>
+  renderLegalBody(currentTerm.value?.bodyMd, t('legal.emptyBody')),
+);
 
 function fmtDate(iso?: string): string {
   if (!iso) return '2026. 11. 01';
-  return new Date(iso).toLocaleDateString('ko-KR');
+  const tag = locale.value === 'zh-cn' ? 'zh-CN' : locale.value;
+  return new Date(iso).toLocaleDateString(tag);
 }
 
 async function loadTerms() {
@@ -154,7 +135,7 @@ async function loadTerms() {
 }
 
 function syncCurrentTerm() {
-  const match = terms.value.find((t) => t.code === activeCode.value || t.id === activeCode.value);
+  const match = terms.value.find((x) => x.code === activeCode.value || x.id === activeCode.value);
   currentTerm.value = match ?? null;
   notFound.value = !match && terms.value.length > 0;
 }
@@ -171,9 +152,9 @@ async function consent() {
   try {
     await legalApi.consent(currentTerm.value.id);
     consented.value = true;
-    toast.success('약관에 동의하셨습니다.');
+    toast.success(t('legal.consentOk'));
   } catch (err: unknown) {
-    toast.error(errMessageOf(err), '약관 동의 실패');
+    toast.error(errMessageOf(err), t('legal.consentFail'));
   } finally {
     consenting.value = false;
   }

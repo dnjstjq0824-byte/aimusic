@@ -7,15 +7,14 @@
         ERROR
       </div>
     </div>
-    <h1 class="text-xl font-bold text-white mb-2">일시적인 오류가 발생했습니다</h1>
+    <h1 class="text-xl font-bold text-white mb-2">{{ t('common.httpError.t500') }}</h1>
     <p class="text-xs text-text-secondary leading-relaxed mb-6 max-w-sm">
-      서버와의 통신 중 문제가 발생했습니다. 잠시 후 다시 시도해 주시기 바랍니다.
-      문제가 계속되면 고객센터로 문의해 주세요.
+      {{ t('common.httpError.d500') }}
     </p>
     <div class="flex items-center gap-3">
-      <UiButton variant="brand" size="md" @click="reload">새로고침</UiButton>
+      <UiButton variant="brand" size="md" @click="reload">{{ t('common.actions.reload') }}</UiButton>
       <RouterLink to="/">
-        <UiButton variant="secondary" size="md">홈으로</UiButton>
+        <UiButton variant="secondary" size="md">{{ t('common.httpError.home') }}</UiButton>
       </RouterLink>
     </div>
   </div>
@@ -23,8 +22,11 @@
 
 <script setup lang="ts">
 defineI18nRoute(false);
+import { useI18n } from 'vue-i18n';
 import UiButton from '@/components/ui/UiButton.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
+
+const { t } = useI18n();
 
 function reload() {
   window.location.reload();

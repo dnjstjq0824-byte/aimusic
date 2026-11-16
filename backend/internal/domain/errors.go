@@ -41,6 +41,8 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrEmailTaken marks duplicate registration email.
 	ErrEmailTaken = errors.New("email taken")
+	// ErrHandleTaken marks a creator handle owned by someone else (S1).
+	ErrHandleTaken = errors.New("handle taken")
 	// ErrInvalidCredentials marks login failures.
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	// ErrUserInactive marks disabled accounts.
@@ -67,4 +69,16 @@ var (
 	ErrTOTPEnrollRequired = errors.New("totp enrollment required")
 	// ErrActivePassExists blocks buying a pass while one is active (B-08).
 	ErrActivePassExists = errors.New("active pass exists")
+	// ErrOAuthLinkLoginRequired marks a social login whose email matches an
+	// existing account without provider-verified email (C-11): the user must
+	// sign in with the existing account first, then link at /account/connections.
+	ErrOAuthLinkLoginRequired = errors.New("oauth link requires existing-account login")
+	// ErrOAuthLinkTaken marks a provider identity already linked to another user.
+	ErrOAuthLinkTaken = errors.New("oauth identity already linked")
+	// ErrOAuthLastMethod blocks unlinking the final login method (WI-A1).
+	ErrOAuthLastMethod = errors.New("cannot unlink last login method")
+	// ErrEmailNotVerified gates commerce surfaces (billing orders/payments,
+	// upload pre-check/finalize, store registration, generations) until the
+	// account email is verified (WI-A2). Streaming stays open.
+	ErrEmailNotVerified = errors.New("email not verified")
 )

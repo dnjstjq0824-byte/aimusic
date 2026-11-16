@@ -7,46 +7,46 @@
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
       </div>
-      <h1 class="text-xl font-black text-white">결제 승인 중…</h1>
-      <p class="text-xs text-text-secondary">창을 닫지 마세요.</p>
+      <h1 class="text-xl font-black text-white">{{ t('checkout.cfApproving') }}</h1>
+      <p class="text-xs text-text-secondary">{{ t('checkout.cfDontClose') }}</p>
     </div>
 
     <template v-else-if="subscription">
-      <UiPageHeader eyebrow="Payment" title="결제가 완료되었습니다" />
+      <UiPageHeader eyebrow="Payment" :title="t('checkout.cfDone')" />
       <UiCard border-variant="success" class="space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-sm font-bold text-white">{{ subscription.plan?.nameKo ?? '이용권' }}</span>
+          <span class="text-sm font-bold text-white">{{ subscription.plan?.nameKo ?? t('checkout.cfPass') }}</span>
           <UiBadge variant="success" size="sm">ACTIVE</UiBadge>
         </div>
         <dl class="space-y-2 text-xs">
           <div class="flex justify-between">
-            <dt class="text-text-muted">유효기간</dt>
+            <dt class="text-text-muted">{{ t('checkout.fPeriod') }}</dt>
             <dd class="text-text-primary">
-              {{ fmtDate(subscription.currentPeriodStart) }} ~ {{ fmtDate(subscription.currentPeriodEnd) }}
+              {{ fmt.dateISO(subscription.currentPeriodStart) }} ~ {{ fmt.dateISO(subscription.currentPeriodEnd) }}
             </dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-text-muted">주문번호</dt>
+            <dt class="text-text-muted">{{ t('checkout.fOrder') }}</dt>
             <dd class="font-mono text-text-primary">{{ orderId }}</dd>
           </div>
         </dl>
         <p class="border-t border-surface-border pt-3 text-caption leading-relaxed text-text-secondary">
-          환불 기준: {{ REFUND_POLICY_SUMMARY }} 해지·환불은 내 라이브러리에서 신청할 수 있습니다.
+          {{ t('checkout.cfRefundLabel') }}: {{ t(REFUND_POLICY_SUMMARY_KEY) }} {{ t('checkout.cfRefundNote') }}
         </p>
       </UiCard>
       <div class="flex justify-end gap-2">
         <RouterLink to="/library">
-          <UiButton variant="brand" size="md">내 라이브러리로 이동</UiButton>
+          <UiButton variant="brand" size="md">{{ t('checkout.cfGoLibrary') }}</UiButton>
         </RouterLink>
       </div>
     </template>
 
     <template v-else>
-      <UiPageHeader eyebrow="Payment" title="결제 승인 실패" />
-      <UiErrorBanner :message="error" title="승인 실패" />
+      <UiPageHeader eyebrow="Payment" :title="t('checkout.cfFailed')" />
+      <UiErrorBanner :message="error" :title="t('checkout.cfFailBanner')" />
       <div class="flex justify-end gap-2">
         <RouterLink to="/pricing">
-          <UiButton variant="secondary" size="md">요금제로 돌아가기</UiButton>
+          <UiButton variant="secondary" size="md">{{ t('checkout.backToPricing') }}</UiButton>
         </RouterLink>
       </div>
     </template>
@@ -56,10 +56,13 @@
 <script setup lang="ts">
 defineI18nRoute(false);
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { billingApi } from '@/api/endpoints';
-import { REFUND_POLICY_SUMMARY } from '@/api/refundPolicy';
+import { REFUND_POLICY_SUMMARY_KEY } from '@/api/refundPolicy';
 import { errMessageOf } from '@/api/client';
+import { useFormat } from '@/composables/useFormat';
+import { trackEvent } from '@/utils/analytics';
 import type { BillingSubscription } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
@@ -68,15 +71,13 @@ import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 
 const route = useRoute();
+const { t } = useI18n();
+const fmt = useFormat();
 
 const loading = ref(true);
 const subscription = ref<BillingSubscription | null>(null);
 const orderId = ref('');
 const error = ref<string | null>(null);
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('ko-KR');
-}
 
 onMounted(async () => {
   const paymentKey = route.query.paymentKey;
@@ -84,12 +85,13 @@ onMounted(async () => {
   const amount = route.query.amount;
   if (typeof paymentKey !== 'string' || typeof oid !== 'string' || typeof amount !== 'string') {
     loading.value = false;
-    error.value = 'Toss 결제 응답이 올바르지 않습니다. (paymentKey/orderId/amount 누락)';
+    error.value = t('checkout.cfBadResponse');
     return;
   }
   orderId.value = oid;
   try {
     const res = await billingApi.confirmPayment(paymentKey, oid, Number(amount));
+    trackEvent({ name: 'checkout_completed' });
     subscription.value = res.subscription;
   } catch (err: unknown) {
     error.value = errMessageOf(err);

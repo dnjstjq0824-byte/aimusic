@@ -1,6 +1,8 @@
 // Domain models mirroring backend/internal/domain/entities.go JSON shapes.
 library;
 
+import '../l10n/app_localizations.dart';
+
 /// Track mirrors domain.Track (JSON tags in entities.go).
 class Track {
   Track({
@@ -270,16 +272,17 @@ abstract final class DisputeReasons {
 
   static const all = [aiPolicy, voice, sample, other];
 
-  static String label(String reason) {
+  /// Localized label for a reason code (WI-R12: ARB-backed).
+  static String labelOf(String reason, AppLocalizations s) {
     switch (reason) {
       case aiPolicy:
-        return 'AI 정책 위반';
+        return s.reasonAiPolicy;
       case voice:
-        return '무단 보이스 클론';
+        return s.reasonVoiceClone;
       case sample:
-        return '무단 샘플 사용';
+        return s.reasonSample;
       default:
-        return '기타';
+        return s.reasonOther;
     }
   }
 }
@@ -307,17 +310,23 @@ class TokenPair {
 
 /// Minimal auth principal from GET /auth/me.
 class AuthMe {
-  AuthMe({required this.userId, required this.role, this.ageConfirmedAt});
+  AuthMe(
+      {required this.userId,
+      required this.role,
+      this.ageConfirmedAt,
+      this.locale});
 
   factory AuthMe.fromJson(Map<String, dynamic> j) => AuthMe(
         userId: j['userId'] as String,
         role: (j['role'] as String?) ?? 'USER',
         ageConfirmedAt: j['ageConfirmedAt'] as String?,
+        locale: j['locale'] as String?,
       );
 
   final String userId;
   final String role;
   final String? ageConfirmedAt;
+  final String? locale;
 
   bool get needsAgeConfirm => ageConfirmedAt == null || ageConfirmedAt!.isEmpty;
 }

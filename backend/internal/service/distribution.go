@@ -119,10 +119,10 @@ func (s *DistributionService) BuildDSPKit(ctx context.Context, trackIDs []string
 		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		return nil, fmt.Errorf("%w: trackIds 1개 이상", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: trackIds needs 1+ entries", domain.ErrInvalidInput)
 	}
 	if len(ids) > MaxDSPKitTracks {
-		return nil, fmt.Errorf("%w: 최대 %d곡", domain.ErrInvalidInput, MaxDSPKitTracks)
+		return nil, fmt.Errorf("%w: at most %d tracks", domain.ErrInvalidInput, MaxDSPKitTracks)
 	}
 	nowFn := s.now
 	if nowFn == nil {

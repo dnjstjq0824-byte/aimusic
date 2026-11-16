@@ -1,43 +1,43 @@
 <template>
   <div class="space-y-6">
     <UiPageHeader
-      eyebrow="Admin Governance"
-      title="회원 관리"
-      description="계정 검색, 역할 변경, 잠금/해제를 처리합니다. 본인 계정 변경과 마지막 관리자 강등은 거부됩니다."
+      :eyebrow="t('admin.us.eyebrow')"
+      :title="t('admin.us.title')"
+      :description="t('admin.us.desc')"
     >
       <template #actions>
-        <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">새로고침</UiButton>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">{{ t('admin.us.refresh') }}</UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="회원 목록을 불러오지 못했습니다" retry-label="다시 시도" @retry="reload" />
+    <UiErrorBanner :message="error" :title="t('admin.us.loadFail')" :retry-label="t('common.actions.retry')" @retry="reload" />
 
-    <!-- Filters -->
     <UiCard class="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label class="flex-[2] text-xs text-text-secondary">
-        <span class="mb-1 block font-semibold">이메일/표시 이름 검색</span>
+        <span class="mb-1 block font-semibold">{{ t('admin.us.fQuery') }}</span>
         <input
           v-model="query"
           type="text"
-          placeholder="검색어"
+          :placeholder="t('admin.us.fQueryPh')"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
         />
       </label>
       <label class="flex-1 text-xs text-text-secondary">
-        <span class="mb-1 block font-semibold">역할</span>
+        <span class="mb-1 block font-semibold">{{ t('admin.us.fRole') }}</span>
         <select
           v-model="roleFilter"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white"
           @change="reload"
         >
-          <option value="">전체</option>
+          <option value="">{{ t('admin.us.all') }}</option>
           <option value="ADMIN">ADMIN</option>
           <option value="PARTNER">PARTNER</option>
+          <option value="BUSINESS">BUSINESS</option>
           <option value="USER">USER</option>
         </select>
       </label>
-      <UiButton variant="secondary" size="sm" @click="reload">조회</UiButton>
+      <UiButton variant="secondary" size="sm" @click="reload">{{ t('admin.us.search') }}</UiButton>
     </UiCard>
 
     <div v-if="loading && users.length === 0" class="space-y-3">
@@ -46,7 +46,7 @@
     </div>
 
     <div v-else-if="users.length === 0" class="py-12">
-      <UiEmptyState title="회원이 없습니다" description="검색 조건에 맞는 계정이 없습니다." />
+      <UiEmptyState :title="t('admin.us.empty')" :description="t('admin.us.emptyDesc')" />
     </div>
 
     <div v-else class="space-y-3">
@@ -57,7 +57,10 @@
               <span class="truncate text-sm font-bold text-white">{{ u.displayName }}</span>
               <UiBadge variant="info" size="xs">{{ u.role }}</UiBadge>
               <UiBadge :variant="u.isActive ? 'success' : 'danger'" size="xs">
-                {{ u.isActive ? '활성' : '잠금' }}
+                {{ u.isActive ? t('admin.us.active') : t('admin.us.locked') }}
+              </UiBadge>
+              <UiBadge v-if="businessOf(u.id)" :variant="businessOf(u.id)?.status === 'APPROVED' ? 'success' : 'warning'" size="xs">
+                {{ t('admin.us.bizBadge', { status: businessOf(u.id)?.status ?? '' }) }}
               </UiBadge>
             </div>
             <div class="mt-1 truncate font-mono text-caption text-text-secondary">{{ u.email }}</div>
@@ -67,11 +70,12 @@
               :value="u.role"
               class="rounded-lg border border-surface-border bg-surface-1 px-2 py-1 text-xs text-white"
               :disabled="busyId === u.id"
-              aria-label="역할 변경"
+              :aria-label="t('admin.us.changeRole')"
               @change="changeRole(u, ($event.target as HTMLSelectElement).value)"
             >
               <option value="ADMIN">ADMIN</option>
               <option value="PARTNER">PARTNER</option>
+              <option value="BUSINESS">BUSINESS</option>
               <option value="USER">USER</option>
             </select>
             <UiButton
@@ -80,7 +84,25 @@
               :loading="busyId === u.id"
               @click="toggleActive(u)"
             >
-              {{ u.isActive ? '잠그기' : '해제하기' }}
+              {{ u.isActive ? t('admin.us.lock') : t('admin.us.unlock') }}
+            </UiButton>
+            <UiButton
+              v-if="businessOf(u.id)?.status === 'PENDING'"
+              variant="brand"
+              size="xs"
+              :loading="bizBusyId === u.id"
+              @click="reviewBusiness(u, true)"
+            >
+              {{ t('admin.us.bizApprove') }}
+            </UiButton>
+            <UiButton
+              v-if="businessOf(u.id) && businessOf(u.id)?.status !== 'SUSPENDED'"
+              variant="ghost"
+              size="xs"
+              :loading="bizBusyId === u.id"
+              @click="reviewBusiness(u, false)"
+            >
+              {{ t('admin.us.bizSuspend') }}
             </UiButton>
             <UiButton
               variant="ghost"
@@ -88,18 +110,19 @@
               :loading="blocksBusyId === u.id"
               @click="toggleBlocks(u.id)"
             >
-              {{ expandedBlocksId === u.id ? '제재 내역 접기' : '제재 내역' }}
+              {{ expandedBlocksId === u.id ? t('admin.us.blocksHide') : t('admin.us.blocks') }}
             </UiButton>
           </div>
         </div>
         <div class="text-caption text-text-muted">
-          가입: {{ formatTime(u.createdAt) }}
-          <span v-if="u.ageConfirmedAt"> · 14+ 확인됨</span>
-          <span v-else> · 14+ 미확인</span>
+          {{ t('admin.us.joined', { at: formatTime(u.createdAt) }) }}
+          <span v-if="u.ageConfirmedAt"> · {{ t('admin.us.ageYes') }}</span>
+          <span v-else> · {{ t('admin.us.ageNo') }}</span>
+          <span v-if="businessOf(u.id)"> · {{ businessOf(u.id)?.companyName }} ({{ businessOf(u.id)?.country }})</span>
         </div>
         <div v-if="expandedBlocksId === u.id" class="rounded-lg border border-surface-border bg-surface-0 p-3 text-xs">
           <div v-if="(blocksByUser[u.id] ?? []).length === 0" class="text-text-muted">
-            제재 기록이 없습니다.
+            {{ t('admin.us.blocksEmpty') }}
           </div>
           <ul v-else class="space-y-2">
             <li
@@ -108,12 +131,12 @@
               class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <UiBadge variant="danger" size="xs">스트라이크 {{ b.strikeNumber }}</UiBadge>
+                <UiBadge variant="danger" size="xs">{{ t('admin.us.strike', { n: b.strikeNumber }) }}</UiBadge>
                 <span class="ml-2 text-text-primary">{{ b.reason }}</span>
               </div>
               <div class="font-mono text-caption text-text-muted">
                 {{ formatTime(b.createdAt) }}
-                <span v-if="b.expiresAt"> · 만료 {{ formatTime(b.expiresAt) }}</span>
+                <span v-if="b.expiresAt"> · {{ t('admin.us.strikeExpiry', { at: formatTime(b.expiresAt) }) }}</span>
               </div>
             </li>
           </ul>
@@ -128,9 +151,9 @@
           :loading="loading"
           @click="loadMore"
         >
-          더 불러오기
+          {{ t('admin.us.more') }}
         </UiButton>
-        <p v-else class="text-caption text-text-muted">마지막 회원입니다.</p>
+        <p v-else class="text-caption text-text-muted">{{ t('admin.us.last') }}</p>
       </div>
     </div>
   </div>
@@ -142,7 +165,8 @@ import { onMounted, ref } from 'vue';
 import { adminApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
-import type { User, UserBlock } from '@/api/types';
+import { useApiError } from '@/composables/useApiError';
+import type { BusinessProfile, User, UserBlock } from '@/api/types';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
@@ -151,45 +175,62 @@ import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
+const { t, locale } = useI18n();
 const PAGE = 20;
 
 const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const busyId = ref<string | null>(null);
+const bizBusyId = ref<string | null>(null);
 const blocksBusyId = ref<string | null>(null);
 const expandedBlocksId = ref<string | null>(null);
 const blocksByUser = ref<Record<string, UserBlock[]>>({});
+const businesses = ref<Record<string, BusinessProfile>>({});
 const query = ref('');
 const roleFilter = ref('');
 const offset = ref(0);
 const hasMore = ref(true);
 const toast = useToast();
+const apiError = useApiError();
+
+function businessOf(userId: string): BusinessProfile | undefined {
+  return businesses.value[userId];
+}
 
 function formatTime(iso: string | null | undefined): string {
   if (!iso) return '-';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ko-KR', { hour12: false });
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(locale.value === 'en' ? 'en-US' : 'ko-KR', { hour12: false });
 }
 
 async function fetchPage(reset: boolean): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const page = (await adminApi.listUsers({
-      q: query.value.trim() || undefined,
-      role: roleFilter.value || undefined,
-      limit: PAGE,
-      offset: reset ? 0 : offset.value,
-    })) ?? [];
+    const [page, pending, approved] = await Promise.all([
+      adminApi.listUsers({
+        q: query.value.trim() || undefined,
+        role: roleFilter.value || undefined,
+        limit: PAGE,
+        offset: reset ? 0 : offset.value,
+      }),
+      adminApi.listBusinesses('PENDING', 100).catch(() => []),
+      adminApi.listBusinesses('APPROVED', 100).catch(() => []),
+    ]);
+    const rows = page ?? [];
     if (reset) {
-      users.value = page;
-      offset.value = page.length;
+      users.value = rows;
+      offset.value = rows.length;
     } else {
-      users.value = users.value.concat(page);
-      offset.value += page.length;
+      users.value = users.value.concat(rows);
+      offset.value += rows.length;
     }
-    hasMore.value = page.length === PAGE;
+    hasMore.value = rows.length === PAGE;
+    for (const p of [...(pending ?? []), ...(approved ?? [])]) {
+      businesses.value[p.userId] = p;
+    }
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {
@@ -213,9 +254,9 @@ async function changeRole(u: User, role: string): Promise<void> {
     const updated = await adminApi.setUserRole(u.id, role);
     const i = users.value.findIndex((x) => x.id === u.id);
     if (i >= 0) users.value[i] = updated;
-    toast.success(`${u.email} 역할을 ${role}(으)로 변경했습니다.`);
+    toast.success(t('admin.us.roleChanged', { email: u.email, role }));
   } catch (err: unknown) {
-    error.value = errMessageOf(err);
+    error.value = apiError(err);
   } finally {
     busyId.value = null;
   }
@@ -228,11 +269,24 @@ async function toggleActive(u: User): Promise<void> {
     const updated = await adminApi.setUserActive(u.id, !u.isActive);
     const i = users.value.findIndex((x) => x.id === u.id);
     if (i >= 0) users.value[i] = updated;
-    toast.success(u.isActive ? `${u.email} 계정을 잠갔습니다.` : `${u.email} 계정을 해제했습니다.`);
+    toast.success(t(u.isActive ? 'admin.us.lockedToast' : 'admin.us.unlockedToast', { email: u.email }));
   } catch (err: unknown) {
-    error.value = errMessageOf(err);
+    error.value = apiError(err);
   } finally {
     busyId.value = null;
+  }
+}
+
+async function reviewBusiness(u: User, approve: boolean): Promise<void> {
+  bizBusyId.value = u.id;
+  try {
+    const p = await adminApi.reviewBusiness(u.id, approve);
+    businesses.value[u.id] = p;
+    toast.success(t(approve ? 'admin.us.bizApproved' : 'admin.us.bizSuspended', { email: u.email }));
+  } catch (err: unknown) {
+    toast.error(apiError(err), t('admin.us.bizFail'));
+  } finally {
+    bizBusyId.value = null;
   }
 }
 
@@ -246,7 +300,7 @@ async function toggleBlocks(userId: string): Promise<void> {
     blocksByUser.value[userId] = await adminApi.listUserBlocks(userId);
     expandedBlocksId.value = userId;
   } catch (err: unknown) {
-    toast.error(errMessageOf(err), '제재 내역 조회 실패');
+    toast.error(apiError(err), t('admin.us.blocksFail'));
   } finally {
     blocksBusyId.value = null;
   }

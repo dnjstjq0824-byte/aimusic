@@ -10,6 +10,11 @@
 
     <UiErrorBanner :message="oauthError" :title="t('auth.login.oauthFailTitle')" class="mb-4" />
 
+    <div v-if="registered" class="mb-4 rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-center">
+      <p class="text-sm font-bold text-white">{{ t('auth.login.registeredTitle') }}</p>
+      <p class="mt-1 text-xs leading-relaxed text-text-secondary">{{ t('auth.login.registeredBody') }}</p>
+    </div>
+
     <UiCard class="shadow-2xl">
       <div v-if="socialLoading" class="space-y-2">
         <UiSkeleton height="h-10" width="w-full" />
@@ -122,7 +127,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 import SocialButtons from '@/components/auth/SocialButtons.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const auth = useAuthStore();
 const router = useRouter();
@@ -147,6 +152,9 @@ const oauthError = computed(() => {
   if (typeof code !== 'string' || code === '') return null;
   return apiError({ response: { data: { error: { code, message: code } } } });
 });
+
+// A2: fresh signups land here with ?registered=1 and a verification guide.
+const registered = computed(() => route.query.registered === '1');
 
 function fillCreds(e: string, p: string, autoSubmit = false) {
   email.value = e;
@@ -177,7 +185,7 @@ async function submitLogin(): Promise<void> {
 
 onMounted(async () => {
   try {
-    providers.value = (await authApi.oauthProviders()) ?? [];
+    providers.value = (await authApi.oauthProviders(locale.value)) ?? [];
   } catch {
     providers.value = [];
   } finally {

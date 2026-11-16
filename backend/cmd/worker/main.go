@@ -160,7 +160,8 @@ func (w *worker) processGeneration(ctx context.Context, p *repository.Generation
 		lyrics = *job.Lyrics
 	}
 	res, err := w.genBackend.Generate(ctx, generator.Request{
-		JobID: job.ID, Prompt: job.Prompt, Lyrics: lyrics, Model: job.Model, Params: params,
+		JobID: job.ID, Prompt: job.Prompt, Lyrics: lyrics, Model: job.Model,
+		ModelVersion: job.ModelVersion, Seed: job.Seed, Params: params,
 	})
 	if err != nil {
 		return fail(err.Error())
@@ -178,6 +179,24 @@ func (w *worker) processGeneration(ctx context.Context, p *repository.Generation
 		return fail(fmt.Sprintf("stage generated audio: %v", err))
 	}
 	if err := w.repos.GenJobs.MarkSucceeded(ctx, job.ID, key, res.DurationMs); err != nil {
+		return err
+	}
+	// Served values are truth; v1 servers echo nothing, so keep the request
+	// pins (WI-G1). A v1 verdict (passed:false, no watermark) can never
+	// satisfy the AVIBE finalize branch — by design.
+	mv := res.ModelVersion
+	if mv == "" {
+		mv = job.ModelVersion
+	}
+	seed := res.Seed
+	if seed == nil {
+		seed = job.Seed
+	}
+	// The server verdict covers prompt + watermark legs. The worker appends
+	// "similarity" here once the fingerprint screen graduates from the G2
+	// PoC; until then the AVIBE branch stays fail-closed (G-MODEL).
+	safetyJSON, _ := json.Marshal(map[string]any{"passed": res.Safety.Passed, "checks": res.Safety.Checks})
+	if err := w.repos.GenJobs.UpdateResult(ctx, job.ID, mv, seed, res.WeightsHash, string(safetyJSON), res.WatermarkID); err != nil {
 		return err
 	}
 	log.Printf("generation job %s staged to %s (%d bytes)", job.ID, key, len(res.Audio))

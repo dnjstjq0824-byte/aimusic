@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type Hls from 'hls.js';
 import { computed, ref } from 'vue';
 import { storeDeviceApi, trackApi } from '@/api/endpoints';
-import { deviceTokenStore, errCodeOf } from '@/api/client';
+import { deviceTokenStore, errCodeOf, tKey } from '@/api/client';
 import type { DeviceQueue, DeviceQueueTrack, StoreDevice, Track } from '@/api/types';
 
 const HEARTBEAT_MS = 10000;
@@ -123,7 +123,7 @@ export const useStorePlayerStore = defineStore('storePlayer', () => {
     });
     el.addEventListener('error', () => {
       if (hls || !el.getAttribute('src')) return;
-      fail(loadSeq, '음원을 재생할 수 없습니다. 네트워크 상태를 확인해 주세요.');
+      fail(loadSeq, tKey('player.storeErrPlayFailed', "Can't play this track. Check the network."));
     });
     window.addEventListener('online', () => {
       isOnline.value = true;
@@ -229,7 +229,7 @@ export const useStorePlayerStore = defineStore('storePlayer', () => {
         hls = instance;
         instance.on(HlsImpl.Events.ERROR, (_evt, data) => {
           if (seq !== loadSeq || hls !== instance || !data.fatal) return;
-          fail(seq, `스트리밍 연결이 끊겼습니다: ${track.title}`);
+          fail(seq, tKey('player.errStreamLost', 'Stream interrupted: {title}', { title: track.title }));
         });
         instance.loadSource(url);
         instance.attachMedia(el);

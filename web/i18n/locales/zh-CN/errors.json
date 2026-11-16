@@ -26,7 +26,12 @@
     "ERR_DOWNLOAD_REQUIRES_PASS": "下载需要生效中的会员。",
     "ERR_DOWNLOAD_QUOTA": "已达到每日下载上限。",
     "ERR_DOWNLOAD_UNAVAILABLE": "母带文件不可用。",
+    "ERR_OAUTH_LINK_LOGIN_REQUIRED": "该邮箱已注册。请先使用邮箱登录，再在已关联账号中关联社交账号。",
+    "ERR_OAUTH_LINK_TAKEN": "该社交账号已关联至其他账号。",
+    "ERR_OAUTH_LAST_METHOD": "无法解除最后一种登录方式。",
+    "EMAIL_NOT_VERIFIED": "需要完成邮箱验证。请打开收件箱中的验证链接。",
     "ERR_INTERNAL": "服务器出错。",
-    "ERR_FALLBACK": "请求失败。"
+    "ERR_FALLBACK": "请求失败。",
+    "ERR_HANDLE_TAKEN": "该创作者名已被占用。"
   }
 }

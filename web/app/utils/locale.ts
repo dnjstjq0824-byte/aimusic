@@ -58,3 +58,45 @@ export function intlLocale(code: string): string {
   if (code === 'zh-cn') return 'zh-CN';
   return code;
 }
+
+// Base route names of public pages (prefix or ko-default): the URL wins and
+// the server locale must not override them. Keep in sync with routeRules SSR
+// list as R3+ adds pages.
+export const PUBLIC_BASE_NAMES = new Set([
+  'home',
+  'explore',
+  'charts',
+  'playlists',
+  'playlist-detail',
+  'track-detail',
+  'pricing',
+  'business',
+  'for-creators',
+  'trust',
+  'create',
+  'legal-terms',
+  'certificate-verify',
+]);
+
+/** True when the path carries an explicit locale prefix (/en/… — URL wins). */
+export function isPrefixedPath(path: string): boolean {
+  const first = path.split('/')[1];
+  return ['en', 'ja', 'zh-cn', 'th'].includes(first ?? '');
+}
+
+/**
+ * Server-locale application (A2, detection order ① users.locale). Returns the
+ * locale to switch to, or null to keep the current one. Public pages and
+ * prefixed paths keep URL-wins and never switch.
+ */
+export function shouldApplyServerLocale(
+  serverLocale: string | null | undefined,
+  current: string,
+  path: string,
+  baseName: string,
+): SupportedLocale | null {
+  if (!serverLocale || !(SUPPORTED_LOCALES as readonly string[]).includes(serverLocale)) return null;
+  if (serverLocale === current) return null;
+  if (PUBLIC_BASE_NAMES.has(baseName) || isPrefixedPath(path)) return null;
+  return serverLocale as SupportedLocale;
+}

@@ -14,12 +14,12 @@ var biznoWeights = []int{1, 3, 7, 1, 3, 7, 1, 3}
 func NormalizeBusinessNumber(raw string) (string, error) {
 	clean := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(raw), "-", ""), " ", "")
 	if len(clean) != 10 {
-		return "", fmt.Errorf("사업자등록번호 10자리: %w", ErrInvalidInput)
+		return "", fmt.Errorf("business number must be 10 digits: %w", ErrInvalidInput)
 	}
 	digits := make([]int, 10)
 	for i := 0; i < 10; i++ {
 		if clean[i] < '0' || clean[i] > '9' {
-			return "", fmt.Errorf("사업자등록번호 숫자 10자리: %w", ErrInvalidInput)
+			return "", fmt.Errorf("business number must be numeric 10 digits: %w", ErrInvalidInput)
 		}
 		digits[i] = int(clean[i] - '0')
 	}
@@ -31,7 +31,7 @@ func NormalizeBusinessNumber(raw string) (string, error) {
 		}
 	}
 	if same {
-		return "", fmt.Errorf("사업자등록번호 형식 오류: %w", ErrInvalidInput)
+		return "", fmt.Errorf("business number format invalid: %w", ErrInvalidInput)
 	}
 	sum := 0
 	for i := 0; i < 8; i++ {
@@ -41,7 +41,7 @@ func NormalizeBusinessNumber(raw string) (string, error) {
 	sum += prod/10 + prod%10
 	check := (10 - sum%10) % 10
 	if check != digits[9] {
-		return "", fmt.Errorf("사업자등록번호 체크섬 오류: %w", ErrInvalidInput)
+		return "", fmt.Errorf("business number checksum mismatch: %w", ErrInvalidInput)
 	}
 	return clean, nil
 }

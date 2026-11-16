@@ -1,25 +1,7 @@
 // Applies the resolved locale on app start (client only) for UNPREFIXED
 // non-public screens. Public pages resolve from the URL (or ko default);
 // this plugin must not override them.
-import { resolveLocale, writeStoredLocale } from '@/utils/locale';
-
-// Base route names of public pages (prefix or ko-default). Keep in sync
-// with routeRules SSR list as R3+ adds pages.
-const PUBLIC_BASE_NAMES = new Set([
-  'home',
-  'explore',
-  'charts',
-  'playlists',
-  'playlist-detail',
-  'track-detail',
-  'pricing',
-  'business',
-  'for-creators',
-  'trust',
-  'create',
-  'legal-terms',
-  'certificate-verify',
-]);
+import { PUBLIC_BASE_NAMES, resolveLocale, writeStoredLocale } from '@/utils/locale';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const route = useRoute();

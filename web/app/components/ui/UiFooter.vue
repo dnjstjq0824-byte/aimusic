@@ -29,10 +29,10 @@
         <div>
           <h4 class="font-bold text-white uppercase tracking-wider text-caption mb-3">{{ t('common.footer.colPartner') }}</h4>
           <ul class="space-y-2 text-xs">
-            <li><RouterLink to="/partner/upload" class="hover:text-white transition-colors">{{ t('common.footer.gate') }}</RouterLink></li>
-            <li><RouterLink to="/partner/subscriptions" class="hover:text-white transition-colors">{{ t('common.footer.proof') }}</RouterLink></li>
-            <li><RouterLink to="/partner" class="hover:text-white transition-colors">{{ t('common.footer.settlement') }}</RouterLink></li>
-            <li><RouterLink to="/disputes" class="hover:text-white transition-colors">{{ t('common.footer.disputes') }}</RouterLink></li>
+            <li><RouterLink to="/studio/upload" class="hover:text-white transition-colors">{{ t('common.footer.gate') }}</RouterLink></li>
+            <li><RouterLink to="/studio/proofs" class="hover:text-white transition-colors">{{ t('common.footer.proof') }}</RouterLink></li>
+            <li><RouterLink to="/studio/earnings" class="hover:text-white transition-colors">{{ t('common.footer.settlement') }}</RouterLink></li>
+            <li><RouterLink to="/rights-center" class="hover:text-white transition-colors">{{ t('common.footer.disputes') }}</RouterLink></li>
           </ul>
         </div>
 

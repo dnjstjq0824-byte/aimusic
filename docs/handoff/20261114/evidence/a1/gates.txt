@@ -1,0 +1,49 @@
+# WI-A1 gates (2026-11-16, Docker-less run)
+
+## Backend (local, no containers)
+- `go build ./...` (backend/): PASS, no output.
+- `go vet ./...`: PASS, no output.
+- `go test -count=1 ./...`: PASS all 14 packages with tests
+  (service 12.3s incl. 18 TestOAuth* groups + subtests; audio 47s).
+- `gofmt`: 13 touched Go files clean modulo CRLF checkout artifact
+  (LF-normalized copies in $env:TEMP\gofmtcheck: `gofmt -l` empty).
+  - backend/internal/config/config.go + handler/auth.go got `gofmt -w`
+    (struct alignment); diffs stay logical-only (55 / 165 lines).
+- `bash -n scripts/test-e2e.sh + start-local.sh` via Git Bash: PASS.
+- Migration 000023: up/down SQL written; DB round-trip NOT TESTED (Docker).
+
+## Web (local, no containers)
+- `npm run typecheck`: exit 0 (known-harmless volar sfc-route-blocks
+  warning only, same as R2).
+- `npm run test -- --run`: 71/71 PASS (14 files; +2 socialBrand tests).
+- `node scripts/check-i18n.mjs`: PASS (UNUSED-KEYS warn 212, same as R8).
+- `node --test scripts/worker-grant.test.mjs`: 14/14 PASS.
+- `npm run build`: PASS in 54.4s (node-server preset).
+
+## Docs / spelling
+- `npx cspell@10.5.1` on OAUTH_SETUP.md + L1 draft: 0 issues
+  (after adding kakao/Kakao/KAKAO/avibemusic/PKCE to both cspell configs).
+
+## Docker-dependent: NOT TESTED (environment blocker)
+- `docker ps` fails: engine API 500 for v1.56 AND v1.44
+  ("check if the server supports the requested API version").
+  Docker Desktop processes ARE running; the Linux engine itself is broken
+  (same symptom as R8's 15-min failure).
+- Remediation attempt: `Restart-Service com.docker.service` failed
+  ("Cannot open service", permissions). No approval wait per task rules.
+- Consequently NOT TESTED: local stack boot, harness setup+run, E2E suite
+  (incl. new A1 assertions), 5-language captures, migration up/down on PG.
+- E2E script additions mirror existing assertion shapes and pass `bash -n`;
+  they run in CI (ubuntu) where Docker works.
+
+## Security spot-checks (read-verified, no live OAuth keys)
+- handler/auth.go redirect targets: `/oauth/callback?code=`,
+  `/signup/complete-email?token=`, `/account/connections?linked=`,
+  `/login?oauthError=` — no accessToken/refreshToken in any Location.
+- Startup log emits variable NAMES only (test TestOAuthStartupWarnings).
+- Router smoke test TestOAuthRoutesRegisterAndFailClosed (handler pkg):
+  registration has no Gin static/param conflict; providers catalog 200 with
+  ko order + all disabled; wechat/disabled start 400; GET+POST callback 302
+  with oauthError and zero token substrings; bogus exchange 401;
+  connections without auth 401.
+- Real-key live verification: DEFERRED (no provider keys issued; stub-only).

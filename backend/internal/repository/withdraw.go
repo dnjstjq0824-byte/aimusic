@@ -6,15 +6,16 @@ import (
 
 // WithdrawUserTx runs the whole withdrawal in one transaction: deactivate,
 // purge user + partner PII, cancel the active subscription, delete reset /
-// OAuth / notification rows, and bump the token version (revoking every
-// outstanding token). Any failure rolls everything back, so an account can
-// never strand half-withdrawn (deactivated but token-live, or purged but
-// still subscribed).
+// verification / OAuth / notification rows, and bump the token version
+// (revoking every outstanding token). Any failure rolls everything back, so
+// an account can never strand half-withdrawn (deactivated but token-live, or
+// purged but still subscribed).
 //
 // The statements mirror UserRepo.SetActive/PurgePII/BumpTokenVersion,
 // PartnerRepo.PurgePIIByUser, BillingRepo.CancelActiveSubscription,
-// PasswordResetRepo.DeleteForUser, OAuthRepo.DeleteForUser and
-// NotificationRepo.DeleteForUser; keep them in sync.
+// PasswordResetRepo.DeleteForUser, EmailVerifyRepo.DeletePendingForUser,
+// OAuthRepo.DeleteForUser and NotificationRepo.DeleteForUser; keep them in
+// sync.
 func (r *Repos) WithdrawUserTx(ctx context.Context, userID string) error {
 	tx, err := r.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -44,6 +45,8 @@ func (r *Repos) WithdrawUserTx(ctx context.Context, userID string) error {
 			WHERE user_id = $1::uuid AND status = 'ACTIVE'`},
 		{"delete reset tokens", `
 			DELETE FROM password_reset_tokens WHERE user_id = $1::uuid AND used_at IS NULL`},
+		{"delete email verifications", `
+			DELETE FROM email_verifications WHERE user_id = $1::uuid AND used_at IS NULL`},
 		{"delete oauth links", `DELETE FROM oauth_accounts WHERE user_id = $1::uuid`},
 		{"delete notifications", `DELETE FROM notifications WHERE user_id = $1::uuid`},
 		{"bump token version", `UPDATE users SET token_version = token_version + 1 WHERE id = $1::uuid`},

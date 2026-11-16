@@ -29,6 +29,7 @@ import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
+import { authApi } from '@/api/endpoints';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
@@ -44,17 +45,18 @@ const failed = ref(false);
 const error = ref<string | null>(null);
 
 onMounted(async () => {
-  const access = route.query.accessToken;
-  const refresh = route.query.refreshToken;
-  if (typeof access !== 'string' || typeof refresh !== 'string' || access === '' || refresh === '') {
+  // C-16: the callback carries a one-time code, never tokens.
+  const code = route.query.code;
+  if (typeof code !== 'string' || code === '') {
     failed.value = true;
     error.value = t('auth.oauth.invalidResponse');
     return;
   }
   try {
-    await auth.loginWithTokens(access, refresh);
+    const { tokens } = await authApi.oauthExchange(code);
+    await auth.loginWithTokens(tokens.accessToken, tokens.refreshToken);
     toast.success(t('auth.oauth.success'));
-    // Strip tokens from history so they never linger in the URL bar.
+    // Strip the code from history so it can never be replayed from the URL bar.
     await router.replace(localePath('/'));
   } catch {
     failed.value = true;

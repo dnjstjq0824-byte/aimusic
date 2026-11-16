@@ -11,6 +11,13 @@ export const VIEWPORTS = {
 
 export const ROLES = ['guest', 'listener', 'creator', 'storePartner', 'admin'];
 
+// R13 language dimension (web locale codes; ko = unprefixed default).
+// Override with HARNESS_LANGS=ko,en for a faster subset run.
+export const LANGS = (process.env.HARNESS_LANGS || 'ko,en,ja,zh-cn,th')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter((s) => ['ko', 'en', 'ja', 'zh-cn', 'th'].includes(s));
+
 const GUEST_ROUTES = [
   ['home', '/'],
   ['explore', '/explore'],
@@ -23,6 +30,14 @@ const GUEST_ROUTES = [
   ['playlists', '/playlists'],
   ['playlist-public', '/playlists/{playlist}'],
   ['track', '/tracks/{track}'],
+  ['creator', '/creators/{creator}'],
+  ['embed-track', '/embed/track/{trackShort}'],
+  ['embed-playlist', '/embed/playlist/{playlistShort}'],
+  ['landing-mood', '/explore/mood/cafe'],
+  ['landing-genre', '/explore/genre/electronic'],
+  ['landing-use', '/explore/use/youtube'],
+  ['guides', '/guides'],
+  ['guide-article', '/guides/store-music-license'],
   ['login', '/login'],
   ['register-tab', '/login?tab=register'],
   ['partner-tab', '/login?tab=partner'],
@@ -44,7 +59,12 @@ const GUEST_ROUTES = [
   ['not-found', '/no-such-page'],
   ['guard-library', '/library'],
   ['legacy-library', '/my-library'],
-  ['guard-partner', '/partner'],
+  ['legacy-disputes', '/disputes'],
+  ['legacy-partner', '/partner'],
+  ['legacy-partner-stores', '/partner/stores'],
+  ['guard-account', '/account/security'],
+  ['guard-studio', '/studio'],
+  ['guard-console', '/business/console'],
   ['guard-checkout', '/checkout'],
   ['guard-admin', '/admin'],
 ];
@@ -57,27 +77,43 @@ const LISTENER_ROUTES = [
   ['playlists', '/playlists'],
   ['playlist-public', '/playlists/{playlist}'],
   ['track', '/tracks/{track}'],
-  ['disputes', '/disputes'],
+  ['creator', '/creators/{creator}'],
+  ['guides', '/guides'],
+  ['rights-center', '/rights-center'],
+  ['account', '/account'],
+  ['account-profile', '/account/profile'],
   ['account-security', '/account/security'],
+  ['account-billing', '/account/billing'],
+  ['account-language', '/account/language'],
+  ['account-privacy', '/account/privacy'],
+  ['account-connections', '/account/connections'],
   ['checkout', '/checkout'],
   ['pricing', '/pricing'],
-  ['guard-partner', '/partner'],
+  ['guard-studio', '/studio'],
+  ['guard-console', '/business/console'],
   ['guard-admin', '/admin'],
 ];
 
 const CREATOR_ROUTES = [
   ['home', '/'],
-  ['partner', '/partner'],
-  ['partner-upload', '/partner/upload'],
-  ['partner-subscriptions', '/partner/subscriptions'],
-  ['partner-stores', '/partner/stores'],
-  ['partner-generations', '/partner/generations'],
+  ['studio', '/studio'],
+  ['studio-create', '/studio/create'],
+  ['studio-upload', '/studio/upload'],
+  ['studio-catalog', '/studio/catalog'],
+  ['studio-proofs', '/studio/proofs'],
+  ['studio-earnings', '/studio/earnings'],
+  ['studio-settings', '/studio/settings'],
+  ['guard-console', '/business/console'],
   ['guard-admin', '/admin'],
 ];
 
 const STORE_ROUTES = [
-  ['partner-stores', '/partner/stores'],
-  ['partner', '/partner'],
+  ['console', '/business/console'],
+  ['console-stores', '/business/console/stores'],
+  ['console-players', '/business/console/players'],
+  ['console-licenses', '/business/console/licenses'],
+  ['console-billing', '/business/console/billing'],
+  ['studio', '/studio'],
   ['store-player', '/store/player'],
   ['home', '/'],
 ];
@@ -93,6 +129,9 @@ const ADMIN_ROUTES = [
   ['admin-stores', '/admin/stores'],
   ['admin-distribution', '/admin/distribution'],
   ['admin-settlements', '/admin/settlements'],
+  ['admin-inquiries', '/admin/inquiries'],
+  ['admin-role-grants', '/admin/role-grants'],
+  ['admin-social', '/admin/social'],
   ['home', '/'],
 ];
 

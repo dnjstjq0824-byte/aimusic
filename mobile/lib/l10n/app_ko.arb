@@ -1,0 +1,263 @@
+{
+  "@@locale": "ko",
+  "@@last_modified": "2026-11-16T00:00:00Z",
+  "appTitle": "AVIBE",
+  "tabHome": "홈",
+  "tabSearch": "검색",
+  "tabPlaylists": "플리",
+  "tabPlayer": "재생",
+  "tabStore": "매장",
+  "sessionExpired": "세션이 만료되었습니다. 다시 로그인하세요.",
+  "loginTitle": "AVIBE 로그인",
+  "loginEmail": "이메일",
+  "loginPassword": "비밀번호 (8자 이상)",
+  "loginTotp": "2단계 인증 코드",
+  "loginTotpHint": "인증 앱 6자리 또는 복구 코드",
+  "loginSubmit": "로그인",
+  "loginSubmitTotp": "인증하고 로그인",
+  "loginCreateAccount": "계정 만들기",
+  "loginHaveAccount": "이미 계정이 있어요",
+  "loginNeedAgeConfirm": "만 14세 이상 확인이 필요합니다.",
+  "loginTotpPrompt": "인증 앱의 6자리 코드를 입력하세요.",
+  "loginFailed": "인증에 실패했습니다.",
+  "loginOrSocial": "또는 소셜 계정으로 계속하기",
+  "loginSocialFailed": "{provider} 로그인에 실패했습니다.",
+  "@loginSocialFailed": {
+    "placeholders": {
+      "provider": {"type": "String"}
+    }
+  },
+  "loginSocialCancelled": "소셜 로그인이 취소되었습니다.",
+  "loginSocialReturnFailed": "앱 복귀 처리에 실패했습니다. 다시 시도하세요.",
+  "providerGoogle": "Google",
+  "providerKakao": "카카오",
+  "providerApple": "Apple",
+  "providerNaver": "네이버",
+  "providerLine": "LINE",
+  "signupTitle": "AVIBE 회원가입",
+  "signupDisplayName": "표시 이름",
+  "signupBirthYear": "출생연도 (선택)",
+  "signupBirthYearHint": "예: 1995",
+  "signupInviteCode": "초대 코드 (필요 시)",
+  "signupAgeConfirm": "만 14세 이상입니다. (필수, 만 14세 미만은 가입 불가)",
+  "signupSubmit": "회원가입",
+  "signupBackToLogin": "로그인으로 돌아가기",
+  "ageGateTitle": "만 14세 이상 확인",
+  "ageGateDesc": "소셜 계정으로 처음 로그인했습니다. 스트리밍·결제를 이용하려면 연령 확인이 필요합니다.",
+  "ageGateConfirm": "만 14세 이상입니다. (필수)",
+  "ageGateBirthYear": "출생연도 (선택)",
+  "ageGateBirthYearHint": "예: 1995",
+  "ageGateFailed": "연령 확인에 실패했습니다.",
+  "ageGateLogout": "로그아웃",
+  "ageGateStart": "확인하고 시작하기",
+  "settingsTitle": "설정",
+  "settingsLanguage": "언어",
+  "settingsLanguageSaved": "언어가 저장되었습니다.",
+  "settingsLanguageFailed": "언어 저장에 실패했습니다.",
+  "settingsServerNote": "로그인하면 서버 언어 설정과 동기화됩니다.",
+  "settingsLogout": "로그아웃",
+  "settingsLegal": "약관 및 안내",
+  "langKo": "한국어",
+  "langEn": "English",
+  "langJa": "日本語",
+  "langZh": "简体中文",
+  "langTh": "ไทย",
+  "commonBeta": "Beta",
+  "homeEmpty": "아직 공개된 곡이 없습니다.",
+  "homeFailed": "피드를 불러오지 못했습니다.",
+  "searchTitle": "검색",
+  "searchHint": "곡 제목 또는 AI 제공자로 검색",
+  "searchEmpty": "검색 결과가 없습니다.",
+  "searchFailed": "검색에 실패했습니다.",
+  "playlistTitle": "플레이리스트",
+  "playlistEmpty": "플레이리스트가 없습니다. + 버튼으로 만드세요.",
+  "playlistPublic": "공개",
+  "playlistPrivate": "비공개",
+  "playlistRename": "이름 변경",
+  "playlistDelete": "삭제",
+  "playlistListFailed": "목록을 불러오지 못했습니다.",
+  "playlistNew": "새 플레이리스트",
+  "playlistEdit": "플레이리스트 수정",
+  "playlistNameLabel": "제목",
+  "playlistCancel": "취소",
+  "playlistSave": "저장",
+  "playlistSaveFailed": "저장에 실패했습니다.",
+  "playlistDeleteFailed": "삭제에 실패했습니다.",
+  "playlistSaveOrder": "순서 저장",
+  "playlistAddTrack": "곡 추가",
+  "playlistDetailEmpty": "'{title}'에 곡이 없습니다.\n+ 버튼으로 추가하세요.",
+  "@playlistDetailEmpty": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "playlistPlay": "재생",
+  "playlistDetailFailed": "상세를 불러오지 못했습니다.",
+  "playlistOrderFailed": "순서 저장에 실패했습니다.",
+  "playlistClose": "닫기",
+  "playlistAddFailed": "추가에 실패했습니다.",
+  "playerTitle": "재생 중",
+  "playerReportBlock": "신고 / 차단",
+  "playerTabWaveform": "파형",
+  "playerTabLyrics": "가사",
+  "playerTabAi": "AI·라이선스",
+  "playerNoTrack": "재생 중인 곡이 없습니다.",
+  "playerError": "플레이어 오류: {detail}",
+  "@playerError": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  },
+  "playerReportReasonTitle": "신고 사유 선택",
+  "playerBlockArtist": "이 아티스트(파트너) 차단 및 큐에서 제외",
+  "playerViewBlocks": "내 차단 내역 보기",
+  "playerBlockReasonDefault": "모바일 앱 사용자 직접 아티스트 차단",
+  "playerArtistBlocked": "아티스트가 차단되어 재생 목록에서 즉시 제외되었습니다.",
+  "playerBlockFailed": "아티스트 차단에 실패했습니다.",
+  "playerReportTitle": "신고하기",
+  "playerReportDetailLabel": "상세 설명 (선택)",
+  "playerReportDetailHint": "권리 침해 내용을 설명해주세요",
+  "playerCancel": "취소",
+  "playerReport": "신고",
+  "playerReportReceived": "신고가 접수되었습니다 ({status}).",
+  "@playerReportReceived": {
+    "placeholders": {
+      "status": {"type": "String"}
+    }
+  },
+  "playerReportFailed": "신고에 실패했습니다.",
+  "playerWaveformTitle": "오디오 파형 (Waveform)",
+  "playerInstrumental": "연주곡(Instrumental) 음원입니다.",
+  "playerNoLyrics": "등록된 가사가 없습니다.\n이 곡은 {provider} AI 모델로 생성된 음원입니다.",
+  "@playerNoLyrics": {
+    "placeholders": {
+      "provider": {"type": "String"}
+    }
+  },
+  "playerPromptLabel": "생성 프롬프트: {prompt}",
+  "@playerPromptLabel": {
+    "placeholders": {
+      "prompt": {"type": "String"}
+    }
+  },
+  "playerTrackFailed": "곡 정보를 불러오지 못했습니다.",
+  "playerAiLabel": "AI 생성 여부",
+  "playerAiYes": "AI 생성 음원",
+  "playerAiNo": "일반 음원",
+  "playerProviderLabel": "AI 제공자",
+  "playerDisclosureLabel": "고지 문구",
+  "playerNoDisclosure": "별도 고지 없음",
+  "playerBitrateLabel": "비트레이트",
+  "playerKeyLabel": "키",
+  "playerPlayCountLabel": "재생 수",
+  "playerStatusLabel": "상태",
+  "playerAiNotice": "이 음원은 AI 생성물 표시 의무에 따라 제공자와 생성 여부가 공개됩니다. 상업적 이용 범위는 제공자 라이선스 정책과 플랫폼 이용약관(TOS)을 따릅니다.",
+  "playerViewTerms": "이용약관 보기",
+  "legalTitle": "약관 및 안내",
+  "legalAiTitle": "AI 생성물 안내",
+  "legalAiDesc": "AI 음원 표시 및 라이선스 고지",
+  "legalBlocksTitle": "내 차단 내역",
+  "legalBlocksDesc": "신고 스트라이크에 따른 이용 제한",
+  "legalWithdrawalTitle": "회원 탈퇴 안내",
+  "legalTermsHeader": "이용약관",
+  "legalRequired": "필수",
+  "legalVersion": "버전 {version}",
+  "@legalVersion": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "legalConsentRequired": " · 필수 동의",
+  "legalConsent": "동의하기",
+  "legalConsentDone": "동의가 기록되었습니다.",
+  "legalConsentFailed": "동의 처리에 실패했습니다.",
+  "legalLoadFailed": "약관을 불러오지 못했습니다.",
+  "legalAiHeading": "AI 음원 표시 안내",
+  "legalAiP1": "이 플랫폼의 모든 음원은 AI 생성 여부가 표시됩니다. 재생 화면의 'AI·라이선스' 탭에서 제공자(SUNO, UDIO, AIVA 등), 고지 문구, 비트레이트를 확인할 수 있습니다.",
+  "legalAiP2": "AI 음원의 상업적 이용 범위는 각 제공자의 라이선스 정책과 플랫폼 이용약관을 따릅니다. 무단 보이스 클론, 무단 샘플 사용이 의심되는 곡은 재생 화면의 신고 메뉴로 제보할 수 있습니다.",
+  "legalViewTos": "이용약관(TOS) 보기",
+  "legalNoBlocks": "차단 내역이 없습니다.",
+  "legalStrikeItem": "스트라이크 {number} · {reason}",
+  "@legalStrikeItem": {
+    "placeholders": {
+      "number": {"type": "String"},
+      "reason": {"type": "String"}
+    }
+  },
+  "legalNoExpiry": "만료일 없음",
+  "legalExpires": "만료: {date}",
+  "@legalExpires": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "legalBlocksFailed": "차단 내역을 불러오지 못했습니다.",
+  "legalWithdrawalHeading": "탈퇴 전 확인하세요",
+  "legalWithdrawalBody": "· 플레이리스트와 재생 기록이 즉시 비활성화 및 삭제 처리됩니다.\n· 진행 중인 신고·분쟁이 있으면 관련 법령에 따라 보존 후 파기됩니다.\n· 아래 [즉시 회원 탈퇴] 버튼을 누르면 별도 고객센터 문의 없이 앱 내에서 즉시 탈퇴됩니다.",
+  "legalLogout": "로그아웃",
+  "legalWithdrawNow": "즉시 회원 탈퇴",
+  "storeTitle": "매장 모드",
+  "storeRefreshQueue": "큐 새로고침",
+  "storeUnpair": "페어링 해제",
+  "storeUnpairTitle": "페어링 해제",
+  "storeUnpairBody": "이 태블릿의 매장 페어링을 해제하고 재생을 중지합니다.",
+  "storeCancel": "취소",
+  "storeUnpairConfirm": "해제",
+  "storePairGuide": "파트너 콘솔의 매장 관리에서 발급된 8자리 페어링 코드를 입력하세요.",
+  "storePairCodeLabel": "페어링 코드",
+  "storePairCodeHint": "예: A1B2C3D4",
+  "storePair": "페어링",
+  "storePairFailed": "페어링에 실패했습니다.",
+  "storeOpenNow": "{business} · 영업 중",
+  "@storeOpenNow": {
+    "placeholders": {
+      "business": {"type": "String"}
+    }
+  },
+  "storeOpenNowPlaylist": "{business} · 영업 중 · {playlist}",
+  "@storeOpenNowPlaylist": {
+    "placeholders": {
+      "business": {"type": "String"},
+      "playlist": {"type": "String"}
+    }
+  },
+  "storeClosed": "{business} · {reason}",
+  "@storeClosed": {
+    "placeholders": {
+      "business": {"type": "String"},
+      "reason": {"type": "String"}
+    }
+  },
+  "storeQueueEmpty": "재생할 곡이 없습니다.",
+  "storeNoSelection": "선택된 곡 없음",
+  "storePrev": "이전 곡",
+  "storePause": "일시정지",
+  "storePlay": "재생",
+  "storeNext": "다음 곡",
+  "errNotStreamable": "재생할 수 없는 곡입니다 (차단 또는 심사 중). 다음 곡으로 이동합니다.",
+  "errNotFound": "요청한 항목을 찾을 수 없습니다.",
+  "errAuth": "로그인이 필요하거나 인증이 만료되었습니다.",
+  "errInactive": "비활성화된 계정입니다. 고객센터에 문의하세요.",
+  "errForbidden": "권한이 없습니다.",
+  "errRateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+  "errEmailTaken": "이미 등록된 이메일입니다.",
+  "errTotpRequired": "2단계 인증 코드가 필요합니다.",
+  "errAgeConfirm": "만 14세 이상 확인이 필요합니다. 프로필에서 연령을 확인하세요.",
+  "errConsent": "필수 약관 동의가 필요합니다. 약관 화면에서 동의하세요.",
+  "errTotpInvalid": "인증 코드가 올바르지 않습니다. 다시 입력하세요.",
+  "errLoginLocked": "로그인 시도가 너무 많습니다. 15분 후 다시 시도하세요.",
+  "errProviderNotAllowed": "허용 목록에 없는 제공자입니다. 허용 제휴 제공자를 선택하세요.",
+  "errInvalidInput": "입력값이 올바르지 않습니다: {detail}",
+  "@errInvalidInput": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  },
+  "errGeneric": "일시적인 오류가 발생했습니다.",
+  "errNetwork": "네트워크 연결에 실패했습니다.",
+  "errRequest": "요청에 실패했습니다.",
+  "reasonAiPolicy": "AI 정책 위반",
+  "reasonVoiceClone": "무단 보이스 클론",
+  "reasonSample": "무단 샘플 사용",
+  "reasonOther": "기타"
+}

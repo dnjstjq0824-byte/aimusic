@@ -33,7 +33,9 @@
       "accountSettings": "⟦Àccòùnt sèttìngs～～～～～～～⟧",
       "mobileMenuOpen": "⟦Òpèn mènù～～～～⟧",
       "mobileMenuClose": "⟦Clòsè mènù～～～～⟧",
-      "mobileMenu": "⟦Mòbìlè mènù～～～～～⟧"
+      "mobileMenu": "⟦Mòbìlè mènù～～～～～⟧",
+      "creatorStudio": "⟦Crèàtòr Stùdìò～～～～～～⟧",
+      "businessConsole": "⟦Bùsìnèss Cònsòlè～～～～～～⟧"
     },
     "tabs": {
       "label": "⟦Bòttòm nàvìgàtìòn～～～～～～～⟧",
@@ -41,7 +43,8 @@
       "explore": "⟦Èxplòrè～～～⟧",
       "playlists": "⟦Plàylìsts～～～～⟧",
       "library": "⟦Lìbràry～～～⟧",
-      "account": "⟦Àccòùnt～～～⟧"
+      "account": "⟦Àccòùnt～～～⟧",
+      "list": "⟦Tàbs～～⟧"
     },
     "footer": {
       "tagline": "⟦Strèàmìng lìcènsèd ÀÌ mùsìc clèàrèd fòr còmmèrcìàl ùsè.～～～～～～～～～～～～～～～～～～～～～～⟧",
@@ -103,16 +106,16 @@
       "checkout-confirm": "⟦Pàymènt còmplètè～～～～～～～⟧",
       "track-detail": "⟦Tràck～～⟧",
       "playlist-detail": "⟦Plàylìst～～～～⟧",
-      "dispute-center": "⟦Rìghts Cèntèr～～～～～～⟧",
+      "rights-center": "⟦Rìghts Cèntèr～～～～～～⟧",
       "account-security": "⟦Àccòùnt sècùrìty～～～～～～～⟧",
+      "account-index": "⟦Àccòùnt sèttìngs～～～～～～～～⟧",
+      "account-profile": "⟦Pròfìlè～～～⟧",
+      "account-language": "⟦Làngùàgè～～～～⟧",
+      "account-privacy": "⟦Prìvàcy～～～⟧",
+      "account-connections": "⟦Cònnèctèd àccòùnts～～～～～～～～～⟧",
       "legal-root": "⟦Tèrms～～⟧",
       "legal-terms": "⟦Tèrms～～⟧",
       "certificate-verify": "⟦Vèrìfy cèrtìfìcàtè～～～～～～～～⟧",
-      "partner-dashboard": "⟦Pàrtnèr dàshbòàrd～～～～～～～⟧",
-      "partner-upload": "⟦Ùplòàd mùsìc～～～～～⟧",
-      "partner-subscriptions": "⟦ÀÌ sùbscrìptìòn pròòf～～～～～～～～～⟧",
-      "partner-stores": "⟦Stòrès～～～⟧",
-      "partner-generations": "⟦Gènèràtè mùsìc～～～～～～⟧",
       "admin-overview": "⟦Àdmìn òvèrvìèw～～～～～～⟧",
       "admin-reviews": "⟦Rèvìèws～～～⟧",
       "admin-policies": "⟦Lìcènsè pòlìcìès～～～～～～～⟧",
@@ -125,7 +128,30 @@
       "admin-settlements": "⟦Sèttlèmènts～～～～～⟧",
       "store-player": "⟦Stòrè plàyèr～～～～～⟧",
       "server-error": "⟦Èrròr～～⟧",
-      "not-found": "⟦Pàgè nòt fòùnd～～～～～～⟧"
+      "not-found": "⟦Pàgè nòt fòùnd～～～～～～⟧",
+      "creators-handle": "⟦Crèàtòr～～⟧",
+      "embed-track-shortId": "⟦Èmbèd plàyèr～～～～⟧",
+      "embed-playlist-shortId": "⟦Èmbèd plàyèr～～～～⟧",
+      "explore-mood-mood": "⟦Mòòd～～⟧",
+      "explore-genre-genre": "⟦Gènrè～～⟧",
+      "explore-use-useCase": "⟦Mùsìc by ùsè càsè～～～～～⟧",
+      "guides": "⟦Gùìdès～～⟧",
+      "guides-slug": "⟦Gùìdès～～⟧",
+      "studio-dashboard": "⟦Stùdìò dàshbòàrd～～～～～～⟧",
+      "studio-create": "⟦ÀÌ gènèràtìòn～～～～～⟧",
+      "studio-upload": "⟦Ùplòàd mùsìc～～～～～⟧",
+      "studio-catalog": "⟦My tràcks～～～～⟧",
+      "studio-proofs": "⟦ÀÌ sùbscrìptìòn pròòf～～～～～～～～⟧",
+      "studio-earnings": "⟦Èàrnìngs～～～⟧",
+      "studio-settings": "⟦Stùdìò sèttìngs～～～～～～⟧",
+      "business-console": "⟦Bùsìnèss Cònsòlè～～～～～～⟧",
+      "business-console-stores": "⟦Stòrès～～⟧",
+      "business-console-players": "⟦Plàyèrs～～～⟧",
+      "business-console-licenses": "⟦Lìcènsès～～～⟧",
+      "business-console-billing": "⟦Bìllìng～～～⟧",
+      "admin-inquiries": "⟦Sàlès ìnqùìrìès～～～～～～⟧",
+      "admin-role-grants": "⟦Ròlè mìgràtìòn lòg～～～～～～～⟧",
+      "admin-social": "⟦Sòcìàl òvèrvìèw～～～～～～⟧"
     },
     "locale": {
       "label": "⟦Dìsplày làngùàgè～～～～～～～⟧",
@@ -158,13 +184,37 @@
       "loading": "⟦Lòàdìng…～～～～⟧",
       "showMore": "⟦Shòw mòrè～～～～⟧",
       "more": "⟦Mòrè～～⟧",
-      "share": "⟦Shàrè～～⟧"
+      "share": "⟦Shàrè～～⟧",
+      "logout": "⟦Lòg òùt～～～⟧",
+      "reload": "⟦Rèlòàd～～⟧"
+    },
+    "paginator": {
+      "label": "⟦Pàgìnàtìòn～～～～⟧",
+      "ofTotal": "⟦{range} òf {total}～～～～～～⟧",
+      "pageOnly": "⟦Pàgè {page}～～～～⟧",
+      "prev": "⟦Prèvìòùs pàgè～～～～～～⟧",
+      "next": "⟦Nèxt pàgè～～～～⟧",
+      "pageNum": "⟦Pàgè {p}～～～⟧",
+      "range": "⟦{from}–{to}～～～～⟧",
+      "empty": "⟦0⟧",
+      "prevShort": "⟦Bàck～～⟧",
+      "nextShort": "⟦Nèxt～～⟧"
+    },
+    "httpError": {
+      "t404": "⟦Pàgè nòt fòùnd～～～～～～⟧",
+      "d404": "⟦Thè pàgè wàs dèlètèd òr thè àddrèss chàngèd.～～～～～～～～～～～～～～～～～～～～⟧",
+      "t500": "⟦Sòmèthìng wènt wròng～～～～～～～～～～⟧",
+      "d500": "⟦À sèrvèr èrròr òccùrrèd. Try àgàìn shòrtly, òr còntàct sùppòrt ìf ìt pèrsìsts.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "home": "⟦Hòmè～～⟧",
+      "backHome": "⟦Bàck hòmè～～～～⟧",
+      "exploreCta": "⟦Èxplòrè tràcks～～～～～～⟧"
     },
     "auth": {
       "sessionExpired": "⟦Yòùr sèssìòn èxpìrèd. Plèàsè lòg ìn àgàìn.～～～～～～～～～～～～～～～～～⟧",
       "sessionExpiredTitle": "⟦Lògìn rèqùìrèd～～～～～～⟧",
       "needAdmin": "⟦Thìs pàgè ìs fòr àdmìns ònly.～～～～～～～～～～～～⟧",
-      "needPartner": "⟦Thìs pàgè ìs fòr pàrtnèrs ònly. Ìt ùnlòcks àftèr pàrtnèr àppròvàl.～～～～～～～～～～～～～～～～～～～～～～～～⟧"
+      "needPartner": "⟦Thìs pàgè ìs fòr pàrtnèrs ònly. Ìt ùnlòcks àftèr pàrtnèr àppròvàl.～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "needBusiness": "⟦Thìs pàgè ìs fòr bùsìnèss àccòùnts ònly. Ìt ùnlòcks àftèr bùsìnèss àppròvàl.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧"
     },
     "brand": {
       "logoAlt": "⟦ÀVÌBÈ lògò～～～～⟧"

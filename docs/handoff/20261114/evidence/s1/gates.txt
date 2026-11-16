@@ -1,0 +1,45 @@
+# WI-S1 evidence — URL/slug/handle (2026-11-16, Docker-less)
+
+## Implementation
+- Migration 000025 (max 000024 + 1, runtime verified): tracks/playlists
+  short_id (unique) + slug (NOT NULL), users.handle (nullable unique +
+  CHECK ^[a-z0-9_]{3,30}$), collision-safe md5 backfill, analytics_events,
+  indexnow_log tables. Down reverses all.
+- domain/seo.go: Slugify (unicode kept, WS->dash, delimiters->dash, 80 runes),
+  NewShortID (crypto base62-8), ValidateShortID/Handle + 40 reserved words,
+  SplitSlugID (uuid/short/slug-short), canonical builders, sitemap types,
+  analytics allowlist + PII sanitize. seo_test.go: 6 groups PASS.
+- repository/seo.go: TrackByParam/PlaylistByParam (uuid|short|slug-short +
+  canonical + moved flag), CreatorByHandle, ClaimHandle (taken mapping),
+  sitemap cursors (updated_at,id), LandingCount, InsertEvents,
+  SignupsByLocale, InquiryCounts, IndexNowLog/MarkSent/SentSince.
+- Scans extended: trackColumns(+Qualified), playlistColumns, userColumns +
+  trackCreatorSelect (creator display + handle join, 8 SELECTs).
+- Creates assign short_id/slug (TrackRepo/PlaylistRepo).
+- service/seo.go: Resolve (locale-strip + tracks/playlists/my-library/
+  disputes, 301 targets), SubmitIndexNow (5-locale fan-out, cap, retryx1,
+  audit), PurgeCache (Cloudflare, tokenless skip). seo_test.go: 7 groups PASS
+  (incl. httptest purge round-trip).
+- handler/seo.go + router: GET /seo/resolve, /seo/sitemap/:type (1h cache),
+  /seo/landing, /creators/:handle, POST /events (10rps/60burst, 202),
+  POST /users/handle (JWT), GET /oembed + /api/v1/oembed (bare JSON),
+  /admin/seo/status|indexnow|purge. GetTrack/TrackPlaylists/Playlist.Get/
+  ListTracks accept slug params. Review/takedown/playlist-update fire
+  notifySearchAsync (IndexNow + purge, background 30s ctx).
+- AuthService.RegisterPartner auto-assigns creator_* handle (retry x3).
+- domain.ErrHandleTaken + 409 ERR_HANDLE_TAKEN mapping + API.md + errors.* x6.
+- Web: detailParam/trackLink/playlistLink; 7 link sites emit canonical
+  slug-short (TrackCard/Row, players, home, playlists index, track related).
+
+## Gates (observed, Docker-less)
+- go build ./... : PASS (exit 0)
+- go vet ./... : PASS (no output)
+- go test -count=1 ./... : PASS (14 pkgs ok, incl. domain/service/handler)
+- gofmt new files : clean (edited legacy files keep CRLF checkout artifact)
+- E2E T20 (38 asserts: resolve/sitemap/landing/creators/oembed/events/
+  indexnow-no-key/purge-no-token/overview): bash -n PASS, RUNTIME DEFERRED
+  (Docker engine API 500, same session probe as prior WIs)
+- 000025 up/down round-trip: DEFERRED (needs Postgres)
+
+## Deferred (Docker recovery)
+- T20 runtime + 000025 up/down + harness canonical-link spot + 5-lang capture.

@@ -23,6 +23,28 @@ const ORDER: Record<string, string[]> = {
   en: ['GOOGLE', 'APPLE'],
 };
 
+// Official brand colors for the social buttons (WI-A1). Logos stay out:
+// text + brand color only, no external assets.
+export interface SocialBrand {
+  bg: string;
+  fg: string;
+  border: string;
+}
+
+const BRANDS: Record<string, SocialBrand> = {
+  GOOGLE: { bg: '#FFFFFF', fg: '#1F1F1F', border: '#747775' },
+  APPLE: { bg: '#000000', fg: '#FFFFFF', border: '#000000' },
+  KAKAO: { bg: '#FEE500', fg: '#000000', border: '#FEE500' },
+  NAVER: { bg: '#03C75A', fg: '#FFFFFF', border: '#03C75A' },
+  LINE: { bg: '#06C755', fg: '#FFFFFF', border: '#06C755' },
+};
+
+const FALLBACK_BRAND: SocialBrand = { bg: '#2A2F3A', fg: '#FFFFFF', border: 'transparent' };
+
+export function socialBrand(code: string): SocialBrand {
+  return BRANDS[code] ?? FALLBACK_BRAND;
+}
+
 export function orderSocialProviders(providerCodes: string[], locale: string): SocialProviderMeta[] {
   const enabled = new Set(providerCodes);
   const order = ORDER[locale] ?? ORDER.en ?? [];

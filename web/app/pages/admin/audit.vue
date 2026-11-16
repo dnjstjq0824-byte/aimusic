@@ -1,41 +1,40 @@
 <template>
   <div class="space-y-6">
     <UiPageHeader
-      eyebrow="Admin Governance"
-      title="관리자 감사 추적"
-      description="검수·분쟁·정산·정책 변경 등 모든 관리자 조치의 실행 주체와 시각을 append-only로 기록합니다."
+      :eyebrow="t('admin.au.eyebrow')"
+      :title="t('admin.au.title')"
+      :description="t('admin.au.desc')"
     >
       <template #actions>
-        <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">새로고침</UiButton>
+        <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">{{ t('admin.au.refresh') }}</UiButton>
       </template>
     </UiPageHeader>
 
-    <UiErrorBanner :message="error" title="감사 기록을 불러오지 못했습니다" retry-label="다시 시도" @retry="reload" />
+    <UiErrorBanner :message="error" :title="t('admin.au.loadFail')" :retry-label="t('common.actions.retry')" @retry="reload" />
 
-    <!-- Filters -->
     <UiCard class="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label class="flex-1 text-xs text-text-secondary">
-        <span class="mb-1 block font-semibold">조치 종류</span>
+        <span class="mb-1 block font-semibold">{{ t('admin.au.fAction') }}</span>
         <select
           v-model="actionFilter"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white"
           @change="reload"
         >
-          <option value="">전체</option>
+          <option value="">{{ t('admin.au.all') }}</option>
           <option v-for="a in knownActions" :key="a" :value="a">{{ a }}</option>
         </select>
       </label>
       <label class="flex-1 text-xs text-text-secondary">
-        <span class="mb-1 block font-semibold">대상 종류 (예: track, settlement)</span>
+        <span class="mb-1 block font-semibold">{{ t('admin.au.fEntity') }}</span>
         <input
           v-model="entityFilter"
           type="text"
-          placeholder="전체"
+          :placeholder="t('admin.au.all')"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
         />
       </label>
-      <UiButton variant="secondary" size="sm" @click="reload">조회</UiButton>
+      <UiButton variant="secondary" size="sm" @click="reload">{{ t('admin.au.search') }}</UiButton>
     </UiCard>
 
     <div v-if="loading && events.length === 0" class="space-y-3">
@@ -45,8 +44,8 @@
 
     <div v-else-if="events.length === 0" class="py-12">
       <UiEmptyState
-        title="감사 기록이 없습니다"
-        description="아직 기록된 관리자 조치가 없습니다. 검수·정산 등의 조치를 실행하면 여기에 표시됩니다."
+        :title="t('admin.au.empty')"
+        :description="t('admin.au.emptyDesc')"
       />
     </div>
 
@@ -63,15 +62,15 @@
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted">
           <span>
-            실행자:
-            <strong class="text-text-primary">{{ e.actorUserId ? shortId(e.actorUserId) : '(시스템/CLI)' }}</strong>
+            {{ t('admin.au.actor') }}
+            <strong class="text-text-primary">{{ e.actorUserId ? shortId(e.actorUserId) : t('admin.au.system') }}</strong>
           </span>
           <span v-if="e.ip">
             IP: <span class="font-mono">{{ e.ip }}</span>
           </span>
         </div>
         <details v-if="e.metadata && e.metadata !== '{}'" class="text-caption">
-          <summary class="cursor-pointer text-text-secondary hover:text-white">상세 보기</summary>
+          <summary class="cursor-pointer text-text-secondary hover:text-white">{{ t('admin.au.detail') }}</summary>
           <pre class="mt-1 overflow-x-auto rounded-lg bg-surface-0 p-2 font-mono text-text-primary">{{ prettyMeta(e.metadata) }}</pre>
         </details>
       </UiCard>
@@ -84,9 +83,9 @@
           :loading="loading"
           @click="loadMore"
         >
-          더 불러오기
+          {{ t('admin.au.more') }}
         </UiButton>
-        <p v-else class="text-caption text-text-muted">마지막 기록입니다.</p>
+        <p v-else class="text-caption text-text-muted">{{ t('admin.au.last') }}</p>
       </div>
     </div>
   </div>
@@ -106,6 +105,7 @@ import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
+const { t, locale } = useI18n();
 const PAGE = 50;
 
 const knownActions = [
@@ -122,6 +122,8 @@ const knownActions = [
   'ADMIN_CREATE',
   'USER_SET_ROLE',
   'USER_SET_ACTIVE',
+  'BUSINESS_REVIEW',
+  'STORE_VERIFY',
 ];
 
 const events = ref<AuditEvent[]>([]);
@@ -139,7 +141,8 @@ function shortId(id: string): string {
 function formatTime(iso: string | null | undefined): string {
   if (!iso) return '-';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('ko-KR', { hour12: false });
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(locale.value === 'en' ? 'en-US' : 'ko-KR', { hour12: false });
 }
 
 function prettyMeta(raw: string): string {

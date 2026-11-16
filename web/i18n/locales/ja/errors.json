@@ -26,7 +26,12 @@
     "ERR_DOWNLOAD_REQUIRES_PASS": "ダウンロードには利用中のパスが必要です。",
     "ERR_DOWNLOAD_QUOTA": "1日のダウンロード上限に達しました。",
     "ERR_DOWNLOAD_UNAVAILABLE": "マスターファイルを利用できません。",
+    "ERR_OAUTH_LINK_LOGIN_REQUIRED": "このメールアドレスは登録済みです。メールでログインしてから、連携アカウントでソーシャルアカウントを連携してください。",
+    "ERR_OAUTH_LINK_TAKEN": "このソーシャルアカウントは既に別のアカウントに連携されています。",
+    "ERR_OAUTH_LAST_METHOD": "最後のログイン手段は解除できません。",
+    "EMAIL_NOT_VERIFIED": "メール認証が必要です。受信箱の認証リンクを開いてください。",
     "ERR_INTERNAL": "サーバーエラーが発生しました。",
-    "ERR_FALLBACK": "リクエストに失敗しました。"
+    "ERR_FALLBACK": "リクエストに失敗しました。",
+    "ERR_HANDLE_TAKEN": "このハンドルは既に使われています。"
   }
 }
