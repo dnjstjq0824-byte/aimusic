@@ -16,7 +16,7 @@ WITH ranked AS (
 )
 UPDATE tracks t SET short_id =
   substr(md5(t.id::text || ':avibe-track'), 1, 7) ||
-  substr('0123456789abcdef', ((ranked.rn - 1) % 16) + 1, 1)
+  substr('0123456789abcdef', ((((ranked.rn - 1) % 16) + 1)::int), 1)
 FROM ranked WHERE ranked.id = t.id;
 UPDATE tracks SET slug =
   substr(regexp_replace(regexp_replace(lower(trim(both from title)), '[/\\?#%&+=]', '-', 'g'), '\s+', '-', 'g'), 1, 80)
@@ -37,7 +37,7 @@ WITH ranked AS (
 )
 UPDATE playlists p SET short_id =
   substr(md5(p.id::text || ':avibe-playlist'), 1, 7) ||
-  substr('0123456789abcdef', ((ranked.rn - 1) % 16) + 1, 1)
+  substr('0123456789abcdef', ((((ranked.rn - 1) % 16) + 1)::int), 1)
 FROM ranked WHERE ranked.id = p.id;
 UPDATE playlists SET slug =
   substr(regexp_replace(regexp_replace(lower(trim(both from title)), '[/\\?#%&+=]', '-', 'g'), '\s+', '-', 'g'), 1, 80)

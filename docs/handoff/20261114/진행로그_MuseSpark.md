@@ -16,26 +16,26 @@
 | R5 | PASS | (아래 3건) | 코드 36·로케일 6언어 | go全·E2E 435·tsc·vitest 64·checker·하네스 192·빌드 | r5 json/txt(+PNG 192)+r5-i18n 20종 | AiBadge 미키화·용도facet·BPM슬라이더·legal alias |
 | R6 | PASS | (아래 3건) | 코드 33·로케일 6언어 | go全·E2E 466·tsc·vitest 64·checker·하네스 198·빌드 | r6 json/txt(+PNG 198)+r6-i18n 20종 | AiBadge·크리에이터팔로우UI(S4)·legal alias |
 | R7 | PASS | (아래 3건) | 코드 26·로케일 6언어 | go全·E2E 483·tsc·vitest 64·checker·하네스 210·빌드 | r7 json/txt(+PNG 210)+r7-i18n 20종 | 플랜명 한글 고정·문의UI R11·legal alias |
-| R8 | BLOCKED | 미커밋(워킹트리) | 코드 15·로케일 6언어 | go全·tsc·vitest 69·checker·빌드 그린, 하네스·E2E 환경블로커 | r8 gates.txt+r8-i18n 20종 | Docker 엔진 기동 실패 — 다음 세션에서 하네스 234·E2E 487 재실행 |
+| R8 | PASS | 1aca943+검증수정 | 코드 15·로케일 6언어 | E2E 701/0(T18 포함)·하네스 1530 무오류 | r13 baseline+screens(+PNG 1530) | 없음(전용 증거는 최종 매트릭스로 계승) |
 | L1 | PASS | 미커밋(금지) | 초안 1 | cspell 0·게시금지 확인 | – | G-3 법률 검토·게시(범위 밖) |
-| A1 | BLOCKED | 미커밋(워킹트리) | 코드 33·로케일 6언어 | go全·tsc·vitest 71·checker·빌드·grant·cspell 그린, E2E·하네스 환경블로커 | a1 gates+stub 3종 | Docker 엔진 API 500 지속 — E2E 해당분·하네스·실키 실측 미실행 |
-| A2 | BLOCKED | 미커밋(워킹트리) | P2c-2 엔진 35·P2c-3 화면 30(로케일 6언어 포함) | go全·tsc·vitest 75·checker·빌드·grant 그린, E2E·하네스·SMTP 환경블로커 | a2 gates.txt | Docker 엔진 API 500 지속 — T19·하네스·000024 실측·실발송 미실행 |
-| S1 | BLOCKED | 미커밋(워킹트리) | P3a 코드 32(엔진 25+웹 7) | go全·단위·E2E-bash 그린, E2E·하네스·000025 실측 환경블로커 | s1 gates.txt | Docker API 500 지속 — T20·하네스270·000025 실측 미실행 |
-| S2 | BLOCKED | 미커밋(워킹트리) | P3b 코드 13·로케일 6언어 | tsc·vitest 94·checker·이중빌드·dev실측 그린, E2E·하네스 환경블로커 | s2 gates+OG 2종 | 동일 블로커 — 5언어 PNG·트랙SSR 실측 미실행 |
-| S3 | BLOCKED | 미커밋(워킹트리) | P3c 코드 40(문서·CI·E2E 포함) | dev실측(robots·사이트맵·키파일) 그린, E2E·외부등록 deferred | s3 gates.txt | 동일 블로커 + 콘솔등록·IndexNow키(PO) |
-| S4 | BLOCKED | 미커밋(워킹트리) | (P3c에 포함) | dev실측(임베드·가이드·랜딩404) 그린, 가이드문구 PO검토 대기 | s4 gates.txt | 동일 블로커 |
-| S5 | BLOCKED | 미커밋(워킹트리) | (P3c에 포함) | LHCI설정·RUM·이벤트단위 그린, 실측·서명값 deferred | s5 gates.txt | 동일 블로커 + 서명·토큰(PO) |
-| R9 | BLOCKED | 미커밋(워킹트리) | P4a 코드 19·로케일 6언어·삭제 6 | go全·tsc·vitest 98·checker·이중빌드·grant 그린, 하네스·E2E 환경블로커 | r9 gates.txt | Docker API 500 지속 — 하네스 309·E2E T21·5언어 캡처 미실행 |
-| R10 | BLOCKED | 미커밋(워킹트리) | P4b 엔진 24·화면 22·로케일 6언어 | go全(+단위 7)·tsc·vitest 98·checker·이중빌드·bash-n 그린, DB·E2E·하네스 환경블로커 | r10 gates.txt | 동일 블로커 — 000026 왕복·드라이런·T21·5언어 캡처 미실행 |
-| R11 | BLOCKED | 미커밋(워킹트리) | P4c 코드 16·로케일 ko/en | tsc·checker(admin 면제)·빌드 그린, 하네스·캡처 환경블로커 | r11 gates.txt | 동일 블로커 — admin 13면·ko/en 캡처 미실측 |
-| G0 | BLOCKED | 미커밋(워킹트리) | 코드 11(마이그레이션 2+엔진 9) | 네이티브PG 왕복·go全 그린, E2E T22·하네스 환경블로커 | g0 gates.txt | Docker API 500 — T22 런타임·하네스 미실행 |
-| G1 | BLOCKED | 미커밋(워킹트리) | 코드 6(Go 2+py 1+스키마 2+README 1) | 계약단위(v1호환)·오프라인검증 그린, E2E 환경블로커 | g1 gates.txt | 동일 블로커 |
+| A1 | PASS | 1aca943+setup수정 | 코드 33·로케일 6언어 | E2E 701/0(가드)·스텁 18종·하네스 소셜 5언어 무오류 | a1 gates+stub·r13 | 실키 5종 실측 deferred(PO) |
+| A2 | PASS | 1aca943 | 엔진 35·화면 30 | E2E 701/0(T19 전 항목)·하네스 인증 5언어 무오류 | a2 gates·r13 | SMTP 실발송 deferred |
+| S1 | PASS | 1aca943+000025수정 | 코드 32 | E2E 701/0(T20 slug/short/handle)·하네스 무오류 | s1 gates·r13 | 없음(substr 캐스트 수정済) |
+| S2 | PASS | 1aca943 | 코드 13·로케일 6언어 | E2E 701/0(T20 oEmbed)·하네스 5언어 무오류 | s2 gates+OG·r13 | 없음 |
+| S3 | PASS | 1aca943 | 코드 40 | E2E 701/0(T20 사이트맵·robots·indexnow·purge)·하네스 무오류 | s3 gates·r13 | 콘솔등록·IndexNow키(PO) |
+| S4 | PASS | 1aca943 | (P3c 포함) | E2E 701/0(T20 게이트)·하네스 임베드·가이드·랜딩(404 기대) | s4 gates·r13 | 가이드문구 PO검토 대기 |
+| S5 | PASS | 1aca943 | (P3c 포함) | E2E 701/0(T20 이벤트)·하네스 무오류 | s5 gates·r13 | RUM 실측·서명(PO) |
+| R9 | PASS | 1aca943 | 코드 19·로케일 6언어·삭제 6 | E2E 701/0·하네스 스튜디오 8면×5언어 무오류 | r9 gates·r13 | 없음 |
+| R10 | PASS | 1aca943+스케줄수정 | 엔진 24·화면 22 | E2E 701/0(T21 역할·콘솔)·하네스 콘솔 5언어 무오류 | r10 gates·r13 | 없음(TIME 스캔 수정済) |
+| R11 | PASS | 1aca943 | 코드 16·로케일 ko/en | E2E 701/0(T21 admin)·하네스 admin 14면×5언어 무오류 | r11 gates·r13 | 없음 |
+| G0 | PASS | 1aca943 | 코드 11 | E2E 701/0(T22 스키마·트리거·핀) | g0 gates | 없음 |
+| G1 | PASS | 1aca943 | 코드 6 | E2E 701/0(T22 핀·게이트)+계약단위 | g1 gates | 없음 |
 | G2 | BLOCKED | 미커밋(워킹트리) | 코드 1(PoC 드라이버) | NOT TESTED (GPU·가중치 부재) | g2 리포트 json+gates | 자택 GPU PC 실측 deferred |
 | G3 | PASS | 미커밋(워킹트리) | 문서 1(비교표) | 비교틀 완성·가격기입 0(가드레일 4) | g3 gates.txt | 견적일 가격기입·PO 선택 deferred |
 | G4 | PASS | 미커밋(워킹트리) | 코드 3(eval) | self-test 2종 그린 | g4 gates.txt | GPU 백엔드·임계값 교정 deferred |
-| G5 | BLOCKED | 미커밋(워킹트리) | 코드 13·로케일 6언어·문서 2·사전 2 | 가드단위·tsc·vitest 104·checker·빌드·플래그프로브 그린, 하네스·E2E 환경블로커 | g5 gates+PNG 2종 | 동일 블로커 — 하네스·T22·5언어 캡처 미실행 |
-| R12 | BLOCKED | 미커밋(워킹트리) | P5a 41(코드 30·ARB 5언어·생성 6) | analyze 0·test 22·ARB동치·go全·OAuth단위 그린, 잔여 런타임 없음 | r12 gates.txt | Docker API 500 — P5 합산보고로 BLOCKED 계승, 단독 게이트 전부 그린 |
-| R13 | BLOCKED | 미커밋(워킹트리) | P5b 44(코드 35·로케일 6·CSV 3) | checker전역·tsc·vitest 113·이중빌드·grant 그린, E2E·하네스1530 환경블로커 | r13 gates+matrix+defects·CSV 3종·완료보고 | 동일 블로커 — E2E 전수·하네스·결함0 트리아지 미실행 |
+| G5 | PASS | 1aca943 | 코드 13·로케일 6언어·문서 2·사전 2 | E2E 701/0(T22 가드·위반행)+단위·하네스 create 자리 5언어 | g5 gates·r13 | 없음 |
+| R12 | PASS | 1aca943 | P5a 41 | analyze 0·test 22·ARB동치·OAuth단위(런타임 불필요) | r12 gates | 없음 |
+| R13 | PASS | 1aca943+검증수정 | P5b 44 | E2E 701/0·하네스 1530(200×1500+게이트404×30)·트리아지 0 | r13 baseline+screens+defects·CSV 3종 | DEFECT-R13-01 PO 백로그 유지 |
 
 ## 항목 기록
 
@@ -309,3 +309,22 @@
   E2E 전수·하네스 1530·결함 0 트리아지 NOT TESTED → 복구 후 1회 실행 시 R13 PASS 판정.
 - 파일 상한: P5 합산 85 → **P5a(R12)=41·P5b(R13+보고)=44 분할 선언**. 부모는 반드시 2건+ 분리 커밋.
 - 증거: evidence/r13/{gates.txt,harness-matrix.txt,defects.md} + i18n-review/ + 완료보고_리디자인_20261114.md.
+
+### 검증 세션 (2026-11-17) — Docker 복구 후 E2E·하네스 완주, R8~R13 전항목 PASS
+- 환경: Docker healthy, 로컬 스택(API 18081·DB 55432·Redis 16380·S3 14566·dev 15173).
+  api/worker를 1aca943 코드로 리빌드, 배치 23~27+시드 적용(가드 전수 확인).
+- E2E: e2e-runner 컨테이너+env-file로 3회 실행 → 최종 PASS 701 / FAIL 0 / SKIP 0
+  (T01~T22, T18~T22 포함). 발견·수정 7건: ①00025 substr bigint 캐스트
+  ②store TIME 스캔 500(제품) ③T11 owner_user_id 픽스처 ④T20 코드캡처 오타 2곳
+  ⑤T21 백필 기대→런타임 경로+신규 리스너(명세 근거: 백필은 1회성) ⑥T22 동의 누락
+  ⑦T14 short_id 실행별 고유화(UNIQUE 재실행 충돌).
+- 하네스: setup→run 1530화면 2회 실행 → 최종 200×1500+404×30(게이트 정상)+500×0,
+  hScroll·tiny·unlabeled·noAlt 0. 1차 지적 46건 중 실결함 1건
+  (playlist-public 하이드레이션, ownerView 게이트로 수정·프로브 4종 확인),
+  나머지는 게이트 404 기대 패턴 + 임베드 1회성 타임아웃(재측정 정상).
+- 런타임 조치: JWT TTL 240분 임시 상향 후 15분 원복·api/worker 재생성, dev 서버
+  종료+좀비 제거, .env 원복, 임시 비밀·스크립트 삭제. 운영 쓰기 0.
+- 판정: R8·A1·A2·S1~S5·R9·R10·R11·G0·G1·G5·R12·R13 전부 PASS(위 상태판 반영).
+  G2 NOT TESTED·외부 deferred(OAuth 실키·SMTP·GPU·법률·배포)는 PO 잔여로 유지.
+- 미커밋(승인 대기): .gitignore·store.go·000025·test-e2e.sh·setup.mjs·
+  playlists/[id].vue·진행로그·r13 증거 4종(baseline.json·screens.txt·gates·defects).

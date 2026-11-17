@@ -59,7 +59,7 @@
       <section :aria-label="t('playlist.tracksTitle')">
         <div v-if="tracks.length === 0" class="py-10">
           <UiEmptyState :title="t('playlist.trackEmptyT')" :description="t('playlist.trackEmptyD')">
-            <template v-if="isOwner" #action>
+            <template v-if="ownerView" #action>
               <RouterLink :to="localePath('/explore')">
                 <UiButton variant="secondary" size="sm">{{ t('playlist.trackEmptyCta') }}</UiButton>
               </RouterLink>
@@ -108,7 +108,7 @@
       </section>
     </template>
 
-    <UiModal v-if="isOwner" v-model="editOpen" :title="t('playlist.editInfo')" max-width="sm">
+    <UiModal v-if="ownerView" v-model="editOpen" :title="t('playlist.editInfo')" max-width="sm">
       <div class="space-y-4 p-5">
         <UiInput v-model="editTitle" :label="t('playlist.editTitle')" required />
         <UiCheckbox v-model="editPublic">{{ t('playlist.editVisibility') }}</UiCheckbox>

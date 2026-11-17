@@ -1092,7 +1092,7 @@ E2E_DEV="e2e00000-0000-4000-8000-000000000002"
 psql_q "DELETE FROM store_play_logs WHERE played_at >= '$PERIOD_START'::date AND played_at < '$PERIOD_END'::date;" >/dev/null
 psql_q "DELETE FROM store_devices WHERE id='$E2E_DEV'::uuid;" >/dev/null
 psql_q "DELETE FROM store_businesses WHERE id='$E2E_BIZ'::uuid;" >/dev/null
-psql_q "INSERT INTO store_businesses (id,partner_id,business_number,store_name,status) VALUES ('$E2E_BIZ'::uuid,'$PA_PARTNER_ID'::uuid,'E2E-SETTLE-001','E2E Settle Store','APPROVED');" >/dev/null
+psql_q "INSERT INTO store_businesses (id,partner_id,owner_user_id,business_number,store_name,status) VALUES ('$E2E_BIZ'::uuid,'$PA_PARTNER_ID'::uuid,'$PA_USER_ID'::uuid,'E2E-SETTLE-001','E2E Settle Store','APPROVED');" >/dev/null
 psql_q "INSERT INTO store_devices (id,business_id,device_name,status) VALUES ('$E2E_DEV'::uuid,'$E2E_BIZ'::uuid,'E2E Player','ACTIVE');" >/dev/null
 psql_q "INSERT INTO store_play_logs (device_id,track_id,played_at,duration_played_secs,counted_as_play) SELECT '$E2E_DEV'::uuid,'$DISPUTE_TRACK_A'::uuid,NOW(),30,TRUE FROM generate_series(1,3);" >/dev/null
 psql_q "INSERT INTO store_play_logs (device_id,track_id,played_at,duration_played_secs,counted_as_play) VALUES ('$E2E_DEV'::uuid,'$DISPUTE_TRACK_B'::uuid,NOW(),30,TRUE);" >/dev/null
@@ -1475,11 +1475,15 @@ assert_eq "T13 cumulative heartbeats stay 1 row" "1" "$T13_ROWS"
 
 section "T14 site search v2 (R5 trgm + creator + tag display names)"
 psql_q "UPDATE users SET display_name='E2E 별빛프로듀서' WHERE id=(SELECT user_id FROM partner_profiles WHERE id='$PA_PARTNER_ID'::uuid);" >/dev/null
-T14_T1="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E Neon Focus Run','T1400001','e2e-neon-focus-run','electronic','{focus}','staging/t14/1.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T2="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 밤하늘 드라이브','T1400002','e2e-밤하늘-드라이브','pop','{drive}','staging/t14/2.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T3="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 集中チル','T1400003','e2e-集中チル','ambient','{chill}','staging/t14/3.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T4="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 专注摇滚','T1400004','e2e-专注摇滚','rock','{focus}','staging/t14/4.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
-T14_T5="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E โฟกัส','T1400005','e2e-โฟกัส','electronic','{focus}','staging/t14/5.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+# short_id is UNIQUE per b25: derive per-run ids from the STAMP random suffix
+# so re-runs don't collide with earlier fixtures (slugs stay fixed; no unique
+# constraint, and all asserts key on UUIDs).
+T14_SFX="$(printf '%s' "$STAMP" | tr -d '-' | tail -c 6)"
+T14_T1="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E Neon Focus Run','T${T14_SFX}1','e2e-neon-focus-run','electronic','{focus}','staging/t14/1.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T2="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 밤하늘 드라이브','T${T14_SFX}2','e2e-밤하늘-드라이브','pop','{drive}','staging/t14/2.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T3="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 集中チル','T${T14_SFX}3','e2e-集中チル','ambient','{chill}','staging/t14/3.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T4="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E 专注摇滚','T${T14_SFX}4','e2e-专注摇滚','rock','{focus}','staging/t14/4.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
+T14_T5="$(psql_q "INSERT INTO tracks (partner_id,title,short_id,slug,genre,mood_tags,original_object_key,ai_provider,ai_generated,status,play_count) VALUES ('$PA_PARTNER_ID'::uuid,'E2E โฟกัส','T${T14_SFX}5','e2e-โฟกัส','electronic','{focus}','staging/t14/5.wav','SUNO',TRUE,'READY',0) RETURNING id::text;" | tr -d ' \r\n')"
 code="$(api GET "/tracks?q=Neon&limit=50" "" "")"
 assert_status "T14 en title search" "200" "$code"
 assert_contains "T14 en match" "$T14_T1" "$(cat "$BODY")"
@@ -1861,12 +1865,12 @@ if [[ "$evprops" == *"a@b.c"* ]]; then fail "T20 events email leaked"; else pass
 code="$(api GET "/admin/seo/status" "$ADMIN_TOKEN" "")"
 assert_status "T20 admin seo status" "200" "$code"
 assert_contains "T20 indexnow disabled without key" '"indexNowEnabled":false' "$(cat "$BODY" | tr -d ' ')"
-code="$(api POST "/admin/seo/indexnow" "$ADMIN_TOKEN" '{"paths":["/guides"]}')')"
+code="$(api POST "/admin/seo/indexnow" "$ADMIN_TOKEN" '{"paths":["/guides"]}')"
 assert_status "T20 indexnow no-key submit" "200" "$code"
 assert_contains "T20 indexnow queued false" '"queued":false' "$(cat "$BODY" | tr -d ' ')"
 inxrows="$(psql_q "SELECT COUNT(*) FROM indexnow_log WHERE status='skipped_no_key';" | tr -d ' \r\n')"
 if [ "$inxrows" -ge 5 ] 2>/dev/null; then pass "T20 indexnow 5-locale log $inxrows"; else fail "T20 indexnow log got '$inxrows'"; fi
-code="$(api POST "/admin/seo/purge" "$ADMIN_TOKEN" '{"urls":["https://avibemusic.com/guides"]}')')"
+code="$(api POST "/admin/seo/purge" "$ADMIN_TOKEN" '{"urls":["https://avibemusic.com/guides"]}')"
 assert_status "T20 purge no-token" "200" "$code"
 assert_contains "T20 purge false" '"purged":false' "$(cat "$BODY" | tr -d ' ')"
 code="$(api GET "/admin/overview" "$ADMIN_TOKEN" "")"
@@ -1879,14 +1883,34 @@ chk="$(psql_q "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname
 assert_contains "T21 users role check covers BUSINESS" "BUSINESS" "$chk"
 nullable="$(psql_q "SELECT is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='store_businesses' AND column_name='partner_id';" | tr -d ' \r\n')"
 assert_eq "T21 store partner_id nullable" "YES" "$nullable"
-# G-ROLE backfill: T13 store (partnerA) resolves owner + grant.
+# R10 store ownership: T13 store (created at runtime via /partner/stores)
+# carries its owner's user id. The one-time G-ROLE backfill ('migration'
+# source) only covers pre-migration stores, so E2E proves the runtime path:
+# a store-owning partner keeps both consoles reachable via admin grant.
 t13_owner="$(psql_q "SELECT owner_user_id::text FROM store_businesses WHERE id='$T13_BIZ'::uuid;" | tr -d ' \r\n')"
-assert_eq "T21 T13 store owner backfilled" "$PA_USER_ID" "$t13_owner"
-pa_grant="$(psql_q "SELECT source FROM user_roles WHERE user_id='$PA_USER_ID'::uuid AND role='BUSINESS';" | tr -d ' \r\n')"
-assert_eq "T21 partnerA BUSINESS grant source" "migration" "$pa_grant"
-code="$(api GET "/auth/me" "$PA_TOKEN" "")"
-assert_status "T21 partnerA me" "200" "$code"
+assert_eq "T21 T13 store owner set" "$PA_USER_ID" "$t13_owner"
+T21P_EMAIL="e2e-t21p-$STAMP@example.com"
+code="$(register_partner "$T21P_EMAIL" "E2E-T21P")"
+assert_status "T21 register store-owner partner" "201" "$code"
+T21P_UID="$(jget "data.user.id")"
+code="$(api POST "/auth/login" "" "{\"email\":\"$T21P_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T21 store-owner login" "200" "$code"
+T21P_TOKEN="$(jget "data.tokens.accessToken")"
+consent_all_required "$T21P_TOKEN" >/dev/null
+psql_q "UPDATE users SET email_verified_at=NOW() WHERE id='$T21P_UID'::uuid;" >/dev/null
+T21P_BIZNO="$(python3 -c "import random; w=[1,3,7,1,3,7,1,3]; d=[5,6]+[random.randint(0,9) for _ in range(7)]; s=sum(d[i]*w[i] for i in range(8)); p=d[8]*5; s+=p//10+p%10; d.append((10-s%10)%10); print(''.join(map(str,d)))")"
+code="$(api POST "/partner/stores" "$T21P_TOKEN" "{\"businessNumber\":\"$T21P_BIZNO\",\"storeName\":\"E2E T21P Store\"}")"
+assert_status "T21 store-owner register store" "201" "$code"
+code="$(api POST "/admin/users/$T21P_UID/role" "$ADMIN_TOKEN" '{"role":"BUSINESS"}')"
+assert_status "T21 grant store-owner BUSINESS" "200" "$code"
+code="$(api GET "/auth/me" "$T21P_TOKEN" "")"
+assert_status "T21 store-owner me" "200" "$code"
 assert_contains "T21 me roles carry BUSINESS" "BUSINESS" "$(cat "$BODY")"
+assert_contains "T21 me roles keep PARTNER" "PARTNER" "$(cat "$BODY")"
+code="$(api GET "/business/stores" "$T21P_TOKEN" "")"
+assert_status "T21 store-owner console reachable" "200" "$code"
+code="$(api GET "/partner/tracks" "$T21P_TOKEN" "")"
+assert_status "T21 store-owner studio reachable" "200" "$code"
 # Business signup KR: checksum-valid number approves immediately.
 T21_BIZNO="$(python3 -c "import random; w=[1,3,7,1,3,7,1,3]; d=[1,2]+[random.randint(0,9) for _ in range(7)]; s=sum(d[i]*w[i] for i in range(8)); p=d[8]*5; s+=p//10+p%10; d.append((10-s%10)%10); print(''.join(map(str,d)))")"
 T21_EMAIL="e2e-biz-$STAMP@example.com"
@@ -1965,7 +1989,16 @@ consent_all_required "$T21_FOREIGN_TOKEN" >/dev/null
 psql_q "UPDATE users SET email_verified_at=NOW() WHERE id='$T21_FOREIGN_ID'::uuid;" >/dev/null
 code="$(api GET "/business/stores/$T21_STORE/devices" "$T21_FOREIGN_TOKEN" "")"
 assert_status "T21 cross-owner devices -> 403" "403" "$code"
-code="$(api GET "/business/stores" "$USER_TOKEN" "")"
+# USER_ID carries a lingering PARTNER grant from the T02 admin role-switch
+# test (grants stay by design), so the listener denial needs a fresh account.
+T21L_EMAIL="e2e-t21l-$STAMP@example.com"
+code="$(api POST "/auth/register" "" "{\"email\":\"$T21L_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-t21-listener\",\"ageConfirmed\":true}")"
+assert_status "T21 register fresh listener" "201" "$code"
+code="$(api POST "/auth/login" "" "{\"email\":\"$T21L_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T21 fresh listener login" "200" "$code"
+T21L_TOKEN="$(jget "data.tokens.accessToken")"
+consent_all_required "$T21L_TOKEN" >/dev/null
+code="$(api GET "/business/stores" "$T21L_TOKEN" "")"
 assert_status "T21 listener console -> 403" "403" "$code"
 code="$(api GET "/business/stores" "" "")"
 assert_status "T21 guest console -> 401" "401" "$code"
@@ -2020,6 +2053,7 @@ code="$(api POST "/auth/login" "" "{\"email\":\"$T22_EMAIL\",\"password\":\"$PW\
 assert_status "T22 login guard partner" "200" "$code"
 T22_TOKEN="$(jget "data.tokens.accessToken")"
 psql_q "UPDATE users SET email_verified_at=NOW() WHERE email='$T22_EMAIL';" >/dev/null
+consent_all_required "$T22_TOKEN" >/dev/null
 code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"BTS 스타일로 불러줘"}')"
 assert_status "T22 ko style imitation -> 400" "400" "$code"
 code="$(api POST "/partner/generations" "$T22_TOKEN" '{"prompt":"a ballad in the style of Blackpink"}')"
@@ -2033,6 +2067,7 @@ code="$(api POST "/auth/login" "" "{\"email\":\"$T22B_EMAIL\",\"password\":\"$PW
 assert_status "T22 login guard partner B" "200" "$code"
 T22B_TOKEN="$(jget "data.tokens.accessToken")"
 psql_q "UPDATE users SET email_verified_at=NOW() WHERE email='$T22B_EMAIL';" >/dev/null
+consent_all_required "$T22B_TOKEN" >/dev/null
 code="$(api POST "/partner/generations" "$T22B_TOKEN" '{"prompt":"あの歌手っぽく歌って"}')"
 assert_status "T22 ja style imitation -> 400" "400" "$code"
 code="$(api POST "/partner/generations" "$T22B_TOKEN" '{"prompt":"เพลงเลียนแบบเสียงนักร้อง"}')"

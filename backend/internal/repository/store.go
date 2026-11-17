@@ -234,17 +234,30 @@ const storeScheduleColumns = `id::text, business_id::text, weekday, open_time, c
 
 func scanStoreSchedule(row interface{ Scan(...any) error }) (*domain.StoreSchedule, error) {
 	s := &domain.StoreSchedule{}
-	var openT, closeT time.Time
+	// TIME columns arrive as "15:04:05" strings from the driver; scanning
+	// into time.Time fails (unsupported Scan), so scan text and trim.
+	var openS, closeS string
 	var playlist sql.NullString
-	err := row.Scan(&s.ID, &s.BusinessID, &s.Weekday, &openT, &closeT,
+	err := row.Scan(&s.ID, &s.BusinessID, &s.Weekday, &openS, &closeS,
 		&playlist, &s.IsClosed, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-	s.OpenTime = openT.Format("15:04")
-	s.CloseTime = closeT.Format("15:04")
+	s.OpenTime = trimTimeToHM(openS)
+	s.CloseTime = trimTimeToHM(closeS)
 	s.PlaylistID = strPtr(playlist)
 	return s, nil
+}
+
+// trimTimeToHM normalizes a TIME column value ("15:04:05") to "15:04".
+func trimTimeToHM(v string) string {
+	if t, err := time.Parse("15:04:05", v); err == nil {
+		return t.Format("15:04")
+	}
+	if len(v) >= 5 {
+		return v[:5]
+	}
+	return v
 }
 
 // UpsertSchedule sets one weekday row (open/close as "15:04").

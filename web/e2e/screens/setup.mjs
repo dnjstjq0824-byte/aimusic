@@ -46,6 +46,7 @@ async function registerListener(tag) {
     email, password: PW, displayName: `harness-${tag}`, ageConfirmed: true,
   });
   if (r.status !== 201) throw new Error(`register ${tag}: ${r.status} ${JSON.stringify(r.json)}`);
+  psql(`UPDATE users SET email_verified_at=NOW() WHERE email='${email}';`);
   const l = await api('POST', '/auth/login', null, { email, password: PW });
   if (l.status !== 200) throw new Error(`login ${tag}: ${l.status}`);
   await clearGates(l.json.data.tokens.accessToken);
@@ -58,6 +59,7 @@ async function registerPartner(tag) {
     email, password: PW, displayName: `harness-${tag}`, company: `Harness ${tag}`, ageConfirmed: true,
   });
   if (r.status !== 201) throw new Error(`register ${tag}: ${r.status} ${JSON.stringify(r.json)}`);
+  psql(`UPDATE users SET email_verified_at=NOW() WHERE email='${email}';`);
   const l = await api('POST', '/auth/login', null, { email, password: PW });
   if (l.status !== 200) throw new Error(`login ${tag}: ${l.status}`);
   await clearGates(l.json.data.tokens.accessToken);
