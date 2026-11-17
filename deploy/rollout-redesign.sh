@@ -18,7 +18,8 @@ KEY="$HOME/.ssh/avibe_vultr"
 SSH=(ssh -i "$KEY" -o BatchMode=yes "$VPS")
 CF_ACCOUNT=f5c363135efe9b22ca66eb39f2f8e1da   # avibemusic.com account
 TS=$(date -u +%Y%m%d-%H%M%S)
-REV=$(git rev-parse --short HEAD)
+# Web image tag = last commit touching web/ (unrelated commits reuse it).
+REV=$(git log -1 --format=%h -- web)
 WEB_IMAGE=avibe-prod-web:latest
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
