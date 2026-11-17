@@ -35,9 +35,10 @@ func (f *fakeGenStore) ListByPartner(_ context.Context, partnerID string, _ int)
 	return out, nil
 }
 
-func (f *fakeGenStore) CreateFull(_ context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string) (*domain.GenerationJob, error) {
+func (f *fakeGenStore) CreateFull(_ context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string) (*domain.GenerationJob, error) {
 	g := &domain.GenerationJob{ID: "gen-1", PartnerID: partnerID, Prompt: prompt,
-		Lyrics: lyrics, Model: model, LicenseRef: licenseRef, ParamsJSON: paramsJSON, Status: domain.JobQueued}
+		Lyrics: lyrics, Model: model, LicenseRef: licenseRef, ParamsJSON: paramsJSON, Status: domain.JobQueued,
+		Seed: seed, ModelVersion: modelVersion}
 	f.jobs = append(f.jobs, g)
 	return g, nil
 }
@@ -125,11 +126,95 @@ func TestGenerationBannedPrompt(t *testing.T) {
 	// Third strike within 24h suspends generation.
 	if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "p", Prompt: "voice clone again"}); err == nil {
 		t.Fatal("third strike must fail")
-	} else if got := err.Error(); !strings.Contains(got, "24시간") {
+	} else if got := err.Error(); !strings.Contains(got, "24h") {
 		t.Errorf("third strike must mention 24h suspension, got %q", got)
 	}
 	// Clean prompt still works after unrelated partner's strikes.
 	if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "other", Prompt: "calm guitar"}); err != nil {
 		t.Errorf("clean prompt: %v", err)
+	}
+}
+
+func TestGenerationMultilingualGuard(t *testing.T) {
+	blocked := []string{
+		"clone the voice of the singer", // en voice phrase
+		"목소리를 복제해줘",                     // ko voice phrase
+		"歌声を真似した曲",                      // ja voice phrase
+		"模仿声音唱一首",                       // zh voice phrase
+		"เพลงเลียนแบบเสียงนักร้อง",     // th voice phrase
+		"a ballad in the style of BTS", // en style construction
+		"BTS 스타일로 불러줘",                 // ko style construction
+		"あの歌手っぽく歌って",                   // ja style construction
+		"cover of blackpink",           // en artist name
+		"아이유 노래처럼 만들어줘",                // ko artist name
+		"ＶＯＩＣＥ　ＣＬＯＮＥ me",               // full-width evasion
+		"voice    clone\tme",           // whitespace evasion
+	}
+	for _, prompt := range blocked {
+		if kw := matchBannedKeyword(prompt, nil); kw == "" {
+			t.Errorf("prompt %q must be blocked", prompt)
+		}
+	}
+	clean := []string{
+		"upbeat piano loop for a cafe",
+		"a triumphant orchestral finale", // "iu" in triumph must not match artist IU
+		"liquid drum and bass groove",
+		"잔잔한 피아노와 스트링의 시네마틱 인트로",
+	}
+	for _, prompt := range clean {
+		if kw := matchBannedKeyword(prompt, nil); kw != "" {
+			t.Errorf("prompt %q must pass, matched %q", prompt, kw)
+		}
+	}
+}
+
+func TestGenerationSubmitSeedPins(t *testing.T) {
+	f := &fakeGenStore{now: time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)}
+	svc := testGenerationService(f, 5, nil)
+	job, err := svc.Submit(context.Background(), GenerationSubmitInput{
+		PartnerID: "partner-1", Prompt: "calm guitar",
+		Params: map[string]any{"seed": float64(42), "modelVersion": "ace-step-v1.2"},
+	})
+	if err != nil {
+		t.Fatalf("Submit: %v", err)
+	}
+	if job.Seed == nil || *job.Seed != 42 {
+		t.Errorf("seed not persisted: %+v", job.Seed)
+	}
+	if job.ModelVersion != "ace-step-v1.2" {
+		t.Errorf("modelVersion = %q", job.ModelVersion)
+	}
+	bad := []map[string]any{
+		{"seed": float64(-1)},
+		{"seed": "abc"},
+		{"seed": float64(1.5)},
+		{"modelVersion": 42},
+		{"modelVersion": strings.Repeat("x", 65)},
+	}
+	for _, params := range bad {
+		if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "partner-1", Prompt: "calm guitar", Params: params}); err == nil {
+			t.Errorf("params %+v must be rejected", params)
+		}
+	}
+}
+
+func TestAvibeProvenanceOK(t *testing.T) {
+	ok := &domain.GenerationJob{Status: domain.JobSucceeded, WatermarkID: "wm-1", SafetyResult: `{"passed":true,"checks":["similarity","watermark"]}`}
+	if !AvibeProvenanceOK(ok) {
+		t.Error("verified job must pass")
+	}
+	bad := []*domain.GenerationJob{
+		nil,
+		{Status: domain.JobQueued, WatermarkID: "wm-1", SafetyResult: `{"passed":true}`},
+		{Status: domain.JobSucceeded, SafetyResult: `{"passed":true}`},
+		{Status: domain.JobSucceeded, WatermarkID: "wm-1", SafetyResult: `{"passed":false}`},
+		{Status: domain.JobSucceeded, WatermarkID: "wm-1", SafetyResult: "not-json"},
+		{Status: domain.JobSucceeded, WatermarkID: "wm-1"},
+		{Status: domain.JobSucceeded, WatermarkID: "wm-1", SafetyResult: `{"passed":true,"checks":["prompt","watermark"]}`},
+	}
+	for i, job := range bad {
+		if AvibeProvenanceOK(job) {
+			t.Errorf("case %d must fail closed", i)
+		}
 	}
 }

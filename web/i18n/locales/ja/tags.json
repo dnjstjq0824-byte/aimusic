@@ -1,0 +1,23 @@
+{
+  "tags": {
+    "focus": "集中",
+    "chill": "チル",
+    "cafe": "カフェ",
+    "workout": "ワークアウト",
+    "drive": "ドライブ",
+    "sleep": "スリープ",
+    "cinematic": "シネマティック",
+    "cyberpunk": "サイバーパンク",
+    "electronic": "エレクトロニック",
+    "pop": "ポップ",
+    "rock": "ロック",
+    "hiphop": "ヒップホップ",
+    "jazz": "ジャズ",
+    "classical": "クラシック",
+    "ambient": "アンビエント",
+    "gym": "ジム",
+    "work": "作業",
+    "youtube": "ユーチューブ",
+    "party": "パーティー"
+  }
+}

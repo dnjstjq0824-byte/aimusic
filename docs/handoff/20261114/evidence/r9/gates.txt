@@ -1,0 +1,28 @@
+# WI-R9 gates (2026-11-16, Docker-less; engine API 500 blocker)
+Branch: feat/redesign-20261114 (no commits/pushes/merges, no prod writes)
+
+## Observed green
+- go build ./... : clean (backend/)
+- go vet ./... : clean
+- go test -count=1 ./... : 14 ok / 4 no-test-files (worker/config/domain/handler/audio/crypto/generator/licensegate/mail/storage/toss/repository/search/service)
+- gofmt : new files LF-clean; edited files LF-clean on normalized copies (working-tree CRLF is checkout artifact; index is LF)
+- web typecheck (nuxt typecheck) : exit 0 (pre-existing volar plugin warning only)
+- vitest run : 98/98 (16 files; +4 new: authStore roles x3, upload 4-step gate x1)
+- check-i18n : PASS (UNUSED-KEYS warn 300 only; partner allowlist 6 entries removed)
+- key usage check (temp script) : KEYS OK (all t() literals + dynamic status/reason/weekday/title keys exist in ko)
+- nuxt build (node) : complete in 28.6s (earlier full run 45.0s)
+- nuxt build (cloudflare-module) : complete in 43.2s
+- worker-grant : 14/14
+- cspell (R9-R11 files) : 0 new issues (pre-existing script noise untouched; schs->weekRows, FEMAIL-family renamed)
+
+## R9 scope implemented
+- layouts/studio.vue + pages/studio/{index,create,upload,catalog,proofs,earnings,settings}.vue
+- components/studio/{KpiCard,ReviewTimeline}.vue
+- partnerUploadStore: canLeaveStep1 + step3Blocked (4-step gates)
+- Deleted: pages/partner/*.vue (5) + layouts/partner.vue; middleware 301 /partner/** -> /studio/** + /partner/stores -> /business/console/stores
+- studio.json x6 locales (ko/en/ja/zh-CN/th/en-XA) + common titles/nav updates
+
+## NOT TESTED (environment blocker)
+- Docker Desktop engine API 500 (client 29.9.2/API 1.56); Start-Process + 5-min poll => DOCKER_DOWN_AFTER_5MIN (this session)
+- Harness setup->run (103 routes x 3 viewports = 309 screens), E2E T21 runtime, 5-language captures, 000026 up/down round-trip
+- G-ROLE dry-run script present (scripts/role-migration-dryrun.sql) but not executed (needs DB)

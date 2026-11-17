@@ -72,10 +72,10 @@ CREATE TABLE IF NOT EXISTS user_artist_blocks (
 CREATE INDEX IF NOT EXISTS idx_uab_blocker ON user_artist_blocks (blocker_user_id);
 
 -- Users (fixed UUIDs for reproducible local dev)
-INSERT INTO users (id, email, password_hash, role, display_name, is_active) VALUES
-  ('a0000000-0000-4000-8000-000000000001', 'admin@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'ADMIN', '관리자', TRUE),
-  ('a0000000-0000-4000-8000-000000000002', 'partner@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'PARTNER', '파트너뮤직', TRUE),
-  ('a0000000-0000-4000-8000-000000000003', 'user@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'USER', '일반청취자', TRUE)
+INSERT INTO users (id, email, password_hash, role, display_name, handle, is_active) VALUES
+  ('a0000000-0000-4000-8000-000000000001', 'admin@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'ADMIN', '관리자', NULL, TRUE),
+  ('a0000000-0000-4000-8000-000000000002', 'partner@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'PARTNER', '파트너뮤직', 'partnermusic', TRUE),
+  ('a0000000-0000-4000-8000-000000000003', 'user@example.com', '$2a$10$012345678901234567890uSeEdDuMmYhAsHfOrLoCaLdEvOnLy01234', 'USER', '일반청취자', NULL, TRUE)
 ON CONFLICT (email) DO NOTHING;
 
 -- Partner profile
@@ -151,7 +151,15 @@ INSERT INTO ai_provider_policies (
    192,
    ARRAY['free', 'non-commercial', 'trial', 'demo', 'evaluation', 'personal use only', 'watermarked', 'free-trial', 'cc-by-nc', 'cover', 'remix', 'voice clone', '보이스클론', 'unofficial'],
    '비상업 라이선스 가중치 모델(CC-BY-NC 계열) 또는 보이스클로닝 포함 음원은 상업적 스트리밍 유통이 불가합니다.',
-   'https://example.com/open-model-policy')
+   'https://example.com/open-model-policy'),
+  ('AVIBE', TRUE,
+   ARRAY[]::TEXT[],
+   ARRAY[]::TEXT[],
+   ARRAY[]::TEXT[],
+   192,
+   ARRAY[]::TEXT[],
+   'AVIBE 자체 생성 모델 출력물은 유사도·워터마크 검사가 통과된 작업만 유통할 수 있습니다.',
+   'https://avibemusic.com/trust')
 ON CONFLICT (provider) DO UPDATE SET
   allows_standalone_streaming = EXCLUDED.allows_standalone_streaming,
   allowed_plan_tiers = EXCLUDED.allowed_plan_tiers,
@@ -190,6 +198,11 @@ ON CONFLICT (code, version) DO UPDATE SET
   title_ko = EXCLUDED.title_ko,
   body_md = EXCLUDED.body_md,
   is_required = EXCLUDED.is_required;
+
+-- R10 role grants for seed accounts (idempotent; backfill covers older rows).
+INSERT INTO user_roles (user_id, role, source)
+SELECT id, role, 'backfill' FROM users WHERE email LIKE '%@example.com'
+ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Legal terms v1.1 (launch-compliance revision: §102/§103 OSP procedure,
 -- "no rights warranty" notice, withdrawal/refund terms; see docs/legal/*.md).

@@ -1,0 +1,31 @@
+{
+  "library": {
+    "title": "⟦Lìbràry～～～⟧",
+    "tabLiked": "⟦Lìkèd tràcks～～～～～⟧",
+    "tabRecent": "⟦Rècèntly plàyèd～～～～～～⟧",
+    "tabSaved": "⟦Sàvèd plàylìsts～～～～～～⟧",
+    "tabFollows": "⟦Fòllòwìng～～～～⟧",
+    "myPlCard": "⟦{count} òf my plàylìsts～～～～～～～～～～⟧",
+    "playAll": "⟦Plày àll～～～～⟧",
+    "likedEmptyT": "⟦Nò lìkèd tràcks yèt～～～～～～～～⟧",
+    "likedEmptyD": "⟦Tàp ♡ òn tràcks yòù lòvè ìn Èxplòrè.～～～～～～～～～～～～～～～⟧",
+    "likedEmptyCta": "⟦Èxplòrè～～～⟧",
+    "recentEmptyT": "⟦Nò rècènt plàys～～～～～～⟧",
+    "recentEmptyD": "⟦Plày yòùr fìrst tràck.～～～～～～～～～⟧",
+    "savedEmptyT": "⟦Nò sàvèd plàylìsts～～～～～～～～⟧",
+    "savedEmptyD": "⟦Sàvè plàylìsts yòù lòvè.～～～～～～～～～～⟧",
+    "followsCreatorsT": "⟦Crèàtòrs yòù fòllòw～～～～～～～～⟧",
+    "followsPlaylistsT": "⟦Plàylìsts yòù fòllòw～～～～～～～～⟧",
+    "followsEmptyT": "⟦Nòt fòllòwìng ànyònè yèt～～～～～～～～～～⟧",
+    "followsEmptyD": "⟦Fòllòw fàvòrìtè crèàtòrs ànd plàylìsts.～～～～～～～～～～～～～～～～⟧",
+    "unfollow": "⟦Ùnfòllòw～～～～⟧",
+    "follow": "⟦Fòllòw～～～⟧",
+    "likeAria": "⟦Lìkè thìs tràck～～～～～～⟧",
+    "unlikeAria": "⟦Ùnlìkè thìs tràck～～～～～～～⟧",
+    "unsave": "⟦Rèmòvè～～～⟧",
+    "toastLiked": "⟦Lìkèd.～～～⟧",
+    "toastUnliked": "⟦Lìkè rèmòvèd.～～～～～～⟧",
+    "toastFollowed": "⟦Fòllòwìng.～～～～⟧",
+    "toastUnfollowed": "⟦Ùnfòllòwèd.～～～～～⟧"
+  }
+}

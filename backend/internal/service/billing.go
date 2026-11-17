@@ -86,7 +86,7 @@ func (s *BillingService) CreateOrder(ctx context.Context, userID, planCode strin
 		return nil, nil, fmt.Errorf("%w: user/plan", domain.ErrInvalidInput)
 	}
 	if consentAt.IsZero() || s.now().Sub(consentAt) < 0 || s.now().Sub(consentAt) > 24*time.Hour {
-		return nil, nil, fmt.Errorf("%w: 청약철회·환불 기준 동의가 필요합니다", domain.ErrInvalidInput)
+		return nil, nil, fmt.Errorf("%w: withdrawal/refund consent required (within 24h)", domain.ErrInvalidInput)
 	}
 	if active, err := s.billing.GetActiveSubscription(ctx, userID); err == nil && active != nil {
 		return nil, nil, domain.ErrActivePassExists
@@ -325,7 +325,7 @@ func (s *BillingService) activePass(ctx context.Context, userID string) (*domain
 	sub, err := s.billing.GetActiveSubscription(ctx, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			return nil, nil, fmt.Errorf("%w: 이용 중인 이용권이 없습니다", domain.ErrInvalidInput)
+			return nil, nil, fmt.Errorf("%w: no active pass", domain.ErrInvalidInput)
 		}
 		return nil, nil, err
 	}
@@ -422,7 +422,7 @@ func (s *BillingService) cancelImmediate(ctx context.Context, userID, reason str
 			return nil, err
 		}
 		if !claimed {
-			return nil, fmt.Errorf("%w: 이미 환불 처리 중이거나 완료된 주문입니다", domain.ErrInvalidInput)
+			return nil, fmt.Errorf("%w: order already refunding or refunded", domain.ErrInvalidInput)
 		}
 		cancelAmount := q.RefundKRW
 		if cancelAmount == order.AmountKRW {

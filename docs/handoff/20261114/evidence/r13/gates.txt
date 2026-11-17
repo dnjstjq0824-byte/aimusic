@@ -1,0 +1,48 @@
+# WI-R13 gates (observed 2026-11-16/17 session, Docker-less)
+
+## Web gates (PASS)
+- node scripts/check-i18n.mjs (strict-by-default since R13): check-i18n PASS
+  (HANGUL 0 across web/app; key parity 6 locales OK; ICU OK; backend codes OK;
+   UNUSED-KEYS warn 317 — warning only, namespaces fill in later WIs)
+- npm run typecheck: exit 0 (pre-existing volar sfc-route-blocks plugin warning only)
+- npx vitest run: 113/113 passed (17 files; +9 R13: translator-bridge 4, dateISO 1, locale-detect 4)
+- npm run build (nuxt node): complete in 38.1s
+- NITRO_PRESET=cloudflare-module npm run build: complete in 76s
+- node scripts/worker-grant.test.mjs: pass 14 fail 0
+- cspell on R13-touched files: 0 new words (6 hits are pre-existing toks/linktok
+  in oauth.go lines untouched by R13)
+- node --check on run.mjs + config.mjs: OK
+
+## R13 implementation notes
+- 19 strict-HANGUL files keyed (api/client, refundPolicy, 4 stores, 2 gates,
+  2 legal widgets, 4 ui primitives, 5 pages) + 2 consumers (pricing, studio/upload)
+  + 1 new plugin (i18n-keys) + check-i18n.mjs (allowlist removed) + CI step rename
+- 119 new keys x 6 locales merged (scripts/r13-merge-locales.cjs); ja/zh-CN/th
+  machine-draft, Beta until native review (G-L); en-XA pseudo-generated
+- Store-safe translation bridge: setKeyTranslator/tKey in client.ts, installed by
+  plugins/i18n-keys.ts; unit tests assert English fallback + translator-first
+- Harness language dimension: LANGS (ko/en/ja/zh-cn/th) in config.mjs, lang loop +
+  URL prefix + stored-locale pinning in run.mjs; HARNESS_LANGS subset override
+- Static matrix: 102 route-slots (guest 48 / listener 22 / creator 10 /
+  storePartner 8 / admin 14) x 3 viewports x 5 langs = 1530 screens
+- i18n-review CSVs: ja.csv / zh-CN.csv / th.csv, 1663 rows each
+  (key, ko source, translation, harness screenshot path)
+
+## Environment blocker (RESOLVED 2026-11-17, Docker recovered)
+- 11-16: Docker engine API 500 all session. 11-17: engine healthy, full stack green.
+- E2E full suite: PASS 701 / FAIL 0 / SKIP 0 (e2e-runner container + env-file,
+  T01-T22 incl. T18 profile, T19 email/locale, T20 exposure, T21 roles/console,
+  T22 generation prep). Failures found and fixed during verification:
+  000025 substr(bigint) migration cast, store TIME scan, T11 owner fixture,
+  T20 code-capture typos, T21 backfill->runtime-path + fresh listener, T22
+  consents, T14 per-run short_ids.
+- Harness setup -> run (1530 screens): 2nd run 200x1500 + 404x30 (S4 landing
+  gate, expected) + 500x0 + hydration 0. hScroll/tiny/unlabeled/noAlt 0.
+  1st-run findings: playlist-public hydration mismatch (ownerView fix,
+  probe-verified) + 1 embed timeout flake (retry clean). See defects.md.
+- Runtime notes: JWT_ACCESS_TTL temporarily 240min for the 1530 run (15min
+  tokens cannot span it; restored to 15 + api/worker recreated after),
+  setup.mjs adds email-verify for A2 gates. Dev server stopped + zombie
+  reaped after; .env restored, no prod writes.
+- R13 PASS verdict: requirements met (this file + baseline.json + screens.txt
+  + 1530 PNGs local + defects.md triage). G2/G3/G4 external items stay deferred.

@@ -1,0 +1,31 @@
+{
+  "library": {
+    "title": "音乐库",
+    "tabLiked": "喜欢的歌曲",
+    "tabRecent": "最近播放",
+    "tabSaved": "收藏的歌单",
+    "tabFollows": "我的关注",
+    "myPlCard": "我的歌单{count}个",
+    "playAll": "全部播放",
+    "likedEmptyT": "还没有喜欢的歌曲",
+    "likedEmptyD": "在发现里给喜欢的歌点♡吧。",
+    "likedEmptyCta": "去发现",
+    "recentEmptyT": "暂无播放记录",
+    "recentEmptyD": "先听第一首吧。",
+    "savedEmptyT": "还没有收藏的歌单",
+    "savedEmptyD": "收藏喜欢的歌单吧。",
+    "followsCreatorsT": "关注的创作者",
+    "followsPlaylistsT": "关注的歌单",
+    "followsEmptyT": "还没有关注",
+    "followsEmptyD": "关注喜欢的创作者和歌单吧。",
+    "unfollow": "取消关注",
+    "follow": "关注",
+    "likeAria": "点赞",
+    "unlikeAria": "取消点赞",
+    "unsave": "取消收藏",
+    "toastLiked": "已点赞。",
+    "toastUnliked": "已取消点赞。",
+    "toastFollowed": "已关注。",
+    "toastUnfollowed": "已取消关注。"
+  }
+}

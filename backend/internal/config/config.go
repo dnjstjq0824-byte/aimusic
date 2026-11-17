@@ -22,6 +22,7 @@ type Config struct {
 	AESKey []byte
 	HLS    HLSConfig
 	Reset  PasswordResetConfig
+	Verify EmailVerifyConfig
 	OAuth  OAuthConfig
 	Toss   TossConfig
 	Mail   MailConfig
@@ -29,6 +30,34 @@ type Config struct {
 	// Empty BackendURL means no GPU server is connected; generation jobs then
 	// fail with a clear message instead of fake audio.
 	Generation GenerationConfig
+	// SEO covers sitemap/IndexNow/cache-purge/search-console knobs (WI-S*).
+	SEO SEOConfig
+}
+
+// SEOConfig configures search exposure (WI-S1~S5). Keys stay empty until the
+// PO provisions them; every consumer degrades gracefully (log + skip) while
+// unset, and StartupWarnings names only the missing variable, never values.
+type SEOConfig struct {
+	// SiteBaseURL is the public web origin (canonical host, no trailing slash).
+	SiteBaseURL string
+	// IndexNowKey enables IndexNow submission; the same value is served at
+	// /{key}.txt by the web tier for ownership proof.
+	IndexNowKey string
+	// IndexNowEndpoint defaults to https://api.indexnow.org/indexnow (tests
+	// override it with a stub server).
+	IndexNowEndpoint string
+	// IndexNowDailyCap bounds submissions per rolling 24h (default 10000,
+	// the IndexNow quota).
+	IndexNowDailyCap int
+	// CachePurgeToken + ZoneID enable Cloudflare cache purge on content
+	// change; empty token means rely on SWR expiry.
+	CachePurgeToken string
+	CachePurgeZone  string
+	// Console verification tokens (meta/file placeholders; PO-provided).
+	GoogleVerify string
+	BingVerify   string
+	NaverVerify  string
+	DaumVerify   string
 }
 
 // SecurityConfig configures HTTP hardening (CORS allowlist, trusted proxies).
@@ -99,12 +128,22 @@ type PasswordResetConfig struct {
 	FrontendBaseURL string
 }
 
-// OAuthConfig configures Google/Kakao social login. A provider is enabled
-// when its client ID and secret are both set. Endpoint URLs default to the
-// real provider hosts and exist as env knobs for hermetic tests.
+// EmailVerifyConfig configures the email-verification flow (WI-A2).
+type EmailVerifyConfig struct {
+	// TokenTTLHours bounds single-use verification links (default 24).
+	TokenTTLHours int
+}
+
+// OAuthConfig configures Google/Kakao/Apple/Naver/LINE social login (WI-A1).
+// A provider enables when every required credential is set (Kakao secret is
+// optional); endpoint URLs default to the real provider hosts and exist as
+// env knobs for hermetic tests.
 type OAuthConfig struct {
-	FrontendBaseURL    string
-	RedirectBaseURL    string
+	FrontendBaseURL string
+	RedirectBaseURL string
+	// SecureCookies marks OAuth state cookies Secure (off on local/dev/test
+	// so plain-http flows keep working).
+	SecureCookies      bool
 	GoogleClientID     string
 	GoogleClientSecret string
 	GoogleTokenURL     string
@@ -113,6 +152,20 @@ type OAuthConfig struct {
 	KakaoClientSecret  string
 	KakaoTokenURL      string
 	KakaoUserinfoURL   string
+	AppleServicesID    string
+	AppleTeamID        string
+	AppleKeyID         string
+	ApplePrivateKey    string
+	AppleTokenURL      string
+	AppleJWKSURL       string
+	NaverClientID      string
+	NaverClientSecret  string
+	NaverTokenURL      string
+	NaverUserinfoURL   string
+	LineChannelID      string
+	LineChannelSecret  string
+	LineTokenURL       string
+	LineJWKSURL        string
 	StateSecret        string
 }
 
@@ -132,6 +185,8 @@ type MailConfig struct {
 	SMTPPass string
 	From     string
 	FromName string
+	// NotifyEmail receives ops alerts (business inquiries). Empty disables.
+	NotifyEmail string
 }
 
 // GenerationConfig points the worker at an external GPU generation server
@@ -202,9 +257,13 @@ func Load() (*Config, error) {
 		TokenTTLMinutes: getenvInt("PASSWORD_RESET_TTL_MINUTES", 30),
 		FrontendBaseURL: frontendBase,
 	}
+	cfg.Verify = EmailVerifyConfig{
+		TokenTTLHours: getenvInt("EMAIL_VERIFY_TTL_HOURS", 24),
+	}
 	cfg.OAuth = OAuthConfig{
 		FrontendBaseURL:    frontendBase,
 		RedirectBaseURL:    strings.TrimRight(getenv("OAUTH_REDIRECT_BASE_URL", "http://localhost:8080/api/v1/auth/oauth"), "/"),
+		SecureCookies:      !nonProdEnv(cfg.Env),
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GoogleTokenURL:     getenv("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
@@ -213,6 +272,20 @@ func Load() (*Config, error) {
 		KakaoClientSecret:  os.Getenv("KAKAO_CLIENT_SECRET"),
 		KakaoTokenURL:      getenv("KAKAO_TOKEN_URL", "https://kauth.kakao.com/oauth/token"),
 		KakaoUserinfoURL:   getenv("KAKAO_USERINFO_URL", "https://kapi.kakao.com/v2/user/me"),
+		AppleServicesID:    os.Getenv("APPLE_SERVICES_ID"),
+		AppleTeamID:        os.Getenv("APPLE_TEAM_ID"),
+		AppleKeyID:         os.Getenv("APPLE_KEY_ID"),
+		ApplePrivateKey:    os.Getenv("APPLE_PRIVATE_KEY"),
+		AppleTokenURL:      getenv("APPLE_TOKEN_URL", "https://appleid.apple.com/auth/token"),
+		AppleJWKSURL:       getenv("APPLE_JWKS_URL", "https://appleid.apple.com/auth/keys"),
+		NaverClientID:      os.Getenv("NAVER_CLIENT_ID"),
+		NaverClientSecret:  os.Getenv("NAVER_CLIENT_SECRET"),
+		NaverTokenURL:      getenv("NAVER_TOKEN_URL", "https://nid.naver.com/oauth2.0/token"),
+		NaverUserinfoURL:   getenv("NAVER_USERINFO_URL", "https://openapi.naver.com/v1/nid/me"),
+		LineChannelID:      os.Getenv("LINE_CHANNEL_ID"),
+		LineChannelSecret:  os.Getenv("LINE_CHANNEL_SECRET"),
+		LineTokenURL:       getenv("LINE_TOKEN_URL", "https://api.line.me/oauth2/v2.1/token"),
+		LineJWKSURL:        getenv("LINE_JWKS_URL", "https://api.line.me/oauth2/v2.1/certs"),
 		StateSecret:        os.Getenv("OAUTH_STATE_SECRET"),
 	}
 	cfg.Toss = TossConfig{
@@ -220,18 +293,31 @@ func Load() (*Config, error) {
 		APIBaseURL: strings.TrimRight(getenv("TOSS_API_BASE_URL", "https://api.tosspayments.com"), "/"),
 	}
 	cfg.Mail = MailConfig{
-		SMTPHost: os.Getenv("SMTP_HOST"),
-		SMTPPort: getenvInt("SMTP_PORT", 587),
-		SMTPUser: os.Getenv("SMTP_USER"),
-		SMTPPass: os.Getenv("SMTP_PASS"),
-		From:     getenv("MAIL_FROM", "no-reply@avibemusic.com"),
-		FromName: getenv("MAIL_FROM_NAME", "AVIBE"),
+		SMTPHost:    os.Getenv("SMTP_HOST"),
+		SMTPPort:    getenvInt("SMTP_PORT", 587),
+		SMTPUser:    os.Getenv("SMTP_USER"),
+		SMTPPass:    os.Getenv("SMTP_PASS"),
+		NotifyEmail: os.Getenv("OPS_NOTIFY_EMAIL"),
+		From:        getenv("MAIL_FROM", "no-reply@avibemusic.com"),
+		FromName:    getenv("MAIL_FROM_NAME", "AVIBE"),
 	}
 	cfg.Generation = GenerationConfig{
 		BackendURL:          strings.TrimRight(strings.TrimSpace(os.Getenv("GENERATION_BACKEND_URL")), "/"),
 		TimeoutSeconds:      getenvInt("GENERATION_TIMEOUT_SECONDS", 600),
 		DailyCapPerPartner:  getenvInt("GENERATION_DAILY_CAP", 5),
 		BannedKeywordsExtra: getenvList("GENERATION_BANNED_KEYWORDS"),
+	}
+	cfg.SEO = SEOConfig{
+		SiteBaseURL:      strings.TrimRight(getenv("SITE_BASE_URL", "https://avibemusic.com"), "/"),
+		IndexNowKey:      strings.TrimSpace(os.Getenv("INDEXNOW_KEY")),
+		IndexNowEndpoint: strings.TrimRight(getenv("INDEXNOW_ENDPOINT", "https://api.indexnow.org/indexnow"), "/"),
+		IndexNowDailyCap: getenvInt("INDEXNOW_DAILY_CAP", 10000),
+		CachePurgeToken:  strings.TrimSpace(os.Getenv("CF_CACHE_PURGE_TOKEN")),
+		CachePurgeZone:   strings.TrimSpace(os.Getenv("CF_ZONE_ID")),
+		GoogleVerify:     strings.TrimSpace(os.Getenv("GOOGLE_SITE_VERIFICATION")),
+		BingVerify:       strings.TrimSpace(os.Getenv("BING_SITE_VERIFICATION")),
+		NaverVerify:      strings.TrimSpace(os.Getenv("NAVER_SITE_VERIFICATION")),
+		DaumVerify:       strings.TrimSpace(os.Getenv("DAUM_SITE_VERIFICATION")),
 	}
 	return cfg, nil
 }

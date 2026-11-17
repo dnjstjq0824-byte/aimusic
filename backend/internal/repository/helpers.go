@@ -37,6 +37,13 @@ func nullStr(s *string) any {
 	return *s
 }
 
+func nullInt64(v *int64) any {
+	if v == nil {
+		return nil
+	}
+	return *v
+}
+
 func nullInt(v *int) any {
 	if v == nil {
 		return nil

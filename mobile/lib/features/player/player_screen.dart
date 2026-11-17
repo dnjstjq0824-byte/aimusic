@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -119,23 +120,24 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     final handlerAsync = ref.watch(audioHandlerProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('재생 중'),
+        title: Text(s.playerTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.flag_outlined),
-            tooltip: '신고 / 차단',
+            tooltip: s.playerReportBlock,
             onPressed: () => _showReportMenu(context, ref),
           ),
         ],
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: '파형'),
-            Tab(text: '가사'),
-            Tab(text: 'AI·라이선스'),
+          tabs: [
+            Tab(text: s.playerTabWaveform),
+            Tab(text: s.playerTabLyrics),
+            Tab(text: s.playerTabAi),
           ],
         ),
       ),
@@ -145,7 +147,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           builder: (context, itemSnap) {
             final item = itemSnap.data;
             if (item == null) {
-              return const Center(child: Text('재생 중인 곡이 없습니다.'));
+              return Center(child: Text(s.playerNoTrack));
             }
             return Column(
               children: [
@@ -165,7 +167,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           },
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('플레이어 오류: $e')),
+        error: (e, _) => Center(child: Text(s.playerError(e.toString()))),
       ),
     );
   }
@@ -174,6 +176,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     final handler = await ref.read(audioHandlerProvider.future);
     final item = handler.mediaItem.value;
     if (item == null || !context.mounted) return;
+    final s = context.l10n;
     final api = ref.read(apiProvider);
     final reason = await showModalBottomSheet<String>(
       context: context,
@@ -181,20 +184,20 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const ListTile(title: Text('신고 사유 선택')),
+            ListTile(title: Text(s.playerReportReasonTitle)),
             for (final r in DisputeReasons.all)
               ListTile(
-                title: Text(DisputeReasons.label(r)),
+                title: Text(DisputeReasons.labelOf(r, s)),
                 onTap: () => Navigator.pop(context, r),
               ),
             ListTile(
               leading: const Icon(Icons.person_off_outlined),
-              title: const Text('이 아티스트(파트너) 차단 및 큐에서 제외'),
+              title: Text(s.playerBlockArtist),
               onTap: () => Navigator.pop(context, '__BLOCK_ARTIST__'),
             ),
             ListTile(
               leading: const Icon(Icons.block),
-              title: const Text('내 차단 내역 보기'),
+              title: Text(s.playerViewBlocks),
               onTap: () {
                 Navigator.pop(context);
                 context.go('/legal/blocks');
@@ -210,12 +213,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         final track = await api.getTrack(item.id);
         await api.blockArtist(
           partnerId: track.partnerId,
-          reason: '모바일 앱 사용자 직접 아티스트 차단',
+          reason: s.playerBlockReasonDefault,
         );
         await handler.removeTracksByPartner(track.partnerId);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('아티스트가 차단되어 재생 목록에서 즉시 제외되었습니다.')),
+            SnackBar(content: Text(s.playerArtistBlocked)),
           );
         }
       } catch (e) {
@@ -223,7 +226,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                e is ApiException ? friendlyMessage(e) : '아티스트 차단에 실패했습니다.',
+                e is ApiException
+                    ? friendlyMessage(e, s)
+                    : s.playerBlockFailed,
               ),
             ),
           );
@@ -235,23 +240,23 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('신고하기'),
+        title: Text(s.playerReportTitle),
         content: TextField(
           controller: descCtrl,
-          decoration: const InputDecoration(
-            labelText: '상세 설명 (선택)',
-            hintText: '권리 침해 내용을 설명해주세요',
+          decoration: InputDecoration(
+            labelText: s.playerReportDetailLabel,
+            hintText: s.playerReportDetailHint,
           ),
           maxLines: 3,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text(s.playerCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('신고'),
+            child: Text(s.playerReport),
           ),
         ],
       ),
@@ -267,7 +272,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('신고가 접수되었습니다 (${dispute.status}).')),
+          SnackBar(content: Text(s.playerReportReceived(dispute.status))),
         );
       }
     } catch (e) {
@@ -275,8 +280,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '신고에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playerReportFailed)),
         );
       }
     }
@@ -398,6 +403,7 @@ class _WaveformTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final detail = ref.watch(_trackDetailProvider(trackId));
     final bars = detail.maybeWhen(
       data: (track) => _parseWaveform(track.waveformJson) ?? _barsFor(trackId, 64),
@@ -431,7 +437,7 @@ class _WaveformTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('오디오 파형 (Waveform)',
+          Text(s.playerWaveformTitle,
               style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
@@ -472,6 +478,7 @@ class _LyricsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final detail = ref.watch(_trackDetailProvider(trackId));
     return detail.when(
       data: (track) => SingleChildScrollView(
@@ -486,15 +493,15 @@ class _LyricsTab extends ConsumerWidget {
               track.lyrics != null && track.lyrics!.trim().isNotEmpty
                   ? track.lyrics!
                   : (track.isInstrumental
-                      ? '연주곡(Instrumental) 음원입니다.'
-                      : '등록된 가사가 없습니다.\n이 곡은 ${track.aiProvider} AI 모델로 생성된 음원입니다.'),
+                      ? s.playerInstrumental
+                      : s.playerNoLyrics(track.aiProvider)),
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             if (track.aiPrompt != null &&
                 track.aiPrompt!.trim().isNotEmpty &&
                 track.isPromptPublic) ...[
               const SizedBox(height: 16),
-              Text('생성 프롬프트: ${track.aiPrompt!}',
+              Text(s.playerPromptLabel(track.aiPrompt!),
                   style: Theme.of(context).textTheme.bodySmall),
             ],
             if (track.aiDisclosureText != null) ...[
@@ -506,7 +513,7 @@ class _LyricsTab extends ConsumerWidget {
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Center(child: Text('곡 정보를 불러오지 못했습니다.')),
+      error: (_, __) => Center(child: Text(s.playerTrackFailed)),
     );
   }
 }
@@ -519,37 +526,38 @@ class _AiLicenseTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final detail = ref.watch(_trackDetailProvider(item.id));
     return detail.when(
       data: (track) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _row(context, 'AI 생성 여부', track.aiGenerated ? 'AI 생성 음원' : '일반 음원'),
-          _row(context, 'AI 제공자', track.aiProvider),
-          _row(context, '고지 문구',
-              track.aiDisclosureText ?? '별도 고지 없음'),
-          _row(context, '비트레이트',
+          _row(context, s.playerAiLabel,
+              track.aiGenerated ? s.playerAiYes : s.playerAiNo),
+          _row(context, s.playerProviderLabel, track.aiProvider),
+          _row(context, s.playerDisclosureLabel,
+              track.aiDisclosureText ?? s.playerNoDisclosure),
+          _row(context, s.playerBitrateLabel,
               track.bitrateKbps == null ? '-' : '${track.bitrateKbps} kbps'),
           _row(context, 'BPM', track.bpm == null ? '-' : '${track.bpm}'),
-          _row(context, '키', track.musicalKey ?? '-'),
+          _row(context, s.playerKeyLabel, track.musicalKey ?? '-'),
           _row(context, 'ISRC', track.isrc ?? '-'),
-          _row(context, '재생 수', '${track.playCount}'),
-          _row(context, '상태', track.status),
+          _row(context, s.playerPlayCountLabel, '${track.playCount}'),
+          _row(context, s.playerStatusLabel, track.status),
           const SizedBox(height: 12),
           Text(
-            '이 음원은 AI 생성물 표시 의무에 따라 제공자와 생성 여부가 공개됩니다. '
-            '상업적 이용 범위는 제공자 라이선스 정책과 플랫폼 이용약관(TOS)을 따릅니다.',
+            s.playerAiNotice,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: () => context.go('/legal'),
-            child: const Text('이용약관 보기'),
+            child: Text(s.playerViewTerms),
           ),
         ],
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Center(child: Text('곡 정보를 불러오지 못했습니다.')),
+      error: (_, __) => Center(child: Text(s.playerTrackFailed)),
     );
   }
 

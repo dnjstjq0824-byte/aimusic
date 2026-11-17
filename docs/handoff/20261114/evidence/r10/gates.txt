@@ -1,0 +1,28 @@
+# WI-R10 gates (2026-11-16, Docker-less; engine API 500 blocker)
+Branch: feat/redesign-20261114 (no commits/pushes/merges, no prod writes)
+
+## Observed green
+- go build ./... : clean
+- go vet ./... : clean
+- go test -count=1 ./... : all packages ok (incl. 8 new R10 tests: claims roles, fallback, re-resolve, RegisterBusiness x5 cases, ValidRole, RequireRole x2, owner isolation)
+- gofmt : LF-clean (entities.go pre-existing Track/Playlist misalignments fixed)
+- web typecheck : exit 0; vitest 98/98; check-i18n PASS
+- nuxt build : node 28.6s + cloudflare-module 43.2s
+- bash -n (Git Bash) : scripts/test-e2e.sh OK, scripts/start-local.sh OK
+- worker-grant 14/14; cspell 0 new
+
+## R10 scope implemented
+- Engine: 000026 up/down (user_roles + backfill, business_profiles, owner_user_id + backfill, partner_id nullable, BUSINESS migration grants)
+- Claims.roles + RequireRole multi-grant + RegisterBusiness + /business console group (9 routes) + admin role-grants/oauth-stats/businesses/review
+- StoreService owner variants (9) + UpsertSchedule owner-based playlist check
+- Web: layouts/business.vue + console 5 pages + business/index.vue move + signup/business wiring + store/player 5-language + device locale
+- business.json console+player x6 + auth.business x8 keys + needBusiness
+- E2E T21: 54 assertions (schema 3 + constraint 2, backfill 4, KR signup 7, foreign+review 8, console 19, isolation/guards 5, admin 6)
+- start-local.sh batch23-26 guards; seed.sql role-grant backfill; docs/API.md + docs/ERD.md
+
+## Data migration (local only; prod forbidden)
+- Backfill lives inside 000026 steps 4-5; dry-run queries in scripts/role-migration-dryrun.sql (5 selects, read-only)
+- NOT EXECUTED: no database reachable (Docker down). Run dry-run first after recovery, attach output, then apply.
+
+## NOT TESTED (environment blocker)
+- 000026 up/down round-trip, dry-run output, E2E T21 runtime, harness 309, 5-language captures

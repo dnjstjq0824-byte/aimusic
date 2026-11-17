@@ -91,6 +91,9 @@ func createAdmin(ctx context.Context, repos *repository.Repos, args []string) er
 	if err != nil {
 		return err
 	}
+	if err := repos.Users.GrantRole(ctx, u.ID, domain.RoleAdmin, "admin"); err != nil {
+		return err
+	}
 	if err := repos.Audit.Record(ctx, nil, "ADMIN_CREATE", "user", u.ID, `{"via":"adminctl"}`, "adminctl"); err != nil {
 		return fmt.Errorf("admin created but audit write failed: %w", err)
 	}
@@ -101,20 +104,23 @@ func createAdmin(ctx context.Context, repos *repository.Repos, args []string) er
 func setRole(ctx context.Context, repos *repository.Repos, args []string) error {
 	fs := flag.NewFlagSet("set-role", flag.ContinueOnError)
 	email := fs.String("email", "", "user email (required)")
-	role := fs.String("role", "", "ADMIN|PARTNER|USER (required)")
+	role := fs.String("role", "", "ADMIN|PARTNER|USER|BUSINESS (required)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	mail := strings.TrimSpace(strings.ToLower(*email))
 	r := strings.ToUpper(strings.TrimSpace(*role))
-	if r != domain.RoleAdmin && r != domain.RolePartner && r != domain.RoleUser {
-		return errors.New("--role must be ADMIN|PARTNER|USER")
+	if !domain.ValidRole(r) {
+		return errors.New("--role must be ADMIN|PARTNER|USER|BUSINESS")
 	}
 	u, err := repos.Users.GetByEmail(ctx, mail)
 	if err != nil {
 		return err
 	}
 	if err := repos.Users.SetRole(ctx, u.ID, r); err != nil {
+		return err
+	}
+	if err := repos.Users.GrantRole(ctx, u.ID, r, "admin"); err != nil {
 		return err
 	}
 	if err := repos.Audit.Record(ctx, nil, "USER_SET_ROLE", "user", u.ID, `{"role":"`+r+`","via":"adminctl"}`, "adminctl"); err != nil {

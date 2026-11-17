@@ -25,10 +25,20 @@ Source of truth: `backend/internal/handler/router.go` (+ `auth.go`, `legal.go`,
 | Code | HTTP | When |
 |------|------|------|
 | `ERR_INVALID_INPUT` | 400 | validation failure (handler `ShouldBindJSON`, service `ErrInvalidInput`) |
-| `ERR_UNAUTHORIZED` | 401 | missing/invalid Bearer, bad login (`ErrInvalidCredentials`) |
+| `ERR_UNAUTHORIZED` | 401 | missing/invalid Bearer |
+| `ERR_INVALID_CREDENTIALS` | 401 | bad login, bad token (reset/verify/exchange/link), stale refresh (`ErrInvalidCredentials`) |
+| `ERR_TOTP_INVALID` | 401 | wrong 2FA code |
+| `ERR_OAUTH_LINK_LOGIN_REQUIRED` | 401 | unverified provider email matches an existing account: sign in first, then link (C-11) |
 | `ERR_FORBIDDEN` | 403 | wrong role (`RequireRole`), non-owner playlist/counter, `ErrForbidden` |
 | `ERR_USER_INACTIVE` | 403 | `users.is_active=false` |
 | `ERR_NOT_STREAMABLE` | 403 | track not `READY` or no `hls_prefix` (stream/heartbeat/playlist-add) |
+| `ERR_TOTP_REQUIRED` | 403 | 2FA account logging in without a code |
+| `ERR_AGE_CONFIRM_REQUIRED` | 403 | commerce without the 14+ declaration (`RequireAgeConfirmed`) |
+| `ERR_CONSENT_REQUIRED` | 403 | commerce with pending required terms (`RequireConsents`) |
+| `ERR_TOTP_ENROLL_REQUIRED` | 403 | `/admin/*` without an enrolled second factor (S-03) |
+| `ERR_OAUTH_LAST_METHOD` | 403 | unlinking the final login method refused |
+| `EMAIL_NOT_VERIFIED` | 403 | commerce without a verified email: orders/payments, pre-check/finalize, store register, generations (`RequireEmailVerified`, WI-A2) |
+| `ERR_DOWNLOAD_REQUIRES_PASS` | 403 | download without an active pass (owner/admin exempt) |
 | `ERR_NON_COMMERCIAL_TIER` | 403 | license gate: no/unverified/rejected/expired subscription, or generated after expiry |
 | `ERR_RETROACTIVE_GENERATION_DATE` | 403 | license gate: `generatedAt` before subscription window start |
 | `ERR_SYNC_ONLY_LICENSE` | 403 | license gate: `allows_standalone_streaming=false` (seed: `SOUNDRAW`, `MUBERT`) |
@@ -37,12 +47,22 @@ Source of truth: `backend/internal/handler/router.go` (+ `auth.go`, `legal.go`,
 | `ERR_NOT_FOUND` | 404 | missing row (`ErrNotFound`) |
 | `ERR_DUPLICATE_AUDIO_FILE` | 409 | `audioSha256` already in `tracks.original_object_key` (LIKE match) |
 | `ERR_EMAIL_TAKEN` | 409 | duplicate registration email |
+| `ERR_HANDLE_TAKEN` | 409 | creator handle owned by someone else (`POST /users/handle`, WI-S1) |
+| `ERR_ACTIVE_PASS_EXISTS` | 409 | buying a pass while one is active (B-08) |
+| `ERR_OAUTH_LINK_TAKEN` | 409 | provider identity already linked to another user |
 | `ERR_RATE_LIMITED` | 429 | token bucket empty |
+| `ERR_TOO_MANY_ATTEMPTS` | 429 | throttled credential attempts (login 10 failures/15 min) |
+| `ERR_DOWNLOAD_QUOTA` | 429 | 50/day download quota spent |
+| `ERR_DOWNLOAD_UNAVAILABLE` | 502 | master file missing in storage |
 | `ERR_PAYMENT_UNAVAILABLE` | 503 | billing called with `TOSS_SECRET_KEY` unset |
 | `ERR_INTERNAL` | 500 | unmapped error |
 
 Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 403
 (`backend/internal/domain/errors.go`, `handler/middleware.go:AbortError`).
+`code` is the stable contract; `message` is developer-facing English (WI-A2:
+no Korean in API error strings — the web maps codes via `errors.*`).
+`LOGIN_LOCKED` survives only as a legacy web key; the API emits
+`ERR_TOO_MANY_ATTEMPTS` for throttled logins.
 
 ## Auth (`/auth`)
 
@@ -50,9 +70,10 @@ Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 4
 |--------|------|------|-------------|
 | POST | `/auth/register` | – | `{email,password(min8),displayName,birthYear?,ageConfirmed:true,inviteCode?}` → `User` (C8 invite gate when `REGISTRATION_INVITE_CODE` set; C9 14+ required) |
 | POST | `/auth/register/partner` | – | `{email,password,displayName,company,contactEmail?,birthYear?,ageConfirmed:true,inviteCode?}` → `{user,partner(PENDING)}` |
-| POST | `/auth/login` | – | `{email,password,totpCode?}` → `{tokens:{accessToken,refreshToken,expiresIn},user}` (2FA accounts: `403 ERR_TOTP_REQUIRED` without code, `401 ERR_TOTP_INVALID` on wrong code; recovery codes accepted single-use; 10 failures/15 min → `429 LOGIN_LOCKED`) |
+| POST | `/auth/register/business` | – | `{email,password,displayName?,company,bizNo?,country?(KR default),industry?,birthYear?,ageConfirmed:true,inviteCode?}` → `{user(BUSINESS),business}` (R10: KR requires checksum-valid `bizNo` → profile `APPROVED`; other countries → `PENDING` manual review) |
+| POST | `/auth/login` | – | `{email,password,totpCode?}` → `{tokens:{accessToken,refreshToken,expiresIn},user}` (2FA accounts: `403 ERR_TOTP_REQUIRED` without code, `401 ERR_TOTP_INVALID` on wrong code; recovery codes accepted single-use; 10 failures/15 min → `429 ERR_TOO_MANY_ATTEMPTS`) |
 | POST | `/auth/refresh` | – | `{refreshToken}` → `{tokens}` |
-| GET | `/auth/me` | JWT | – → `{userId,role,ageConfirmedAt,displayName,email,totpEnabled}` |
+| GET | `/auth/me` | JWT | – → `{userId,role,roles[],ageConfirmedAt,displayName,email,totpEnabled,locale,emailVerified}` (`roles` = primary + `user_roles` grants, primary first; JWT carries the same `roles` claim, re-resolved per request) |
 | POST | `/auth/age-confirm` | JWT | `{ageConfirmed:true,birthYear?}` → `{confirmed:true}` (social signups must confirm 14+; commerce gated → `403 ERR_AGE_CONFIRM_REQUIRED`) |
 | GET | `/auth/export` | JWT | personal-data bundle download (profile sans secrets, consents, playlists, playback, logs, disputes, orders, partner data) |
 | POST | `/auth/logout-all` | JWT | – → `{revoked:true}` (bumps `users.token_version`; all prior access/refresh tokens 401) |
@@ -62,12 +83,25 @@ Gate mapping: `domain.GateError.StatusCode()` → 409 only for duplicate, else 4
 | POST | `/auth/withdraw` | JWT | – → `{withdrawn:true}` (in-app immediate withdrawal) |
 | POST | `/auth/password-reset/request` | – | `{email}` → `202 {requested:true}` (always; no enumeration) |
 | POST | `/auth/password-reset/confirm` | – | `{token,newPassword(min8)}` → `{reset:true}` (single-use, 30 min TTL) |
-| GET | `/auth/oauth/providers` | – | `[{provider,enabled}]` (drives frontend social buttons) |
-| GET | `/auth/oauth/:provider/start` | – | `302` to Google/Kakao authorize (`:provider=google\|kakao`) |
-| GET | `/auth/oauth/:provider/callback?code=&state=` | – | `302` to SPA `/oauth/callback?accessToken=&refreshToken=&role=` (failures → `/login?oauthError=<code>`) |
+| POST | `/auth/email/verify/request` | JWT | – → `202 {requested:true}` (rate-limited 1 rps / burst 5; mails a 24h single-use link in the caller locale; verified accounts no-op) |
+| POST | `/auth/email/verify/confirm` | – | `{token}` → `{verified:true,tokens,user}` (single-use; logging in, so the mailed link continues signed in; unknown/expired/replay → `401 ERR_INVALID_CREDENTIALS`) |
+| PATCH | `/auth/me/locale` | JWT | `{locale:ko\|en\|ja\|zh-cn\|th}` → `{userId,locale}` (else `400 ERR_INVALID_INPUT`) |
+| GET | `/auth/oauth/providers?locale=` | – | `[{provider,enabled}]` in locale display order (drives frontend social buttons) |
+| GET | `/auth/oauth/:provider/start[?intent=link&linkToken=]` | – | `302` to provider authorize + state/PKCE cookies (`:provider=google\|kakao\|apple\|naver\|line`) |
+| GET, POST | `/auth/oauth/:provider/callback` | – | `302` to SPA: login → `/oauth/callback?code=` (60s single-use), email-missing → `/signup/complete-email?token=`, link → `/account/connections?linked=` (failures → `/login?oauthError=<code>`) |
+| POST | `/auth/oauth/exchange` | – | `{code}` → `{tokens}` (single-use, 60s TTL) |
+| POST | `/auth/oauth/complete-email` | – | `{token,email,locale?}` → `{provider,email,emailVerificationRequired:true}` (mails a 24h single-use link; confirm creates+links the account and logs in) |
+| POST | `/auth/oauth/link-token` | auth | `{linkToken}` (5min, binds a connect flow to the caller) |
+| GET | `/auth/oauth/connections` | auth | `[{provider,email,createdAt}]` |
+| DELETE | `/auth/oauth/connections/:provider` | auth | `{unlinked:true}` (last method → `ERR_OAUTH_LAST_METHOD`) |
 
 Social accounts always land on `USER`; partners onboard via email + business
-verification. Kakao login requires account-email consent.
+verification. Auto-link of an existing same-email account happens only when
+the provider verifies the address (Google/Apple `email_verified`, Kakao
+`is_email_verified`+`is_email_valid`); otherwise the user signs in first and
+links at `/account/connections`. State is signature+10min+single-use bound to
+an HttpOnly cookie; PKCE (Google/Kakao/Apple/LINE) and OIDC nonce (Apple/LINE)
+verified. WeChat is deferred (adapter interface only). Setup: `docs/OAUTH_SETUP.md`.
 
 Example:
 
@@ -95,13 +129,13 @@ curl -s localhost:8080/api/v1/auth/login \
 | GET | `/license-policies/:provider` | one provider (`SUNO\|UDIO\|AIVA\|STABLE_AUDIO\|SOUNDRAW\|MUBERT\|CUSTOM_OPEN_MODEL`) |
 | GET | `/subscriptions` | caller subscriptions |
 | POST | `/subscriptions` | `{provider,planName,proofObjectKey?}` → `PENDING` row |
-| POST | `/pre-check` | see below → `{eligible:true,stagingKey,uploadUrl,expiresInSecs:900}` (only on pass) |
-| POST | `/finalize` | see below → `{trackId,jobId}` + enqueues `transcode:queue` |
+| POST | `/pre-check` | see below → `{eligible:true,stagingKey,uploadUrl,expiresInSecs:900}` (only on pass; unverified email → `403 EMAIL_NOT_VERIFIED`) |
+| POST | `/finalize` | see below → `{trackId,jobId}` + enqueues `transcode:queue` (unverified email → `403 EMAIL_NOT_VERIFIED`) |
 | POST | `/albums` | `{title,releaseType?,coverObjectKey?}` → `Album` |
 | GET | `/albums?limit=&offset=` | caller albums |
 | GET | `/tracks?limit=&offset=` | caller tracks (all statuses) |
 | PUT | `/settlement` | `{bank,accountNumber}` → AES-256-GCM encrypted at rest |
-| POST | `/stores` | `{businessNumber,storeName,licenseCount?}` → `201 StoreBusiness PENDING` (WI-05 #19; biz-no checksum) |
+| POST | `/stores` | `{businessNumber,storeName,licenseCount?}` → `201 StoreBusiness PENDING` (WI-05 #19; biz-no checksum; unverified email → `403 EMAIL_NOT_VERIFIED`) |
 | GET | `/stores` | caller store businesses |
 | POST | `/stores/:id/devices` | `{deviceName}` → `201 StoreDevice` + 8-char pairing code (15min; ≤ license cap) |
 | GET | `/stores/:id/devices` | store player devices |
@@ -109,9 +143,9 @@ curl -s localhost:8080/api/v1/auth/login \
 | POST | `/stores/:id/devices/:deviceId/revoke` | deactivate player |
 | GET/POST | `/stores/:id/schedules` | weekly schedule (`{weekday 0..6,openTime,closeTime,playlistId?,isClosed}`; playlist must be own/public/official) |
 | GET | `/stores/:id/devices/:deviceId/logs?limit=` | certified play logs |
-| POST | `/generations` | `{prompt,lyrics?,model?,licenseRef?,params?}` → `201 GenerationJob` + enqueues `generation:queue` (WI-03; needs `GENERATION_BACKEND_URL`, else job FAILED with message; WI-08: daily cap `GENERATION_DAILY_CAP` + banned-prompt filter with 24h suspension on 3rd strike) |
+| POST | `/generations` | `{prompt,lyrics?,model?,licenseRef?,params?}` → `201 GenerationJob` + enqueues `generation:queue` (WI-03; needs `GENERATION_BACKEND_URL`, else job FAILED with message; WI-08: daily cap `GENERATION_DAILY_CAP` + banned-prompt filter with 24h suspension on 3rd strike; unverified email → `403 EMAIL_NOT_VERIFIED`; G0/G5: `params.seed` int ≥ 0 + `params.modelVersion` ≤ 64 chars persist as reproducibility pins; multilingual guard: voice-mimic phrases, `~ 스타일로 / in the style of` constructions, and a curated artist-name seed in ko/en/ja/zh-CN/th with full-width/space normalization) |
 | GET | `/generations?limit=` | caller generation jobs, newest first |
-| GET | `/generations/:id` | one job (`outputObjectKey` on SUCCEEDED → normal PreCheck/Finalize with its SHA-256) |
+| GET | `/generations/:id` | one job (`outputObjectKey` on SUCCEEDED → normal PreCheck/Finalize with its SHA-256; G0/G1 provenance fields: `modelVersion`, `seed`, `safetyResult` JSON `{"passed", "checks"}`, `watermarkId`) |
 
 Pre-check request (`handler/partner.go:preCheckRequest`):
 
@@ -136,6 +170,21 @@ keywords are enforced inside step 2. The window check is always enforced server-
 (the client `requiresActiveSub` flag is ignored). On pass the staging key
 embeds the SHA: `staging/<partnerId>/<sha>/<basename>` and `PresignPut`
 TTL is 15 min.
+
+Provider `AVIBE` (WI-G0, own-model output) short-circuits after the policy
+lookup: pass requires server-derived `AvibeChecksPassed` — a SUCCEEDED
+generation job that staged the key, with a passing safety verdict whose
+checks include `similarity` + `watermark` and a recorded `watermarkId`
+(`service.AvibeProvenanceOK`; tiers/cutoff/subscription are skipped).
+Self-declaration without provenance fails with `ERR_NON_COMMERCIAL_TIER`
+("verified similarity and watermark checks"). Finalized AVIBE tracks get
+`origin: AVIBE_MODEL` ("Born Verified"); everything else is `EXTERNAL_AI`.
+The generation backend contract is v2 (`pkg/generator` +
+`generator/server.py`): `contractVersion`, `modelVersion`, `seed`,
+`watermark: true` forced, `safety`/`weightsHash`/`watermarkId` echoed back,
+large payloads via `audioUrl`; v1 replies (bare `audioBase64`) still decode
+with empty provenance. Model-card / dataset-manifest JSON schemas live in
+`docs/generation/`.
 
 Finalize request (repeats the pre-check grant; the gate is re-validated and
 the staging key must bind to the same partner + SHA, else 403):
@@ -167,12 +216,33 @@ society settlement path first). The worker re-validates
 window from the stored rights declaration before HLS packaging, so a track
 that bypassed finalize can never reach transcode.
 
+## Business console (`/business`, JWT + `BUSINESS|PARTNER|ADMIN`)
+
+Owner-keyed store management for the R10 console (`owner_user_id` authority;
+legacy `/partner/stores` stays partner-profile keyed). Public
+`POST /business/inquiries` (R7 honeypot + rate limit) is unchanged.
+
+| Method | Path | Body → Data |
+|--------|------|-------------|
+| GET | `/profile` | caller `BusinessProfile` |
+| POST | `/stores` | `{businessNumber,storeName,licenseCount?}` → `201 StoreBusiness PENDING` (biz-no checksum; unverified email → `403 EMAIL_NOT_VERIFIED`) |
+| GET | `/stores` | caller store businesses |
+| POST | `/stores/:id/devices` | `{deviceName}` → `201 StoreDevice` + 8-char pairing code (15min; ≤ license cap) |
+| GET | `/stores/:id/devices` | store player devices |
+| PUT | `/stores/:id/devices/:deviceId` | `{deviceName,volume 0..100}` (remote volume) |
+| POST | `/stores/:id/devices/:deviceId/revoke` | deactivate player |
+| GET/POST | `/stores/:id/schedules` | weekly schedule (same shape as the partner path) |
+| GET | `/stores/:id/devices/:deviceId/logs?limit=` | certified play logs |
+
+StoreBusiness JSON gains `ownerUserId`; `partnerId` reads `""` for
+business-created stores. Cross-owner access is `403 ERR_FORBIDDEN`.
+
 ## Tracks (`/tracks`)
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/tracks?q=&provider=&genre=&mood=&sort=&limit=&offset=` | – | `READY` only page `{items,total,limit,offset}`; `sort=recent\|oldest\|popular\|title` (default `recent`), `q` = title substring (max 100 chars) |
-| GET | `/tracks/:id` | – | one track (any status) |
+| GET | `/tracks/:id` | – | one track (any status); `:id` = uuid, short ID, or `slug-shortId` (WI-S1) |
 | GET | `/tracks/:id/stream` | JWT (login required, anonymous 401) | `READY` + `hls_prefix` only → `{url,expiresAt,jti,quality}` signed (`exp,jti,sig`, TTL `HLS_URL_TTL_SECONDS` default 300). Active pass/admin → `master.m3u8` (`HQ` 256k); free → `stream_0.m3u8` (`SQ` 128k). Artist-blocked → `ERR_NOT_STREAMABLE` |
 | GET | `/tracks/:id/download` | JWT | `READY` master bytes as attachment (P2-1 #22). Paid passes only — owner + admin exempt (`ERR_DOWNLOAD_REQUIRES_PASS` 403), 50/day quota (`ERR_DOWNLOAD_QUOTA` 429). WAV gains a LIST-INFO AI-disclosure chunk, MP3 an ID3v2 comment; every download is logged (`download_logs`) |
 | GET | `/tracks/:id/certificate` | – | public certificate view for one track, 404 when none (P2-6 #24) |
@@ -203,8 +273,8 @@ Fraud windows count counted plays only: `>=120 counted/hour/user` or
 |--------|------|-------|
 | GET | `/playlists` or `/playlists/me` | caller playlists |
 | POST | `/playlists` | `{title,isPublic}` → `201` |
-| GET/PUT/DELETE | `/playlists/:id` | owner or public-visible for GET; owner-only mutate |
-| GET | `/playlists/:id/tracks` | ordered entries |
+| GET/PUT/DELETE | `/playlists/:id` | owner or public-visible for GET; owner-only mutate; `:id` = uuid, short ID, or `slug-shortId` (WI-S1) |
+| GET | `/playlists/:id/tracks` | ordered entries (same `:id` forms) |
 | POST | `/playlists/:id/tracks` | `{trackId}` (`READY` only, idempotent) → `201` |
 | DELETE | `/playlists/:id/tracks/:trackId` | owner-only |
 | PUT | `/playlists/:id/reorder` or `/:id/tracks/reorder` | `{trackIds:[...]}` must include every current id |
@@ -216,6 +286,21 @@ Fraud windows count counted plays only: `>=120 counted/hour/user` or
 | POST | `/users/blocks` | `{partnerId,reason?}` → records UGC artist block |
 | GET | `/users/blocks` | caller's blocked artists |
 | DELETE | `/users/blocks/:partnerId` | unblock artist |
+| POST | `/users/handle` | `{handle}` → claim creator handle (lowercase alnum+`_`, 3–30, reserved blocked; taken → `409 ERR_HANDLE_TAKEN`, WI-S1) |
+
+## Search exposure (`/seo`, `/creators`, `/events`, `/oembed` — WI-S1~S5)
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/seo/resolve?path=` | – | legacy/locale path → `{canonical,redirect}` (uuid·short·stale-slug → `301` target; unknown → 404) |
+| GET | `/seo/sitemap/:type?cursor=&limit=` | – | `{items:[{loc,lastmod}],nextCursor}`; `type ∈ tracks\|playlists\|creators\|landings\|guides\|static` (READY/public only, 1h cache) |
+| GET | `/seo/landing?mood=\|genre=\|use=` | – | `{count,ok}` for the 12-track landing gate (exactly one facet, S4) |
+| GET | `/creators/:handle` | – | `{profile,tracks,playlists}` public creator page data (READY tracks ≤10) |
+| GET | `/oembed?url=&maxwidth=` | – | bare oEmbed `rich` payload (also `/api/v1/oembed`); private/foreign → 404/400 |
+| POST | `/events` | – | `{events:[{name,locale?,path?,props?}]}` batch 1–50 → `202 {accepted}` (allowlist §1.4 + `web_vital`; PII props stripped; 10rps/60burst) |
+| GET | `/admin/seo/status` | ADMIN | `{indexNowEnabled,sent24h,dailyCap,cachePurgeReady,consoleVerifying}` (no key material) |
+| POST | `/admin/seo/indexnow` | ADMIN | `{paths:[1..100]}` → `{queued,sent}` (5-locale fan-out, daily cap, retry×1, `indexnow_log`; no key → logged `skipped_no_key`) |
+| POST | `/admin/seo/purge` | ADMIN | `{urls:[1..100 absolute]}` → `{purged}` (Cloudflare; no token → `false`, SWR expiry) |
 
 ## Store device (`/store/device`, device Bearer [REDACTED] except claim)
 
@@ -249,7 +334,7 @@ Every dispute carries the §103 timeline: `takedown_requested_at` (report),
 
 | Method | Path | Body → Data |
 |--------|------|-------------|
-| GET | `/admin/overview` | console snapshot `{users,tracks,reviews,disputesOpen,plays,queueDepth,jobsFailed24h,settlementsPending}` (`queueDepth=null` when Redis is down) |
+| GET | `/admin/overview` | console snapshot `{users,tracks,reviews,disputesOpen,plays,queueDepth,jobsFailed24h,settlementsPending,signupsByLocale, inquiries}` (`queueDepth=null` when Redis is down; S5 adds the locale funnel + inquiry conversion) |
 | GET | `/admin/pending` or `/admin/tracks/pending` | `{tracks,licenseGateTracks,disputes,partners,subscriptions,rightsByTrack,subsById}` |
 | POST | `/admin/review` or `/admin/tracks/:id/review` | `{trackId,approve,reason?}` → `READY` or `LICENSE_GATE_REJECTED` (+Korean reason) |
 | PUT | `/admin/tracks/:id/isrc` | `{isrc}` → canonical 12-char assign (WI-05, audited `TRACK_ISRC_ASSIGN`; UNIQUE rejects dupes) |
@@ -267,7 +352,11 @@ Every dispute carries the §103 timeline: `takedown_requested_at` (report),
 | POST | `/admin/curation/takedown` | `{trackId,reason?}` → immediate `TAKEN_DOWN` + staging/HLS byte purge (status kept on purge failure; retry resumes) |
 | GET | `/admin/audit-events?action=&entityType=&limit=&offset=` | append-only admin trail `{id,actorUserId,action,entityType,entityId,metadata,ip,createdAt}` newest first |
 | GET | `/admin/users?q=&role=&limit=&offset=` | account search newest first |
-| POST | `/admin/users/:id/role` | `{role}` (self-change + last-admin demote refused) |
+| POST | `/admin/users/:id/role` | `{role}` (`ADMIN\|PARTNER\|USER\|BUSINESS`; self-change + last-admin demote refused; the new primary is also recorded as a `user_roles` grant, older grants stay) |
+| GET | `/admin/role-grants?limit=` | newest-first `{userId,email,displayName,primaryRole,role,grantedAt,source}` (R11 migration log) |
+| GET | `/admin/oauth/stats` | `{byProvider:[{provider,links}],linkedUsers,totalLinks}` (R11 social overview) |
+| GET | `/admin/businesses?status=` | company profiles by `PENDING\|APPROVED\|SUSPENDED` |
+| POST | `/admin/businesses/:userId/review` | `{approve}` → `APPROVED`/`SUSPENDED` (audited `BUSINESS_REVIEW`) |
 | POST | `/admin/users/:id/active` | `{active}` (locks revoke sessions; self-lock refused) |
 | GET | `/admin/users/:id/blocks` | strike/block history of one account (admin console 제재 내역) |
 | POST | `/admin/settlements/calculate` | `{partnerId,periodStart:YYYY-MM-DD,periodEnd:YYYY-MM-DD,storePoolKrw?,directKrw?,incomeType?}` → upserted 70:30 settlement (`BUSINESS_33` 3.3% default, `OTHER_88` 8.8% occasional income; a present `ratePerPlayKrw` is rejected 400 — the per-play rate is abolished) |
@@ -296,8 +385,8 @@ ERR_PAYMENT_UNAVAILABLE`; the plan catalog still works.
 | Method | Path | Auth | Body → Data |
 |--------|------|------|-------------|
 | GET | `/billing/plans` | – | active plans cheapest first |
-| POST | `/billing/orders` | JWT | `{planCode,refundConsentAt RFC3339}` → `201 {order,plan}` (`PENDING`, merchant id `AVIBE-YYYYMMDD-XXXXXXXX`; consent ≤24h old, stored with `refund_terms_version`) |
-| POST | `/billing/payments/confirm` | JWT | `{paymentKey,orderId,amount}` → `{subscription}` (Toss approve + `ACTIVE` period) |
+| POST | `/billing/orders` | JWT | `{planCode,refundConsentAt RFC3339}` → `201 {order,plan}` (`PENDING`, merchant id `AVIBE-YYYYMMDD-XXXXXXXX`; consent ≤24h old, stored with `refund_terms_version`; unverified email → `403 EMAIL_NOT_VERIFIED`) |
+| POST | `/billing/payments/confirm` | JWT | `{paymentKey,orderId,amount}` → `{subscription}` (Toss approve + `ACTIVE` period; unverified email → `403 EMAIL_NOT_VERIFIED`) |
 | POST | `/billing/webhooks/toss` | – | Toss transmission → `{received:true}` (verified by re-query, idempotent) |
 | GET | `/billing/subscriptions/me` | JWT | `{subscription}` (`null` when no active pass) |
 | POST | `/billing/subscriptions/cancel` | JWT | – → `{cancelled:true}` |

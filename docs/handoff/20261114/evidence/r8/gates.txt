@@ -1,0 +1,33 @@
+WI-R8 gates (2026-11-16 session, Docker-less subset)
+branch: feat/redesign-20261114
+
+GO (backend/)
+- go build ./...            : PASS (no output)
+- go vet ./...              : PASS (no output)
+- go test -count=1 handler/service/repository : PASS (1.834s/2.445s/0.954s)
+- go test ./... (cached)    : all ok
+- gofmt                     : repo-wide -l noise is pre-existing CRLF-checkout artifact
+                            (HEAD blob itself fails gofmt -d; core.autocrlf=true).
+                            R8 files verified clean modulo CRLF+BOM via LF temp copies.
+
+WEB (web/)
+- npm run typecheck         : exit 0 (only known-harmless volar sfc-route-blocks warning)
+- vitest --run              : 14 files, 69/69 passed (64 + 5 new legalBody)
+- npm run i18n:check        : PASS (UNUSED-KEYS warn 212)
+- npm run build             : success in 32.2s
+
+BLOCKED (Docker Desktop engine down)
+- harness (78 routes x 3 viewports = 234 screens, config already has account 6 + rights-center)
+- E2E incl. T18 profile nickname (PUT /auth/profile 4 assertions in scripts/test-e2e.sh)
+- Docker Desktop started via Start-Process; engine API kept returning
+  500 "check if the server supports the requested API version" for 15+ min.
+  Prior session notes: first FAIL was host-psql-from-container; fix is in-container
+  psql direct. Could not reach that step (no engine at all).
+
+Worktree implementation re-verified (read-only):
+- PUT /auth/profile: router.go:95, auth.go UpdateProfile, service UpdateDisplayName
+- account pages: index shell + profile/security/billing/language/privacy/connections
+- /disputes -> /rights-center 301 (app.global.ts), rights-center.vue rename
+- legal transPendingT/D banner ([code].vue) + ko legal.json strings
+- legalBody.ts + legalBody.test.ts (5 tests)
+- evidence/r8-i18n: 20 PNG (profile+rights x 5 langs x 2 viewports, prior session)

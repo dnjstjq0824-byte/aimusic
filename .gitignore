@@ -11,6 +11,7 @@ secrets/
 # Docker volumes / local data
 /volumes/
 data/
+!web/app/data/
 docker-data/
 *.volume
 
@@ -82,3 +83,29 @@ generator/.venv/
 generator/__pycache__/
 generator/*.pyc
 
+
+# Screen harness local auth (ephemeral local tokens)
+web/e2e/screens/.auth.json
+
+docs/handoff/20261114/evidence/baseline/*.png
+docs/handoff/20261114/evidence/nuxt-csr/*.png
+docs/handoff/20261114/evidence/nuxt-ssr/*.png
+
+# Nuxt build output
+web/.nuxt
+web/.output
+web/.data
+web/node_modules/.cache/nuxt
+
+docs/handoff/20261114/evidence/r1/*.png
+docs/handoff/20261114/evidence/r2/*.png
+docs/handoff/20261114/evidence/r3/*.png
+docs/handoff/20261114/evidence/r4/*.png
+docs/handoff/20261114/evidence/r5/*.png
+docs/handoff/20261114/evidence/r6/*.png
+docs/handoff/20261114/evidence/r7/*.png
+docs/handoff/20261114/evidence/r8/*.png
+docs/handoff/20261114/evidence/r13/*.png
+
+# Worker assets extracted from the web image at deploy time
+deploy/web-public/

@@ -27,7 +27,8 @@ func (s *PlaylistService) Create(ctx context.Context, ownerID, title string, isP
 
 // Get returns a playlist visible to caller (owner or public).
 func (s *PlaylistService) Get(ctx context.Context, callerID, playlistID string) (*domain.Playlist, error) {
-	p, err := s.repos.Playlists.GetByID(ctx, playlistID)
+	// S1: detail params may be uuid, short ID, or slug-shortID.
+	p, _, _, err := s.repos.SEO.PlaylistByParam(ctx, playlistID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +41,11 @@ func (s *PlaylistService) Get(ctx context.Context, callerID, playlistID string) 
 // ListMine returns the caller's playlists.
 func (s *PlaylistService) ListMine(ctx context.Context, callerID string) ([]*domain.Playlist, error) {
 	return s.repos.Playlists.ListByOwner(ctx, callerID)
+}
+
+// ListPublic returns discoverable playlists for guests and rails.
+func (s *PlaylistService) ListPublic(ctx context.Context, limit int) ([]*domain.Playlist, error) {
+	return s.repos.Playlists.ListPublic(ctx, limit)
 }
 
 // Update renames a playlist; owner only.
@@ -110,10 +116,11 @@ func (s *PlaylistService) Reorder(ctx context.Context, callerID, playlistID stri
 
 // ListTracks returns ordered entries visible to caller.
 func (s *PlaylistService) ListTracks(ctx context.Context, callerID, playlistID string) ([]*domain.PlaylistTrack, error) {
-	if _, err := s.Get(ctx, callerID, playlistID); err != nil {
+	p, err := s.Get(ctx, callerID, playlistID)
+	if err != nil {
 		return nil, err
 	}
-	return s.repos.Playlists.ListTracks(ctx, playlistID)
+	return s.repos.Playlists.ListTracks(ctx, p.ID)
 }
 
 func (s *PlaylistService) requireOwner(ctx context.Context, callerID, playlistID string) error {
@@ -261,6 +268,11 @@ func (s *PlaybackService) Heartbeat(ctx context.Context, in HeartbeatInput) (*He
 // GetState returns the resume position.
 func (s *PlaybackService) GetState(ctx context.Context, userID, trackID string) (*domain.UserPlaybackState, error) {
 	return s.repos.Playback.GetState(ctx, userID, trackID)
+}
+
+// RecentTracks returns the user's recently resumed READY tracks.
+func (s *PlaybackService) RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error) {
+	return s.repos.Tracks.RecentTracks(ctx, userID, limit)
 }
 
 // SetPosition stores the resume position.

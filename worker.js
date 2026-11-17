@@ -112,6 +112,36 @@ async function hmacHex(key, message) {
   return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+function makeNonce() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes));
+}
+
+const EMBED_PATH =/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?embed(?:\/|$)/;
+
+// fetchPage proxies a page request to the Nuxt SSR origin, keeping the
+// public host visible to Nuxt and passing redirects through untouched.
+async function fetchPage(request, env, url) {
+  const origin = (env.WEB_ORIGIN || '').replace(/\/+$/, '');
+  if (!origin) return env.ASSETS.fetch(request);
+  const headers = new Headers(request.headers);
+  headers.set('X-Forwarded-Host', url.host);
+  headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
+  const init = { method: request.method, headers, redirect: 'manual' };
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    init.body = request.body;
+    init.duplex = 'half';
+  }
+  try {
+    return await fetch(origin + url.pathname + url.search, init);
+  } catch (err) {
+    return new Response('AVIBE is temporarily unavailable. Please retry shortly.', {
+      status: 502,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '30' },
+    });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -261,31 +291,48 @@ export default {
       return fetch(target, init);
     }
 
-    // 3. Static SPA assets with hardening headers (tokens live in
-    // localStorage, so XSS/clickjacking defenses on the app shell matter).
-    const asset = await env.ASSETS.fetch(request);
+    // 3. Pages: Nuxt SSR on the VPS (WEB_ORIGIN, via the named tunnel).
+    // Build assets (/_nuxt/*, fonts, icons) are matched by the assets layer
+    // before this Worker runs; everything else is rendered by Nuxt. Without
+    // WEB_ORIGIN the Worker falls back to the static assets (legacy SPA).
+    // Hardening headers below apply either way (tokens live in localStorage,
+    // so XSS/clickjacking defenses on the app shell matter).
+    const asset = await fetchPage(request, env, url);
     const headers = new Headers(asset.headers);
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    headers.set('X-Frame-Options', 'DENY');
+    // Embed player pages (/embed/*, any locale prefix) are meant to be framed
+    // by third-party sites; every other page stays unframeable.
+    const embeddable = EMBED_PATH.test(url.pathname);
+    if (!embeddable) headers.set('X-Frame-Options', 'DENY');
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Nuxt SSR emits two inline scripts (runtime config + importmap); a
+    // per-response nonce on every <script> keeps script-src strict.
+    const isHtml = (headers.get('content-type') || '').includes('text/html');
+    const nonce = isHtml ? makeNonce() : '';
     headers.set(
       'Content-Security-Policy',
       "default-src 'self'; " +
-        "script-src 'self' https://static.cloudflareinsights.com; " +
+        `script-src 'self'${nonce ? ` 'nonce-${nonce}'` : ''} https://static.cloudflareinsights.com https://js.tosspayments.com; ` +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
         'font-src \'self\' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; ' +
         'img-src \'self\' data: blob:; ' +
         'media-src \'self\' blob: https:; ' +
         'connect-src \'self\' https:; ' +
         'frame-src https://pay.tosspayments.com https://*.tosspayments.com; ' +
-        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        `frame-ancestors ${embeddable ? '*' : "'none'"}; base-uri 'self'; form-action 'self'`,
     );
-    return new Response(asset.body, {
+    const out = new Response(asset.body, {
       status: asset.status,
       statusText: asset.statusText,
       headers,
     });
+    if (nonce && typeof HTMLRewriter !== 'undefined') {
+      return new HTMLRewriter()
+        .on('script', { element(el) { el.setAttribute('nonce', nonce); } })
+        .transform(out);
+    }
+    return out;
   },
 };

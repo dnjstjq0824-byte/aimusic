@@ -22,6 +22,7 @@ import (
 const (
 	ctxUserIDKey    = "auth.userID"
 	ctxRoleKey      = "auth.role"
+	ctxRolesKey     = "auth.roles"
 	ctxDeviceIDKey  = "auth.deviceID"
 	ctxRequestIDKey = "http.requestID"
 )
@@ -49,6 +50,19 @@ func CurrentRole(c *gin.Context) string {
 	return ""
 }
 
+// CurrentRoles returns the authenticated effective roles, primary first.
+func CurrentRoles(c *gin.Context) []string {
+	if v, ok := c.Get(ctxRolesKey); ok {
+		if roles, ok := v.([]string); ok {
+			return roles
+		}
+	}
+	if primary := CurrentRole(c); primary != "" {
+		return []string{primary}
+	}
+	return nil
+}
+
 // JWTAuth validates Bearer access tokens and stores the principal.
 func JWTAuth(auth *service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -72,6 +86,7 @@ func JWTAuth(auth *service.AuthService) gin.HandlerFunc {
 		}
 		c.Set(ctxUserIDKey, claims.UserID)
 		c.Set(ctxRoleKey, claims.Role)
+		c.Set(ctxRolesKey, claims.Roles)
 		c.Next()
 	}
 }
@@ -88,6 +103,7 @@ func JWTOptional(auth *service.AuthService) gin.HandlerFunc {
 			if claims, err := auth.ValidateAccess(c.Request.Context(), token); err == nil {
 				c.Set(ctxUserIDKey, claims.UserID)
 				c.Set(ctxRoleKey, claims.Role)
+				c.Set(ctxRolesKey, claims.Roles)
 			}
 		}
 		c.Next()
@@ -172,6 +188,30 @@ func RequireConsents(legal *repository.LegalRepo) gin.HandlerFunc {
 	}
 }
 
+// RequireEmailVerified blocks unverified accounts from commerce surfaces
+// (billing orders/payments, upload pre-check/finalize, store registration,
+// generations) until they click a verification link (WI-A2). Streaming and
+// listening stay open. Must run after JWTAuth.
+func RequireEmailVerified(users *repository.UserRepo) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		uid := CurrentUserID(c)
+		if uid == "" {
+			abort(c, http.StatusUnauthorized, "ERR_UNAUTHORIZED", "missing principal")
+			return
+		}
+		u, err := users.GetByID(c.Request.Context(), uid)
+		if err != nil {
+			AbortError(c, err)
+			return
+		}
+		if u.EmailVerifiedAt == nil {
+			abort(c, http.StatusForbidden, "EMAIL_NOT_VERIFIED", "email verification required")
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireAdminTOTP blocks admins that have not enrolled a second factor
 // (S-03). TOTP enrollment lives under /auth/totp/*, which stays open, so an
 // admin can always enroll and come back. Must run after JWTAuth.
@@ -194,18 +234,21 @@ func RequireAdminTOTP(users *repository.UserRepo, required bool) gin.HandlerFunc
 	}
 }
 
-// RequireRole allows only the listed roles.
+// RequireRole allows callers holding any of the listed roles, counting both
+// the primary role and additive user_roles grants (R10).
 func RequireRole(roles ...string) gin.HandlerFunc {
 	allowed := map[string]bool{}
 	for _, r := range roles {
 		allowed[r] = true
 	}
 	return func(c *gin.Context) {
-		if !allowed[CurrentRole(c)] {
-			abort(c, http.StatusForbidden, "ERR_FORBIDDEN", "insufficient role")
-			return
+		for _, r := range CurrentRoles(c) {
+			if allowed[r] {
+				c.Next()
+				return
+			}
 		}
-		c.Next()
+		abort(c, http.StatusForbidden, "ERR_FORBIDDEN", "insufficient role")
 	}
 }
 
@@ -423,6 +466,14 @@ func errCodeOfDomain(err error) string {
 		return "ERR_ACTIVE_PASS_EXISTS"
 	case errors.Is(err, domain.ErrTOTPEnrollRequired):
 		return "ERR_TOTP_ENROLL_REQUIRED"
+	case errors.Is(err, domain.ErrOAuthLinkLoginRequired):
+		return "ERR_OAUTH_LINK_LOGIN_REQUIRED"
+	case errors.Is(err, domain.ErrOAuthLinkTaken):
+		return "ERR_OAUTH_LINK_TAKEN"
+	case errors.Is(err, domain.ErrOAuthLastMethod):
+		return "ERR_OAUTH_LAST_METHOD"
+	case errors.Is(err, domain.ErrEmailNotVerified):
+		return "EMAIL_NOT_VERIFIED"
 	default:
 		return ""
 	}
@@ -440,6 +491,8 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusNotFound, "ERR_NOT_FOUND", "not found")
 	case errors.Is(err, domain.ErrEmailTaken):
 		abort(c, http.StatusConflict, "ERR_EMAIL_TAKEN", "email already registered")
+	case errors.Is(err, domain.ErrHandleTaken):
+		abort(c, http.StatusConflict, "ERR_HANDLE_TAKEN", "handle already taken")
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		abort(c, http.StatusUnauthorized, "ERR_INVALID_CREDENTIALS", "invalid credentials")
 	case errors.Is(err, domain.ErrUserInactive):
@@ -466,6 +519,14 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusConflict, "ERR_ACTIVE_PASS_EXISTS", "an active pass already exists")
 	case errors.Is(err, domain.ErrTOTPEnrollRequired):
 		abort(c, http.StatusForbidden, "ERR_TOTP_ENROLL_REQUIRED", "admin accounts must enroll a second factor")
+	case errors.Is(err, domain.ErrOAuthLinkLoginRequired):
+		abort(c, http.StatusUnauthorized, "ERR_OAUTH_LINK_LOGIN_REQUIRED", "sign in with the existing account first, then link")
+	case errors.Is(err, domain.ErrOAuthLinkTaken):
+		abort(c, http.StatusConflict, "ERR_OAUTH_LINK_TAKEN", "provider identity already linked")
+	case errors.Is(err, domain.ErrOAuthLastMethod):
+		abort(c, http.StatusForbidden, "ERR_OAUTH_LAST_METHOD", "cannot unlink the last login method")
+	case errors.Is(err, domain.ErrEmailNotVerified):
+		abort(c, http.StatusForbidden, "EMAIL_NOT_VERIFIED", "verify your email to use commerce features")
 	default:
 		slog.Error("internal_error",
 			"request_id", CurrentRequestID(c),

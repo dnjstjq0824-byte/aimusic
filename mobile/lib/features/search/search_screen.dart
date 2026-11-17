@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/providers.dart';
 import '../home/home_screen.dart';
@@ -14,18 +15,19 @@ class SearchScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final results = ref.watch(searchResultsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('검색')),
+      appBar: AppBar(title: Text(s.searchTitle)),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: '곡 제목 또는 AI 제공자로 검색',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: s.searchHint,
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (v) =>
                   ref.read(searchQueryProvider.notifier).state = v,
@@ -34,7 +36,7 @@ class SearchScreen extends ConsumerWidget {
           Expanded(
             child: results.when(
               data: (tracks) => tracks.isEmpty
-                  ? const Center(child: Text('검색 결과가 없습니다.'))
+                  ? Center(child: Text(s.searchEmpty))
                   : ListView.builder(
                       itemCount: tracks.length,
                       itemBuilder: (context, i) =>
@@ -44,8 +46,8 @@ class SearchScreen extends ConsumerWidget {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(e is ApiException
-                    ? friendlyMessage(e)
-                    : '검색에 실패했습니다.'),
+                    ? friendlyMessage(e, s)
+                    : s.searchFailed),
               ),
             ),
           ),

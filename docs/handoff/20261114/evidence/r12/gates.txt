@@ -1,0 +1,35 @@
+# WI-R12 gates (observed 2026-11-16/17 session, Docker-less)
+
+## Mobile gates (PASS)
+- flutter analyze --no-pub: No issues found!
+- flutter test --no-pub: 22 passed (15 pre-existing + 7 new r12_locale_social_test)
+- ARB parity (scripts/check-mobile-release.sh --arb-only): 5 locales x 191 keys OK
+- Korean literals in mobile/lib Dart sources (excl. generated l10n): 0
+- flutter gen-l10n: clean (6 files generated under mobile/lib/l10n, committed)
+- flutter pub get --offline: resolved (url_launcher 6.3.3, app_links 7.2.2 from cache; intl bumped 0.19.0 -> 0.20.3 for flutter_localizations)
+
+## Backend gates for the R12 slice (PASS)
+- go build ./...: clean
+- go vet ./...: clean
+- go test -count=1 ./...: 14 ok / 4 no-test-files (full suite green)
+- New tests: TestOAuthAppPlatformRoundTrip, TestOAuthAppPlatformGuards (service),
+  TestOAuthAppErrorReturnRoutesToAppLink (handler) — all pass
+- gofmt: R12 files (oauth.go, oauth_test.go, handler/auth.go, oauth_routes_test.go) clean;
+  32 other files flagged are pre-existing CRLF files untouched by R12
+
+## R12 implementation notes
+- ARB 5 (app_ko/en/ja/zh/th, 191 keys each); ja/zh/th machine-draft, Beta badges in settings (G-L)
+- Actual migrated Korean lines: 169 (spec said 572 — real count smaller; all migrated, 0 remain)
+- Login/signup split: /login + /signup routes; social buttons driven by GET /auth/oauth/providers
+- Social: system browser (url_launcher externalApplication) + avibe://oauth/callback app link;
+  backend ?platform=app signs .app state marker, redirects to fixed avibe:// URL (no open redirect)
+- iOS App Store Apple requirement: documented in code + report (PO must configure Apple key for iOS release)
+- Server locale sync: PATCH /auth/me/locale on change (logged in) + adopt server locale after login/signup
+- Theme: full web-v2 token mirror (brand/surface/text/status/verified/focus/radii) + CJK/Thai font fallbacks
+- Bottom tabs: 5 (unchanged structure, labels keyed)
+- Deferred: mobile complete-email screen (email-less provider -> typed oauthError=email_required);
+  link-intent returns treated as cancelled (mobile never sends link intents)
+
+## Environment blocker
+- Docker engine API 500 (v1.56) all session; Start-Process + 5-min poll -> still down.
+  No mobile E2E exists (gates above are the full mobile gate set); no Docker-gated R12 item pending.

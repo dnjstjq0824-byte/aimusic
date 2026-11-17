@@ -88,6 +88,7 @@ func TestValidateCommercialEligibility(t *testing.T) {
 		AllowedPlanTiers:          []string{"Creator", "Pro", "Scale", "Business", "Enterprise"},
 		BlockedPlanTiers:          []string{"Free", "Starter", "Trial"},
 	}
+	avibePolicy := &Policy{Provider: "AVIBE", AllowsStandaloneStreaming: true}
 	soundrawBlocked := &Policy{
 		Provider:                  "SOUNDRAW",
 		AllowsStandaloneStreaming: false,
@@ -174,14 +175,14 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			name:     "unknown provider allowlisted-out",
 			store:    &stubStore{policy: nil, sub: verifiedSub()},
 			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "MUSICGEN", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: false},
-			wantErr:  "지원하지 않는 AI 제공자",
+			wantErr:  "unsupported AI provider",
 			wantCode: domain.CodeProviderNotAllowlisted,
 		},
 		{
 			name:     "valid provider without policy row",
 			store:    &stubStore{policy: nil, sub: verifiedSub()},
 			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: false},
-			wantErr:  "정책이 등록되어 있지 않습니다",
+			wantErr:  "no policy registered for provider",
 			wantCode: domain.CodeProviderNotAllowlisted,
 		},
 		{
@@ -215,6 +216,31 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			wantErr:  "소유권 요건",
 			wantCode: domain.CodeSyncOnlyLicense,
 		},
+		{
+			name:  "avibe verified passes without subscription",
+			store: &stubStore{policy: avibePolicy},
+			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "AVIBE", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: true, AvibeChecksPassed: true},
+		},
+		{
+			name:     "avibe unverified blocked",
+			store:    &stubStore{policy: avibePolicy},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "AVIBE", AudioSHA256: "aaa", GeneratedAt: inWindow, RequiresActiveSubAtCreation: true},
+			wantErr:  "verified similarity and watermark checks",
+			wantCode: domain.CodeNonCommercialTier,
+		},
+		{
+			name:     "avibe without policy row blocked",
+			store:    &stubStore{policy: nil},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "AVIBE", AudioSHA256: "aaa", GeneratedAt: inWindow, AvibeChecksPassed: true},
+			wantErr:  "no policy registered for provider",
+			wantCode: domain.CodeProviderNotAllowlisted,
+		},
+		{
+			name:    "avibe duplicate sha still blocked",
+			store:   &stubStore{hashExists: true, policy: avibePolicy},
+			req:     PreCheckRequest{PartnerID: "partner-1", Provider: "avibe", AudioSHA256: "aaa", GeneratedAt: inWindow, AvibeChecksPassed: true},
+			wantErr: "sha256 already registered",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -226,7 +252,7 @@ func TestValidateCommercialEligibility(t *testing.T) {
 				if res == nil || res.Policy == nil {
 					t.Fatal("expected policy in result")
 				}
-				if tc.req.RequiresActiveSubAtCreation && res.Subscription == nil {
+				if tc.req.RequiresActiveSubAtCreation && res.Subscription == nil && tc.req.Provider != domain.ProviderAvibe {
 					t.Fatal("expected subscription in result")
 				}
 				return
@@ -235,7 +261,7 @@ func TestValidateCommercialEligibility(t *testing.T) {
 				t.Fatalf("expected error containing %q", tc.wantErr)
 			}
 			var gateErr *domain.GateError
-			if !errors.As(err, &gateErr) && tc.name != "duplicate" {
+			if !errors.As(err, &gateErr) && tc.wantCode != "" {
 				t.Fatalf("expected GateError, got %T: %v", err, err)
 			}
 			if tc.wantCode != "" && gateErr != nil && gateErr.Code != tc.wantCode {

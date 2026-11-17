@@ -1,0 +1,52 @@
+<template>
+  <UiModal
+    :model-value="modelValue"
+    :title="title"
+    :description="description"
+    max-width="sm"
+    @close="$emit('update:modelValue', false)"
+  >
+    <p v-if="body" class="text-xs leading-relaxed text-text-secondary">{{ body }}</p>
+    <template #footer>
+      <UiButton variant="ghost" size="sm" @click="$emit('update:modelValue', false)">
+        {{ cancelLabel || t('common.actions.cancel') }}
+      </UiButton>
+      <UiButton :variant="danger ? 'danger' : 'brand'" size="sm" :loading="loading" @click="$emit('confirm')">
+        {{ confirmLabel || t('common.actions.confirm') }}
+      </UiButton>
+    </template>
+  </UiModal>
+</template>
+
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import UiModal from './UiModal.vue';
+import UiButton from './UiButton.vue';
+
+const { t } = useI18n();
+
+interface Props {
+  modelValue: boolean;
+  title: string;
+  description?: string;
+  body?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  danger?: boolean;
+  loading?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  description: '',
+  body: '',
+  confirmLabel: '',
+  cancelLabel: '',
+  danger: false,
+  loading: false,
+});
+
+defineEmits<{
+  (e: 'update:modelValue', val: boolean): void;
+  (e: 'confirm'): void;
+}>();
+</script>

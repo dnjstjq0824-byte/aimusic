@@ -117,6 +117,8 @@ type Repos struct {
 	GenJobs       *GenerationJobRepo
 	Disputes      *DisputeRepo
 	Playlists     *PlaylistRepo
+	Engagement    *EngagementRepo
+	Business      *BusinessRepo
 	Playback      *PlaybackRepo
 	Streaming     *StreamingRepo
 	Settlements   *SettlementRepo
@@ -124,6 +126,7 @@ type Repos struct {
 	Gate          *GateStore
 	Queue         *Queue
 	Resets        *PasswordResetRepo
+	EmailVerify   *EmailVerifyRepo
 	OAuth         *OAuthRepo
 	Billing       *BillingRepo
 	Audit         *AuditRepo
@@ -132,6 +135,7 @@ type Repos struct {
 	Certificates  *CertificateRepo
 	Downloads     *DownloadRepo
 	Grants        *PlaybackGrantStore
+	SEO           *SEORepo
 }
 
 // WithTx returns a repository aggregate whose catalog writes (albums,
@@ -163,6 +167,8 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		GenJobs:       &GenerationJobRepo{db: db},
 		Disputes:      &DisputeRepo{db: db},
 		Playlists:     &PlaylistRepo{db: db},
+		Engagement:    &EngagementRepo{db: db},
+		Business:      &BusinessRepo{db: db},
 		Playback:      &PlaybackRepo{db: db},
 		Streaming:     &StreamingRepo{db: db},
 		Settlements:   &SettlementRepo{db: db},
@@ -170,6 +176,7 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Gate:          &GateStore{db: db},
 		Queue:         &Queue{rdb: rdb},
 		Resets:        &PasswordResetRepo{db: db},
+		EmailVerify:   &EmailVerifyRepo{db: db},
 		OAuth:         &OAuthRepo{db: db},
 		Billing:       &BillingRepo{db: db},
 		Audit:         &AuditRepo{db: db},
@@ -178,5 +185,6 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Certificates:  &CertificateRepo{db: db},
 		Downloads:     &DownloadRepo{db: db},
 		Grants:        &PlaybackGrantStore{rdb: rdb},
+		SEO:           &SEORepo{db: db},
 	}
 }

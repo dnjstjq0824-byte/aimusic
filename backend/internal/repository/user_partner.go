@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -14,17 +15,17 @@ import (
 type UserRepo struct{ db *sql.DB }
 
 const userColumns = `id::text, email, password_hash, role, display_name, is_active,
-	birth_year, age_confirmed_at, token_version, totp_secret, totp_enabled,
+	birth_year, age_confirmed_at, locale, handle, email_verified_at, token_version, totp_secret, totp_enabled,
 	totp_enrolled_at, COALESCE(array_length(totp_recovery_hashes, 1), 0),
 	created_at, updated_at`
 
 func scanUser(row interface{ Scan(...any) error }) (*domain.User, error) {
 	u := &domain.User{}
 	var birth sql.NullInt64
-	var ageConfirmed, totpEnrolled sql.NullTime
-	var totpSecret sql.NullString
+	var ageConfirmed, totpEnrolled, emailVerified sql.NullTime
+	var totpSecret, handle sql.NullString
 	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.DisplayName,
-		&u.IsActive, &birth, &ageConfirmed, &u.TokenVersion,
+		&u.IsActive, &birth, &ageConfirmed, &u.Locale, &handle, &emailVerified, &u.TokenVersion,
 		&totpSecret, &u.TOTPEnabled, &totpEnrolled, &u.TOTPRecoveryLeft,
 		&u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
@@ -32,6 +33,8 @@ func scanUser(row interface{ Scan(...any) error }) (*domain.User, error) {
 	}
 	u.BirthYear = intPtr(birth)
 	u.AgeConfirmedAt = timePtr(ageConfirmed)
+	u.Handle = strPtr(handle)
+	u.EmailVerifiedAt = timePtr(emailVerified)
 	u.TOTPEnrolledAt = timePtr(totpEnrolled)
 	if totpSecret.Valid {
 		u.TOTPSecret = totpSecret.String
@@ -101,10 +104,103 @@ func (r *UserRepo) UpdatePasswordHash(ctx context.Context, id, hash string) erro
 	return err
 }
 
+// SetDisplayName changes an account's display name (R8 profile).
+func (r *UserRepo) SetDisplayName(ctx context.Context, id, displayName string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET display_name = $2, updated_at = NOW() WHERE id = $1::uuid`, id, displayName)
+	return err
+}
+
+// SetLocale changes an account's display language (A2). The CHECK constraint
+// rejects codes outside ko|en|ja|zh-cn|th.
+func (r *UserRepo) SetLocale(ctx context.Context, id, locale string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET locale = $2, updated_at = NOW() WHERE id = $1::uuid`, id, locale)
+	return err
+}
+
+// MarkEmailVerified stamps an account's email as verified (A2). The first
+// verification wins: re-confirming keeps the original timestamp.
+func (r *UserRepo) MarkEmailVerified(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()), updated_at = NOW() WHERE id = $1::uuid`, id)
+	return err
+}
+
 // SetRole changes an account's role (operator action; see cmd/adminctl).
 func (r *UserRepo) SetRole(ctx context.Context, id, role string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET role = $2 WHERE id = $1::uuid`, id, role)
 	return err
+}
+
+// ListRoles returns the account's effective roles, primary first (R10).
+func (r *UserRepo) ListRoles(ctx context.Context, id string) ([]string, error) {
+	u, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT role FROM user_roles WHERE user_id = $1::uuid ORDER BY granted_at ASC`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{u.Role}
+	seen := map[string]bool{u.Role: true}
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, err
+		}
+		if !seen[role] {
+			seen[role] = true
+			out = append(out, role)
+		}
+	}
+	return out, rows.Err()
+}
+
+// GrantRole adds an additive capability grant (idempotent, R10).
+func (r *UserRepo) GrantRole(ctx context.Context, id, role, source string) error {
+	if !domain.ValidRole(role) {
+		return fmt.Errorf("%w: unknown role", domain.ErrInvalidInput)
+	}
+	if source == "" {
+		source = "manual"
+	}
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO user_roles (user_id, role, source) VALUES ($1::uuid, $2, $3)
+		ON CONFLICT (user_id, role) DO NOTHING`, id, role, source)
+	return err
+}
+
+// RoleGrant is one user_roles row joined with its account (admin log, R11).
+type RoleGrant struct {
+	UserID      string    `json:"userId"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"displayName"`
+	PrimaryRole string    `json:"primaryRole"`
+	Role        string    `json:"role"`
+	GrantedAt   time.Time `json:"grantedAt"`
+	Source      string    `json:"source"`
+}
+
+// ListRoleGrants returns newest-first role grants (admin, R11).
+func (r *UserRepo) ListRoleGrants(ctx context.Context, limit int) ([]*RoleGrant, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT g.user_id::text, u.email, u.display_name, u.role, g.role, g.granted_at, g.source
+		FROM user_roles g JOIN users u ON u.id = g.user_id
+		ORDER BY g.granted_at DESC LIMIT $1`, clampLimit(limit, 50, 200))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*RoleGrant{}
+	for rows.Next() {
+		g := &RoleGrant{}
+		if err := rows.Scan(&g.UserID, &g.Email, &g.DisplayName, &g.PrimaryRole, &g.Role, &g.GrantedAt, &g.Source); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
 }
 
 // BumpTokenVersion invalidates every outstanding JWT for the account.

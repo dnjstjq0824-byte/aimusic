@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 
+	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/service"
 )
 
@@ -23,19 +26,30 @@ func (h *CertificateHandler) IssueCertificate(c *gin.Context) {
 }
 
 // VerifyCertificate resolves a public certificate number.
+// A miss is 200 {data:null} (R5 H-11): absence is a normal query result,
+// not an error, so clients render the not-found state without a 404.
 func (h *CertificateHandler) VerifyCertificate(c *gin.Context) {
 	view, err := h.Services.Certificates.Verify(c.Request.Context(), c.Param("number"))
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			ok(c, nil)
+			return
+		}
 		AbortError(c, err)
 		return
 	}
 	ok(c, view)
 }
 
-// VerifyTrackCertificate resolves a track's certificate (404 when none).
+// VerifyTrackCertificate resolves a track's certificate.
+// Unissued tracks are 200 {data:null} (R5 H-11).
 func (h *CertificateHandler) VerifyTrackCertificate(c *gin.Context) {
 	view, err := h.Services.Certificates.VerifyByTrack(c.Request.Context(), c.Param("id"))
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			ok(c, nil)
+			return
+		}
 		AbortError(c, err)
 		return
 	}

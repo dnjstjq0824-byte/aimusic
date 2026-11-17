@@ -1,0 +1,37 @@
+# WI-S4 evidence — embed/oEmbed/creators/landings/guides/share (2026-11-16)
+
+## Implementation
+- Embed: /embed/track/:shortId + /embed/playlist/:shortId (embed layout,
+  SSR lightweight, noindex+crawlable, ?lang= SSR switch, AVIBE-backlink,
+  embed_loaded analytics). Private playlists render missing-state.
+- oEmbed: GET /oembed + /api/v1/oembed (bare spec JSON, rich+iframe,
+  width clamp 200-800, author links, READY/public gates, host guard).
+  Discovery <link> on track/playlist pages.
+- Creators: /creators/:handle (UI §3.8: header+stats+follow+share, tabs
+  top/all/playlists/about, profile/person/ProfilePage+Breadcrumb schema,
+  OG). Follow = creator-follow UI (R6 leftover) via engagement API.
+- Landings: /explore/mood|genre|use (shared LandingPage, SSR, <12 or
+  unknown key or engine-down -> 404, landingTitle/Description SEO,
+  breadcrumb + OG). NOTE: pages/explore.vue moved to pages/explore/index.vue
+  (Nuxt forbids file+dir coexistence; route name unchanged).
+- Guides: /guides hub + 3 articles (store-music-license,
+  suno-paid-commercial-use, ai-music-youtube-checklist), bodies in
+  web/content/*.json (ko+en full; ja/zh-CN/th = ko + draft notice),
+  grounded in 2026-11-11 platform survey + check dates, fact-only
+  service names, Article+FAQPage+Breadcrumb schema, related links.
+  PO copy review before publish (noted; branch undeployed).
+- Share: ShareButtons (copy+Kakao+LINE+X+Facebook, utm_source=share) on
+  track/playlist/creator/guide; share_clicked analytics.
+
+## Gates (observed)
+- Dev probes: embed track noindex + (API-down) missing message; embed
+  ?lang=th -> lang=th + Thai strings; guides ko/en/ja/th SSR (body +
+  meta + JSON-LD + share utm, see S2); landing /explore/mood/cafe ->
+  404 (gate correct without engine); /explore still 200 post-move.
+- vitest/guides loader: covered via page builds + typecheck (no
+  dedicated test: static JSON + trivial loader).
+- E2E T20 creators/oembed/landing asserts: bash -n PASS, runtime DEFERRED.
+
+## Deferred (Docker recovery)
+- Embed playback-permission E2E, creator follow flows, landing ≥12 live
+  rendering + 404 matrix, guide PO copy review, 5-lang PNG set.

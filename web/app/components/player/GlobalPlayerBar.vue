@@ -1,0 +1,270 @@
+<template>
+  <div class="pb-safe px-safe fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-t border-surface-border bg-surface-1/95 backdrop-blur-2xl shadow-2xl transition-all sm:bottom-0 sm:px-6 sm:pt-2.5">
+    <!-- Notice strip if tracks were skipped -->
+    <div v-if="player.skippedIds.length > 0" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-amber font-medium" role="status">
+      {{ t('player.skipped', { count: player.skippedIds.length }) }}
+    </div>
+
+    <div v-if="player.error && player.currentTrack" class="mx-auto max-w-7xl pb-1.5 text-center text-caption text-accent-crimson font-medium" role="alert">
+      {{ player.error }}
+      <RouterLink
+        v-if="player.errorCode === 'ERR_UNAUTHORIZED'"
+        :to="localePath({ name: 'login', query: { redirect: $route.fullPath } })"
+        class="ml-2 font-bold text-brand-400 hover:underline"
+      >
+        {{ t('player.loginLink') }}
+      </RouterLink>
+    </div>
+
+    <!-- Mobile (<sm): slim 64px mini row above the tab bar (UI §2.2). -->
+    <div class="sm:hidden">
+      <div class="h-0.5 w-full bg-surface-3" aria-hidden="true">
+        <div class="h-full bg-brand-500 transition-[width]" :style="{ width: `${progressPct}%` }" />
+      </div>
+      <div class="flex h-16 items-center gap-3 px-1">
+        <button type="button" class="shrink-0" :aria-label="t('player.expand')" @click="$emit('expand')">
+          <UiCoverArt
+            :seed="player.currentTrack?.id ?? 'idle'"
+            :title="player.currentTrack?.title ?? t('player.idle')"
+            size="sm"
+            :verified="player.currentTrack?.status === 'READY'"
+          />
+        </button>
+        <button type="button" class="min-w-0 flex-1 truncate text-left" :aria-label="t('player.expand')" @click="$emit('expand')">
+          <span class="block truncate text-xs font-bold" :class="player.currentTrack ? 'text-white' : 'text-text-secondary'">
+            {{ player.currentTrack?.title ?? t('player.idle') }}
+          </span>
+          <span class="block truncate text-caption text-text-muted">
+            {{ player.currentTrack?.aiProvider ?? t('player.idleHint') }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-500 text-on-brand shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50"
+          :disabled="player.isLoading || !player.currentTrack"
+          :aria-label="player.isPlaying ? t('player.pause') : t('player.play')"
+          @click="player.toggle()"
+        >
+          <svg v-if="player.isLoading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <svg v-else-if="player.isPlaying" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+          </svg>
+          <svg v-else class="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border bg-surface-2 text-text-primary hover:text-white"
+          :aria-label="t('player.queueOpenCount', { count: player.queue.length })"
+          @click="$emit('toggle-queue')"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
+          <span
+            v-if="player.queue.length > 0"
+            class="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-brand-500 px-1 text-center font-mono text-caption font-bold leading-4 text-on-brand"
+          >
+            {{ player.queue.length }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tablet/Desktop (sm+): three columns -> [track info | controls over seekbar | queue]. -->
+    <div
+      class="mx-auto hidden max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,22rem)_auto] sm:gap-x-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,36rem)_minmax(0,1fr)] sm:gap-y-1"
+    >
+      <!-- Left: Track info -->
+      <div class="flex min-w-0 items-center gap-3 sm:row-span-2">
+        <button type="button" class="shrink-0" :aria-label="t('player.expand')" @click="$emit('expand')">
+          <UiCoverArt
+            :seed="player.currentTrack?.id ?? 'idle'"
+            :title="player.currentTrack?.title ?? t('player.idle')"
+            size="sm"
+            :verified="player.currentTrack?.status === 'READY'"
+          />
+        </button>
+
+        <div class="min-w-0 flex-1">
+          <div v-if="player.currentTrack">
+            <RouterLink
+              :to="localePath({ name: 'track-detail', params: { id: player.currentTrack ? detailParam(player.currentTrack) : '' } })"
+              class="block truncate text-xs font-bold text-white hover:text-brand-400 transition-colors"
+            >
+              {{ player.currentTrack.title }}
+            </RouterLink>
+            <div class="flex items-center gap-1.5 text-caption text-text-secondary mt-0.5 truncate">
+              <span class="font-medium text-brand-300">{{ player.currentTrack.aiProvider }}</span>
+              <span aria-hidden="true">·</span>
+              <span class="text-verified font-semibold">{{ t('player.verified') }}</span>
+              <span aria-hidden="true">·</span>
+              <span
+                class="rounded px-1 py-px font-bold"
+                :class="player.currentQuality === 'HQ' ? 'bg-brand-500/20 text-brand-300' : 'bg-surface-3 text-text-secondary'"
+                :title="player.currentQuality === 'HQ' ? t('player.qualityHq') : t('player.qualitySq')"
+              >{{ player.currentQuality }}</span>
+            </div>
+          </div>
+          <div v-else>
+            <div class="truncate text-xs font-semibold text-text-secondary">{{ t('player.idle') }}</div>
+            <div class="truncate text-caption text-text-muted">{{ t('player.idleHint') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Control buttons -->
+      <div class="flex items-center justify-end gap-1 sm:justify-center sm:gap-4">
+        <!-- Shuffle -->
+        <button
+          type="button"
+          class="hidden rounded p-1 transition-colors sm:inline-flex"
+          :class="player.shuffle ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
+          :aria-pressed="player.shuffle"
+          :aria-label="t('player.shuffle')"
+          @click="player.toggleShuffle()"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+          </svg>
+        </button>
+
+        <!-- Previous -->
+        <button
+          type="button"
+          class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
+          :aria-label="t('player.previous')"
+          @click="player.playPrev()"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M6 5h2v14H6zM20 5v14L9 12z" />
+          </svg>
+        </button>
+
+        <!-- Play / Pause -->
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-on-brand shadow-glow-brand hover:bg-brand-400 active:scale-95 transition-all disabled:opacity-50 cursor-pointer sm:h-9 sm:w-9"
+          :disabled="player.isLoading || !player.currentTrack"
+          :aria-label="player.isPlaying ? t('player.pause') : t('player.play')"
+          @click="player.toggle()"
+        >
+          <svg v-if="player.isLoading" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <svg v-else-if="player.isPlaying" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+          </svg>
+          <svg v-else class="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+
+        <!-- Next -->
+        <button
+          type="button"
+          class="rounded p-1.5 text-text-primary hover:text-white transition-colors sm:p-1"
+          :aria-label="t('player.next')"
+          @click="player.playNext(true)"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M16 5h2v14h-2zM4 5v14l11-7z" />
+          </svg>
+        </button>
+
+        <!-- Repeat -->
+        <button
+          type="button"
+          class="relative hidden rounded p-1 transition-colors sm:inline-flex"
+          :class="player.repeat !== 'off' ? 'text-brand-400' : 'text-text-secondary hover:text-white'"
+          :aria-pressed="player.repeat !== 'off'"
+          :aria-label="t('player.repeat', { mode: repeatLabel })"
+          @click="player.cycleRepeat()"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m17 2 4 4-4 4" />
+            <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4" />
+            <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+          </svg>
+          <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-caption font-bold text-on-brand">1</span>
+        </button>
+      </div>
+
+      <!-- Right: Extras (Queue toggle, tablet/desktop) -->
+      <div class="hidden items-center justify-end gap-2.5 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:flex">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-text-primary hover:text-white hover:border-surface-border-hover transition-colors"
+          :aria-label="t('player.queueOpen')"
+          @click="$emit('toggle-queue')"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10" />
+          </svg>
+          <span>{{ t('player.queue') }}</span>
+          <span class="rounded-full bg-brand-500/20 text-brand-400 px-1.5 py-0.5 text-caption font-mono font-bold">
+            {{ player.queue.length }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Waveform Seekbar & time (tablet/desktop) -->
+      <div class="col-span-2 flex w-full items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-2">
+        <span class="w-8 shrink-0 text-right font-mono text-caption text-text-secondary">{{ fmtPos(player.positionMs) }}</span>
+        <div class="min-w-0 flex-1">
+          <WaveformSeekbar
+            :position-ms="player.positionMs"
+            :duration-ms="player.durationMs || player.currentTrack?.durationMs || 0"
+            :seed="player.currentTrack?.id ?? 'idle'"
+            @seek="player.seek($event)"
+          />
+        </div>
+        <span class="w-8 shrink-0 font-mono text-caption text-text-secondary">{{ fmtDur(player.durationMs || player.currentTrack?.durationMs || 0) }}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { usePlayerStore } from '@/stores/playerStore';
+import WaveformSeekbar from './WaveformSeekbar.vue';
+import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import { detailParam } from '@/utils/seo';
+const localePath = useLocalePath();
+
+const player = usePlayerStore();
+const { t } = useI18n();
+
+defineEmits<{
+  (e: 'toggle-queue'): void;
+  (e: 'expand'): void;
+}>();
+
+const repeatLabel = computed(() => {
+  if (player.repeat === 'one') return t('player.repeatOne');
+  if (player.repeat === 'all') return t('player.repeatAll');
+  return t('player.repeatOff');
+});
+
+const progressPct = computed(() => {
+  const total = player.durationMs || player.currentTrack?.durationMs || 0;
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, (player.positionMs / total) * 100));
+});
+
+function fmtPos(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function fmtDur(ms: number): string {
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+</script>

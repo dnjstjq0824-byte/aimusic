@@ -1,0 +1,13 @@
+# WI-G2 증거 (GPU PC PoC) — NOT TESTED (GPU 없음)
+
+- 판정: 이 개발機에는 CUDA GPU·ACE-Step 가중치·워터마크 라이브러리가
+  없으므로 PoC 실측 불가. 무리한 대체 없이 NOT TESTED로 기록하고 종료.
+- 드라이버 `generator/poc/run_poc.py` 작성: GPU PC에서
+  ① ACE-Step 추론 ② 워터마크 삽입·검출 ③ 지문 유사도 ④ 리포트(JSON+콘솔)
+  절차 수행. 결측 시 NOT TESTED 리포트 작성 후 exit 0.
+- 본機 실행 결과: `G2 PoC: NOT TESTED (GENERATOR_MODEL_DIR...; acestep;
+  audioseal; CUDA-capable GPU)` → `evidence/g2/poc-report.json` 보관.
+- 라이선스(ACE-Step·AudioSeal)는 GPU PC 실행 시 설치 산출물의
+  LICENSE 파일 해시로 재확인 (본 문서·코드에 라이선스 단정 없음).
+- 생성물은 운영 스토어에 올리지 않음 (드라이버에 명시).
+- deferred: 자택 GPU PC 실측 (워터마크 검출률·유사도 결과 포함 리포트).

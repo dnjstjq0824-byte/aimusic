@@ -270,6 +270,20 @@ class ApiService {
     }
   }
 
+  /// Display language sync (PATCH /auth/me/locale, A2).
+  /// [locale] uses server codes: ko|en|ja|zh-cn|th.
+  Future<String> updateLocale(String locale) async {
+    try {
+      final res = await _dio.patch<Map<String, dynamic>>(
+        '/auth/me/locale',
+        data: {'locale': locale},
+      );
+      return unwrapData<Map<String, dynamic>>(res)['locale'] as String;
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
   // ---- Legal: GET /legal/terms, GET /legal/terms/:code, consents ----
 
   Future<List<LegalTerm>> listTerms() async {

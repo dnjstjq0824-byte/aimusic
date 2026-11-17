@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/providers.dart';
 
@@ -56,11 +57,12 @@ class _AgeGateDialogState extends ConsumerState<_AgeGateDialog> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
+        final s = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '연령 확인에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.ageGateFailed)),
         );
       }
     } finally {
@@ -70,34 +72,35 @@ class _AgeGateDialogState extends ConsumerState<_AgeGateDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return PopScope(
       canPop: false,
       child: AlertDialog(
-        title: const Text('만 14세 이상 확인'),
+        title: Text(s.ageGateTitle),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                '소셜 계정으로 처음 로그인했습니다. 스트리밍·결제를 이용하려면 연령 확인이 필요합니다.',
-                style: TextStyle(fontSize: 13),
+              Text(
+                s.ageGateDesc,
+                style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
                 value: _confirmed,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                title: const Text('만 14세 이상입니다. (필수)',
-                    style: TextStyle(fontSize: 13)),
+                title: Text(s.ageGateConfirm,
+                    style: const TextStyle(fontSize: 13)),
                 onChanged: (v) => setState(() => _confirmed = v ?? false),
               ),
               TextField(
                 controller: _birthYear,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: '출생연도 (선택)',
-                  hintText: '예: 1995',
+                decoration: InputDecoration(
+                  labelText: s.ageGateBirthYear,
+                  hintText: s.ageGateBirthYearHint,
                 ),
               ),
             ],
@@ -112,7 +115,7 @@ class _AgeGateDialogState extends ConsumerState<_AgeGateDialog> {
                     ref.invalidate(authMeProvider);
                     if (context.mounted) Navigator.of(context).pop();
                   },
-            child: const Text('로그아웃'),
+            child: Text(s.ageGateLogout),
           ),
           FilledButton(
             onPressed: (_confirmed && !_busy) ? _submit : null,
@@ -122,7 +125,7 @@ class _AgeGateDialogState extends ConsumerState<_AgeGateDialog> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('확인하고 시작하기'),
+                : Text(s.ageGateStart),
           ),
         ],
       ),

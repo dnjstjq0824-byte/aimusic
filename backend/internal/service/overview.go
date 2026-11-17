@@ -37,6 +37,16 @@ type AdminOverview struct {
 		Count  int64 `json:"count"`
 		NetKRW int64 `json:"netKrw"`
 	} `json:"settlementsPending"`
+	// SignupsByLocale counts users per locale (S5 language funnel).
+	SignupsByLocale map[string]int64 `json:"signupsByLocale"`
+	// Inquiries counts business inquiries per status (S5 conversion input:
+	// contacted+closed over total).
+	Inquiries struct {
+		Total     int64 `json:"total"`
+		New       int64 `json:"new"`
+		Contacted int64 `json:"contacted"`
+		Closed    int64 `json:"closed"`
+	} `json:"inquiries"`
 }
 
 // OverviewService aggregates platform counts for the admin console.
@@ -102,5 +112,16 @@ func (s *OverviewService) Overview(ctx context.Context) (*AdminOverview, error) 
 	if out.SettlementsPending.Count, out.SettlementsPending.NetKRW, err = r.Settlements.PendingTotals(ctx); err != nil {
 		return nil, err
 	}
+	if out.SignupsByLocale, err = r.SEO.SignupsByLocale(ctx); err != nil {
+		return nil, err
+	}
+	counts, err := r.SEO.InquiryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out.Inquiries.New = counts["NEW"]
+	out.Inquiries.Contacted = counts["CONTACTED"]
+	out.Inquiries.Closed = counts["CLOSED"]
+	out.Inquiries.Total = out.Inquiries.New + out.Inquiries.Contacted + out.Inquiries.Closed
 	return &out, nil
 }

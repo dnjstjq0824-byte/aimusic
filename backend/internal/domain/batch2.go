@@ -2,15 +2,27 @@ package domain
 
 import "time"
 
-// OAuth providers supported for social login.
+// OAuth providers supported for social login (WI-A1). WeChat stays out:
+// adapter interface only, implementation deferred (needs a China entity).
 const (
 	OAuthGoogle = "GOOGLE"
 	OAuthKakao  = "KAKAO"
+	OAuthApple  = "APPLE"
+	OAuthNaver  = "NAVER"
+	OAuthLine   = "LINE"
 )
+
+// OAuthProviders lists every supported social provider in canonical order.
+var OAuthProviders = []string{OAuthGoogle, OAuthKakao, OAuthApple, OAuthNaver, OAuthLine}
 
 // ValidOAuthProvider reports whether p is a supported social provider.
 func ValidOAuthProvider(p string) bool {
-	return p == OAuthGoogle || p == OAuthKakao
+	for _, c := range OAuthProviders {
+		if p == c {
+			return true
+		}
+	}
+	return false
 }
 
 // Billing order statuses.
@@ -95,6 +107,52 @@ type PasswordResetToken struct {
 	ID        string
 	UserID    string
 	TokenHash string
+	ExpiresAt time.Time
+	UsedAt    *time.Time
+	CreatedAt time.Time
+}
+
+// User locales (users.locale CHECK, WI-A2). Codes match the web route locales.
+const (
+	LocaleKo   = "ko"
+	LocaleEn   = "en"
+	LocaleJa   = "ja"
+	LocaleZhCn = "zh-cn"
+	LocaleTh   = "th"
+)
+
+// UserLocales lists every supported user locale in canonical order.
+var UserLocales = []string{LocaleKo, LocaleEn, LocaleJa, LocaleZhCn, LocaleTh}
+
+// ValidLocale reports whether l is a supported user locale.
+func ValidLocale(l string) bool {
+	for _, c := range UserLocales {
+		if l == c {
+			return true
+		}
+	}
+	return false
+}
+
+// Email verification purposes (email_verifications.purpose, WI-A2).
+const (
+	// VerifyPurposeAccount verifies a registered account's email.
+	VerifyPurposeAccount = "VERIFY"
+	// VerifyPurposeOAuthSignup verifies a typed email for a pending social
+	// signup (A1 complete-email): the account is created on confirm.
+	VerifyPurposeOAuthSignup = "OAUTH"
+)
+
+// EmailVerification mirrors email_verifications (hash only; the raw token
+// exists solely inside the emailed link). UserID is nil for OAUTH rows,
+// which carry the A1 signup token in RefToken instead.
+type EmailVerification struct {
+	ID        string
+	UserID    *string
+	Email     string
+	Purpose   string
+	TokenHash string
+	RefToken  *string
 	ExpiresAt time.Time
 	UsedAt    *time.Time
 	CreatedAt time.Time

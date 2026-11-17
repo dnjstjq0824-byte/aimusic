@@ -15,6 +15,7 @@ type PlaybackSvc interface {
 	Heartbeat(ctx context.Context, in service.HeartbeatInput) (*service.HeartbeatOutput, error)
 	GetState(ctx context.Context, userID, trackID string) (*domain.UserPlaybackState, error)
 	SetPosition(ctx context.Context, userID, trackID string, positionMs int) (*domain.UserPlaybackState, error)
+	RecentTracks(ctx context.Context, userID string, limit int) ([]*domain.Track, error)
 }
 
 // Heartbeat logs playback progress and returns counting/fraud decisions.
@@ -44,6 +45,22 @@ func (h *PlaybackHandler) GetState(c *gin.Context) {
 		return
 	}
 	ok(c, state)
+}
+
+// Recent returns the caller's recently resumed READY tracks.
+//
+//	GET /playback/recent?limit=
+func (h *PlaybackHandler) Recent(c *gin.Context) {
+	items, err := h.Playback.RecentTracks(c.Request.Context(), CurrentUserID(c), queryInt(c, "limit", 10))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	out := make([]*domain.Track, 0, len(items))
+	for _, t := range items {
+		out = append(out, t.PublicView())
+	}
+	okList(c, out)
 }
 
 type setStateRequest struct {

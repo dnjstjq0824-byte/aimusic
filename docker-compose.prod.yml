@@ -11,7 +11,8 @@
 # R2 binding and browsers PUT staging uploads to presigned R2 URLs.
 # No ports are published: the API is served only via the Cloudflare named
 # tunnel (api.avibemusic.com -> api:8080).
-# The web SPA is served by the Cloudflare Worker (wrangler deploy).
+# Pages: Nuxt SSR (web -> web.avibemusic.com); the Cloudflare Worker on
+# avibemusic.com serves /_nuxt assets, proxies /api, HLS, and pages to it.
 name: avibe-prod
 
 services:
@@ -117,6 +118,25 @@ services:
     networks:
       - avibe
 
+  web:
+    # Nuxt 4 SSR (web/Dockerfile). Built on the operator PC and shipped with
+    # `docker save | docker load` (a 1GB VPS cannot run the Nuxt build).
+    image: avibe-prod-web:latest
+    container_name: avibe-prod-web
+    restart: unless-stopped
+    environment:
+      NUXT_API_ORIGIN: http://api:8080
+      NUXT_INDEXNOW_KEY: ${INDEXNOW_KEY:-}
+      # nuxt-og-image URL signing (>=32 chars, generated once on the VPS .env).
+      NUXT_APP_SECRET: ${NUXT_APP_SECRET:?NUXT_APP_SECRET required}
+      NODE_OPTIONS: --max-old-space-size=192
+    depends_on:
+      api:
+        condition: service_started
+    mem_limit: 256m
+    networks:
+      - avibe
+
   cloudflared:
     # O-06: pinned to the proven-running version (was :latest).
     image: cloudflare/cloudflared:2026.10.7
@@ -127,6 +147,8 @@ services:
       - ./cloudflared/:/etc/cloudflared/:ro
     depends_on:
       api:
+        condition: service_started
+      web:
         condition: service_started
     mem_limit: 128m
     networks:

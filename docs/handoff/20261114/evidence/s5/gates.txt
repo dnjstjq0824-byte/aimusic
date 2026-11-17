@@ -1,0 +1,40 @@
+# WI-S5 evidence — perf/RUM/analytics/applinks/purge (2026-11-16, Docker-less)
+
+## Implementation
+- Budgets: web/lighthouserc.cjs (mobile, 1 run): performance>=0.90 ERROR,
+  seo=1.0 ERROR, a11y>=0.9 warn, script<=170KB ERROR; URLs /, $TRACK,
+  /th/playlists, /ja/business. CI e2e job extended: web build + preview
+  + READY-track discovery + lhci autorun (E2E_KEEP_FIXTURES=1).
+- RUM: plugins/rum.client.ts (web-vitals LCP/INP/CLS -> web_vital events).
+- Analytics: utils/analytics(.ts+Events.ts) cookieless batcher (20/5s,
+  sendBeacon-on-hide, per-tab random session, drop-on-fail). Wired all 15
+  §1.4 events: signup_started/completed x3 types, login_succeeded
+  (password/token), play_started/play_30s (player store), playlist_created,
+  track_liked, inquiry_opened/submitted(useCase), checkout_started(plan)/
+  completed, locale_changed, share_clicked(channel), embed_loaded(kind),
+  create_waitlist_joined.
+- Engine: POST /events (allowlist, locale/path caps, SanitizeEventProps
+  PII strip + 20-key/256B caps, batch 1-50, append-only table).
+- Admin overview: + signupsByLocale (map) + inquiries {total,new,
+  contacted,closed} (conversion input).
+- App links: .well-known/assetlinks.json (fingerprint placeholder) +
+  apple-app-site-association (TEAMID placeholder, JSON content-type
+  routeRule). Paths: tracks/playlists/creators/embed/oauth-callback.
+- CF Web Analytics: beacon slot via NUXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN.
+- Cache purge: service PurgeCache (zone/files API, tokenless->false) +
+  POST /admin/seo/purge + auto-purge on review/takedown/playlist-update
+  (same background hook as IndexNow). Unit: httptest round-trip PASS.
+
+## Gates (observed)
+- Dev probes: assetlinks 200 JSON, apple association 200 JSON content-type,
+  llms.txt 200 (S3 file, S5 discovery), rum plugin loads (no console
+  errors on guide pages), /events validation unit PASS.
+- cspell: 0 on covered sources (+48 dict words, twins in sync; locales/
+  scripts out of scope by convention, verified via HEAD baseline).
+- worker-grant: 14/14 (worker.js untouched).
+- LHCI runtime + RUM ingestion + purge live call: DEFERRED (CI env /
+  tokens). Purge token + fingerprints + TEAMID + analytics token = PO.
+
+## Deferred (external/Docker)
+- LHCI first green run (CI), funnel dashboard UI (R11 admin), signing
+  values, CF token, Beijing/Baidu stance (spec: on hold).

@@ -5,12 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"avibe-platform/backend/internal/domain"
 	"avibe-platform/backend/internal/service"
 )
 
 // PlaylistHandler serves playlist CRUD, entries, and reorder.
 type PlaylistHandler struct {
 	Playlists *service.PlaylistService
+	SEO       *service.SEOService
 }
 
 type playlistRequest struct {
@@ -43,6 +45,18 @@ func (h *PlaylistHandler) ListMine(c *gin.Context) {
 	ok(c, playlists)
 }
 
+// ListPublic returns discoverable playlists (no auth).
+//
+//	GET /playlists/public?limit=
+func (h *PlaylistHandler) ListPublic(c *gin.Context) {
+	items, err := h.Playlists.ListPublic(c.Request.Context(), queryInt(c, "limit", 20))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	okList(c, items)
+}
+
 // Get returns one visible playlist.
 func (h *PlaylistHandler) Get(c *gin.Context) {
 	p, err := h.Playlists.Get(c.Request.Context(), CurrentUserID(c), c.Param("id"))
@@ -65,6 +79,7 @@ func (h *PlaylistHandler) Update(c *gin.Context) {
 		AbortError(c, err)
 		return
 	}
+	notifySearchAsync(h.SEO, []string{domain.CanonicalPlaylistPath(p.Slug, p.ShortID)})
 	ok(c, p)
 }
 

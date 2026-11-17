@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -15,9 +16,10 @@ class LegalListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final terms = ref.watch(legalTermsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('약관 및 안내')),
+      appBar: AppBar(title: Text(s.legalTitle)),
       body: Column(
         children: [
           Expanded(
@@ -25,29 +27,29 @@ class LegalListScreen extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.smart_toy_outlined),
-                  title: const Text('AI 생성물 안내'),
-                  subtitle: const Text('AI 음원 표시 및 라이선스 고지'),
+                  title: Text(s.legalAiTitle),
+                  subtitle: Text(s.legalAiDesc),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.go('/legal/ai-notice'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.block),
-                  title: const Text('내 차단 내역'),
-                  subtitle: const Text('신고 스트라이크에 따른 이용 제한'),
+                  title: Text(s.legalBlocksTitle),
+                  subtitle: Text(s.legalBlocksDesc),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.go('/legal/blocks'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.person_remove_outlined),
-                  title: const Text('회원 탈퇴 안내'),
+                  title: Text(s.legalWithdrawalTitle),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.go('/legal/withdrawal'),
                 ),
                 const Divider(),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Text('이용약관',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Text(s.legalTermsHeader,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 terms.when(
                   data: (items) => Column(
@@ -56,7 +58,7 @@ class LegalListScreen extends ConsumerWidget {
                         ListTile(
                           title: Text(t.titleKo),
                           subtitle: Text('${t.code} · v${t.version}'
-                              '${t.isRequired ? ' · 필수' : ''}'),
+                              '${t.isRequired ? ' · ${s.legalRequired}' : ''}'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => context.go('/legal/terms/${t.code}'),
                         ),
@@ -69,8 +71,8 @@ class LegalListScreen extends ConsumerWidget {
                   error: (e, _) => Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(e is ApiException
-                        ? friendlyMessage(e)
-                        : '약관을 불러오지 못했습니다.'),
+                        ? friendlyMessage(e, s)
+                        : s.legalLoadFailed),
                   ),
                 ),
               ],
@@ -90,6 +92,7 @@ class TermDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final term = ref.watch(_termProvider(code));
     return Scaffold(
       appBar: AppBar(title: Text(code)),
@@ -102,7 +105,9 @@ class TermDetailScreen extends ConsumerWidget {
               Text(t.titleKo,
                   style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 4),
-              Text('버전 ${t.version}${t.isRequired ? ' · 필수 동의' : ''}',
+              Text(
+                  s.legalVersion(t.version) +
+                      (t.isRequired ? s.legalConsentRequired : ''),
                   style: Theme.of(context).textTheme.bodySmall),
               const Divider(height: 24),
               SelectableText(t.bodyMd),
@@ -110,7 +115,7 @@ class TermDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: () => _consent(context, ref, t),
-                  child: const Text('동의하기'),
+                  child: Text(s.legalConsent),
                 ),
               ],
             ],
@@ -119,8 +124,8 @@ class TermDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(e is ApiException
-              ? friendlyMessage(e)
-              : '약관을 불러오지 못했습니다.'),
+              ? friendlyMessage(e, s)
+              : s.legalLoadFailed),
         ),
       ),
     );
@@ -132,16 +137,17 @@ class TermDetailScreen extends ConsumerWidget {
       await ref.read(apiProvider).createConsent(t.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('동의가 기록되었습니다.')),
+          SnackBar(content: Text(context.l10n.legalConsentDone)),
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final s = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '동의 처리에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.legalConsentFailed)),
         );
       }
     }
@@ -158,29 +164,24 @@ class AiNoticeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('AI 생성물 안내')),
+      appBar: AppBar(title: Text(s.legalAiTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('AI 음원 표시 안내',
+            Text(s.legalAiHeading,
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
-            const Text(
-              '이 플랫폼의 모든 음원은 AI 생성 여부가 표시됩니다. 재생 화면의 ‘AI·라이선스’ 탭에서 '
-              '제공자(SUNO, UDIO, AIVA 등), 고지 문구, 비트레이트를 확인할 수 있습니다.',
-            ),
+            Text(s.legalAiP1),
             const SizedBox(height: 12),
-            const Text(
-              'AI 음원의 상업적 이용 범위는 각 제공자의 라이선스 정책과 플랫폼 이용약관을 따릅니다. '
-              '무단 보이스 클론, 무단 샘플 사용이 의심되는 곡은 재생 화면의 신고 메뉴로 제보할 수 있습니다.',
-            ),
+            Text(s.legalAiP2),
             const SizedBox(height: 24),
             OutlinedButton(
               onPressed: () => context.go('/legal/terms/${TermCodes.tos}'),
-              child: const Text('이용약관(TOS) 보기'),
+              child: Text(s.legalViewTos),
             ),
           ],
         ),
@@ -195,30 +196,34 @@ class BlocksScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final blocks = ref.watch(myBlocksProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('내 차단 내역')),
+      appBar: AppBar(title: Text(s.legalBlocksTitle)),
       body: blocks.when(
         data: (items) => items.isEmpty
-            ? const Center(child: Text('차단 내역이 없습니다.'))
+            ? Center(child: Text(s.legalNoBlocks))
             : ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, i) {
                   final b = items[i];
                   return ListTile(
-                    leading: const Icon(Icons.block, color: Colors.redAccent),
-                    title: Text('스트라이크 ${b.strikeNumber} · ${b.reason}'),
+                    leading:
+                        const Icon(Icons.block, color: Colors.redAccent),
+                    title: Text(s.legalStrikeItem(
+                        b.strikeNumber.toString(), b.reason)),
                     subtitle: Text(b.expiresAt == null
-                        ? '만료일 없음'
-                        : '만료: ${b.expiresAt}'),
+                        ? s.legalNoExpiry
+                        : s.legalExpires(
+                            b.expiresAt!.toIso8601String().split('T').first)),
                   );
                 },
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(e is ApiException
-              ? friendlyMessage(e)
-              : '차단 내역을 불러오지 못했습니다.'),
+              ? friendlyMessage(e, s)
+              : s.legalBlocksFailed),
         ),
       ),
     );
@@ -231,21 +236,18 @@ class WithdrawalScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('회원 탈퇴 안내')),
+      appBar: AppBar(title: Text(s.legalWithdrawalTitle)),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('탈퇴 전 확인하세요',
+            Text(s.legalWithdrawalHeading,
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
-            const Text(
-              '· 플레이리스트와 재생 기록이 즉시 비활성화 및 삭제 처리됩니다.\n'
-              '· 진행 중인 신고·분쟁이 있으면 관련 법령에 따라 보존 후 파기됩니다.\n'
-              '· 아래 [즉시 회원 탈퇴] 버튼을 누르면 별도 고객센터 문의 없이 앱 내에서 즉시 탈퇴됩니다.',
-            ),
+            Text(s.legalWithdrawalBody),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -255,7 +257,7 @@ class WithdrawalScreen extends ConsumerWidget {
                     ref.invalidate(authMeProvider);
                     if (context.mounted) context.go('/login');
                   },
-                  child: const Text('로그아웃'),
+                  child: Text(s.legalLogout),
                 ),
                 const SizedBox(width: 12),
                 FilledButton(
@@ -270,7 +272,7 @@ class WithdrawalScreen extends ConsumerWidget {
                     ref.invalidate(authMeProvider);
                     if (context.mounted) context.go('/login');
                   },
-                  child: const Text('즉시 회원 탈퇴'),
+                  child: Text(s.legalWithdrawNow),
                 ),
               ],
             ),

@@ -2,25 +2,28 @@ name = "aimusic"
 compatibility_date = "2024-10-01"
 main = "worker.js"
 
-[build]
-command = "npm --prefix web run build"
-
+# Pages are rendered by Nuxt SSR on the VPS (container avibe-prod-web, served
+# through the named tunnel as WEB_ORIGIN). The assets below MUST come from that
+# same image build, or SSR HTML references /_nuxt chunk hashes that do not
+# exist. deploy/rollout-redesign.sh extracts them (docker cp .../public) into
+# deploy/web-public before `wrangler deploy`; there is no local build step.
 [assets]
-directory = "./web/dist"
+directory = "./deploy/web-public"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
+# Unmatched paths run the Worker (SSR proxy), never an SPA index.html.
+not_found_handling = "none"
 
 # Production origins. Set these to the stable prod hosts before deploy
 # (ephemeral trycloudflare tunnel URLs expire and must never ship):
-# API is served by the Cloudflare named tunnel `avibe` (stable hostname).
+# API and web are served by the Cloudflare named tunnel `avibe`.
 # HLS media comes from the private R2 bucket below (WI-D1).
 # Secret (never in this file):  wrangler secret put HLS_SIGNING_KEY
 [vars]
 API_ORIGIN = "https://api.avibemusic.com"
+WEB_ORIGIN = "https://web.avibemusic.com"
+# Rollout bridge for the SQ/HQ grant change (B-04): closed.
+ALLOW_LEGACY_GRANTS = "false"
 
 [[r2_buckets]]
 binding = "HLS_BUCKET"
 bucket_name = "public-hls"
-# Rollout bridge for the SQ/HQ grant change (B-04): accept pre-tier grants
-# only until the new backend is live, then set to "false" and redeploy.
-ALLOW_LEGACY_GRANTS = "false"

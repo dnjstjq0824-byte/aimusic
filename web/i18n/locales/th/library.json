@@ -1,0 +1,31 @@
+{
+  "library": {
+    "title": "คลัง",
+    "tabLiked": "เพลงที่ถูกใจ",
+    "tabRecent": "เพิ่งฟัง",
+    "tabSaved": "เพลย์ลิสต์ที่บันทึก",
+    "tabFollows": "กำลังติดตาม",
+    "myPlCard": "เพลย์ลิสต์ของฉัน {count} รายการ",
+    "playAll": "เล่นทั้งหมด",
+    "likedEmptyT": "ยังไม่มีเพลงที่ถูกใจ",
+    "likedEmptyD": "กด ♡ ให้เพลงที่ชอบในสำรวจ",
+    "likedEmptyCta": "สำรวจ",
+    "recentEmptyT": "ยังไม่มีประวัติ",
+    "recentEmptyD": "ลองฟังเพลงแรกกัน",
+    "savedEmptyT": "ยังไม่มีเพลย์ลิสต์ที่บันทึก",
+    "savedEmptyD": "บันทึกเพลย์ลิสต์ที่ชอบไว้",
+    "followsCreatorsT": "ครีเอเตอร์ที่ติดตาม",
+    "followsPlaylistsT": "เพลย์ลิสต์ที่ติดตาม",
+    "followsEmptyT": "ยังไม่ได้ติดตามใคร",
+    "followsEmptyD": "ติดตามครีเอเตอร์และเพลย์ลิสต์ที่ชอบ",
+    "unfollow": "เลิกติดตาม",
+    "follow": "ติดตาม",
+    "likeAria": "ถูกใจเพลงนี้",
+    "unlikeAria": "ยกเลิกถูกใจ",
+    "unsave": "เอาออก",
+    "toastLiked": "ถูกใจแล้ว",
+    "toastUnliked": "ยกเลิกถูกใจแล้ว",
+    "toastFollowed": "ติดตามแล้ว",
+    "toastUnfollowed": "เลิกติดตามแล้ว"
+  }
+}

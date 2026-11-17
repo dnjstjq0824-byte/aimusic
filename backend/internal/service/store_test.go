@@ -39,6 +39,18 @@ func (f *fakeStoreRepo) CreateBusiness(_ context.Context, partnerID, businessNum
 	return b, nil
 }
 
+func (f *fakeStoreRepo) CreateBusinessForOwner(_ context.Context, ownerUserID, businessNumber, storeName string, licenseCount int) (*domain.StoreBusiness, error) {
+	for _, b := range f.businesses {
+		if b.BusinessNumber == businessNumber {
+			return nil, errors.New("duplicate business_number")
+		}
+	}
+	b := &domain.StoreBusiness{ID: "biz-" + businessNumber, OwnerUserID: ownerUserID, BusinessNumber: businessNumber,
+		StoreName: storeName, LicenseCount: licenseCount, Status: domain.StorePending}
+	f.businesses[b.ID] = b
+	return b, nil
+}
+
 func (f *fakeStoreRepo) GetBusinessByID(_ context.Context, id string) (*domain.StoreBusiness, error) {
 	b, ok := f.businesses[id]
 	if !ok {
@@ -51,6 +63,16 @@ func (f *fakeStoreRepo) ListBusinessesByPartner(_ context.Context, partnerID str
 	out := []*domain.StoreBusiness{}
 	for _, b := range f.businesses {
 		if b.PartnerID == partnerID {
+			out = append(out, b)
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeStoreRepo) ListBusinessesByOwner(_ context.Context, ownerUserID string) ([]*domain.StoreBusiness, error) {
+	out := []*domain.StoreBusiness{}
+	for _, b := range f.businesses {
+		if b.OwnerUserID == ownerUserID {
 			out = append(out, b)
 		}
 	}
@@ -351,7 +373,7 @@ func TestDeviceQueueAndHeartbeat(t *testing.T) {
 
 func TestScheduleValidation(t *testing.T) {
 	f := newFakeStoreRepo()
-	f.businesses["biz-1"] = &domain.StoreBusiness{ID: "biz-1", PartnerID: "partner-1",
+	f.businesses["biz-1"] = &domain.StoreBusiness{ID: "biz-1", PartnerID: "partner-1", OwnerUserID: "user-1",
 		BusinessNumber: "1234567891", StoreName: "S", LicenseCount: 1, Status: domain.StoreApproved}
 	pl := &fakeStorePlaylists{playlists: map[string]*domain.Playlist{
 		"pl-own": {ID: "pl-own", OwnerUserID: "user-1", Title: "Own"},
@@ -456,5 +478,52 @@ func TestClampStorePlaySecs(t *testing.T) {
 		if got := clampStorePlaySecs(c.reported, c.base, c.durMs, c.elapsed); got != c.want {
 			t.Errorf("%s: got %d want %d", c.name, got, c.want)
 		}
+	}
+}
+
+func TestOwnerPathRegisterListAndIsolation(t *testing.T) {
+	f := newFakeStoreRepo()
+	svc := testStoreService(f, nil, nil, nil)
+	ctx := context.Background()
+	b, err := svc.RegisterBusinessForOwner(ctx, "user-1", "1234567891", "Owner Store", 2)
+	if err != nil {
+		t.Fatalf("RegisterBusinessForOwner: %v", err)
+	}
+	if b.OwnerUserID != "user-1" || b.PartnerID != "" {
+		t.Fatalf("owner = %q partner = %q, want user-1/empty", b.OwnerUserID, b.PartnerID)
+	}
+	mine, err := svc.ListBusinessesByOwner(ctx, "user-1")
+	if err != nil || len(mine) != 1 {
+		t.Fatalf("ListBusinessesByOwner = %d, %v", len(mine), err)
+	}
+	other, err := svc.ListBusinessesByOwner(ctx, "user-2")
+	if err != nil || len(other) != 0 {
+		t.Fatalf("ListBusinessesByOwner(user-2) = %d, %v", len(other), err)
+	}
+	dev, err := svc.CreateDeviceForOwner(ctx, "user-1", b.ID, "Counter")
+	if err != nil {
+		t.Fatalf("CreateDeviceForOwner: %v", err)
+	}
+	if _, err := svc.CreateDeviceForOwner(ctx, "user-2", b.ID, "Intruder"); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("cross-owner device create err = %v, want ErrForbidden", err)
+	}
+	if _, err := svc.UpdateDeviceForOwner(ctx, "user-1", dev.ID, "Counter v2", 42); err != nil {
+		t.Fatalf("UpdateDeviceForOwner: %v", err)
+	}
+	if _, err := svc.ListDevicesForOwner(ctx, "user-2", b.ID); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("cross-owner device list err = %v, want ErrForbidden", err)
+	}
+	if _, err := svc.DeviceLogsForOwner(ctx, "user-1", dev.ID, 10); err != nil {
+		t.Fatalf("DeviceLogsForOwner: %v", err)
+	}
+	if err := svc.RevokeDeviceForOwner(ctx, "user-1", dev.ID); err != nil {
+		t.Fatalf("RevokeDeviceForOwner: %v", err)
+	}
+	if _, err := svc.ListSchedulesForOwner(ctx, "user-1", b.ID); err != nil {
+		t.Fatalf("ListSchedulesForOwner: %v", err)
+	}
+	// Partner-link path cannot see business-owned stores (PartnerID "").
+	if _, err := svc.ListDevices(ctx, "partner-1", b.ID); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("partner-path device list err = %v, want ErrForbidden", err)
 	}
 }

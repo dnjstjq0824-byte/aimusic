@@ -1,0 +1,42 @@
+# WI-G5 증거 (UI 자리 + 다국어 가드)
+
+## 다국어 키워드 가드 — TESTED (go test)
+- `go test ./internal/service/`: `TestGenerationMultilingualGuard` 통과
+  (차단 12종: ko/en/ja/th 음성모방·스타일모방·아티스트명·전각/공백 회피,
+  허용 4종: triumph 내 "iu" 등 경계 확인).
+- 정규화: 전각 ASCII 폴딩 + U+3000 + 소문자 + 공백 압축 (의존성 없음).
+- 아티스트명: 단어경계 매칭 + 큐레이션 시드 18종 (PO/법률 확대 예정).
+
+## 웹 게이트 — TESTED
+- `nuxt typecheck`: exit 0 (volar 플러그인 잡음은 기존 현상).
+- `vitest run`: 104/104 (신규 styleTagOptions 6 포함).
+- `check-i18n`: PASS (UNUSED 296 경고만, parity·ICU·코드 전부 통과).
+  studio.create.v2 20키 × 6로케일 (ko/en 실번역, ja/zh-CN/th 기계초안,
+  en-XA 의사번역).
+- `nuxt build`: 31.9s 성공 (B3011 충돌 해결 후: styleTags.ts →
+  styleTagOptions.ts 개명).
+- `worker-grant`: 14/14. `bash -n` (Git Bash): test-e2e.sh + start-local.sh.
+- `cspell`: 신규 0 (사전 쌍둥이 25단어 추가 + 코드 개명 2건).
+
+## 플래그 on/off 렌더 — TESTED (Playwright + API 스텁, Docker 불필요)
+- flag-off: v2 패널 부재 + 기존 목록 존재 + JS 오류 0 → PROBE-PASS.
+- flag-on (`NUXT_PUBLIC_GENERATE_UI=1`): v2 패널 + 기존 목록 + 오류 0 → PASS.
+- 발견·수정 2건:
+  ① Nitro env 오버라이드가 숫자 1 전달 → `=== true` 실패.
+     `true|1|'1'` 허용으로 수정 후 재검증 PASS.
+  ② 변형 슬롯1 빈 문구 어색 → `v2.variationEmpty` 키 추가 (6로케일).
+- 스크린샷: `evidence/g5/studio-create-v2-on-1440.png` (v2 패널 전체 확인),
+  `evidence/g5/studio-create-v2-off-1440.png` (게스트 로그인 화면 — off 확인은
+  DOM 프로브로 수행).
+- `/create` SSR: 200 + 대기자 폼 + `generateUi:false` 런타임 확인.
+
+## 자리 재사용 (신규 화면 변화 없음)
+- 홈 히어로 "만들기" 자리: R5 예약분 그대로 (비활성 칩).
+- 요금제 크리에이터 "생성 크레딧" 자리: R7 `creditSoon` 문구 그대로 (가격 없음).
+- `/create` 소개+대기자: R7 화면 + 엔진 저장 그대로 (POST /waitlist 멱등).
+- 수용 조건(플래그 꺼진 운영 화면 변화는 /create뿐) 충족:
+  G5 가시 변경은 플래그 뒤 + 기존 자리 재사용뿐.
+
+## NOT TESTED (Docker 복구 후)
+- 하네스 setup→run (`/create`·`/studio/create` 기존 라우트) + 5언어 캡처,
+  E2E T22 전수. 플래그 on 하네스 변형 1회 추가 권장.

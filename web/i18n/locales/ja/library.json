@@ -1,0 +1,31 @@
+{
+  "library": {
+    "title": "ライブラリ",
+    "tabLiked": "いいねした曲",
+    "tabRecent": "最近の再生",
+    "tabSaved": "保存したプレイリスト",
+    "tabFollows": "フォロー中",
+    "myPlCard": "マイプレイリスト{count}件",
+    "playAll": "すべて再生",
+    "likedEmptyT": "いいねした曲はまだありません",
+    "likedEmptyD": "探すで気に入った曲に♡を押してみましょう。",
+    "likedEmptyCta": "探す",
+    "recentEmptyT": "再生履歴はまだありません",
+    "recentEmptyD": "最初の1曲を聴いてみましょう。",
+    "savedEmptyT": "保存したプレイリストはありません",
+    "savedEmptyD": "気に入ったプレイリストを保存しましょう。",
+    "followsCreatorsT": "フォロー中のクリエイター",
+    "followsPlaylistsT": "フォロー中のプレイリスト",
+    "followsEmptyT": "まだフォローしていません",
+    "followsEmptyD": "好きなクリエイターやプレイリストをフォローしましょう。",
+    "unfollow": "フォロー解除",
+    "follow": "フォローする",
+    "likeAria": "いいねする",
+    "unlikeAria": "いいねを外す",
+    "unsave": "保存を外す",
+    "toastLiked": "いいねしました。",
+    "toastUnliked": "いいねを外しました。",
+    "toastFollowed": "フォローしました。",
+    "toastUnfollowed": "フォローを外しました。"
+  }
+}

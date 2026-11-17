@@ -14,12 +14,12 @@ import (
 // PlaylistRepo accesses playlists and playlist_tracks.
 type PlaylistRepo struct{ db *sql.DB }
 
-const playlistColumns = `id::text, owner_user_id::text, title, description, is_public, is_official_curation, created_at, updated_at`
+const playlistColumns = `id::text, owner_user_id::text, title, short_id, slug, description, is_public, is_official_curation, created_at, updated_at`
 
 func scanPlaylist(row interface{ Scan(...any) error }) (*domain.Playlist, error) {
 	p := &domain.Playlist{}
 	var desc sql.NullString
-	err := row.Scan(&p.ID, &p.OwnerUserID, &p.Title, &desc, &p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
+	err := row.Scan(&p.ID, &p.OwnerUserID, &p.Title, &p.ShortID, &p.Slug, &desc, &p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -32,20 +32,38 @@ func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, isPubl
 }
 
 func (r *PlaylistRepo) CreateFull(ctx context.Context, ownerID, title string, description *string, isPublic, isOfficial bool) (*domain.Playlist, error) {
+	shortID, err := domain.NewShortID()
+	if err != nil {
+		return nil, err
+	}
 	return scanPlaylist(r.db.QueryRowContext(ctx, `
-		INSERT INTO playlists (owner_user_id, title, description, is_public, is_official_curation)
-		VALUES ($1::uuid, $2, $3, $4, $5)
+		INSERT INTO playlists (owner_user_id, title, short_id, slug, description, is_public, is_official_curation)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7)
 		RETURNING `+playlistColumns,
-		ownerID, title, nullStr(description), isPublic, isOfficial))
+		ownerID, title, shortID, domain.Slugify(title, "playlist"), nullStr(description), isPublic, isOfficial))
 }
 
 func (r *PlaylistRepo) GetByID(ctx context.Context, id string) (*domain.Playlist, error) {
-	p, err := scanPlaylist(r.db.QueryRowContext(ctx, `
-		SELECT `+playlistColumns+` FROM playlists WHERE id = $1::uuid`, id))
+	p := &domain.Playlist{}
+	var desc, owner sql.NullString
+	err := r.db.QueryRowContext(ctx, `
+		SELECT p.id::text, p.owner_user_id::text, u.display_name, p.title, p.short_id, p.slug, p.description,
+			p.is_public, p.is_official_curation, p.created_at, p.updated_at
+		FROM playlists p JOIN users u ON u.id = p.owner_user_id
+		WHERE p.id = $1::uuid`, id).Scan(
+		&p.ID, &p.OwnerUserID, &owner, &p.Title, &p.ShortID, &p.Slug, &desc,
+		&p.IsPublic, &p.IsOfficialCuration, &p.CreatedAt, &p.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
 	}
-	return p, err
+	if err != nil {
+		return nil, err
+	}
+	p.Description = strPtr(desc)
+	if owner.Valid {
+		p.OwnerName = owner.String
+	}
+	return p, nil
 }
 
 // ListByOwner returns a user's playlists, newest first.
@@ -73,6 +91,73 @@ func (r *PlaylistRepo) ListOfficialCuration(ctx context.Context) ([]*domain.Play
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT `+playlistColumns+`
 		FROM playlists WHERE is_official_curation = TRUE ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Playlist{}
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ListPublic returns discoverable playlists (official first, then public),
+// newest first. R6 builds full discovery on top of this.
+func (r *PlaylistRepo) ListPublic(ctx context.Context, limit int) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+playlistColumns+`
+		FROM playlists WHERE is_official_curation = TRUE OR is_public = TRUE
+		ORDER BY is_official_curation DESC, created_at DESC LIMIT $1`, clampLimit(limit, 20, 100))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Playlist{}
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ListPublicContaining returns discoverable playlists holding a track.
+func (r *PlaylistRepo) ListPublicContaining(ctx context.Context, trackID string) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id::text, p.owner_user_id::text, p.title, p.short_id, p.slug, p.description, p.is_public, p.is_official_curation, p.created_at, p.updated_at
+		FROM playlists p JOIN playlist_tracks pt ON pt.playlist_id = p.id
+		WHERE pt.track_id = $1::uuid AND (p.is_official_curation = TRUE OR p.is_public = TRUE)
+		ORDER BY p.created_at DESC`, trackID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Playlist{}
+	for rows.Next() {
+		p, err := scanPlaylist(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// SavedPlaylists returns playlists the user saved, most recently saved first.
+func (r *PlaylistRepo) SavedPlaylists(ctx context.Context, userID string, limit int) ([]*domain.Playlist, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT playlists.id::text, playlists.owner_user_id::text, playlists.title, playlists.short_id, playlists.slug, playlists.description,
+			playlists.is_public, playlists.is_official_curation, playlists.created_at, playlists.updated_at
+		FROM playlist_saves s JOIN playlists ON playlists.id = s.playlist_id
+		WHERE s.user_id = $1::uuid ORDER BY s.created_at DESC LIMIT $2`,
+		userID, clampLimit(limit, 20, 100))
 	if err != nil {
 		return nil, err
 	}
@@ -154,6 +239,128 @@ func (r *PlaylistRepo) Reorder(ctx context.Context, playlistID string, trackIDs 
 		}
 	}
 	return tx.Commit()
+}
+
+// EngagementRepo accesses track likes, playlist saves, and follows.
+// Writes are idempotent (re-like/re-save return added=false, removing a
+// missing row returns removed=false) so UI toggles never 4xx/5xx.
+type EngagementRepo struct{ db *sql.DB }
+
+func (r *EngagementRepo) LikeTrack(ctx context.Context, userID, trackID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		INSERT INTO track_likes (user_id, track_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
+		userID, trackID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r *EngagementRepo) UnlikeTrack(ctx context.Context, userID, trackID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM track_likes WHERE user_id = $1::uuid AND track_id = $2::uuid`, userID, trackID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r *EngagementRepo) IsLiked(ctx context.Context, userID, trackID string) (bool, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM track_likes WHERE user_id = $1::uuid AND track_id = $2::uuid`,
+		userID, trackID).Scan(&n)
+	return n == 1, err
+}
+
+func (r *EngagementRepo) SavePlaylist(ctx context.Context, userID, playlistID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		INSERT INTO playlist_saves (user_id, playlist_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
+		userID, playlistID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r *EngagementRepo) UnsavePlaylist(ctx context.Context, userID, playlistID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM playlist_saves WHERE user_id = $1::uuid AND playlist_id = $2::uuid`, userID, playlistID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r *EngagementRepo) IsSaved(ctx context.Context, userID, playlistID string) (bool, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM playlist_saves WHERE user_id = $1::uuid AND playlist_id = $2::uuid`,
+		userID, playlistID).Scan(&n)
+	return n == 1, err
+}
+
+func (r *EngagementRepo) Follow(ctx context.Context, userID, targetType, targetID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		INSERT INTO follows (user_id, target_type, target_id) VALUES ($1::uuid, $2, $3::uuid) ON CONFLICT DO NOTHING`,
+		userID, targetType, targetID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r *EngagementRepo) Unfollow(ctx context.Context, userID, targetType, targetID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM follows WHERE user_id = $1::uuid AND target_type = $2 AND target_id = $3::uuid`,
+		userID, targetType, targetID)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+// ListFollows returns resolved follows (creator display names, playlist
+// titles); rows whose target vanished are skipped. Empty targetType lists all.
+func (r *EngagementRepo) ListFollows(ctx context.Context, userID, targetType string) ([]*domain.Follow, error) {
+	query := `
+		SELECT f.target_type, f.target_id::text,
+			COALESCE(u.display_name, p.title, ''),
+			f.created_at
+		FROM follows f
+		LEFT JOIN partner_profiles pp ON f.target_type = 'creator' AND pp.id = f.target_id
+		LEFT JOIN users u ON u.id = pp.user_id
+		LEFT JOIN playlists p ON f.target_type = 'playlist' AND p.id = f.target_id
+		WHERE f.user_id = $1::uuid`
+	args := []any{userID}
+	if targetType != "" {
+		query += ` AND f.target_type = $2`
+		args = append(args, targetType)
+	}
+	query += ` ORDER BY f.created_at DESC`
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.Follow{}
+	for rows.Next() {
+		f := &domain.Follow{}
+		if err := rows.Scan(&f.TargetType, &f.TargetID, &f.DisplayName, &f.CreatedAt); err != nil {
+			return nil, err
+		}
+		if f.DisplayName == "" {
+			continue
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
 }
 
 // PlaybackRepo accesses user_playback_states.

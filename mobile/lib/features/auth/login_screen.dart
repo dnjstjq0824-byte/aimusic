@@ -1,12 +1,15 @@
-// Login / register screen (POST /auth/login, POST /auth/register).
+// Login screen (POST /auth/login + social). Registration lives on
+// the separate signup screen (WI-R12: login/signup split).
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/providers.dart';
+import '../../services/social_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -18,30 +21,26 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _displayName = TextEditingController();
-  final _birthYear = TextEditingController();
-  final _inviteCode = TextEditingController();
-  bool _registerMode = false;
   bool _busy = false;
-  bool _ageConfirmed = false;
   bool _totpStep = false;
   final _totpCode = TextEditingController();
+  String? _socialBusy;
 
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
     _totpCode.dispose();
-    _displayName.dispose();
-    _birthYear.dispose();
-    _inviteCode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final social = ref.watch(_socialProvidersProvider(locale));
     return Scaffold(
-      appBar: AppBar(title: const Text('AVIBE 로그인')),
+      appBar: AppBar(title: Text(s.loginTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -50,58 +49,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             TextField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: '이메일'),
+              decoration: InputDecoration(labelText: s.loginEmail),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _password,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: '비밀번호 (8자 이상)',
+              decoration: InputDecoration(
+                labelText: s.loginPassword,
               ),
             ),
-            if (_registerMode) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _displayName,
-                decoration: const InputDecoration(labelText: '표시 이름'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _birthYear,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: '출생연도 (선택)',
-                  hintText: '예: 1995',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _inviteCode,
-                decoration: const InputDecoration(
-                  labelText: '초대 코드 (필요 시)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              CheckboxListTile(
-                value: _ageConfirmed,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text(
-                  '만 14세 이상입니다. (필수, 만 14세 미만은 가입 불가)',
-                  style: TextStyle(fontSize: 13),
-                ),
-                onChanged: (v) => setState(() => _ageConfirmed = v ?? false),
-              ),
-            ],
-            if (_totpStep && !_registerMode) ...[
+            if (_totpStep) ...[
               const SizedBox(height: 12),
               TextField(
                 controller: _totpCode,
                 keyboardType: TextInputType.text,
-                decoration: const InputDecoration(
-                  labelText: '2단계 인증 코드',
-                  hintText: '인증 앱 6자리 또는 복구 코드',
+                decoration: InputDecoration(
+                  labelText: s.loginTotp,
+                  hintText: s.loginTotpHint,
                 ),
               ),
             ],
@@ -114,15 +79,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(_registerMode
-                      ? '회원가입'
-                      : (_totpStep ? '인증하고 로그인' : '로그인')),
+                  : Text(_totpStep ? s.loginSubmitTotp : s.loginSubmit),
             ),
             TextButton(
-              onPressed: _busy
-                  ? null
-                  : () => setState(() => _registerMode = !_registerMode),
-              child: Text(_registerMode ? '이미 계정이 있어요' : '계정 만들기'),
+              onPressed: _busy ? null : () => context.go('/signup'),
+              child: Text(s.loginCreateAccount),
+            ),
+            social.when(
+              data: (items) {
+                final enabled =
+                    items.where((p) => p.enabled).toList(growable: false);
+                if (enabled.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+                    Text(s.loginOrSocial,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 8),
+                    for (final p in enabled)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: OutlinedButton(
+                          onPressed: (_busy || _socialBusy != null)
+                              ? null
+                              : () => _socialLogin(p.provider),
+                          child: _socialBusy == p.provider
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : Text(providerDisplayName(s, p.provider)),
+                        ),
+                      ),
+                  ],
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
             ),
           ],
         ),
@@ -131,41 +128,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (_registerMode && !_ageConfirmed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('만 14세 이상 확인이 필요합니다.')),
-      );
-      return;
-    }
+    final s = context.l10n;
     setState(() => _busy = true);
     try {
       final repo = ref.read(authRepositoryProvider);
-      if (_registerMode) {
-        await repo.register(
-          email: _email.text.trim(),
-          password: _password.text,
-          displayName: _displayName.text.trim(),
-          birthYear: int.tryParse(_birthYear.text.trim()),
-          ageConfirmed: _ageConfirmed,
-          inviteCode: _inviteCode.text.trim().isEmpty ? null : _inviteCode.text.trim(),
-        );
-      } else {
-        await repo.login(
-          email: _email.text.trim(),
-          password: _password.text,
-          totpCode: _totpStep ? _totpCode.text.trim() : null,
-        );
-      }
-      ref.invalidate(authMeProvider);
-      if (mounted) {
-        // New/updated required terms gate commerce: route to consent first.
-        try {
-          final pending = await ref.read(apiProvider).pendingConsents();
-          if (mounted) context.go(pending.isEmpty ? '/' : '/legal');
-        } catch (_) {
-          if (mounted) context.go('/');
-        }
-      }
+      await repo.login(
+        email: _email.text.trim(),
+        password: _password.text,
+        totpCode: _totpStep ? _totpCode.text.trim() : null,
+      );
+      await _afterAuth();
     } catch (e) {
       if (e is ApiException &&
           e.code == ApiCodes.totpRequired &&
@@ -173,7 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           mounted) {
         setState(() => _totpStep = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('인증 앱의 6자리 코드를 입력하세요.')),
+          SnackBar(content: Text(s.loginTotpPrompt)),
         );
       } else if (mounted) {
         if (e is ApiException && e.code == ApiCodes.totpInvalid) {
@@ -182,12 +154,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '인증에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.loginFailed)),
         );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  Future<void> _socialLogin(String provider) async {
+    final s = context.l10n;
+    setState(() => _socialBusy = provider);
+    try {
+      final social = ref.read(socialAuthProvider);
+      final code = await social.signIn(provider);
+      await social.exchange(code);
+      await _afterAuth();
+    } on SocialAuthCancelled {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.loginSocialCancelled)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(e is ApiException
+                  ? friendlyMessage(e, s)
+                  : s.loginSocialFailed(
+                      providerDisplayName(s, provider)))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _socialBusy = null);
+    }
+  }
+
+  /// Post-login routing shared by password + social: adopt the server
+  /// locale when the user has no local override, then route to consent
+  /// when required terms are pending.
+  Future<void> _afterAuth() async {
+    ref.invalidate(authMeProvider);
+    final me = await ref.read(authMeProvider.future);
+    if (me?.locale != null && me!.locale!.isNotEmpty) {
+      final override = ref.read(localeOverrideProvider);
+      if (override == null) {
+        await ref
+            .read(localeOverrideProvider.notifier)
+            .apply(normalizeAppLanguage(me.locale));
+      }
+    }
+    if (!mounted) return;
+    try {
+      final pending = await ref.read(apiProvider).pendingConsents();
+      if (mounted) context.go(pending.isEmpty ? '/' : '/legal');
+    } catch (_) {
+      if (mounted) context.go('/');
+    }
+  }
 }
+
+final _socialProvidersProvider =
+    FutureProvider.family<List<OAuthProviderInfo>, String>((ref, locale) {
+  return ref.watch(socialAuthProvider).providers(locale);
+});

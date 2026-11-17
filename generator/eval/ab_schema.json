@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://avibemusic.com/schemas/generation/ab-comparison.json",
+  "title": "AVIBE A/B preference comparison record",
+  "description": "WI-G4: one blinded human-preference vote between two clips (G-MODEL item 4). Raters never see model versions; versions deblind at tally time.",
+  "type": "object",
+  "required": ["voteId", "promptId", "prompt", "clipA", "clipB", "winner", "createdAt"],
+  "properties": {
+    "voteId": { "type": "string", "format": "uuid" },
+    "promptId": { "type": "string", "minLength": 1 },
+    "prompt": { "type": "string", "minLength": 1 },
+    "clipA": {
+      "type": "object",
+      "required": ["clipId", "modelVersion"],
+      "properties": {
+        "clipId": { "type": "string", "minLength": 1 },
+        "modelVersion": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "clipB": {
+      "type": "object",
+      "required": ["clipId", "modelVersion"],
+      "properties": {
+        "clipId": { "type": "string", "minLength": 1 },
+        "modelVersion": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "winner": { "type": "string", "enum": ["A", "B", "TIE"] },
+    "raterRef": { "type": "string", "description": "Opaque rater reference (no PII without consent)." },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

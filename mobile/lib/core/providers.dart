@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../services/audio_handler.dart';
 import '../services/auth_repository.dart';
 import '../services/device_api_service.dart';
+import '../services/social_auth_service.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(),
@@ -40,6 +41,14 @@ final deviceApiProvider = Provider<DeviceApiService>(
 
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(
+    ref.watch(dioProvider),
+    ref.watch(secureStorageProvider),
+  ),
+);
+
+/// Social login (system browser + app-link return, WI-R12).
+final socialAuthProvider = Provider<SocialAuthService>(
+  (ref) => SocialAuthService(
     ref.watch(dioProvider),
     ref.watch(secureStorageProvider),
   ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_locale.dart';
 import '../../core/error.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -17,9 +18,10 @@ class PlaylistListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
     final lists = ref.watch(playlistsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('플레이리스트')),
+      appBar: AppBar(title: Text(s.playlistTitle)),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showEditDialog(context, ref, null),
         child: const Icon(Icons.add),
@@ -29,7 +31,7 @@ class PlaylistListScreen extends ConsumerWidget {
           Expanded(
             child: lists.when(
               data: (items) => items.isEmpty
-                  ? const Center(child: Text('플레이리스트가 없습니다. + 버튼으로 만드세요.'))
+                  ? Center(child: Text(s.playlistEmpty))
                   : ListView.builder(
                       itemCount: items.length,
                       itemBuilder: (context, i) {
@@ -37,8 +39,9 @@ class PlaylistListScreen extends ConsumerWidget {
                         return ListTile(
                           leading: const Icon(Icons.queue_music),
                           title: Text(p.title),
-                          subtitle:
-                              Text(p.isPublic ? '공개' : '비공개'),
+                          subtitle: Text(p.isPublic
+                              ? s.playlistPublic
+                              : s.playlistPrivate),
                           trailing: PopupMenuButton<String>(
                             onSelected: (v) {
                               if (v == 'edit') {
@@ -47,11 +50,13 @@ class PlaylistListScreen extends ConsumerWidget {
                                 _delete(context, ref, p);
                               }
                             },
-                            itemBuilder: (_) => const [
+                            itemBuilder: (_) => [
                               PopupMenuItem(
-                                  value: 'edit', child: Text('이름 변경')),
+                                  value: 'edit',
+                                  child: Text(s.playlistRename)),
                               PopupMenuItem(
-                                  value: 'delete', child: Text('삭제')),
+                                  value: 'delete',
+                                  child: Text(s.playlistDelete)),
                             ],
                           ),
                           onTap: () => context.go('/playlists/${p.id}'),
@@ -62,8 +67,8 @@ class PlaylistListScreen extends ConsumerWidget {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(e is ApiException
-                    ? friendlyMessage(e)
-                    : '목록을 불러오지 못했습니다.'),
+                    ? friendlyMessage(e, s)
+                    : s.playlistListFailed),
               ),
             ),
           ),
@@ -78,23 +83,26 @@ class PlaylistListScreen extends ConsumerWidget {
     WidgetRef ref,
     Playlist? existing,
   ) async {
+    final s = context.l10n;
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     bool isPublic = existing?.isPublic ?? false;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(existing == null ? '새 플레이리스트' : '플레이리스트 수정'),
+          title: Text(
+              existing == null ? s.playlistNew : s.playlistEdit),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleCtrl,
-                decoration: const InputDecoration(labelText: '제목'),
+                decoration:
+                    InputDecoration(labelText: s.playlistNameLabel),
                 autofocus: true,
               ),
               SwitchListTile(
-                title: const Text('공개'),
+                title: Text(s.playlistPublic),
                 value: isPublic,
                 onChanged: (v) => setState(() => isPublic = v),
               ),
@@ -103,11 +111,11 @@ class PlaylistListScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
+              child: Text(s.playlistCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('저장'),
+              child: Text(s.playlistSave),
             ),
           ],
         ),
@@ -129,8 +137,8 @@ class PlaylistListScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '저장에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playlistSaveFailed)),
         );
       }
     }
@@ -141,6 +149,7 @@ class PlaylistListScreen extends ConsumerWidget {
     WidgetRef ref,
     Playlist p,
   ) async {
+    final s = context.l10n;
     try {
       await ref.read(apiProvider).deletePlaylist(p.id);
       ref.invalidate(playlistsProvider);
@@ -149,8 +158,8 @@ class PlaylistListScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '삭제에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playlistDeleteFailed)),
         );
       }
     }
@@ -174,10 +183,11 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     final detail = ref.watch(playlistDetailProvider(widget.playlistId));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('플레이리스트'),
+        title: Text(s.playlistTitle),
         actions: [
           if (_order != null)
             TextButton(
@@ -188,11 +198,11 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('순서 저장'),
+                  : Text(s.playlistSaveOrder),
             ),
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: '곡 추가',
+            tooltip: s.playlistAddTrack,
             onPressed: () => _showAddDialog(context, ref),
           ),
         ],
@@ -207,7 +217,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                 if (order.isEmpty) {
                   return Center(
                     child: Text(
-                      '‘${playlist.title}’에 곡이 없습니다.\n+ 버튼으로 추가하세요.',
+                      s.playlistDetailEmpty(playlist.title),
                       textAlign: TextAlign.center,
                     ),
                   );
@@ -227,7 +237,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                         ),
                         FilledButton.icon(
                           icon: const Icon(Icons.play_arrow),
-                          label: const Text('재생'),
+                          label: Text(s.playlistPlay),
                           onPressed: () => playTracks(ref, tracks: order),
                         ),
                       ],
@@ -265,8 +275,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(e is ApiException
-                    ? friendlyMessage(e)
-                    : '상세를 불러오지 못했습니다.'),
+                    ? friendlyMessage(e, s)
+                    : s.playlistDetailFailed),
               ),
             ),
           ),
@@ -277,6 +287,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
   }
 
   Future<void> _saveOrder(BuildContext context, WidgetRef ref) async {
+    final s = context.l10n;
     final order = _order;
     if (order == null) return;
     setState(() => _saving = true);
@@ -292,8 +303,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '순서 저장에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playlistOrderFailed)),
         );
       }
     } finally {
@@ -306,6 +317,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
     WidgetRef ref,
     Track t,
   ) async {
+    final s = context.l10n;
     try {
       await ref
           .read(apiProvider)
@@ -317,8 +329,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '삭제에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playlistDeleteFailed)),
         );
       }
     }
@@ -327,11 +339,12 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
   Future<void> _showAddDialog(BuildContext context, WidgetRef ref) async {
     final catalog = await ref.read(homeTracksProvider.future);
     if (!context.mounted) return;
+    final s = context.l10n;
     Track? picked;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('곡 추가'),
+        title: Text(s.playlistAddTrack),
         content: SizedBox(
           width: double.maxFinite,
           height: 320,
@@ -354,7 +367,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('닫기'),
+            child: Text(s.playlistClose),
           ),
         ],
       ),
@@ -370,8 +383,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e is ApiException
-                  ? friendlyMessage(e)
-                  : '추가에 실패했습니다.')),
+                  ? friendlyMessage(e, s)
+                  : s.playlistAddFailed)),
         );
       }
     }

@@ -1,0 +1,29 @@
+# WI-A1 stub tests: `go test ./internal/service/ -run TestOAuth -count=1 -v`
+# (2026-11-16, all providers against httptest stubs — no live keys)
+--- PASS: TestOAuthProvidersLocaleOrder (0.12s)
+--- PASS: TestOAuthEnvToggle (0.04s)
+--- PASS: TestOAuthStartURLShapes (0.03s)
+--- PASS: TestOAuthGoogleNewUser (0.10s)
+--- PASS: TestOAuthKakaoVerifiedLinksExistingEmail (0.01s)
+--- PASS: TestOAuthAppleFullFlow (0.08s)
+--- PASS: TestOAuthAppleFormPostIDToken (0.11s)
+--- PASS: TestOAuthNaverFlow (0.10s)
+--- PASS: TestOAuthNaverMissingEmailIssuesToken (0.05s)
+--- PASS: TestOAuthLineFlow (0.09s)
+--- PASS: TestOAuthLineNonceMismatch (0.02s)
+--- PASS: TestOAuthC11RefusesUnverifiedAutoLink (0.17s)
+    --- PASS: google_verified_links / google_unverified_refused
+    --- PASS: kakao_verified_links / kakao_unverified_refused / kakao_missing_flags_refused
+    --- PASS: naver_always_refused
+--- PASS: TestOAuthC12StateBinding (0.55s)
+    --- PASS: tampered_signature / cookie_mismatch / missing_cookie / missing_pkce
+    --- PASS: provider_swap / expired / single_use / empty_code
+--- PASS: TestOAuthC16ExchangeCodes (0.28s)
+    --- PASS: success / single_use / expired / bogus
+--- PASS: TestOAuthCompleteEmailGuards (0.04s)
+--- PASS: TestOAuthLinkFlow (0.11s)
+    --- PASS: link_then_idempotent_relink / link_taken_by_another_user / bad_link_token
+--- PASS: TestOAuthUnlink (0.02s)
+--- PASS: TestOAuthStartupWarnings (0.07s)
+PASS / ok avibe-platform/backend/internal/service 2.228s
+# Plus: TestOAuthCredentialsFromEnv (config pkg, env load/unload) — in full-suite PASS.

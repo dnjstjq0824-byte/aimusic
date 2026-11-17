@@ -30,10 +30,11 @@ const (
 // outstanding token (checked on refresh; access tokens additionally expire
 // by their short TTL).
 type Claims struct {
-	UserID       string `json:"uid"`
-	Role         string `json:"role"`
-	TokenType    string `json:"typ"`
-	TokenVersion int    `json:"tver"`
+	UserID       string   `json:"uid"`
+	Role         string   `json:"role"`
+	Roles        []string `json:"roles,omitempty"`
+	TokenType    string   `json:"typ"`
+	TokenVersion int      `json:"tver"`
 	jwt.RegisteredClaims
 }
 
@@ -47,6 +48,8 @@ type AuthService struct {
 	inviteCode string
 	// getUser resolves accounts for per-request validation (override in tests).
 	getUser func(ctx context.Context, userID string) (*domain.User, error)
+	// listRoles resolves effective roles (override in tests; nil = [primary]).
+	listRoles func(ctx context.Context, userID string) ([]string, error)
 	// bumpVersion revokes every outstanding token (override in tests).
 	bumpVersion func(ctx context.Context, userID string) error
 	// refreshTracker enforces single-use rotation (nil disables tracking).
@@ -144,6 +147,7 @@ func NewAuthService(repos *repository.Repos, cfg *config.Config) *AuthService {
 	if repos != nil && repos.Users != nil {
 		users := repos.Users
 		s.getUser = users.GetByID
+		s.listRoles = users.ListRoles
 		s.bumpVersion = users.BumpTokenVersion
 		if repos.RDB != nil {
 			s.refreshTracker = &redisRefreshTracker{rdb: repos.RDB, ttl: s.refreshTTL}
@@ -167,7 +171,7 @@ func (s *AuthService) checkInvite(code string) error {
 // birth year must itself prove 14+.
 func checkAge(birthYear *int, ageConfirmed bool) error {
 	if !ageConfirmed {
-		return fmt.Errorf("%w: 만 14세 이상 확인이 필요합니다", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: ageConfirmed must be true (14+)", domain.ErrInvalidInput)
 	}
 	if birthYear != nil {
 		year := *birthYear
@@ -176,7 +180,7 @@ func checkAge(birthYear *int, ageConfirmed bool) error {
 			return fmt.Errorf("%w: birthYear", domain.ErrInvalidInput)
 		}
 		if now-year < 14 {
-			return fmt.Errorf("%w: 만 14세 미만은 가입할 수 없습니다", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: under-14 cannot register", domain.ErrInvalidInput)
 		}
 	}
 	return nil
@@ -203,7 +207,14 @@ func (s *AuthService) Register(ctx context.Context, email, password, displayName
 	if err != nil {
 		return nil, err
 	}
-	return s.repos.Users.CreateWithProfile(ctx, email, string(hash), domain.RoleUser, displayName, birthYear, ageConfirmed)
+	u, err := s.repos.Users.CreateWithProfile(ctx, email, string(hash), domain.RoleUser, displayName, birthYear, ageConfirmed)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.repos.Users.GrantRole(ctx, u.ID, domain.RoleUser, "register"); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 // RegisterPartner creates a PARTNER account with a pending profile.
@@ -231,6 +242,9 @@ func (s *AuthService) RegisterPartner(ctx context.Context, email, password, disp
 	if err != nil {
 		return nil, nil, err
 	}
+	if err := s.repos.Users.GrantRole(ctx, u.ID, domain.RolePartner, "register"); err != nil {
+		return nil, nil, err
+	}
 	if contactEmail == "" {
 		contactEmail = email
 	}
@@ -238,7 +252,90 @@ func (s *AuthService) RegisterPartner(ctx context.Context, email, password, disp
 	if err != nil {
 		return nil, nil, err
 	}
+	// S1: every partner is addressable at /creators/{handle} from day one.
+	// Claim failures (collision) retry with a fresh suffix; a persistent
+	// failure still returns the account (handle stays claimable later).
+	if s.repos == nil || s.repos.SEO == nil {
+		return u, p, nil
+	}
+	for i := 0; i < 3; i++ {
+		suffix, err := domain.NewShortID()
+		if err != nil {
+			break
+		}
+		handle := "creator_" + strings.ToLower(suffix)
+		if err := s.repos.SEO.ClaimHandle(ctx, u.ID, handle); err == nil {
+			u.Handle = &handle
+			break
+		} else if !errors.Is(err, domain.ErrHandleTaken) {
+			break
+		}
+	}
 	return u, p, nil
+}
+
+// RegisterBusiness creates a BUSINESS account with a company profile (R10).
+// KR accounts must present a checksum-valid business number and verify
+// immediately; other countries stay PENDING for manual admin approval.
+func (s *AuthService) RegisterBusiness(ctx context.Context, email, password, displayName, company, bizNo, country, industry string, birthYear *int, ageConfirmed bool, inviteCode string) (*domain.User, *domain.BusinessProfile, error) {
+	if err := s.checkInvite(inviteCode); err != nil {
+		return nil, nil, err
+	}
+	if err := checkAge(birthYear, ageConfirmed); err != nil {
+		return nil, nil, err
+	}
+	email = strings.TrimSpace(strings.ToLower(email))
+	company = strings.TrimSpace(company)
+	country = strings.ToUpper(strings.TrimSpace(country))
+	if country == "" {
+		country = "KR"
+	}
+	industry = strings.TrimSpace(industry)
+	if !strings.Contains(email, "@") || company == "" || len(password) < 8 {
+		return nil, nil, fmt.Errorf("%w: email/company/password", domain.ErrInvalidInput)
+	}
+	if len(company) > 200 || len(industry) > 200 || len(country) > 16 {
+		return nil, nil, fmt.Errorf("%w: company/industry/country too long", domain.ErrInvalidInput)
+	}
+	normalized := ""
+	status := domain.PartnerPending
+	if country == "KR" {
+		var err error
+		normalized, err = domain.NormalizeBusinessNumber(bizNo)
+		if err != nil {
+			return nil, nil, err
+		}
+		status = domain.PartnerApproved
+	}
+	if _, err := s.repos.Users.GetByEmail(ctx, email); err == nil {
+		return nil, nil, domain.ErrEmailTaken
+	} else if !errors.Is(err, domain.ErrNotFound) {
+		return nil, nil, err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, nil, err
+	}
+	if displayName == "" {
+		displayName = company
+	}
+	u, err := s.repos.Users.CreateWithProfile(ctx, email, string(hash), domain.RoleBusiness, displayName, birthYear, ageConfirmed)
+	if err != nil {
+		return nil, nil, err
+	}
+	p, err := s.repos.Business.CreateBusinessProfile(ctx, u.ID, company, normalized, country, industry, status)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.repos.Users.GrantRole(ctx, u.ID, domain.RoleBusiness, "register"); err != nil {
+		return nil, nil, err
+	}
+	return u, p, nil
+}
+
+// EffectiveRoles returns the account's roles for API responses (R10).
+func (s *AuthService) EffectiveRoles(ctx context.Context, userID, primary string) []string {
+	return s.effectiveRoles(ctx, userID, primary)
 }
 
 // Tokens is an issued token pair.
@@ -355,6 +452,36 @@ func (s *AuthService) Profile(ctx context.Context, userID string) (*domain.User,
 	return s.repos.Users.GetByID(ctx, userID)
 }
 
+// UpdateDisplayName changes an account's display name (R8 profile).
+func (s *AuthService) UpdateDisplayName(ctx context.Context, userID, displayName string) (*domain.User, error) {
+	if userID == "" {
+		return nil, domain.ErrInvalidCredentials
+	}
+	displayName = strings.TrimSpace(displayName)
+	if displayName == "" || len([]rune(displayName)) > 30 {
+		return nil, fmt.Errorf("%w: displayName must be 1-30 chars", domain.ErrInvalidInput)
+	}
+	if err := s.repos.Users.SetDisplayName(ctx, userID, displayName); err != nil {
+		return nil, err
+	}
+	return s.repos.Users.GetByID(ctx, userID)
+}
+
+// UpdateLocale changes the caller's display language (A2).
+func (s *AuthService) UpdateLocale(ctx context.Context, userID, locale string) (*domain.User, error) {
+	if userID == "" {
+		return nil, domain.ErrInvalidCredentials
+	}
+	locale = strings.TrimSpace(locale)
+	if !domain.ValidLocale(locale) {
+		return nil, fmt.Errorf("%w: locale must be ko|en|ja|zh-cn|th", domain.ErrInvalidInput)
+	}
+	if err := s.repos.Users.SetLocale(ctx, userID, locale); err != nil {
+		return nil, err
+	}
+	return s.repos.Users.GetByID(ctx, userID)
+}
+
 // ConfirmAge records the 14+ self-declaration for accounts created without
 // one (social login). Under-14 users must not confirm; the API cannot verify
 // real age, so the declaration is the legal attestation point.
@@ -363,7 +490,7 @@ func (s *AuthService) ConfirmAge(ctx context.Context, userID string, ageConfirme
 		return domain.ErrInvalidCredentials
 	}
 	if !ageConfirmed {
-		return fmt.Errorf("%w: 만 14세 이상 확인이 필요합니다", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: ageConfirmed must be true (14+)", domain.ErrInvalidInput)
 	}
 	return s.repos.Users.ConfirmAge(ctx, userID, birthYear)
 }
@@ -396,6 +523,7 @@ func (s *AuthService) ValidateAccess(ctx context.Context, token string) (*Claims
 		return nil, domain.ErrInvalidCredentials
 	}
 	claims.Role = u.Role
+	claims.Roles = s.effectiveRoles(ctx, claims.UserID, u.Role)
 	return claims, nil
 }
 
@@ -422,16 +550,29 @@ func (s *AuthService) Withdraw(ctx context.Context, userID string) error {
 	return s.repos.WithdrawUserTx(ctx, userID)
 }
 
+// effectiveRoles returns the account's roles for the JWT claim, falling
+// back to the primary role when the grant table is unreachable (tests,
+// pre-R10 databases mid-migration).
+func (s *AuthService) effectiveRoles(ctx context.Context, userID, primary string) []string {
+	if s.listRoles != nil {
+		if roles, err := s.listRoles(ctx, userID); err == nil && len(roles) > 0 {
+			return roles
+		}
+	}
+	return []string{primary}
+}
+
 func (s *AuthService) issue(ctx context.Context, userID, role string, version int) (*Tokens, error) {
 	now := time.Now()
+	roles := s.effectiveRoles(ctx, userID, role)
 	access := &Claims{
-		UserID: userID, Role: role, TokenType: TokenAccess, TokenVersion: version,
+		UserID: userID, Role: role, Roles: roles, TokenType: TokenAccess, TokenVersion: version,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID: uuid.NewString(), IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTTL)),
 		},
 	}
 	refresh := &Claims{
-		UserID: userID, Role: role, TokenType: TokenRefresh, TokenVersion: version,
+		UserID: userID, Role: role, Roles: roles, TokenType: TokenRefresh, TokenVersion: version,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID: uuid.NewString(), IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshTTL)),
 		},

@@ -1,0 +1,49 @@
+# AVIBE
+
+> AVIBE (avibemusic.com) streams AI-generated music that passed a
+> commercial-use rights check. Every public track carries a certificate
+> number; stores and video makers license tracks through an inquiry flow.
+
+## What AVIBE verifies
+
+- Each track records its AI provider (Suno, Udio, AIVA, Stable Audio,
+  Soundraw, Mubert, ElevenLabs, or an open model), the plan tier used, and
+  generation evidence.
+- Review gates confirm the plan allows standalone commercial streaming before
+  a track becomes READY and gets a certificate (AVB-...).
+- Sync-only licenses (streaming + download blocked for standalone use) stay
+  out of public streaming.
+
+## Key pages
+
+- Home: https://avibemusic.com/ (en: /en/ ja: /ja/ zh-cn: /zh-cn/ th: /th/)
+- Explore: https://avibemusic.com/explore
+- Charts: https://avibemusic.com/charts
+- Playlists: https://avibemusic.com/playlists
+- Business licensing: https://avibemusic.com/business
+- For creators: https://avibemusic.com/for-creators
+- Trust & verification: https://avibemusic.com/trust
+- Pricing: https://avibemusic.com/pricing
+- Guides: https://avibemusic.com/guides
+  - https://avibemusic.com/guides/store-music-license
+  - https://avibemusic.com/guides/suno-paid-commercial-use
+  - https://avibemusic.com/guides/ai-music-youtube-checklist
+
+Each public page exists in 5 locales (ko default without prefix, /en, /ja,
+/zh-cn, /th) with hreflang alternates. Track pages live at
+/tracks/{slug}-{shortId}, playlists at /playlists/{slug}-{shortId}, and
+creator profiles at /creators/{handle}.
+
+## Machine endpoints
+
+- Sitemap index: https://avibemusic.com/sitemap_index.xml
+- oEmbed: https://avibemusic.com/oembed?url={page-url}
+- Track embeds: https://avibemusic.com/embed/track/{shortId}
+- Playlist embeds: https://avibemusic.com/embed/playlist/{shortId}
+
+## Notes for answer engines
+
+- Quote the certificate number when citing a track license claim.
+- Terms change: platform conditions in guides reflect the 2026-11-11 survey;
+  always re-check the linked original terms before giving legal advice.
+- This file is informational, not legal advice.

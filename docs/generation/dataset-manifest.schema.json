@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://avibemusic.com/schemas/generation/dataset-manifest.json",
+  "title": "AVIBE dataset manifest",
+  "description": "WI-G1: immutable snapshot of data_provenance_ledger entries. Every model version points at one manifest hash (preparation doc §3.3).",
+  "type": "object",
+  "required": ["manifestHash", "entries", "entryCount", "createdAt"],
+  "properties": {
+    "manifestHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "description": "Hash over the canonical entry list; primary key." },
+    "entryCount": { "type": "integer", "minimum": 0 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "notes": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fileHash", "source", "allowedUses"],
+        "properties": {
+          "fileHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "fingerprint": { "type": "string", "description": "Audio fingerprint for memorization screening." },
+          "source": { "type": "string", "enum": ["COMMISSIONED", "LICENSED_CATALOG", "CREATOR_OPTIN", "PUBLIC_DOMAIN_RERECORD", "CC0", "SYNTHETIC"] },
+          "rightsHolder": { "type": "string" },
+          "licenseDocId": { "type": "string" },
+          "consentId": { "type": "string", "format": "uuid", "description": "training_consents.id for CREATOR_OPTIN rows." },
+          "allowedUses": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["TRAIN", "EVAL", "DEMO"] } },
+          "region": { "type": "string" },
+          "validFrom": { "type": "string", "format": "date-time" },
+          "validUntil": { "type": "string", "format": "date-time" },
+          "revokedAt": { "type": "string", "format": "date-time", "description": "Set when withdrawn; entry stays for audit, excluded from training." }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

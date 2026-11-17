@@ -1,0 +1,62 @@
+# WI-A2 gates (2026-11-16, Docker-less run)
+
+## Backend (local, no containers)
+- `go build ./...` (backend/): PASS, no output.
+- `go vet ./...`: PASS, no output.
+- `go test -count=1 ./...`: PASS all 18 packages with tests
+  (service incl. 12 TestVerify* + 3 TestOAuthFinishVerifiedSignup groups;
+  mail incl. 5-locale template tests; handler incl. A2 route/code tests;
+  audio 30.2s).
+- `gofmt`: 33 touched Go files clean on LF-normalized copies in
+  $env:TEMP\gofmtcheck-a2 (`gofmt -l` empty). One real fix: entities.go
+  struct-tag realignment (EmailVerifiedAt widened the block).
+- `bash -n scripts/test-e2e.sh + start-local.sh` via Git Bash: PASS.
+  (WSL `bash.exe` is broken on this host: Hyper-V not installed.)
+- Migration 000024: up/down SQL written; DB round-trip NOT TESTED (Docker).
+- Korean scan: API error/message strings now English-only (codes canonical);
+  remaining Korean = comments, generation filter keywords (data), ko mail
+  templates, 'withdrawn user' label (E2E-pinned), worker rejection_reason_ko
+  content (E2E-pinned), review-reason default prose (partner content).
+- `npx cspell` on docs/API.md + docs/ERD.md: 11 pre-existing hits
+  (readyz/signups/KOMCA/isrc/journaled on untouched lines), 0 new from A2
+  (added TOTP/totp to both cspell configs for the new table rows).
+
+## Web (local, no containers)
+- `npm run typecheck`: exit 0, zero "error TS" (known-harmless volar
+  sfc-route-blocks warning only, same as R2).
+- `npm run test -- --run`: 75/75 PASS (15 files; +4 locale A2 tests).
+- `node scripts/check-i18n.mjs`: PASS (UNUSED-KEYS warn 212, same as R8/A1).
+- `node --test scripts/worker-grant.test.mjs` (repo root): 14/14 PASS.
+- `npm run build`: PASS in 35.6s (node-server preset).
+
+## Docker-dependent: NOT TESTED (environment blocker)
+- Fresh probe this session: `docker version` → client 29.9.2/API 1.56 OK,
+  engine `500 Internal Server Error ... check if the server supports the
+  requested API version` (desktop-linux). `docker ps` hangs outright.
+  Docker Desktop processes ARE running; the Linux engine is broken
+  (same symptom as R8/A1). No approval wait per task rules.
+- Consequently NOT TESTED: local stack boot, 000024 up/down on PG,
+  harness setup+run (verify-email + account-language are already in the
+  matrix, no config change), E2E suite (incl. new T19 + fixture backfill),
+  5-language captures.
+- E2E additions mirror existing assertion shapes and pass `bash -n`;
+  they run in CI (ubuntu) where Docker works.
+
+## SMTP: deferred (no sending account)
+- No SMTP credentials exist in this environment; live delivery is NOT TESTED
+  by design. Coverage instead: fakeMailer unit tests (request/oAuthSignup
+  assert per-locale subject+link), template tests (2 kinds x 5 locales),
+  E2E T19 (row insert + confirm + gate asserts). Real send needs PO-issued
+  SMTP_HOST/USER/PASS + a recipient inbox check.
+
+## Security spot-checks (read-verified)
+- Confirm issues login tokens in the JSON body, never in a redirect URL
+  (C-16 pattern kept: no Location header carries tokens anywhere in A2).
+- Tokens are SHA-256 at rest, 256-bit random, 24h TTL, single-use
+  (MarkUsed races fail closed via used_at IS NULL).
+- Verify/request is JWT-self + per-route 1rps/5burst: no enumeration
+  oracle, no anonymous mail cannon.
+- Unknown/expired/replayed confirms all render identical 401
+  ERR_INVALID_CREDENTIALS; inactive accounts get no tokens.
+- OAUTH confirm links an existing same-email account only after OUR OWN
+  mailed link is clicked (ownership proven; distinct from provider C-11).

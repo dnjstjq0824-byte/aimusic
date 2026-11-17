@@ -1,4 +1,4 @@
-// App entry: Riverpod scope, go_router shell, dark theme.
+// App entry: Riverpod scope, go_router shell, dark theme, ARB l10n.
 library;
 
 import 'dart:async';
@@ -8,16 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/api_client.dart';
+import 'core/app_locale.dart';
 import 'core/env.dart';
 import 'core/providers.dart';
 import 'features/auth/age_gate.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/signup_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/legal/legal_screens.dart';
 import 'features/player/player_screen.dart';
 import 'features/playlist/playlist_screens.dart';
 import 'features/search/search_screen.dart';
+import 'features/settings/settings_screen.dart';
 import 'features/store/store_screen.dart';
 
 void main() {
@@ -68,6 +71,8 @@ final _router = GoRouter(
       ],
     ),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/legal', builder: (_, __) => const LegalListScreen()),
     GoRoute(
       path: '/legal/terms/:code',
@@ -103,6 +108,10 @@ class _AvibeAppState extends ConsumerState<AvibeApp> {
   StreamSubscription<void>? _expirySub;
   DateTime? _lastExpiredToast;
 
+  /// Localized expiry toast, refreshed every build so the async session
+  /// listener below never touches a BuildContext across the gap.
+  String _expiredMessage = 'Session expired. Please sign in again.';
+
   @override
   void initState() {
     super.initState();
@@ -116,7 +125,7 @@ class _AvibeAppState extends ConsumerState<AvibeApp> {
       }
       _lastExpiredToast = now;
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(content: Text('세션이 만료되었습니다. 다시 로그인하세요.')),
+        SnackBar(content: Text(_expiredMessage)),
       );
       _router.go('/login');
     });
@@ -134,17 +143,29 @@ class _AvibeAppState extends ConsumerState<AvibeApp> {
     ref.watch(authMeProvider);
     ref.listen(authMeProvider, (prev, next) {
       final me = next.valueOrNull;
-      if (me != null && me.needsAgeConfirm) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) maybeShowAgeGate(context, ref, true);
-        });
-      }
+      if (me == null || !me.needsAgeConfirm) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) maybeShowAgeGate(context, ref, true);
+      });
     });
+    final override = ref.watch(localeOverrideProvider);
+    _expiredMessage = AppLocalizations.of(context)?.sessionExpired ??
+        'Session expired. Please sign in again.';
     return MaterialApp.router(
       title: 'AVIBE',
       theme: AppTheme.dark,
       routerConfig: _router,
       scaffoldMessengerKey: _scaffoldMessengerKey,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      // User override wins; otherwise the device locale resolves
+      // through localeResolutionCallback (zh-Hant -> en).
+      locale: override == null ? null : Locale(override),
+      localeResolutionCallback: (device, supported) {
+        if (override != null) return Locale(override);
+        final code = resolveDeviceLanguage(device);
+        return Locale(code);
+      },
     );
   }
 }
@@ -156,22 +177,24 @@ class _Shell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return Scaffold(
       body: nav,
       bottomNavigationBar: NavigationBar(
         selectedIndex: nav.currentIndex,
         onDestinationSelected: nav.goBranch,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-              icon: Icon(Icons.home), label: '홈'),
+              icon: const Icon(Icons.home), label: s.tabHome),
           NavigationDestination(
-              icon: Icon(Icons.search), label: '검색'),
+              icon: const Icon(Icons.search), label: s.tabSearch),
           NavigationDestination(
-              icon: Icon(Icons.queue_music), label: '플리'),
+              icon: const Icon(Icons.queue_music),
+              label: s.tabPlaylists),
           NavigationDestination(
-              icon: Icon(Icons.play_circle), label: '재생'),
+              icon: const Icon(Icons.play_circle), label: s.tabPlayer),
           NavigationDestination(
-              icon: Icon(Icons.storefront), label: '매장'),
+              icon: const Icon(Icons.storefront), label: s.tabStore),
         ],
       ),
     );

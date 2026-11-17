@@ -14,4 +14,10 @@ ingress:
     service: http://api:8080
     originRequest:
       httpHostHeader: api.avibemusic.com
+  # AVIBE web (Nuxt SSR). Only the Worker on avibemusic.com should call this;
+  # Nuxt sees the public host so canonical/i18n URLs stay on avibemusic.com.
+  - hostname: web.avibemusic.com
+    service: http://web:3000
+    originRequest:
+      httpHostHeader: avibemusic.com
   - service: http_status:404
