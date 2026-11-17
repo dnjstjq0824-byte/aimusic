@@ -2,7 +2,7 @@
 # Edge production uses the cloudflare-module build instead (WI-P1 dual-build).
 FROM node:22-alpine AS build
 WORKDIR /src
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
 ARG NUXT_API_PROXY=http://api:8080

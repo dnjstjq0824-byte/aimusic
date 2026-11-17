@@ -29,10 +29,6 @@ build_web_image() {
   # Build from the committed tree only (no local node_modules/.output leak).
   local ctx; ctx=$(mktemp -d)
   git -c core.autocrlf=false archive HEAD web | tar -x -C "$ctx" --strip-components=1
-  # The lockfile was produced with legacy peer resolution (vite 5 vs unhead's
-  # optional vite>=6 peer); npm ci in the image needs the same setting.
-  echo 'legacy-peer-deps=true' > "$ctx/.npmrc"
-  sed -i 's#^COPY package.json package-lock.json ./#COPY package.json package-lock.json .npmrc ./#' "$ctx/Dockerfile"
   docker build --platform linux/amd64 -t "$WEB_IMAGE" -t "avibe-prod-web:$REV" "$ctx"
   rm -rf "$ctx"
 }
