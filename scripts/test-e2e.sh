@@ -144,6 +144,10 @@ if [ -t 1 ]; then
 fi
 
 section() { printf '\n%s=== %s ===%s\n' "$c_yellow" "$1" "$c_reset"; }
+# auth_cooldown: the /auth group is rate-limited per IP (10 rps, burst 20,
+# router.go). Fast CI runners drain the bucket in back-to-back auth blocks;
+# pause so the bucket refills instead of asserting on a 429.
+auth_cooldown() { sleep "${AUTH_COOLDOWN_SECS:-3}"; }
 info()  { printf '[INFO] %s\n' "$1"; }
 pass()  { PASS_COUNT=$((PASS_COUNT+1)); printf '%sPASS%s %s\n' "$c_green" "$c_reset" "$1"; }
 fail()  { FAIL_COUNT=$((FAIL_COUNT+1)); printf '%sFAIL%s %s\n' "$c_red" "$c_reset" "$1"; }
@@ -1340,6 +1344,7 @@ wd_ver="$(psql_q "SELECT token_version FROM users WHERE id='$WD_ID'::uuid;" | tr
 if [ "$wd_ver" -ge 1 ] 2>/dev/null; then pass "withdraw bumps token version ($wd_ver)"; else fail "withdraw token_version=$wd_ver"; fi
 code="$(api GET "/auth/me" "$WD_TOKEN" "")"
 assert_status "withdrawn access rejected" "403" "$code"
+auth_cooldown
 # B-09: refresh rotates single-use; replaying a consumed token revokes the family.
 RF_EMAIL="e2e-rf-$STAMP@example.com"
 code="$(api POST "/auth/register" "" "{\"email\":\"$RF_EMAIL\",\"password\":\"$PW\",\"displayName\":\"e2e-rf\",\"ageConfirmed\":true}")"
@@ -1361,6 +1366,7 @@ code="$(api POST "/auth/refresh" "" "{\"refreshToken\":\"$RF_NEW\"}")"
 assert_status "rotated refresh revoked after reuse" "401" "$code"
 code="$(api POST "/auth/login" "" "{\"email\":\"$RF_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "fresh login recovers" "200" "$code"
+auth_cooldown
 # Export: bundle contains profile+playlists, never secrets.
 code="$(api GET "/auth/export" "$USER_TOKEN" "")"
 assert_status "export my data -> 200" "200" "$code"
@@ -1391,6 +1397,7 @@ code="$(api GET "/admin/users/$USER_ID/blocks" "$ADMIN_TOKEN" "")"
 assert_status "admin user blocks -> 200" "200" "$code"
 code="$(api GET "/admin/users/$USER_ID/blocks" "$USER_TOKEN" "")"
 assert_status "user blocks listener -> 403" "403" "$code"
+auth_cooldown
 code="$(api POST "/auth/login" "" "{\"email\":\"$WD_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "unlocked login works" "200" "$code"
 code="$(api GET "/admin/audit-events?action=USER_SET_ROLE" "$ADMIN_TOKEN" "")"
