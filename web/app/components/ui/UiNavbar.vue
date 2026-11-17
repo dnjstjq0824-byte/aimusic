@@ -1,48 +1,48 @@
 <template>
   <header
-    class="sticky top-0 z-40 border-b border-surface-border/80 bg-surface-0/80 backdrop-blur-xl transition-transform duration-200 lg:translate-y-0"
+    class="sticky top-0 z-40 border-b border-white/[0.06] bg-surface-0/70 backdrop-blur-xl transition-transform duration-200 lg:translate-y-0"
     :class="hideOnScroll ? '-translate-y-full' : ''"
   >
     <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:h-16 lg:px-8">
       <div class="flex min-w-0 items-center gap-4 lg:gap-6">
         <RouterLink to="/" class="flex items-center transition-transform active:scale-95" :aria-label="`AVIBE ${t('common.nav.home')}`">
-          <BrandLogo :size="36" />
+          <BrandLogo :size="30" tagline="" />
         </RouterLink>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden lg:flex items-center gap-1 whitespace-nowrap text-sm font-medium text-text-secondary" :aria-label="t('common.nav.mainMenu')">
+        <nav class="hidden lg:flex items-center gap-0.5 whitespace-nowrap text-sm text-text-secondary" :aria-label="t('common.nav.mainMenu')">
           <RouterLink
             to="/"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'home' ? 'text-white bg-surface-2 font-semibold' : ''"
+            class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
+            :class="routeName === 'home' ? 'text-white' : ''"
           >
             {{ t('common.nav.home') }}
           </RouterLink>
           <RouterLink
             to="/explore"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'explore' ? 'text-white bg-surface-2 font-semibold' : ''"
+            class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
+            :class="routeName === 'explore' ? 'text-white' : ''"
           >
             {{ t('common.nav.explore') }}
           </RouterLink>
           <RouterLink
             to="/playlists"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'playlists' || routeName === 'playlist-detail' ? 'text-white bg-surface-2 font-semibold' : ''"
+            class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
+            :class="routeName === 'playlists' || routeName === 'playlist-detail' ? 'text-white' : ''"
           >
             {{ t('common.nav.playlists') }}
           </RouterLink>
           <RouterLink
             to="/library"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'library' ? 'text-white bg-surface-2 font-semibold' : ''"
+            class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
+            :class="routeName === 'library' ? 'text-white' : ''"
           >
             {{ t('common.nav.library') }}
           </RouterLink>
           <RouterLink
             to="/charts"
-            class="rounded-lg px-3 py-1.5 transition-colors hover:text-white"
-            :class="routeName === 'charts' ? 'text-white bg-surface-2 font-semibold' : ''"
+            class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
+            :class="routeName === 'charts' ? 'text-white' : ''"
           >
             {{ t('common.nav.charts') }}
           </RouterLink>
@@ -61,7 +61,7 @@
             type="search"
             :placeholder="t('common.nav.searchPh')"
             :aria-label="t('common.nav.explore')"
-            class="h-9 w-full rounded-lg border border-surface-border bg-surface-1 pl-9 pr-3 text-xs text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none"
+            class="h-9 w-full rounded-full border border-white/10 bg-white/[0.05] pl-9 pr-3 text-xs text-text-primary placeholder:text-text-muted focus:border-white/25 focus:bg-white/[0.08] focus:outline-none"
           >
         </div>
       </form>
@@ -70,7 +70,7 @@
         <!-- Mobile search shortcut -->
         <RouterLink
           to="/explore"
-          class="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border bg-surface-1 text-text-primary hover:text-white"
+          class="lg:hidden flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-text-primary hover:text-white"
           :aria-label="t('common.nav.explore')"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -81,7 +81,7 @@
 
         <RouterLink
           to="/business"
-          class="hidden lg:inline-flex items-center whitespace-nowrap rounded-lg border border-brand-500/30 bg-brand-950/40 px-3 py-1.5 text-xs font-semibold text-brand-300 hover:bg-brand-950/70 hover:border-brand-500/50 transition-all"
+          class="hidden lg:inline-flex items-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-text-secondary hover:text-white transition-colors"
         >
           {{ t('common.nav.business') }}
         </RouterLink>
@@ -161,13 +161,13 @@
           <div v-else class="flex items-center gap-2">
             <RouterLink
               to="/login"
-              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-3 transition-colors border border-surface-border"
+              class="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-semibold text-text-primary hover:bg-white/[0.12] transition-colors"
             >
               {{ t('common.nav.login') }}
             </RouterLink>
             <RouterLink
               to="/signup"
-              class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
+              class="hidden sm:inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-on-brand hover:bg-brand-400 transition-colors"
             >
               {{ t('common.nav.signup') }}
             </RouterLink>
@@ -176,13 +176,13 @@
             <div class="flex items-center gap-2">
               <RouterLink
                 to="/login"
-                class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-surface-3 transition-colors border border-surface-border"
+                class="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-semibold text-text-primary hover:bg-white/[0.12] transition-colors"
               >
                 {{ t('common.nav.login') }}
               </RouterLink>
               <RouterLink
                 to="/signup"
-                class="hidden sm:inline-flex items-center rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-on-brand shadow-glow-brand hover:bg-brand-400 transition-all"
+                class="hidden sm:inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-on-brand hover:bg-brand-400 transition-colors"
               >
                 {{ t('common.nav.signup') }}
               </RouterLink>

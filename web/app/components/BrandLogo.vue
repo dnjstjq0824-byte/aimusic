@@ -7,7 +7,7 @@
       </slot>
       <span
         v-if="tagline"
-        class="mt-1 whitespace-nowrap text-caption font-semibold tracking-wider text-brand-400"
+        class="mt-1 whitespace-nowrap text-caption font-medium tracking-wider text-text-muted"
         :class="tagline === SLOGAN ? 'tracking-wide' : 'uppercase'"
       >
         {{ tagline }}

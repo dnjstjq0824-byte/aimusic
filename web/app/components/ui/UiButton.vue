@@ -49,7 +49,7 @@ withDefaults(defineProps<Props>(), {
   disabled: false,
   loading: false,
   fullWidth: false,
-  rounded: 'md',
+  rounded: 'full',
 });
 
 defineEmits<{
@@ -71,10 +71,10 @@ const roundedClasses = {
 };
 
 const variantClasses = {
-  brand: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
-  primary: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-bold shadow-glow-brand hover:shadow-glow-brand-lg border border-brand-300/40',
-  secondary: 'bg-surface-2 hover:bg-surface-3 text-text-primary border border-surface-border hover:border-surface-border-hover',
-  outline: 'bg-transparent hover:bg-surface-2 text-text-secondary border border-surface-border hover:border-surface-border-hover',
+  brand: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-semibold',
+  primary: 'bg-brand-500 hover:bg-brand-400 text-on-brand font-semibold',
+  secondary: 'bg-white/[0.06] hover:bg-white/[0.12] text-text-primary border border-white/10 hover:border-white/20',
+  outline: 'bg-transparent hover:bg-white/[0.06] text-text-primary border border-white/15 hover:border-white/30',
   ghost: 'bg-transparent hover:bg-surface-2 text-text-secondary hover:text-text-primary',
   danger: 'bg-accent-crimson/90 hover:bg-accent-crimson text-white border border-red-500/30 shadow',
   success: 'bg-success hover:brightness-110 text-on-brand font-semibold shadow',

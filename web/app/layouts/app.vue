@@ -11,7 +11,11 @@
 
     <UiFooter />
 
-    <GlobalPlayerBar @toggle-queue="queueOpen = !queueOpen" @expand="fullscreenOpen = true" />
+    <!-- v3 flow: the bar appears once something is loaded (no idle bar on
+         landing pages). Client-only: the queue restores from storage. -->
+    <ClientOnly>
+      <GlobalPlayerBar v-if="player.currentTrack" @toggle-queue="queueOpen = !queueOpen" @expand="fullscreenOpen = true" />
+    </ClientOnly>
 
     <MobileTabBar />
 
@@ -35,6 +39,7 @@ import MobileTabBar from '@/components/ui/MobileTabBar.vue';
 import QueueDrawer from '@/components/player/QueueDrawer.vue';
 import FullscreenPlayer from '@/components/player/FullscreenPlayer.vue';
 import { usePublicSeo } from '@/composables/usePublicSeo';
+import { usePlayerStore } from '@/stores/playerStore';
 import { stripLocalePrefix } from '@/utils/seo';
 
 // WI-S2 fallback head for public pages without page-level SEO (static
@@ -49,6 +54,7 @@ usePublicSeo({
   locale,
 });
 
+const player = usePlayerStore();
 const queueOpen = ref(false);
 const fullscreenOpen = ref(false);
 </script>
