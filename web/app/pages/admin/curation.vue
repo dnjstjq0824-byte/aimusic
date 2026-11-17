@@ -151,7 +151,7 @@
           </div>
           <div>
             <span class="text-text-secondary text-caption block">{{ t('admin.cu.stNet') }}</span>
-            <span class="font-black text-brand-400 text-sm">{{ t('admin.cu.krw', { n: lastSettlement.netAmountKrw.toLocaleString() }) }}</span>
+            <span class="font-semibold text-brand-400 text-sm">{{ t('admin.cu.krw', { n: lastSettlement.netAmountKrw.toLocaleString() }) }}</span>
           </div>
         </div>
         <div class="flex justify-end pt-2 border-t border-surface-border">

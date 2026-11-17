@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto max-w-2xl">
     <div class="mb-8 text-center">
-      <h1 class="font-display text-2xl font-black text-white tracking-tight">{{ t('auth.signup.title') }}</h1>
+      <h1 class="type-display text-3xl text-white sm:text-4xl">{{ t('auth.signup.title') }}</h1>
       <p class="text-xs text-text-secondary mt-2">{{ t('auth.signup.subtitle') }}</p>
     </div>
 

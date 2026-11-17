@@ -3,7 +3,7 @@
     <img :src="logoUrl" :width="size" :height="size" :alt="t('common.brand.logoAlt')" class="rounded-lg" />
     <span v-if="wordmark" class="flex flex-col leading-none">
       <slot>
-        <span class="font-extrabold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>
+        <span class="font-semibold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>
       </slot>
       <span
         v-if="tagline"

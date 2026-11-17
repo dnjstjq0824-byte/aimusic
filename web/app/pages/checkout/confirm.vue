@@ -7,7 +7,7 @@
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
       </div>
-      <h1 class="text-xl font-black text-white">{{ t('checkout.cfApproving') }}</h1>
+      <h1 class="text-xl font-semibold text-white">{{ t('checkout.cfApproving') }}</h1>
       <p class="text-xs text-text-secondary">{{ t('checkout.cfDontClose') }}</p>
     </div>
 

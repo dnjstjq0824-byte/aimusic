@@ -2,8 +2,8 @@
   <div class="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center text-center px-4">
     <BrandLogo :size="40" />
     <div class="relative my-6" aria-hidden="true">
-      <div class="text-8xl font-black text-surface-2 tracking-tighter select-none">404</div>
-      <div class="absolute inset-0 flex items-center justify-center text-2xl font-black text-brand-500">
+      <div class="text-8xl font-semibold text-surface-2 tracking-tighter select-none">404</div>
+      <div class="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-brand-500">
         NOT FOUND
       </div>
     </div>

@@ -10,7 +10,7 @@
             {{ playlist.ownerName }} · {{ t('seo.embedTrackCount', { count: tracks.length }) }}
           </p>
         </div>
-        <span class="text-caption font-black tracking-tight text-text-muted">AVIBE</span>
+        <span class="text-caption font-semibold tracking-tight text-text-muted">AVIBE</span>
       </div>
       <ol class="min-h-0 flex-1 space-y-1 overflow-y-auto">
         <li

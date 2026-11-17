@@ -4,7 +4,7 @@
       <UiBadge variant="brand" size="sm" dot>
         {{ t('business.crSoon') }}
       </UiBadge>
-      <h1 class="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
+      <h1 class="font-display mt-4 text-4xl font-medium leading-tight tracking-[-0.03em] text-white sm:text-5xl">
         {{ t('business.crHeroTitle') }}
       </h1>
       <p class="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-text-secondary sm:text-base">
@@ -34,7 +34,7 @@
           </UiButton>
         </form>
         <div v-else class="space-y-2 py-4 text-center">
-          <h2 class="text-lg font-black text-white">{{ t('business.crDoneT') }}</h2>
+          <h2 class="text-lg font-semibold text-white">{{ t('business.crDoneT') }}</h2>
           <p class="text-xs leading-relaxed text-text-secondary">{{ t('business.crDoneD') }}</p>
         </div>
       </UiCard>

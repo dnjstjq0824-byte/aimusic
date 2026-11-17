@@ -23,8 +23,11 @@
     <div v-else-if="!error && track" class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <!-- Main Column -->
       <section class="space-y-6 min-w-0">
-        <UiCard class="relative overflow-hidden">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        <UiCard class="relative isolate overflow-hidden">
+          <!-- v3 flow: blurred cover light behind the track hero. -->
+          <img :src="coverFor(track.id)" alt="" aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-30 blur-3xl">
+          <div class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-surface-0/40 to-surface-0/80" aria-hidden="true" />
+          <div class="relative flex flex-col sm:flex-row sm:items-center gap-5">
             <div class="relative mx-auto shrink-0 sm:mx-0">
               <UiCoverArt :seed="track.id" :title="track.title" size="xl" rounded="xl" :verified="track.status === 'READY'" />
               <button
@@ -51,7 +54,7 @@
                 </UiBadge>
               </div>
 
-              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight break-words">
+              <h1 class="font-display mt-2 text-2xl sm:text-3xl font-medium text-white tracking-[-0.03em] break-words">
                 {{ track.title }}
               </h1>
               <p v-if="track.creatorName" class="mt-1 flex items-center gap-1.5 text-sm text-text-primary">
@@ -129,7 +132,7 @@
             <div
               v-for="(peak, idx) in waveformPeaks"
               :key="idx"
-              class="waveform-bar min-w-[2px] flex-1 rounded-t bg-gradient-to-t from-brand-600 to-amber-400"
+              class="waveform-bar min-w-[2px] flex-1 rounded-t bg-gradient-to-t from-brand-600/70 to-brand-300"
               :style="{ height: `${Math.max(10, Math.round(peak * 100))}%` }"
             />
           </div>
@@ -371,7 +374,7 @@ import type { Track, TrackPage, CertificateView, Playlist } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
-import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import UiCoverArt, { coverFor } from '@/components/ui/UiCoverArt.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';

@@ -2,7 +2,7 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="font-display text-2xl font-black text-white sm:text-3xl">{{ heading }}</h1>
+      <h1 class="font-display text-2xl font-medium text-white sm:text-3xl">{{ heading }}</h1>
       <p class="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">{{ description }}</p>
       <p class="mt-1 text-xs text-text-muted">{{ t('seo.landingCount', { count: fmt.number(count) }) }}</p>
     </div>

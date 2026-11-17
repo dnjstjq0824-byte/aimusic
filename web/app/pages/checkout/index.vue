@@ -33,7 +33,7 @@
           </div>
           <div class="flex justify-between border-t border-surface-border pt-2.5">
             <dt class="font-bold text-white">{{ t('checkout.fAmount') }}</dt>
-            <dd class="text-lg font-black text-brand-400">{{ fmt.currencyKRW(plan.amountKrw) }}</dd>
+            <dd class="text-lg font-semibold text-brand-400">{{ fmt.currencyKRW(plan.amountKrw) }}</dd>
           </div>
         </dl>
       </UiCard>

@@ -1,6 +1,6 @@
 <template>
-  <div class="flex items-center gap-3 rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-surface-border hover:bg-surface-1">
-    <span v-if="rank != null" class="w-6 shrink-0 text-center font-mono text-sm font-black text-text-muted">
+  <div class="flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/[0.04]">
+    <span v-if="rank != null" class="w-6 shrink-0 text-center font-mono text-sm text-text-muted">
       {{ rank }}
     </span>
     <button
@@ -20,7 +20,7 @@
     <div class="min-w-0 flex-1">
       <RouterLink
         :to="localePath({ name: 'track-detail', params: { id: detailParam(track) } })"
-        class="block truncate text-sm font-bold text-white transition-colors hover:text-brand-400"
+        class="block truncate text-sm font-medium text-white transition-colors hover:text-brand-300"
       >
         {{ track.title }}
       </RouterLink>

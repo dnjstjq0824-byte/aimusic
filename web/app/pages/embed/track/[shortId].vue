@@ -25,7 +25,7 @@
           </a>
         </div>
       </div>
-      <span class="text-caption font-black tracking-tight text-text-muted">AVIBE</span>
+      <span class="text-caption font-semibold tracking-tight text-text-muted">AVIBE</span>
     </template>
     <p v-else class="w-full text-center text-xs text-text-muted">{{ t('seo.embedMissing') }}</p>
   </div>

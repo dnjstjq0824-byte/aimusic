@@ -134,27 +134,7 @@
     </section>
 
     <!-- Get started: photo-led use-case cards. -->
-    <section aria-labelledby="start-h" class="!mt-16 sm:!mt-20">
-      <h2 id="start-h" class="mb-5 text-xl font-medium text-white sm:text-2xl">{{ t('home.startTitle') }}</h2>
-      <div class="scrollbar-none -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:pb-0">
-        <RouterLink
-          v-for="s in starters"
-          :key="s.key"
-          :to="localePath({ path: '/explore', query: { mood: s.mood } })"
-          class="group relative aspect-[4/5] w-52 shrink-0 snap-start overflow-hidden rounded-2xl bg-surface-2 sm:w-60 lg:w-auto"
-        >
-          <img
-            :src="s.img"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
-          <span class="absolute inset-x-4 bottom-4 text-sm font-medium leading-snug text-white sm:text-base">{{ t(s.key) }}</span>
-        </RouterLink>
-      </div>
-    </section>
+    <StarterRail class="!mt-16 sm:!mt-20" />
 
     <!-- Feature 1: Listen (live tracks). -->
     <section id="listen-now" class="grid scroll-mt-24 items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16" aria-labelledby="feat-listen-h">
@@ -379,6 +359,7 @@ import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import TrackRow from '@/components/TrackRow.vue';
+import StarterRail from '@/components/landing/StarterRail.vue';
 import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 import { detailParam } from '@/utils/seo';
 
@@ -398,16 +379,6 @@ const personas = [
   { key: 'home.personaVideo', to: { path: '/explore', query: { mood: 'cinematic' } }, icon: 'M3 7h12v10H3zM15 10l6-3v10l-6-3' },
   { key: 'home.personaStore', to: '/business', icon: 'M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6' },
   { key: 'home.personaArtist', to: '/for-creators', icon: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3' },
-];
-
-// "Get started" photo cards -> explore by mood (licensed stock, CREDITS.md).
-const starters = [
-  { key: 'home.startStore', mood: 'cafe', img: '/images/stock/start-store.webp' },
-  { key: 'home.startVideo', mood: 'cinematic', img: '/images/stock/start-video.webp' },
-  { key: 'home.startFocus', mood: 'focus', img: '/images/stock/start-focus.webp' },
-  { key: 'home.startWorkout', mood: 'workout', img: '/images/stock/start-workout.webp' },
-  { key: 'home.startDrive', mood: 'drive', img: '/images/stock/start-drive.webp' },
-  { key: 'home.startRest', mood: 'sleep', img: '/images/stock/start-rest.webp' },
 ];
 
 const creatorItems = [

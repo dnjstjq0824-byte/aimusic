@@ -3,8 +3,8 @@
     <div class="mb-6 flex flex-col items-center gap-3 text-center">
       <BrandLogo :size="44" />
       <div>
-        <h1 class="font-display text-2xl font-black text-white tracking-tight">{{ t('auth.reset.title') }}</h1>
-        <p class="text-xs text-text-secondary mt-1">{{ t('auth.reset.subtitle') }}</p>
+        <h1 class="type-display text-3xl text-white sm:text-4xl">{{ t('auth.reset.title') }}</h1>
+        <p class="mt-2 text-sm text-text-secondary">{{ t('auth.reset.subtitle') }}</p>
       </div>
     </div>
 

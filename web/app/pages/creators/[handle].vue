@@ -19,7 +19,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
           <UiAvatar :name="profile.displayName" size="xl" />
           <div class="min-w-0 flex-1">
-            <h1 class="font-display truncate text-2xl font-black text-white">{{ profile.displayName }}</h1>
+            <h1 class="font-display truncate text-2xl font-medium text-white">{{ profile.displayName }}</h1>
             <p class="mt-1 text-xs text-text-secondary">
               @{{ profile.handle }} · {{ t('seo.creatorStats', { tracks: fmt.number(profile.trackCount), plays: fmt.number(profile.totalPlays) }) }}
             </p>

@@ -21,7 +21,7 @@
          default, so the operational screen below stays byte-identical. -->
     <UiCard v-if="genV2" class="space-y-4 p-5">
       <div>
-        <h2 class="font-display text-lg font-bold tracking-tight text-white">{{ t('studio.create.v2.panelTitle') }}</h2>
+        <h2 class="font-display text-lg font-medium tracking-[-0.03em] text-white">{{ t('studio.create.v2.panelTitle') }}</h2>
         <p class="mt-1 text-xs leading-relaxed text-text-secondary">{{ t('studio.create.v2.panelDesc') }}</p>
       </div>
       <PromptBox v-model="v2Prompt" />

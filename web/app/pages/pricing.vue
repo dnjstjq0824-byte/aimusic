@@ -34,7 +34,7 @@
         <UiCard class="flex flex-col">
           <div class="text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('pricing.freeName') }}</div>
           <div class="mt-2 flex items-baseline gap-1">
-            <span class="text-3xl font-black text-white">{{ fmt.currencyKRW(0) }}</span>
+            <span class="text-3xl font-semibold text-white">{{ fmt.currencyKRW(0) }}</span>
           </div>
           <p class="mt-2 text-xs leading-relaxed text-text-secondary">{{ t('pricing.freeDesc') }}</p>
           <ul class="mt-4 space-y-2 text-xs text-text-primary">
@@ -62,7 +62,7 @@
           </div>
           <div class="mt-2 text-lg font-bold text-white">{{ plan.nameKo }}</div>
           <div class="mt-1 flex items-baseline gap-1">
-            <span class="text-3xl font-black text-white">{{ fmt.currencyKRW(plan.amountKrw) }}</span>
+            <span class="text-3xl font-semibold text-white">{{ fmt.currencyKRW(plan.amountKrw) }}</span>
             <span class="text-xs text-text-muted">{{ t('pricing.perMonth') }}</span>
           </div>
           <ul class="mt-4 space-y-2 text-xs text-text-primary">
@@ -87,7 +87,7 @@
           <UiCard class="flex flex-col">
             <div class="text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('pricing.creatorFreeName') }}</div>
             <div class="mt-2 flex items-baseline gap-1">
-              <span class="text-3xl font-black text-white">{{ fmt.currencyKRW(0) }}</span>
+              <span class="text-3xl font-semibold text-white">{{ fmt.currencyKRW(0) }}</span>
             </div>
             <p class="mt-2 text-xs leading-relaxed text-text-secondary">{{ t('pricing.creatorFreeDesc') }}</p>
             <div class="mt-6 flex-1" />
@@ -107,7 +107,7 @@
             </div>
             <div class="mt-2 text-lg font-bold text-white">{{ plan.nameKo }}</div>
             <div class="mt-1 flex items-baseline gap-1">
-              <span class="text-3xl font-black text-white">{{ fmt.currencyKRW(plan.amountKrw) }}</span>
+              <span class="text-3xl font-semibold text-white">{{ fmt.currencyKRW(plan.amountKrw) }}</span>
               <span class="text-xs text-text-muted">{{ t('pricing.perMonth') }}</span>
             </div>
             <ul class="mt-4 space-y-2 text-xs text-text-primary">
@@ -143,7 +143,7 @@
 
       <!-- Comparison (listener + creator tabs) -->
       <section v-if="activeTab !== 'business'" :aria-label="t('pricing.cmpTitle')" class="overflow-x-auto">
-        <h2 class="font-display mb-3 text-xl font-bold tracking-tight text-white">{{ t('pricing.cmpTitle') }}</h2>
+        <h2 class="font-display mb-3 text-xl font-medium tracking-[-0.03em] text-white">{{ t('pricing.cmpTitle') }}</h2>
         <table class="w-full min-w-[480px] border-collapse text-xs">
           <thead>
             <tr class="border-b border-surface-border text-left text-text-secondary">
@@ -166,7 +166,7 @@
 
       <!-- FAQ -->
       <section :aria-label="t('pricing.faqTitle')">
-        <h2 class="font-display mb-3 text-xl font-bold tracking-tight text-white">{{ t('pricing.faqTitle') }}</h2>
+        <h2 class="font-display mb-3 text-xl font-medium tracking-[-0.03em] text-white">{{ t('pricing.faqTitle') }}</h2>
         <div class="space-y-2">
           <details v-for="item in faqItems" :key="item.qKey" class="group rounded-xl border border-surface-border bg-surface-1 px-4 py-3">
             <summary class="cursor-pointer text-sm font-bold text-white">{{ t(item.qKey) }}</summary>

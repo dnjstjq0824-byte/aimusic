@@ -2,7 +2,7 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="font-display text-2xl font-black text-white sm:text-3xl">{{ t('seo.guideHubTitle') }}</h1>
+      <h1 class="font-display text-2xl font-medium text-white sm:text-3xl">{{ t('seo.guideHubTitle') }}</h1>
       <p class="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">{{ t('seo.guideHubDescription') }}</p>
     </div>
     <div class="grid gap-4 md:grid-cols-3">

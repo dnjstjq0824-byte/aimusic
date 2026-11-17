@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-12">
     <section class="mx-auto max-w-3xl px-4 pt-4 text-center sm:pt-8">
-      <h1 class="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
+      <h1 class="font-display text-4xl font-medium leading-tight tracking-[-0.03em] text-white sm:text-5xl">
         {{ t('business.heroTitle') }}
       </h1>
       <p class="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-text-secondary sm:text-base">
@@ -25,7 +25,7 @@
     </section>
 
     <section id="samples" :aria-label="t('business.useTitle')" class="scroll-mt-24 space-y-4">
-      <h2 class="font-display text-xl font-bold tracking-tight text-white">{{ t('business.useTitle') }}</h2>
+      <h2 class="font-display text-xl font-medium tracking-[-0.03em] text-white">{{ t('business.useTitle') }}</h2>
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <UiCard v-for="pl in samples" :key="pl.id" class="group">
           <CoverMosaic :seeds="sampleSeeds[pl.id] ?? [pl.id]" :title="pl.title" size="md" />
@@ -38,10 +38,10 @@
     </section>
 
     <section :aria-label="t('business.stepsTitle')">
-      <h2 class="font-display mb-4 text-xl font-bold tracking-tight text-white">{{ t('business.stepsTitle') }}</h2>
+      <h2 class="font-display mb-4 text-xl font-medium tracking-[-0.03em] text-white">{{ t('business.stepsTitle') }}</h2>
       <ol class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <li v-for="(s, i) in steps" :key="s.titleKey" class="rounded-2xl border border-surface-border bg-surface-1 p-5">
-          <span class="font-mono text-2xl font-black text-brand-500">{{ i + 1 }}</span>
+          <span class="font-mono text-2xl font-semibold text-brand-500">{{ i + 1 }}</span>
           <h3 class="mt-2 text-sm font-bold text-white">{{ t(s.titleKey) }}</h3>
           <p class="mt-1 text-xs text-text-secondary">{{ t(s.descKey) }}</p>
         </li>
@@ -49,7 +49,7 @@
     </section>
 
     <section :aria-label="t('business.faqTitle')">
-      <h2 class="font-display mb-3 text-xl font-bold tracking-tight text-white">{{ t('business.faqTitle') }}</h2>
+      <h2 class="font-display mb-3 text-xl font-medium tracking-[-0.03em] text-white">{{ t('business.faqTitle') }}</h2>
       <div class="space-y-2">
         <details v-for="item in faqItems" :key="item.qKey" class="rounded-xl border border-surface-border bg-surface-1 px-4 py-3">
           <summary class="cursor-pointer text-sm font-bold text-white">{{ t(item.qKey) }}</summary>
@@ -60,7 +60,7 @@
 
     <section id="inquiry" aria-label="t('business.inqTitle')" class="scroll-mt-24">
       <UiCard class="mx-auto max-w-2xl p-6">
-        <h2 class="text-xl font-black text-white">{{ t('business.inqTitle') }}</h2>
+        <h2 class="text-xl font-semibold text-white">{{ t('business.inqTitle') }}</h2>
         <p class="mt-1 text-xs text-text-secondary">{{ t('business.inqSub') }}</p>
         <div class="mt-4">
           <InquiryForm />

@@ -19,7 +19,7 @@
         <div class="min-w-0 flex-1">
           <RouterLink
             :to="localePath({ name: 'track-detail', params: { id: detailParam(track) } })"
-            class="block truncate text-sm font-bold text-white transition-colors hover:text-brand-400"
+            class="block truncate text-sm font-medium text-white transition-colors hover:text-brand-300"
           >
             {{ track.title }}
           </RouterLink>

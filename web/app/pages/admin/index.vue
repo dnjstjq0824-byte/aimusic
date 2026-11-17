@@ -23,26 +23,26 @@
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.users') }}</div>
-          <div class="text-2xl font-black text-white">{{ t('admin.ov.usersValue', { n: overview.users.total.toLocaleString() }) }}</div>
+          <div class="text-2xl font-semibold text-white">{{ t('admin.ov.usersValue', { n: overview.users.total.toLocaleString() }) }}</div>
           <div class="text-caption text-text-secondary">
             {{ t('admin.ov.usersBreak', { u: overview.users.users.toLocaleString(), p: overview.users.partners.toLocaleString(), a: overview.users.admins.toLocaleString() }) }}
           </div>
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.tracks') }}</div>
-          <div class="text-2xl font-black text-success">{{ t('admin.ov.tracksValue', { n: overview.tracks.ready.toLocaleString() }) }}</div>
+          <div class="text-2xl font-semibold text-success">{{ t('admin.ov.tracksValue', { n: overview.tracks.ready.toLocaleString() }) }}</div>
           <div class="text-caption text-text-secondary">
             {{ t('admin.ov.tracksBreak', { p: overview.tracks.pendingGate.toLocaleString(), d: overview.tracks.takenDown.toLocaleString() }) }}
           </div>
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.plays') }}</div>
-          <div class="text-2xl font-black text-white">{{ t('admin.ov.playsValue', { n: overview.plays.last24h.toLocaleString() }) }}</div>
+          <div class="text-2xl font-semibold text-white">{{ t('admin.ov.playsValue', { n: overview.plays.last24h.toLocaleString() }) }}</div>
           <div class="text-caption text-text-secondary">{{ t('admin.ov.playsTotal', { n: overview.plays.total.toLocaleString() }) }}</div>
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.settles') }}</div>
-          <div class="text-2xl font-black text-brand-300">{{ t('admin.ov.settlesValue', { n: overview.settlementsPending.count.toLocaleString() }) }}</div>
+          <div class="text-2xl font-semibold text-brand-300">{{ t('admin.ov.settlesValue', { n: overview.settlementsPending.count.toLocaleString() }) }}</div>
           <div class="text-caption text-text-secondary">{{ t('admin.ov.settlesNet', { n: overview.settlementsPending.netKrw.toLocaleString() }) }}</div>
         </UiCard>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <UiCard class="space-y-1">
     <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ title }}</div>
-    <div class="text-2xl font-black tabular-nums" :class="valueClass">{{ value }}</div>
+    <div class="text-2xl font-semibold tabular-nums" :class="valueClass">{{ value }}</div>
     <div v-if="sub" class="text-caption text-text-secondary">{{ sub }}</div>
   </UiCard>
 </template>

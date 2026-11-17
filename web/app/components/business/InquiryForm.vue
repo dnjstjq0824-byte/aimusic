@@ -32,7 +32,7 @@
     </UiButton>
   </form>
   <div v-else class="space-y-2 py-6 text-center">
-    <h3 class="text-lg font-black text-white">{{ t('business.successT') }}</h3>
+    <h3 class="text-lg font-semibold text-white">{{ t('business.successT') }}</h3>
     <p class="text-xs leading-relaxed text-text-secondary">{{ t('business.successD') }}</p>
   </div>
 </template>
