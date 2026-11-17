@@ -127,6 +127,8 @@ services:
     environment:
       NUXT_API_ORIGIN: http://api:8080
       NUXT_INDEXNOW_KEY: ${INDEXNOW_KEY:-}
+      # nuxt-og-image URL signing (>=32 chars, generated once on the VPS .env).
+      NUXT_APP_SECRET: ${NUXT_APP_SECRET:?NUXT_APP_SECRET required}
       NODE_OPTIONS: --max-old-space-size=192
     depends_on:
       api:
