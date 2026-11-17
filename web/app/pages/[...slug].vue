@@ -35,4 +35,10 @@ const { t } = useI18n();
 
 const route = useRoute();
 const attemptedPath = computed(() => route.fullPath);
+
+// Real 404 status on SSR (no soft-404 for crawlers or monitors).
+if (import.meta.server) {
+  const event = useRequestEvent();
+  if (event) setResponseStatus(event, 404);
+}
 </script>

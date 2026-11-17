@@ -11,6 +11,7 @@ secrets/
 # Docker volumes / local data
 /volumes/
 data/
+!web/app/data/
 docker-data/
 *.volume
 
@@ -105,3 +106,6 @@ docs/handoff/20261114/evidence/r6/*.png
 docs/handoff/20261114/evidence/r7/*.png
 docs/handoff/20261114/evidence/r8/*.png
 docs/handoff/20261114/evidence/r13/*.png
+
+# Worker assets extracted from the web image at deploy time
+deploy/web-public/
