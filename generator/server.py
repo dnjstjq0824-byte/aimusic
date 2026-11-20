@@ -24,27 +24,40 @@ v2 forces watermark:true (a v2 request with watermark:false is rejected).
 Large payloads: when delivery.uploadUrl is set, the server PUTs the WAV
 there and answers with audioUrl instead of inline base64.
 
-Without model weights installed, /generate returns 503 with a clear message.
-To go live, install ACE-Step + weights on the GPU machine and implement
-infer() below following the README of the ACE-Step release you install.
+Model: ACE-Step 1.5 (https://github.com/ACE-Step/ACE-Step-1.5, code MIT).
+Set ACESTEP_ROOT to an installed checkout (its `checkpoints/` holds the
+weights; first run downloads them) and run this server with that checkout's
+venv. Without it, /generate returns 503 with a clear message.
+Measured 2026-11-21 on Runpod RTX PRO 4000 (24GB): turbo DiT, warm,
+60s song ~2.0s, 180s song ~4.8s (see docs/generation/poc-runpod-20261121.md).
+
+Auth: when GENERATOR_API_TOKEN is set, every request except /healthz must send
+`Authorization: Bearer <token>` (the Runpod proxy URL is public).
 """
 
 from __future__ import annotations
 
 import base64
+import hmac
 import io
 import os
+import tempfile
+import threading
 import urllib.request
 import wave
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="avibe-generator")
 
-MODEL_ID = os.environ.get("GENERATOR_MODEL_ID", "ace-step-v1")
+MODEL_ID = os.environ.get("GENERATOR_MODEL_ID", "ace-step-v1.5-turbo")
 MODEL_VERSION = os.environ.get("GENERATOR_MODEL_VERSION", "")
 WEIGHTS_HASH = os.environ.get("GENERATOR_WEIGHTS_HASH", "")
+API_TOKEN = os.environ.get("GENERATOR_API_TOKEN", "")
+ACESTEP_ROOT = os.environ.get("ACESTEP_ROOT", "")
+ACESTEP_CONFIG = os.environ.get("ACESTEP_CONFIG", "acestep-v15-turbo")
+DEFAULT_STEPS = int(os.environ.get("ACESTEP_INFERENCE_STEPS", "8"))  # turbo default
 MAX_PROMPT_CHARS = 2000
 MAX_LYRICS_CHARS = 10000
 MAX_DURATION_SEC = 600
@@ -86,8 +99,10 @@ class GenerateResponse(BaseModel):
     contract_version: int | None = Field(default=None, alias="contractVersion")
     audio_base64: str | None = Field(default=None, alias="audioBase64")
     audio_url: str | None = Field(default=None, alias="audioUrl")
-    mime_type: str = Field(serialization_alias="mimeType")
-    duration_ms: int = Field(serialization_alias="durationMs")
+    # alias (not serialization_alias): the handlers build this model with the
+    # camelCase names, which failed validation before 2026-11-21.
+    mime_type: str = Field(alias="mimeType")
+    duration_ms: int = Field(alias="durationMs")
     model_version: str | None = Field(default=None, alias="modelVersion")
     seed: int | None = None
     weights_hash: str | None = Field(default=None, alias="weightsHash")
@@ -97,36 +112,122 @@ class GenerateResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+@app.middleware("http")
+async def require_token(request: Request, call_next):
+    """Bearer-token gate (fail closed once GENERATOR_API_TOKEN is set)."""
+    if API_TOKEN and request.url.path != "/healthz":
+        sent = request.headers.get("authorization", "")
+        expected = f"Bearer {API_TOKEN}"
+        if not hmac.compare_digest(sent.encode(), expected.encode()):
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(status_code=401, content={"detail": "unauthorized"})
+    return await call_next(request)
+
+
 def model_available() -> bool:
-    """True when the optional ACE-Step stack is importable.
+    """True when an ACE-Step 1.5 checkout with weights is configured and importable.
 
     Kept as a function (not import-time) so /healthz can report honestly.
     """
+    if not ACESTEP_ROOT or not os.path.isdir(os.path.join(ACESTEP_ROOT, "checkpoints")):
+        return False
     try:
         import acestep  # noqa: F401  pylint: disable=unused-import
     except ImportError:
-        return os.environ.get("GENERATOR_MODEL_DIR", "") != "" and os.path.isdir(
-            os.environ["GENERATOR_MODEL_DIR"]
-        )
+        return False
     return True
 
 
+_handlers: tuple | None = None
+_init_lock = threading.Lock()
+_gen_lock = threading.Lock()  # one generation at a time per GPU
+
+
+def _get_handlers() -> tuple:
+    """Load the ACE-Step DiT once (lazy, so /healthz stays fast)."""
+    global _handlers  # noqa: PLW0603
+    with _init_lock:
+        if _handlers is not None:
+            return _handlers
+        if not model_available():
+            raise NotImplementedError(
+                "ACE-Step 1.5 is not installed here: set ACESTEP_ROOT to a checkout with "
+                "checkpoints/ and run with its venv (see generator/README.md)."
+            )
+        from acestep.handler import AceStepHandler  # pylint: disable=import-outside-toplevel
+        from acestep.llm_inference import LLMHandler  # pylint: disable=import-outside-toplevel
+
+        try:
+            import flash_attn  # noqa: F401  pylint: disable=unused-import,import-outside-toplevel
+
+            use_flash = True
+        except ImportError:
+            use_flash = False
+        dit = AceStepHandler()
+        status, ok = dit.initialize_service(
+            project_root=ACESTEP_ROOT,
+            config_path=ACESTEP_CONFIG,
+            device="auto",
+            use_flash_attention=use_flash,
+            compile_model=False,
+            offload_to_cpu=False,
+            offload_dit_to_cpu=False,
+            quantization=None,
+        )
+        if not ok:
+            raise RuntimeError(f"ACE-Step DiT init failed: {status}")
+        # The 5Hz LM (thinking / CoT metadata) is not loaded: text2music runs
+        # DiT-only. Enabling it is a later WI with its own measurement.
+        _handlers = (dit, LLMHandler())
+        return _handlers
+
+
 def infer(prompt: str, lyrics: str, model: str, params: dict) -> bytes:
-    """Run the music model and return WAV bytes.
+    """Run ACE-Step 1.5 text2music and return WAV bytes.
 
-    SETUP-ONLY STUB: implement on the GPU machine. Suggested shape:
-
-        from acestep import AceStepPipeline  # API of your installed release
-        pipe = get_cached_pipeline(model, os.environ["GENERATOR_MODEL_DIR"])
-        wav_bytes = pipe.generate(prompt, lyrics=lyrics, **params)
-
-    Match the exact call signature to the ACE-Step README of the version you
-    install; do not guess it here.
+    params: optional "durationSec" (else the model picks), "seed" (else random),
+    "inferenceSteps" (default ACESTEP_INFERENCE_STEPS). `model` is recorded by
+    the caller; the loaded config is ACESTEP_CONFIG.
     """
-    raise NotImplementedError(
-        "ACE-Step weights are not installed on this machine. Set GENERATOR_MODEL_DIR "
-        "and implement generator/server.py infer() on the GPU host (see generator/README.md)."
+    dit, llm = _get_handlers()
+    from acestep.inference import (  # pylint: disable=import-outside-toplevel
+        GenerationConfig,
+        GenerationParams,
+        generate_music,
     )
+
+    seed = params.get("seed")
+    duration = params.get("durationSec")
+    text = (lyrics or "").strip()
+    gen_params = GenerationParams(
+        task_type="text2music",
+        caption=prompt,
+        lyrics=text or "[Instrumental]",
+        instrumental=not text,
+        duration=float(duration) if duration else -1,
+        inference_steps=int(params.get("inferenceSteps") or DEFAULT_STEPS),
+        seed=int(seed) if seed is not None else -1,
+        thinking=False,
+        use_cot_metas=False,
+        use_cot_caption=False,
+        use_cot_language=False,
+    )
+    gen_config = GenerationConfig(
+        batch_size=1,
+        use_random_seed=seed is None,
+        seeds=[int(seed)] if seed is not None else None,
+        audio_format="wav",
+    )
+    with _gen_lock, tempfile.TemporaryDirectory() as tmp:
+        result = generate_music(dit, llm, gen_params, gen_config, save_dir=tmp)
+        if not result.success or not result.audios:
+            raise RuntimeError(result.error or result.status_message or "ACE-Step generation failed")
+        path = result.audios[0].get("path") or ""
+        if not path or not os.path.isfile(path):
+            raise RuntimeError("ACE-Step returned no audio file")
+        with open(path, "rb") as fh:
+            return fh.read()
 
 
 def insert_watermark(raw_wav: bytes, job_id: str) -> tuple[bytes, str]:
@@ -194,13 +295,20 @@ def healthz() -> dict:
     }
 
 
-@app.post("/generate")
+@app.post("/generate", response_model_exclude_none=True)
 def generate(req: GenerateRequest) -> GenerateResponse:
     version = validate_request(req)
+    params = dict(req.params or {})
+    if req.duration_sec is not None:
+        params["durationSec"] = req.duration_sec
+    if req.seed is not None:
+        params["seed"] = req.seed
     try:
-        audio = infer(req.prompt, req.lyrics, req.model or MODEL_ID, req.params or {})
+        audio = infer(req.prompt, req.lyrics, req.model or MODEL_ID, params)
     except NotImplementedError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     if version == 1:
         return GenerateResponse(
             audioBase64=base64.b64encode(audio).decode("ascii"),

@@ -1,7 +1,10 @@
-# AVIBE generation backend (WI-03, setup-only)
+# AVIBE generation backend (ACE-Step 1.5)
 
 HTTP server the Go worker calls when `GENERATION_BACKEND_URL` is set.
-Runs on a GPU machine (your home PC). Nothing here runs a model by itself.
+It runs on a GPU machine. `infer()` drives ACE-Step 1.5 (turbo DiT). It was
+verified on a Runpod RTX PRO 4000 on 2026-11-21; the results are in
+`docs/generation/poc-runpod-20261121.md`. The watermark is still a stub, so
+v2 requests stay at 503.
 
 ## Contract
 
@@ -14,22 +17,32 @@ Runs on a GPU machine (your home PC). Nothing here runs a model by itself.
   payloads → `{"contractVersion":2,"audioBase64"|"audioUrl","mimeType",
   "durationMs","modelVersion","seed","weightsHash","safety","watermarkId"}`
   with `safety={"passed":bool,"checks":[...]}`.
-- Without weights: `503` with a clear message (job fails, never fake audio).
-  v2 without a watermark library is likewise `503` (fail closed).
-- New env: `GENERATOR_MODEL_VERSION`, `GENERATOR_WEIGHTS_HASH` (echoed back
-  on v2 replies; empty until the WI-G2 PoC pins a weight set).
+- Without the model: `503` with a clear message (the job fails; the server
+  never returns fake audio). v2 without a watermark library is also `503`
+  (fail closed).
+- Env: `GENERATOR_MODEL_VERSION` and `GENERATOR_WEIGHTS_HASH` are echoed back
+  on v2 replies.
+- Model env: `ACESTEP_ROOT` is the ACE-Step 1.5 checkout; its `checkpoints/`
+  holds the weights. `ACESTEP_CONFIG` defaults to `acestep-v15-turbo`, and
+  `ACESTEP_INFERENCE_STEPS` defaults to 8. `params` accepts `durationSec`,
+  `seed` and `inferenceSteps`.
+- Auth: when `GENERATOR_API_TOKEN` is set, every route except `/healthz`
+  requires `Authorization: Bearer <token>`; anything else gets a 401. Set it
+  whenever the port can be reached from outside, because a Runpod proxy URL is
+  public. The Go worker does not send the token yet (WI-N12).
 
 ## Bring-up on the GPU machine
 
+ACE-Step 1.5's code and weights are both MIT-licensed. Install on a persistent
+disk: on Runpod that is `/workspace`, because the container disk is wiped
+when the Pod stops.
+
 ```sh
-cd generator
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-# then install torch + CUDA + the acestep release you chose,
-# set GENERATOR_MODEL_DIR to the weights, and implement infer() in server.py
-# following that release's README.
-uvicorn server:app --host 0.0.0.0 --port 8000
+git clone --depth 1 https://github.com/ACE-Step/ACE-Step-1.5.git
+cd ACE-Step-1.5 && pip install uv && uv sync     # weights download on first run
+# Run this server with that venv (it already has fastapi and uvicorn):
+GENERATOR_API_TOKEN=<secret> ACESTEP_ROOT=$PWD \
+  .venv/bin/python -m uvicorn server:app --app-dir /path/to/generator --host 127.0.0.1 --port 8000
 ```
 
 Point the backend at it:
@@ -39,12 +52,15 @@ GENERATION_BACKEND_URL=http://<gpu-host>:8000
 GENERATION_TIMEOUT_SECONDS=600   # default
 ```
 
-Submit via `POST /api/v1/partner/generations`, poll
-`GET /api/v1/partner/generations/:id`. On `SUCCEEDED`, `outputObjectKey` holds
-the staged WAV — run the normal PreCheck/Finalize flow with its SHA-256 to
-register the track.
+Submit with `POST /api/v1/partner/generations` and poll
+`GET /api/v1/partner/generations/:id`. On `SUCCEEDED`, `outputObjectKey`
+holds the staged WAV. Run the normal PreCheck/Finalize flow with its SHA-256
+to register the track. Production use waits for G-MODEL: watermark,
+similarity and the rest of the readiness plan.
 
 ## GPU floor
 
-ACE-Step class models need ~8GB+ VRAM and a CUDA-capable GPU. The dev box here
-(GTX 1630 4GB) cannot host it — that is why this directory is setup-only.
+ACE-Step 1.5 turbo ran comfortably on a 24GB GPU. Per the upstream README,
+2B turbo fits in 8–16GB, and XL needs 20GB or more without offload. Measured
+warm with turbo, a 60s song took about 2.0s and a 180s song about 4.8s. The
+dev box here (GTX 1630 4GB) is not a target.
