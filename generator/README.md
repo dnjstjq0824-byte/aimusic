@@ -45,6 +45,10 @@ GENERATOR_API_TOKEN=<secret> ACESTEP_ROOT=$PWD \
   .venv/bin/python -m uvicorn server:app --app-dir /path/to/generator --host 127.0.0.1 --port 8000
 ```
 
+On Runpod the whole stack is already installed on network volume `y7tzkyd0g5`.
+Use `bash scripts/runpod-gen.sh up|test|status|sync|down`; nothing gets reinstalled
+(`docs/generation/poc-runpod-20261121.md` §6).
+
 Point the backend at it:
 
 ```sh
