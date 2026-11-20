@@ -22,7 +22,7 @@
 
     <UiCard v-if="!loading" border-variant="brand">
       <div class="space-y-1">
-        <h3 class="text-xs font-bold text-white uppercase tracking-wider">{{ t('studio.earnings.ruleTitle') }}</h3>
+        <h3 class="text-base font-medium text-white">{{ t('studio.earnings.ruleTitle') }}</h3>
         <p class="text-xs text-text-primary">{{ t('studio.earnings.ruleDesc') }}</p>
         <p class="text-xs text-text-secondary">{{ t('studio.earnings.ruleNote') }}</p>
         <RouterLink to="/legal/PARTNER_CONTRACT" target="_blank" class="inline-block text-xs text-brand-400 hover:underline">
@@ -34,7 +34,7 @@
     <UiCard v-if="!loading" padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('studio.earnings.tableTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.earnings.tableTitle') }}</h2>
           <span class="text-xs text-text-muted font-mono">{{ tracks.length }}</span>
         </div>
       </template>

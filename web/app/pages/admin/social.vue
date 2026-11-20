@@ -38,7 +38,7 @@
       <UiCard padding="none">
         <template #header>
           <div class="px-5 pt-3">
-            <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('admin.so.byProvider') }}</h2>
+            <h2 class="text-base font-medium text-white">{{ t('admin.so.byProvider') }}</h2>
           </div>
         </template>
         <p v-if="stats.byProvider.length === 0" class="px-5 py-6 text-xs text-text-muted">

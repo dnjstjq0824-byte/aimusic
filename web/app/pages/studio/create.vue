@@ -57,7 +57,7 @@
         </RouterLink>
       </div>
       <div class="space-y-2">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('studio.create.v2.variationsTitle') }}</h3>
+        <h3 class="text-base font-medium text-white">{{ t('studio.create.v2.variationsTitle') }}</h3>
         <div class="grid gap-4 sm:grid-cols-2">
           <VariationCard :index="1" :status="slot1Status" :note="lastJob ? '' : t('studio.create.v2.variationEmpty')" />
           <VariationCard :index="2" status="soon" />
@@ -70,7 +70,7 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('studio.create.listTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.create.listTitle') }}</h2>
           <span class="text-xs text-text-muted font-mono">{{ t('studio.create.count', { n: jobs.length }) }}</span>
         </div>
       </template>

@@ -18,7 +18,7 @@
     </UiCard>
 
     <UiCard v-else-if="profile" class="space-y-3">
-      <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('business.console.biContract') }}</h2>
+      <h2 class="text-base font-medium text-white">{{ t('business.console.biContract') }}</h2>
       <dl class="space-y-2 text-xs">
         <div class="flex justify-between gap-2">
           <dt class="text-text-secondary">{{ t('business.console.biCompany') }}</dt>

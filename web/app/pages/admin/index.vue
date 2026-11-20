@@ -21,65 +21,63 @@
 
     <template v-else-if="overview">
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <UiCard class="space-y-1">
-          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.users') }}</div>
-          <div class="text-2xl font-semibold text-white">{{ t('admin.ov.usersValue', { n: overview.users.total.toLocaleString() }) }}</div>
-          <div class="text-caption text-text-secondary">
-            {{ t('admin.ov.usersBreak', { u: overview.users.users.toLocaleString(), p: overview.users.partners.toLocaleString(), a: overview.users.admins.toLocaleString() }) }}
-          </div>
-        </UiCard>
-        <UiCard class="space-y-1">
-          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.tracks') }}</div>
-          <div class="text-2xl font-semibold text-success">{{ t('admin.ov.tracksValue', { n: overview.tracks.ready.toLocaleString() }) }}</div>
-          <div class="text-caption text-text-secondary">
-            {{ t('admin.ov.tracksBreak', { p: overview.tracks.pendingGate.toLocaleString(), d: overview.tracks.takenDown.toLocaleString() }) }}
-          </div>
-        </UiCard>
-        <UiCard class="space-y-1">
-          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.plays') }}</div>
-          <div class="text-2xl font-semibold text-white">{{ t('admin.ov.playsValue', { n: overview.plays.last24h.toLocaleString() }) }}</div>
-          <div class="text-caption text-text-secondary">{{ t('admin.ov.playsTotal', { n: overview.plays.total.toLocaleString() }) }}</div>
-        </UiCard>
-        <UiCard class="space-y-1">
-          <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.ov.settles') }}</div>
-          <div class="text-2xl font-semibold text-brand-300">{{ t('admin.ov.settlesValue', { n: overview.settlementsPending.count.toLocaleString() }) }}</div>
-          <div class="text-caption text-text-secondary">{{ t('admin.ov.settlesNet', { n: overview.settlementsPending.netKrw.toLocaleString() }) }}</div>
-        </UiCard>
+        <KpiCard
+          :title="t('admin.ov.users')"
+          :value="t('admin.ov.usersValue', { n: overview.users.total.toLocaleString() })"
+          :sub="t('admin.ov.usersBreak', { u: overview.users.users.toLocaleString(), p: overview.users.partners.toLocaleString(), a: overview.users.admins.toLocaleString() })"
+        />
+        <KpiCard
+          :title="t('admin.ov.tracks')"
+          :value="t('admin.ov.tracksValue', { n: overview.tracks.ready.toLocaleString() })"
+          :sub="t('admin.ov.tracksBreak', { p: overview.tracks.pendingGate.toLocaleString(), d: overview.tracks.takenDown.toLocaleString() })"
+          tone="success"
+        />
+        <KpiCard
+          :title="t('admin.ov.plays')"
+          :value="t('admin.ov.playsValue', { n: overview.plays.last24h.toLocaleString() })"
+          :sub="t('admin.ov.playsTotal', { n: overview.plays.total.toLocaleString() })"
+        />
+        <KpiCard
+          :title="t('admin.ov.settles')"
+          :value="t('admin.ov.settlesValue', { n: overview.settlementsPending.count.toLocaleString() })"
+          :sub="t('admin.ov.settlesNet', { n: overview.settlementsPending.netKrw.toLocaleString() })"
+          tone="brand"
+        />
       </div>
 
       <div class="grid gap-4 lg:grid-cols-2">
         <UiCard>
           <template #header>
-            <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('admin.ov.queueTitle') }}</h2>
+            <h2 class="text-base font-medium text-white">{{ t('admin.ov.queueTitle') }}</h2>
           </template>
           <ul class="space-y-2 text-xs">
             <li>
-              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-xl border border-surface-border bg-surface-2 p-3 transition-colors hover:bg-surface-3">
-                <span class="font-semibold text-white">{{ t('admin.ov.qTracks') }}</span>
+              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 transition-colors hover:bg-white/[0.07]">
+                <span class="font-medium text-white">{{ t('admin.ov.qTracks') }}</span>
                 <UiBadge :variant="overview.reviews.tracks > 0 ? 'warning' : 'success'" size="sm">
                   {{ t('admin.ov.count', { n: overview.reviews.tracks }) }}
                 </UiBadge>
               </RouterLink>
             </li>
             <li>
-              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-xl border border-surface-border bg-surface-2 p-3 transition-colors hover:bg-surface-3">
-                <span class="font-semibold text-white">{{ t('admin.ov.qPartners') }}</span>
+              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 transition-colors hover:bg-white/[0.07]">
+                <span class="font-medium text-white">{{ t('admin.ov.qPartners') }}</span>
                 <UiBadge :variant="overview.reviews.partners > 0 ? 'warning' : 'success'" size="sm">
                   {{ t('admin.ov.count', { n: overview.reviews.partners }) }}
                 </UiBadge>
               </RouterLink>
             </li>
             <li>
-              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-xl border border-surface-border bg-surface-2 p-3 transition-colors hover:bg-surface-3">
-                <span class="font-semibold text-white">{{ t('admin.ov.qSubs') }}</span>
+              <RouterLink to="/admin/reviews" class="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 transition-colors hover:bg-white/[0.07]">
+                <span class="font-medium text-white">{{ t('admin.ov.qSubs') }}</span>
                 <UiBadge :variant="overview.reviews.subscriptions > 0 ? 'warning' : 'success'" size="sm">
                   {{ t('admin.ov.count', { n: overview.reviews.subscriptions }) }}
                 </UiBadge>
               </RouterLink>
             </li>
             <li>
-              <RouterLink to="/admin/disputes" class="flex items-center justify-between rounded-xl border border-surface-border bg-surface-2 p-3 transition-colors hover:bg-surface-3">
-                <span class="font-semibold text-white">{{ t('admin.ov.qDisputes') }}</span>
+              <RouterLink to="/admin/disputes" class="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3 transition-colors hover:bg-white/[0.07]">
+                <span class="font-medium text-white">{{ t('admin.ov.qDisputes') }}</span>
                 <UiBadge :variant="overview.disputesOpen > 0 ? 'danger' : 'success'" size="sm">
                   {{ t('admin.ov.count', { n: overview.disputesOpen }) }}
                 </UiBadge>
@@ -90,7 +88,7 @@
 
         <UiCard>
           <template #header>
-            <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('admin.ov.pipeTitle') }}</h2>
+            <h2 class="text-base font-medium text-white">{{ t('admin.ov.pipeTitle') }}</h2>
           </template>
           <dl class="space-y-3 text-xs">
             <div class="flex items-center justify-between">
@@ -128,6 +126,7 @@ import type { AdminOverview } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import KpiCard from '@/components/studio/KpiCard.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';

@@ -35,7 +35,7 @@
 
     <UiCard v-if="!loading">
       <template #header>
-        <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('business.console.alertTitle') }}</h2>
+        <h2 class="text-base font-medium text-white">{{ t('business.console.alertTitle') }}</h2>
       </template>
       <ul v-if="offlineDevices.length > 0" class="space-y-2 text-xs">
         <li v-for="d in offlineDevices" :key="d.id" class="flex items-center justify-between gap-2 rounded-xl border border-surface-border bg-surface-2 px-3 py-2">

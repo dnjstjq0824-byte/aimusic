@@ -11,7 +11,7 @@
     <UiCard v-if="!loading" padding="none">
       <template #header>
         <div class="px-5 pt-3">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('business.console.liStoresTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('business.console.liStoresTitle') }}</h2>
         </div>
       </template>
       <p v-if="stores.length === 0" class="px-5 py-6 text-xs text-text-muted">
@@ -44,7 +44,7 @@
     <UiCard v-if="!loading" padding="none">
       <template #header>
         <div class="px-5 pt-3">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('business.console.liCertsTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('business.console.liCertsTitle') }}</h2>
           <p class="mt-1 text-caption text-text-muted">{{ t('business.console.liCertsDesc') }}</p>
         </div>
       </template>
