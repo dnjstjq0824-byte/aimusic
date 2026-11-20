@@ -325,7 +325,8 @@ if (playlist.value && !pageError.value) {
         { name: pl.title, url: shareUrl.value },
       ]),
     ]);
-    defineOgImageComponent('AvibeOg', {
+    // Server only: OG tags are for crawlers; keeps nuxt-og-image out of client JS.
+    if (import.meta.server) defineOgImageComponent('AvibeOg', {
       title: pl.title,
       creator: pl.ownerName ?? '',
       verified: false,

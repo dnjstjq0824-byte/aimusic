@@ -69,7 +69,8 @@ useSchemaOrg([
     { name: tagLabel.value, url: canonicalFor(pagePath.value, locale.value) },
   ]),
 ]);
-defineOgImageComponent('AvibeOg', {
+// Server only: OG tags are for crawlers; keeps nuxt-og-image out of client JS.
+if (import.meta.server) defineOgImageComponent('AvibeOg', {
   title: tagLabel.value,
   creator: 'AVIBE',
   verified: false,

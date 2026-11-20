@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import { createHttpClient, isHttpError, type HttpClient, type HttpError, type HttpRequestConfig } from './http';
 import type { ApiErrorBody } from './types';
 
 // URIs match backend/internal/handler/router.go (/api/v1/...) exactly.
@@ -58,8 +58,8 @@ export const ERR_MESSAGES: Record<string, string> = {
 };
 
 export function errCodeOf(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const body = (err as AxiosError<ApiErrorBody>).response?.data;
+  if (isHttpError<ApiErrorBody>(err)) {
+    const body = err.response?.data;
     if (body?.error?.code) return body.error.code;
   }
   return 'ERR_INTERNAL';
@@ -68,8 +68,8 @@ export function errCodeOf(err: unknown): string {
 export function errMessageOf(err: unknown, fallback?: string): string {
   const code = errCodeOf(err);
   if (code in ERR_MESSAGES) return tKey(`errors.${code}`, ERR_MESSAGES[code] as string);
-  if (axios.isAxiosError(err)) {
-    const msg = (err as AxiosError<ApiErrorBody>).response?.data?.error?.message;
+  if (isHttpError<ApiErrorBody>(err)) {
+    const msg = err.response?.data?.error?.message;
     if (msg) return msg;
   }
   if (fallback !== undefined) return fallback;
@@ -114,7 +114,7 @@ export const tokenStore = {
 
 let refreshPromise: Promise<string> | null = null;
 
-async function refreshAccessToken(client: AxiosInstance): Promise<string> {
+async function refreshAccessToken(client: HttpClient): Promise<string> {
   if (!refreshPromise) {
     const refreshToken = tokenStore.getRefresh();
     refreshPromise = client
@@ -133,36 +133,33 @@ async function refreshAccessToken(client: AxiosInstance): Promise<string> {
   return refreshPromise;
 }
 
-export function createApiClient(): AxiosInstance {
-  const client = axios.create({ baseURL: API_BASE_URL, timeout: 20000 });
-
-  client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = tokenStore.getAccess();
-    if (token) config.headers.set('Authorization', `Bearer ${token}`);
-    return config;
-  });
-
-  client.interceptors.response.use(
-    (res) => res,
-    async (err: AxiosError) => {
-      const original = err.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
+export function createApiClient(): HttpClient {
+  return createHttpClient({
+    baseURL: API_BASE_URL,
+    timeout: 20000,
+    onRequest(config) {
+      const token = tokenStore.getAccess();
+      if (token) (config.headers ??= {}).Authorization = `Bearer ${token}`;
+    },
+    async onError(err: HttpError, client) {
+      const original: HttpRequestConfig = err.config;
       if (
         err.response?.status === 401 &&
-        original &&
         !original._retried &&
         !original.url?.includes('/auth/refresh') &&
         !original.url?.includes('/auth/login') &&
         tokenStore.getRefresh()
       ) {
         original._retried = true;
+        let access: string | null = null;
         try {
-          const access = await refreshAccessToken(client);
-          original.headers.set('Authorization', `Bearer ${access}`);
-          return client.request(original);
+          access = await refreshAccessToken(client);
         } catch {
           tokenStore.clear();
           if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
         }
+        // onRequest re-reads the rotated access token from tokenStore.
+        if (access) return client.request(original);
       }
       // S-03: admins without a second factor are sent to enroll it.
       const code = (err.response?.data as ApiErrorBody | undefined)?.error?.code;
@@ -171,11 +168,9 @@ export function createApiClient(): AxiosInstance {
         const back = encodeURIComponent(window.location.pathname + window.location.search);
         window.location.assign('/account/security?enroll=admin&redirect=' + back);
       }
-      return Promise.reject(err);
+      throw err;
     },
-  );
-
-  return client;
+  });
 }
 
 export const api = createApiClient();
@@ -196,14 +191,15 @@ export const deviceTokenStore = {
 };
 
 /** Device client: Bearer [REDACTED] device token, no user-JWT refresh. A 401 means re-claim. */
-export function createDeviceClient(): AxiosInstance {
-  const client = axios.create({ baseURL: API_BASE_URL, timeout: 20000 });
-  client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = deviceTokenStore.get();
-    if (token) config.headers.set('Authorization', `Bearer ${token}`);
-    return config;
+export function createDeviceClient(): HttpClient {
+  return createHttpClient({
+    baseURL: API_BASE_URL,
+    timeout: 20000,
+    onRequest(config) {
+      const token = deviceTokenStore.get();
+      if (token) (config.headers ??= {}).Authorization = `Bearer ${token}`;
+    },
   });
-  return client;
 }
 
 export const deviceApiClient = createDeviceClient();

@@ -107,7 +107,6 @@ import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 import { stripLocalePrefix } from '@/utils/seo';
-
 export interface ConsoleMenuItem {
   to: string;
   /** Route name without the i18n suffix (e.g. `studio-dashboard`). */

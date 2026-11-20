@@ -1,22 +1,14 @@
-import { AxiosError, AxiosHeaders } from 'axios';
+import { HttpError } from './http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ERR_MESSAGES, errCodeOf, errMessageOf, setKeyTranslator, tKey, tokenStore, unwrap } from './client';
 import type { ApiErrorBody } from './types';
 
-function axiosErrorWith(code: string, message: string): AxiosError<ApiErrorBody> {
-  return new AxiosError<ApiErrorBody>(
-    message,
-    'ERR_BAD_REQUEST',
-    undefined,
-    undefined,
-    {
-      status: 400,
-      statusText: 'Bad Request',
-      headers: {},
-      config: { headers: new AxiosHeaders() },
-      data: { error: { code, message } },
-    },
-  );
+function axiosErrorWith(code: string, message: string): HttpError<ApiErrorBody> {
+  return new HttpError<ApiErrorBody>(message, {}, 'ERR_BAD_REQUEST', {
+    status: 400,
+    headers: {},
+    data: { error: { code, message } },
+  });
 }
 
 describe('errCodeOf', () => {
@@ -26,7 +18,7 @@ describe('errCodeOf', () => {
 
   it('falls back to ERR_INTERNAL for non-API errors', () => {
     expect(errCodeOf(new Error('boom'))).toBe('ERR_INTERNAL');
-    expect(errCodeOf(new AxiosError('network down'))).toBe('ERR_INTERNAL');
+    expect(errCodeOf(new HttpError('network down', {}, 'ERR_NETWORK'))).toBe('ERR_INTERNAL');
   });
 });
 

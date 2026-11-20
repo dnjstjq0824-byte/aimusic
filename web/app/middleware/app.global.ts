@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { safeRedirect } from '@/utils/redirect';
 import { shouldApplyServerLocale } from '@/utils/locale';
+import { ensureConsoleMessages, isConsolePath, type ConsoleI18n } from '@/utils/consoleMessages';
+import { stripLocalePrefix } from '@/utils/seo';
 
 const AUTH_REQUIRED = new Set([
   'library',
@@ -133,6 +135,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   const { $i18n } = useNuxtApp();
+  // Bundle diet: console-only namespaces load before a console route renders.
+  if (isConsolePath(stripLocalePrefix(to.path))) {
+    await ensureConsoleMessages($i18n as unknown as ConsoleI18n, $i18n.locale.value).catch(() => {
+      // A failed chunk leaves raw keys visible; the next navigation retries.
+    });
+  }
   const key = `common.titles.${name}`;
   // Reactive: client-side locale switches (after this middleware runs) refresh title + lang.
   const pageTitle = computed(() => ($i18n.te(key) ? `${$i18n.t(key)} · AVIBE` : 'AVIBE — Beyond Your Music'));
