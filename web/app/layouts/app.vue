@@ -28,19 +28,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import LocaleBanner from '@/components/LocaleBanner.vue';
 import EmailVerifyBanner from '@/components/EmailVerifyBanner.vue';
 import UiNavbar from '@/components/ui/UiNavbar.vue';
 import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';
-import GlobalPlayerBar from '@/components/player/GlobalPlayerBar.vue';
 import MobileTabBar from '@/components/ui/MobileTabBar.vue';
-import QueueDrawer from '@/components/player/QueueDrawer.vue';
-import FullscreenPlayer from '@/components/player/FullscreenPlayer.vue';
 import { usePublicSeo } from '@/composables/usePublicSeo';
 import { usePlayerStore } from '@/stores/playerStore';
 import { stripLocalePrefix } from '@/utils/seo';
+
+// Player UI loads on first use (bundle diet): all three are v-if gated.
+const GlobalPlayerBar = defineAsyncComponent(() => import('@/components/player/GlobalPlayerBar.vue'));
+const QueueDrawer = defineAsyncComponent(() => import('@/components/player/QueueDrawer.vue'));
+const FullscreenPlayer = defineAsyncComponent(() => import('@/components/player/FullscreenPlayer.vue'));
 
 // WI-S2 fallback head for public pages without page-level SEO (static
 // landings etc.). Page-level usePublicSeo calls override title/description;

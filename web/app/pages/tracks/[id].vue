@@ -512,7 +512,8 @@ if (track.value && !pageError.value) {
       { name: tr.title, url: shareUrl.value },
     ]),
   ]);
-  defineOgImageComponent('AvibeOg', {
+  // Server only: OG tags are for crawlers; keeps nuxt-og-image out of client JS.
+  if (import.meta.server) defineOgImageComponent('AvibeOg', {
     title: tr.title,
     creator: tr.creatorName ?? '',
     verified: cert.value !== null,

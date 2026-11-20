@@ -112,7 +112,8 @@ useSchemaOrg([
     { name: body.value.headline, url: shareUrl.value },
   ]),
 ]);
-defineOgImageComponent('AvibeOg', {
+// Server only: OG tags are for crawlers; keeps nuxt-og-image out of client JS.
+if (import.meta.server) defineOgImageComponent('AvibeOg', {
   title: body.value.headline,
   creator: 'AVIBE Guide',
   verified: false,

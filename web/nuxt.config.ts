@@ -219,5 +219,14 @@ export default defineNuxtConfig({
       };
       rename(pages);
     },
+    // Bundle diet (2026-11-21): no <link rel="prefetch"> for lazy chunks
+    // (other pages, player UI, web-vitals). On mobile they competed with the
+    // first render for bandwidth; chunks still load on demand.
+    'build:manifest'(manifest) {
+      for (const key in manifest) {
+        const entry = manifest[key];
+        if (entry) entry.dynamicImports = [];
+      }
+    },
   },
 });
