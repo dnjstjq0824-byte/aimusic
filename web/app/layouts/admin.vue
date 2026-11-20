@@ -36,6 +36,8 @@ function enforceAdminLocale(): void {
   }
 }
 watch(() => route.fullPath, () => enforceAdminLocale());
+// Also on an in-console switch (footer menu), not only on the next navigation.
+watch(locale, () => enforceAdminLocale());
 onMounted(() => enforceAdminLocale());
 
 // v3 flow (phase 3): 13 sections moved from a crowded top bar into the
