@@ -153,6 +153,7 @@ jobs:
         working-directory: web
         env:
           NUXT_API_PROXY: http://localhost:8080
+          NUXT_COMPRESS_PUBLIC_ASSETS: '1'
       - name: lighthouse (S5 budgets)
         run: |
           NUXT_API_PROXY=http://localhost:8080 PORT=3000 npm run preview -- --port 3000 &
