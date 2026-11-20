@@ -122,6 +122,12 @@ export default defineNuxtConfig({
       generateUi: process.env.NUXT_PUBLIC_GENERATE_UI === '1',
     },
   },
+  // CI only: `nuxt preview` (node-server) does not compress, so Lighthouse
+  // measured raw JS against the gzip budget. Prod is compressed by Cloudflare,
+  // so the shipped image stays unchanged unless this flag is set.
+  nitro: {
+    compressPublicAssets: process.env.NUXT_COMPRESS_PUBLIC_ASSETS === '1',
+  },
   routeRules: {
     // Local/node API origin (build-time env; the edge worker serves /api in prod).
     '/api/**': {
