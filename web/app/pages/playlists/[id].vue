@@ -20,7 +20,7 @@
           <p class="text-caption font-bold uppercase tracking-wider text-text-muted">
             {{ playlist.isPublic ? t('playlist.detailPublic') : t('playlist.detailPrivate') }}
           </p>
-          <h1 class="font-display mt-1 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
+          <h1 class="font-display mt-1 break-words text-2xl font-medium tracking-[-0.03em] text-white sm:text-3xl">
             {{ playlist.title }}
           </h1>
           <p class="mt-1 text-xs text-text-secondary">

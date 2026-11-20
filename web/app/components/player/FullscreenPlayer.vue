@@ -31,7 +31,7 @@
 
           <div class="mt-4 flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <h2 class="truncate text-lg font-black text-white">{{ player.currentTrack.title }}</h2>
+              <h2 class="truncate text-lg font-semibold text-white">{{ player.currentTrack.title }}</h2>
               <p class="mt-0.5 truncate text-xs text-text-secondary">{{ creatorLabel }}</p>
             </div>
             <VerifiedSeal

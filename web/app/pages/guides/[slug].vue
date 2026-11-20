@@ -8,7 +8,7 @@
     </nav>
 
     <div>
-      <h1 class="font-display text-2xl font-black text-white sm:text-3xl">{{ body.headline }}</h1>
+      <h1 class="font-display text-2xl font-medium text-white sm:text-3xl">{{ body.headline }}</h1>
       <p class="mt-2 text-sm leading-relaxed text-text-secondary">{{ body.description }}</p>
       <p class="mt-1 text-caption text-text-muted">{{ t('seo.guideUpdated', { date: body.updated }) }}</p>
       <div

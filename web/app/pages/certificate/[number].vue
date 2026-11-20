@@ -21,7 +21,7 @@
 
     <UiCard v-else-if="view" class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-surface-border pb-3">
-        <div class="font-mono text-lg font-black text-white">{{ view.certificate.certNumber }}</div>
+        <div class="font-mono text-lg font-semibold text-white">{{ view.certificate.certNumber }}</div>
         <UiBadge variant="success" size="sm">{{ t('legal.cert.verified') }}</UiBadge>
       </div>
       <dl class="grid gap-3 text-xs sm:grid-cols-2">

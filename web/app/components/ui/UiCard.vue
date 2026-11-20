@@ -1,6 +1,6 @@
 <template>
   <div
-    class="rounded-2xl border bg-surface-1/90 transition-all duration-200"
+    class="rounded-3xl border bg-white/[0.03] transition-all duration-200"
     :class="[
       borderClass,
       paddingClasses[padding],
@@ -8,11 +8,11 @@
       glass ? 'glass-panel' : '',
     ]"
   >
-    <div v-if="$slots.header" class="mb-4 pb-3 border-b border-surface-border">
+    <div v-if="$slots.header" class="mb-4 pb-3 border-b border-white/[0.08]">
       <slot name="header" />
     </div>
     <slot />
-    <div v-if="$slots.footer" class="mt-4 pt-3 border-t border-surface-border">
+    <div v-if="$slots.footer" class="mt-4 pt-3 border-t border-white/[0.08]">
       <slot name="footer" />
     </div>
   </div>
@@ -41,8 +41,8 @@ const paddingClasses = {
 };
 
 const borderClass = {
-  default: 'border-surface-border',
-  brand: 'border-brand-500/40 shadow-glow-brand',
+  default: 'border-white/[0.08]',
+  brand: 'border-brand-500/40',
   success: 'border-success/40',
   danger: 'border-accent-crimson/40',
 }[props.borderVariant];

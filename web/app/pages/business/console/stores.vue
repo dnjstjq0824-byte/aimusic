@@ -56,7 +56,7 @@
         <UiErrorBanner :message="detailError(store.id)" :title="t('business.console.stDetailFail')" />
         <section>
           <div class="mb-2 flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('business.console.stDevices') }}</h3>
+            <h3 class="text-base font-medium text-white">{{ t('business.console.stDevices') }}</h3>
             <UiButton variant="secondary" size="sm" @click="openDeviceModal(store)">{{ t('business.console.stAddDevice') }}</UiButton>
           </div>
           <ul v-if="devicesOf(store.id).length > 0" class="divide-y divide-surface-border rounded-lg border border-surface-border">
@@ -93,7 +93,7 @@
         </section>
 
         <section>
-          <h3 class="mb-2 text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('business.console.stSchedule') }}</h3>
+          <h3 class="mb-2 text-base font-medium text-white">{{ t('business.console.stSchedule') }}</h3>
           <div class="overflow-x-auto rounded-lg border border-surface-border">
             <table class="w-full min-w-[560px] text-xs">
               <thead>

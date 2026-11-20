@@ -18,12 +18,12 @@ export default {
           950: '#083344',
         },
         surface: {
-          0: '#08080d',       // Near-black studio canvas
-          1: '#0e0e15',       // Card / Sidebar background
-          2: '#16161e',       // Elevated surface / Dropdown
-          3: '#202029',       // Hover surface
-          border: '#23232e',  // Subtle hairline border
-          'border-hover': '#3a3a46',
+          0: '#17161c',       // Warm graphite studio canvas (v3 flow)
+          1: '#1e1d24',       // Card / Sidebar background
+          2: '#26252d',       // Elevated surface / Dropdown
+          3: '#302f38',       // Hover surface
+          border: '#2f2e36',  // Subtle hairline border
+          'border-hover': '#47464f',
         },
         brandteal: {
           DEFAULT: '#0a141b',

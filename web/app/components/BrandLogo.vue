@@ -3,11 +3,11 @@
     <img :src="logoUrl" :width="size" :height="size" :alt="t('common.brand.logoAlt')" class="rounded-lg" />
     <span v-if="wordmark" class="flex flex-col leading-none">
       <slot>
-        <span class="font-extrabold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>
+        <span class="font-semibold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>
       </slot>
       <span
         v-if="tagline"
-        class="mt-1 whitespace-nowrap text-caption font-semibold tracking-wider text-brand-400"
+        class="mt-1 whitespace-nowrap text-caption font-medium tracking-wider text-text-muted"
         :class="tagline === SLOGAN ? 'tracking-wide' : 'uppercase'"
       >
         {{ tagline }}

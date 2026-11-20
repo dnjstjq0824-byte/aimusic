@@ -3,7 +3,7 @@
     <BrandLogo :size="48" />
     <div class="mt-6 space-y-3">
       <div v-if="failed" class="space-y-4">
-        <h1 class="text-xl font-black text-white">{{ t('auth.oauth.failedTitle') }}</h1>
+        <h1 class="text-xl font-semibold text-white">{{ t('auth.oauth.failedTitle') }}</h1>
         <UiErrorBanner :message="error" />
         <RouterLink :to="localePath('/login')">
           <UiButton variant="brand" size="md">{{ t('auth.oauth.back') }}</UiButton>
@@ -16,7 +16,7 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
         </div>
-        <h1 class="text-xl font-black text-white">{{ t('auth.oauth.processingTitle') }}</h1>
+        <h1 class="text-xl font-semibold text-white">{{ t('auth.oauth.processingTitle') }}</h1>
         <p class="text-xs text-text-secondary">{{ t('auth.oauth.processingBody') }}</p>
       </div>
     </div>

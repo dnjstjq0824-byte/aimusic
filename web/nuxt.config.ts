@@ -183,7 +183,7 @@ export default defineNuxtConfig({
       viewport: 'width=device-width, initial-scale=1.0, viewport-fit=cover',
       title: 'AVIBE — Beyond Your Music',
       meta: [
-        { name: 'theme-color', content: '#08080d' },
+        { name: 'theme-color', content: '#17161c' },
         {
           name: 'description',
           content:

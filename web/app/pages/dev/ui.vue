@@ -2,14 +2,14 @@
   <div class="mx-auto max-w-5xl space-y-12 px-4 py-10">
     <div>
       <p class="text-caption font-semibold uppercase tracking-widest text-brand-400">Design System v2 · Signal &amp; Seal</p>
-      <h1 class="font-display text-h1 font-extrabold text-text-primary">UI Showcase (dev only)</h1>
+      <h1 class="font-display text-h1 font-medium text-text-primary">UI Showcase (dev only)</h1>
     </div>
 
     <section class="space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Type scale</h2>
-      <p class="font-display text-display font-extrabold text-text-primary">Display 바로 써도 되는 AI 음악</p>
-      <p class="font-display text-h1 font-extrabold text-text-primary">H1 페이지 제목</p>
-      <p class="font-display text-h2 font-bold text-text-primary">H2 섹션 제목</p>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Type scale</h2>
+      <p class="font-display text-display font-medium text-text-primary">Display 바로 써도 되는 AI 음악</p>
+      <p class="font-display text-h1 font-medium text-text-primary">H1 페이지 제목</p>
+      <p class="font-display text-h2 font-medium text-text-primary">H2 섹션 제목</p>
       <p class="text-h3 font-bold text-text-primary">H3 카드 제목</p>
       <p class="text-body text-text-primary">Body 본문 16/24 — 모든 곡은 상업적 이용권 보유 인증을 거쳐 공개됩니다.</p>
       <p class="text-body-sm text-text-secondary">Body-sm 보조 14/20 — 무료로 듣고, 매장과 영상에는 라이선스로 쓰세요.</p>
@@ -18,7 +18,7 @@
     </section>
 
     <section class="space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Buttons</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Buttons</h2>
       <div class="flex flex-wrap items-center gap-3">
         <UiButton variant="primary">Primary</UiButton>
         <UiButton variant="secondary">Secondary</UiButton>
@@ -40,7 +40,7 @@
     </section>
 
     <section class="max-w-md space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Inputs</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Inputs</h2>
       <UiInput v-model="demoText" label="이메일" placeholder="you@example.com" hint="안내 문구" />
       <UiInput v-model="demoText" label="비밀번호" type="password" placeholder="••••••••" />
       <UiInput v-model="demoText" label="오류 상태" error="올바른 값을 입력하세요." />
@@ -48,7 +48,7 @@
     </section>
 
     <section class="space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Verified Seal</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Verified Seal</h2>
       <div class="flex flex-wrap items-center gap-6">
         <VerifiedSeal :size="16" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
         <VerifiedSeal :size="20" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
@@ -58,7 +58,7 @@
     </section>
 
     <section class="space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Covers + Mosaic</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Covers + Mosaic</h2>
       <div class="flex flex-wrap items-end gap-4">
         <UiCoverArt seed="track-a" title="곡 A" size="xs" />
         <UiCoverArt seed="track-b" title="곡 B" size="sm" />
@@ -70,7 +70,7 @@
     </section>
 
     <section class="max-w-xl space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Stepper</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Stepper</h2>
       <Stepper :steps="['계정', '활동 정보', '약관 동의']" :current="step" />
       <div class="flex gap-2">
         <UiButton size="sm" variant="secondary" @click="step = Math.max(0, step - 1)">이전</UiButton>
@@ -79,7 +79,7 @@
     </section>
 
     <section class="space-y-3">
-      <h2 class="font-display text-h2 font-bold text-text-primary">Menu + Sheet + Locale</h2>
+      <h2 class="font-display text-h2 font-medium text-text-primary">Menu + Sheet + Locale</h2>
       <div class="flex flex-wrap items-center gap-4">
         <UiMenu :items="menuItems" @select="menuPick = $event" />
         <span class="text-caption text-text-muted">선택: {{ menuPick === null ? '없음' : menuItems[menuPick]?.label }}</span>

@@ -19,7 +19,7 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('studio.catalog.listTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.catalog.listTitle') }}</h2>
           <div class="flex items-center gap-2">
             <UiSelect v-model="statusFilter" :label="t('studio.catalog.filter')" class="w-44">
               <option value="">{{ t('studio.catalog.filterAll') }}</option>

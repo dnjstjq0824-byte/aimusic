@@ -55,7 +55,7 @@
           <CoverMosaic :seeds="heroSeeds" :title="hero.title" size="lg" />
           <div class="min-w-0">
             <p class="text-caption font-bold uppercase tracking-wider text-brand-400">{{ t('playlist.editorTitle') }}</p>
-            <h2 class="font-display mt-1 truncate text-xl font-black text-white group-hover:text-brand-300">{{ hero.title }}</h2>
+            <h2 class="font-display mt-1 truncate text-xl font-medium text-white group-hover:text-brand-300">{{ hero.title }}</h2>
           </div>
         </RouterLink>
       </section>

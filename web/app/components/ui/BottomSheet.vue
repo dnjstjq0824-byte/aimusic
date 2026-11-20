@@ -7,7 +7,7 @@
       >
         <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-surface-3 sm:hidden" aria-hidden="true" />
         <div class="mb-4 flex items-start justify-between gap-3">
-          <h2 class="font-display text-h3 font-bold text-text-primary">{{ title }}</h2>
+          <h2 class="font-display text-h3 font-medium text-text-primary">{{ title }}</h2>
           <button
             type="button"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary"

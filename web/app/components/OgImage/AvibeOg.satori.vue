@@ -8,7 +8,7 @@ Verified seal. CJK/Thai titles render `plain` (textless cover fallback). -->
       display: 'flex',
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#08080d',
+      backgroundColor: '#17161c',
       color: '#ffffff',
       fontFamily: 'Inter, sans-serif',
       padding: '64px',

@@ -23,22 +23,22 @@
       <div class="grid gap-4 sm:grid-cols-3">
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.so.total') }}</div>
-          <div class="text-2xl font-black text-white">{{ stats.totalLinks.toLocaleString() }}</div>
+          <div class="text-2xl font-semibold text-white">{{ stats.totalLinks.toLocaleString() }}</div>
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.so.users') }}</div>
-          <div class="text-2xl font-black text-brand-400">{{ stats.linkedUsers.toLocaleString() }}</div>
+          <div class="text-2xl font-semibold text-brand-400">{{ stats.linkedUsers.toLocaleString() }}</div>
         </UiCard>
         <UiCard class="space-y-1">
           <div class="text-caption font-bold text-text-muted uppercase tracking-wider">{{ t('admin.so.providers') }}</div>
-          <div class="text-2xl font-black text-success">{{ stats.byProvider.length }}</div>
+          <div class="text-2xl font-semibold text-success">{{ stats.byProvider.length }}</div>
         </UiCard>
       </div>
 
       <UiCard padding="none">
         <template #header>
           <div class="px-5 pt-3">
-            <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('admin.so.byProvider') }}</h2>
+            <h2 class="text-base font-medium text-white">{{ t('admin.so.byProvider') }}</h2>
           </div>
         </template>
         <p v-if="stats.byProvider.length === 0" class="px-5 py-6 text-xs text-text-muted">

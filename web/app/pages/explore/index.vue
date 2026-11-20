@@ -37,6 +37,9 @@
       </UiButton>
     </div>
 
+    <!-- v3 flow: photo shortcuts while nothing is filtered yet. -->
+    <StarterRail v-if="activeFilterCount === 0 && !hasSearchQuery" heading-id="explore-start-h" compact />
+
     <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
       <!-- Filter panel (desktop) -->
       <aside class="hidden lg:block">
@@ -201,6 +204,7 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiInput from '@/components/ui/UiInput.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
+import StarterRail from '@/components/landing/StarterRail.vue';
 import UiSelect from '@/components/ui/UiSelect.vue';
 import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiPagination from '@/components/ui/UiPagination.vue';

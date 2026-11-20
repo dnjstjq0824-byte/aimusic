@@ -38,7 +38,7 @@
     <UiCard v-if="!loading" border-variant="brand">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
-          <h3 class="text-xs font-bold text-white uppercase tracking-wider">{{ t('studio.dash.settleTitle') }}</h3>
+          <h3 class="text-base font-medium text-white">{{ t('studio.dash.settleTitle') }}</h3>
           <p class="text-xs text-text-primary">
             {{ t('studio.dash.settleDesc', { plays: totalPlays.toLocaleString() }) }}
           </p>
@@ -52,12 +52,12 @@
     <div v-if="!loading" class="grid gap-4 lg:grid-cols-2">
       <UiCard>
         <template #header>
-          <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('studio.dash.todosTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.dash.todosTitle') }}</h2>
         </template>
-        <ul v-if="todos.length > 0" class="space-y-2 text-xs">
-          <li v-for="todo in todos" :key="todo.key" class="flex items-center justify-between gap-2 rounded-xl border border-surface-border bg-surface-2 px-3 py-2">
+        <ul v-if="todos.length > 0" class="space-y-2 text-sm">
+          <li v-for="todo in todos" :key="todo.key" class="flex items-center justify-between gap-2 rounded-2xl bg-white/[0.04] px-4 py-3">
             <span class="text-text-primary">{{ todo.label }}</span>
-            <RouterLink :to="todo.to" class="shrink-0 font-semibold text-brand-400 hover:underline">
+            <RouterLink :to="todo.to" class="shrink-0 rounded-full border border-white/10 px-3 py-1 text-xs text-white transition-colors hover:border-white/25">
               {{ t('studio.dash.todoGo') }}
             </RouterLink>
           </li>
@@ -68,7 +68,7 @@
       <UiCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h2 class="text-xs font-bold text-text-primary uppercase tracking-wider">{{ t('studio.dash.recentTitle') }}</h2>
+            <h2 class="text-base font-medium text-white">{{ t('studio.dash.recentTitle') }}</h2>
             <RouterLink to="/studio/catalog" class="text-xs font-semibold text-brand-400 hover:underline">
               {{ t('studio.dash.recentAll') }}
             </RouterLink>
@@ -92,23 +92,23 @@
     <UiCard v-if="!loading" padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('studio.dash.topTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.dash.topTitle') }}</h2>
           <span class="text-xs text-text-muted font-mono">{{ topTracks.length }}</span>
         </div>
       </template>
       <p v-if="topTracks.length === 0" class="px-5 py-6 text-xs text-text-muted">
         {{ t('studio.dash.topEmpty') }}
       </p>
-      <ul v-else class="divide-y divide-surface-border">
+      <ul v-else class="divide-y divide-white/[0.06]">
         <li
           v-for="(trk, i) in topTracks"
           :key="trk.id"
-          class="flex items-center gap-3 px-5 py-3 text-xs hover:bg-surface-2/50 transition-colors"
+          class="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-white/[0.03]"
         >
-          <span class="w-6 shrink-0 font-mono font-bold text-text-muted">{{ i + 1 }}</span>
+          <span class="w-6 shrink-0 tabular-nums text-text-muted">{{ i + 1 }}</span>
           <RouterLink
             :to="localePath({ name: 'track-detail', params: { id: trk.id } })"
-            class="min-w-0 flex-1 truncate font-bold text-white hover:text-brand-400"
+            class="min-w-0 flex-1 truncate font-medium text-white hover:text-brand-400"
           >
             {{ trk.title }}
           </RouterLink>

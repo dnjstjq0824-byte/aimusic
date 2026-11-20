@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-12">
     <section class="mx-auto max-w-3xl px-4 pt-4 text-center sm:pt-8">
-      <h1 class="font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
+      <h1 class="font-display text-4xl font-medium leading-tight tracking-[-0.03em] text-white sm:text-5xl">
         {{ t('business.cHeroTitle') }}
       </h1>
       <p class="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-text-secondary sm:text-base">
@@ -20,7 +20,7 @@
     <section>
       <ol class="grid gap-4 sm:grid-cols-3">
         <li v-for="(s, i) in steps" :key="s.titleKey" class="rounded-2xl border border-surface-border bg-surface-1 p-5">
-          <span class="font-mono text-2xl font-black text-brand-500">{{ i + 1 }}</span>
+          <span class="font-mono text-2xl font-semibold text-brand-500">{{ i + 1 }}</span>
           <h2 class="mt-2 text-sm font-bold text-white">{{ t(s.titleKey) }}</h2>
           <p class="mt-1 text-xs text-text-secondary">{{ t(s.descKey) }}</p>
         </li>

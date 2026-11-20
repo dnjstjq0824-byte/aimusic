@@ -17,7 +17,7 @@
     <UiCard padding="none">
       <template #header>
         <div class="px-5 pt-3 flex items-center justify-between">
-          <h2 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('studio.proofs.listTitle') }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('studio.proofs.listTitle') }}</h2>
           <span class="text-xs text-text-muted font-mono">{{ t('studio.proofs.count', { n: subs.length }) }}</span>
         </div>
       </template>

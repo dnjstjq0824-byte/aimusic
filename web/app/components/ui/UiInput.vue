@@ -8,7 +8,7 @@
       <slot name="labelRight" />
     </div>
     <div
-      class="relative flex min-h-11 items-center rounded-lg border bg-surface-1 transition-all duration-150"
+      class="relative flex min-h-11 items-center rounded-xl border bg-white/[0.04] transition-all duration-150"
       :class="[
         error ? 'border-accent-crimson focus-within:ring-2 focus-within:ring-accent-crimson/40' : 'border-surface-border focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/30',
         disabled ? 'opacity-50 cursor-not-allowed bg-surface-0' : '',

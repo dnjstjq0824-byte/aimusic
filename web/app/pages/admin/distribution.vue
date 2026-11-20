@@ -27,7 +27,7 @@
     <UiCard v-if="kit" padding="none">
       <template #header>
         <div class="flex items-center justify-between px-5 pt-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-text-secondary">{{ t('admin.ds.result', { ok: kit.tracks.length, skip: kit.skipped.length }) }}</h2>
+          <h2 class="text-base font-medium text-white">{{ t('admin.ds.result', { ok: kit.tracks.length, skip: kit.skipped.length }) }}</h2>
           <span class="font-mono text-caption text-text-muted">{{ kit.generatedAt }}</span>
         </div>
       </template>

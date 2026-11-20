@@ -1,5 +1,5 @@
 <template>
-  <div role="tablist" :aria-label="t('common.tabs.list')" class="flex items-center gap-1 rounded-xl bg-surface-0 p-1 border border-surface-border">
+  <div role="tablist" :aria-label="t('common.tabs.list')" class="flex items-center gap-1 rounded-full bg-white/[0.04] p-1 border border-white/10">
     <button
       v-for="(tab, i) in tabs"
       :key="tab.value"
@@ -8,7 +8,7 @@
       role="tab"
       :aria-selected="modelValue === tab.value"
       :tabindex="modelValue === tab.value ? 0 : -1"
-      class="flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-caption font-semibold sm:px-3 sm:text-xs transition-all duration-150 text-center select-none"
+      class="flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-caption font-semibold sm:px-3 sm:text-xs transition-all duration-150 text-center select-none"
       :class="[
         modelValue === tab.value
           ? 'bg-surface-2 text-white shadow-sm border border-surface-border/60'

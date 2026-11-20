@@ -46,13 +46,13 @@ const variantClasses = {
   commercial: 'bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 shadow-sm font-semibold',
   syncOnly: 'bg-amber-950/80 text-amber-300 border border-amber-600/40 font-semibold',
   blocked: 'bg-red-950/80 text-red-300 border border-red-600/40 font-semibold',
-  brand: 'bg-brand-950/80 text-brand-300 border border-brand-500/40 font-semibold',
-  verified: 'bg-brand-950/80 text-brand-300 border border-brand-500/40 font-semibold',
+  brand: 'bg-brand-500/10 text-brand-300 border border-brand-500/25 font-medium',
+  verified: 'bg-brand-500/10 text-brand-300 border border-brand-500/25 font-medium',
   success: 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50',
   warning: 'bg-amber-950/80 text-amber-400 border border-amber-700/50',
   danger: 'bg-red-950/80 text-red-400 border border-red-700/50',
   info: 'bg-blue-950/80 text-blue-400 border border-blue-700/50',
-  neutral: 'bg-surface-2 text-text-primary border border-surface-border',
+  neutral: 'bg-white/[0.06] text-text-primary border border-white/10',
 };
 
 const dotColorClass = computed(() => {
