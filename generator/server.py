@@ -126,11 +126,13 @@ async def require_token(request: Request, call_next):
 
 
 def model_available() -> bool:
-    """True when an ACE-Step 1.5 checkout with weights is configured and importable.
+    """True when an ACE-Step 1.5 checkout is configured and importable.
 
+    Weights live in ACESTEP_ROOT/checkpoints and are downloaded by ACE-Step on
+    the first generation (several minutes), so they are not required here.
     Kept as a function (not import-time) so /healthz can report honestly.
     """
-    if not ACESTEP_ROOT or not os.path.isdir(os.path.join(ACESTEP_ROOT, "checkpoints")):
+    if not ACESTEP_ROOT or not os.path.isdir(os.path.join(ACESTEP_ROOT, "acestep")):
         return False
     try:
         import acestep  # noqa: F401  pylint: disable=unused-import
@@ -152,8 +154,8 @@ def _get_handlers() -> tuple:
             return _handlers
         if not model_available():
             raise NotImplementedError(
-                "ACE-Step 1.5 is not installed here: set ACESTEP_ROOT to a checkout with "
-                "checkpoints/ and run with its venv (see generator/README.md)."
+                "ACE-Step 1.5 is not installed here: set ACESTEP_ROOT to an ACE-Step 1.5 checkout "
+                "and run with its venv (see generator/README.md)."
             )
         from acestep.handler import AceStepHandler  # pylint: disable=import-outside-toplevel
         from acestep.llm_inference import LLMHandler  # pylint: disable=import-outside-toplevel
