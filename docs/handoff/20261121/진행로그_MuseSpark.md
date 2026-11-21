@@ -32,9 +32,13 @@
   반환. 같은 쿼리를 URL 인코딩하면 200 정상. 1차 원인은 Windows
   git-bash curl의 인코딩 깨짐이나, 깨진 쿼리에 500이 아닌 400을
   내려야 한다는 점에서 서버 개선 후보로 남김.
-- T16/T20/T21/T22-AVIBE 401 연쇄, 17건: E2E 초반 발급 토큰
-  (PA_TOKEN/USER_TOKEN, TTL 15분) 만료 후보. E2E 전체 소요 시간
-  미측정이라 후보로 유지 (하네스 완료 후 time 측정으로 확정).
+- T16/T20/T21/T22-AVIBE 401 연쇄, 17건: "missing bearer token"
+  (만료가 아니라 빈 토큰). E2E 실측 133~163초라 TTL 15분 만료는
+  아님 — 원인 정정. T16 PA_TOKEN 재발급·T20 short/slug의 `jget`
+  파싱이 빈 값을 반환. `jget` 단독 10회 반복은 정상이라 E2E
+  실행 컨텍스트 문제 후보 (shim heredoc·BODY 경로·인코딩).
+  Linux CI에서 판정. N2/N9/N12/N13 변경 후 재실행해도 동일
+  584/30/4 — 회귀 없음.
 - T22 ja/th 금칙어 미차단, 2건: **원인 확정 — 환경 문제.**
   Windows curl이 CJK 프롬프트를 `?`(0x3F)로 깨뜨려 전송
   (DB 저장값 16진 확인). ko/en 차단은 ASCII 패턴(`bts`,
