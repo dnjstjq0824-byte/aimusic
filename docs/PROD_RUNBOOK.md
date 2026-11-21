@@ -169,6 +169,23 @@ before the swap; rollback re-tags it `:latest` and recreates `web`.
 - R2: private buckets, no versioning. Takedown purges are deliberate
   deletes. Pre-cutover LocalStack volume stays on the VPS until PO
   approves deletion (G-R2).
+- Media volume deletion review (WI-N10, G-R2/P7): run the read-only
+  compare on the VPS, then fill this report for PO approval:
+  ```sh
+  cd /opt/avibe && set -a && . ./.env && set +a
+  bash <repo>/scripts/r2-media-compare.sh   # reads prod, writes nothing
+  ```
+  Report form (attach the full script output):
+  - date / operator / script rev (`git rev-parse --short HEAD`):
+  - staging: match=N missing=N mismatch=N extra=N
+  - hls: match=N missing=N mismatch=N extra=N
+  - verdict: DELETE-APPROVED (all match, exit 0) or HOLD (list keys)
+  - PO signature + date:
+  Deletion itself (after approval): `docker volume rm
+  avibe-prod_localstackdata` + remove the `localstackdata:` declaration
+  from `docker-compose.prod.yml`. Rehearsed 2026-11-21 on LocalStack
+  fixtures (match/missing/mismatch/extra separated, exit 1 on diff,
+  exit 0 on full match).
 - Secrets live in `/opt/avibe/.env` (mode 600), not a manager. Rotate
   JWT/HLS/OAuth/Toss/R2 on personnel change — rotation revokes sessions
   via `token_version` bump per user or re-issue.
