@@ -49,6 +49,7 @@ Fail-closed at boot (`backend/internal/config/config.go` `Validate`):
 | `OAUTH_*` | for social | Google/Kakao; disabled providers hide buttons |
 | `REGISTRATION_INVITE_CODE` | optional | Pre-launch gate (C8) |
 | `GENERATION_BACKEND_URL` | for generation | GPU server base URL (WI-03, e.g. home-PC `generator/server.py`); empty → generation jobs FAIL with a clear message, never fake audio |
+| `GENERATION_BACKEND_TOKEN` | when server has auth | Bearer token the worker sends (WI-N12); must match the server's `GENERATOR_API_TOKEN`. A 401 fails the job without retry (wrong secret, not transient). Empty → no header (local servers without auth) |
 | `GENERATION_TIMEOUT_SECONDS` | no (600) | Per-generation backend call timeout |
 | `GENERATION_DAILY_CAP` | no (5) | Per-partner daily submit quota (server-enforced) |
 | `GENERATION_BANNED_KEYWORDS` | no | Extra comma-separated prompt block phrases (built-ins cover voice-mimic/impersonation) |

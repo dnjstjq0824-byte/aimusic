@@ -192,7 +192,10 @@ type MailConfig struct {
 // GenerationConfig points the worker at an external GPU generation server
 // (reference: generator/server.py). Timeouts in seconds.
 type GenerationConfig struct {
-	BackendURL     string
+	BackendURL string
+	// BackendToken is sent as `Authorization: Bearer` to the generation
+	// server (WI-N12). Empty = no header (local servers without auth).
+	BackendToken   string
 	TimeoutSeconds int
 	// DailyCapPerPartner is the server-enforced submit quota (default 5).
 	DailyCapPerPartner int
@@ -303,6 +306,7 @@ func Load() (*Config, error) {
 	}
 	cfg.Generation = GenerationConfig{
 		BackendURL:          strings.TrimRight(strings.TrimSpace(os.Getenv("GENERATION_BACKEND_URL")), "/"),
+		BackendToken:        strings.TrimSpace(os.Getenv("GENERATION_BACKEND_TOKEN")),
 		TimeoutSeconds:      getenvInt("GENERATION_TIMEOUT_SECONDS", 600),
 		DailyCapPerPartner:  getenvInt("GENERATION_DAILY_CAP", 5),
 		BannedKeywordsExtra: getenvList("GENERATION_BANNED_KEYWORDS"),

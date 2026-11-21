@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -53,7 +54,7 @@ func main() {
 		log.Fatalf("storage: %v", err)
 	}
 	repos := repository.New(db, rdb)
-	genBackend := generator.SelectBackend(cfg.Generation.BackendURL, time.Duration(cfg.Generation.TimeoutSeconds)*time.Second)
+	genBackend := generator.SelectBackend(cfg.Generation.BackendURL, time.Duration(cfg.Generation.TimeoutSeconds)*time.Second, cfg.Generation.BackendToken)
 	w := &worker{repos: repos, storage: st, hlsBucket: buckets.PublicHLS, stagingBucket: buckets.Staging,
 		http: &http.Client{Timeout: 5 * time.Minute}, genBackend: genBackend}
 
@@ -164,6 +165,13 @@ func (w *worker) processGeneration(ctx context.Context, p *repository.Generation
 		ModelVersion: job.ModelVersion, Seed: job.Seed, Params: params,
 	})
 	if err != nil {
+		// A 401 is a wrong secret, not a transient fault: record the
+		// failure without requeueing (WI-N12). The token itself never
+		// reaches the log (ErrUnauthorized carries no secret).
+		if errors.Is(err, generator.ErrUnauthorized) {
+			log.Printf("generation job %s failed: %s", job.ID, err)
+			return w.repos.GenJobs.MarkFailed(ctx, job.ID, err.Error())
+		}
 		return fail(err.Error())
 	}
 	sum := sha256.Sum256(res.Audio)

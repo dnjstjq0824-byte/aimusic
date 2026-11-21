@@ -80,14 +80,21 @@ func (DisabledBackend) Generate(_ context.Context, _ Request) (*Result, error) {
 	return nil, fmt.Errorf("music generation backend is not configured (GENERATION_BACKEND_URL unset); connect a GPU server and retry")
 }
 
+// ErrUnauthorized marks a generation-backend 401: the configured token is
+// missing or wrong. Callers must NOT retry (fix the secret instead).
+var ErrUnauthorized = fmt.Errorf("generation backend unauthorized (bad GENERATION_BACKEND_TOKEN)")
+
 // RemoteBackend POSTs jobs to a GPU server (POST {base}/generate).
 type RemoteBackend struct {
 	base   string
+	token  string
 	client *http.Client
 }
 
 // NewRemoteBackend builds a backend for base (trailing slashes trimmed).
-func NewRemoteBackend(base string, timeout time.Duration) (*RemoteBackend, error) {
+// A non-empty token is sent as `Authorization: Bearer <token>` (WI-N12);
+// empty keeps the pre-token behavior for local servers without auth.
+func NewRemoteBackend(base string, timeout time.Duration, token string) (*RemoteBackend, error) {
 	base = strings.TrimRight(strings.TrimSpace(base), "/")
 	if base == "" {
 		return nil, fmt.Errorf("generation backend URL is empty")
@@ -95,7 +102,7 @@ func NewRemoteBackend(base string, timeout time.Duration) (*RemoteBackend, error
 	if timeout <= 0 {
 		timeout = 10 * time.Minute
 	}
-	return &RemoteBackend{base: base, client: &http.Client{Timeout: timeout}}, nil
+	return &RemoteBackend{base: base, token: strings.TrimSpace(token), client: &http.Client{Timeout: timeout}}, nil
 }
 
 type remoteRequest struct {
@@ -144,6 +151,9 @@ func (b *RemoteBackend) Generate(ctx context.Context, req Request) (*Result, err
 		return nil, fmt.Errorf("build generation request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if b.token != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+b.token)
+	}
 	resp, err := b.client.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("generation backend unreachable: %w", err)
@@ -152,6 +162,9 @@ func (b *RemoteBackend) Generate(ctx context.Context, req Request) (*Result, err
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxAudioBytes+4096))
 	if err != nil {
 		return nil, fmt.Errorf("read generation response: %w", err)
+	}
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, ErrUnauthorized
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("generation backend %s: %s", resp.Status, strings.TrimSpace(string(raw)))
@@ -217,8 +230,8 @@ func (b *RemoteBackend) fetchAudioURL(ctx context.Context, res *Result) error {
 }
 
 // SelectBackend returns a remote backend when url is set, else DisabledBackend.
-func SelectBackend(url string, timeout time.Duration) Backend {
-	if b, err := NewRemoteBackend(url, timeout); err == nil {
+func SelectBackend(url string, timeout time.Duration, token string) Backend {
+	if b, err := NewRemoteBackend(url, timeout, token); err == nil {
 		return b
 	}
 	return DisabledBackend{}

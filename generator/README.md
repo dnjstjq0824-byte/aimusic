@@ -29,7 +29,8 @@ v2 requests stay at 503.
 - Auth: when `GENERATOR_API_TOKEN` is set, every route except `/healthz`
   requires `Authorization: Bearer <token>`; anything else gets a 401. Set it
   whenever the port can be reached from outside, because a Runpod proxy URL is
-  public. The Go worker does not send the token yet (WI-N12).
+  public. The Go worker sends it from `GENERATION_BACKEND_TOKEN` (WI-N12);
+  a 401 fails the job without retry.
 
 ## Bring-up on the GPU machine
 

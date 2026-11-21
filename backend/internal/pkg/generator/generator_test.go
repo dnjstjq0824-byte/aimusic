@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -40,7 +42,7 @@ func TestRemoteBackendRoundTrip(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -57,7 +59,7 @@ func TestRemoteBackendRoundTrip(t *testing.T) {
 }
 
 func TestRemoteBackendRequiresURL(t *testing.T) {
-	if _, err := NewRemoteBackend("  ", time.Second); err == nil {
+	if _, err := NewRemoteBackend("  ", time.Second, ""); err == nil {
 		t.Error("empty URL must fail")
 	}
 }
@@ -68,7 +70,7 @@ func TestRemoteBackendSurfacesBackendError(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "model loading"})
 	}))
 	defer srv.Close()
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -103,7 +105,7 @@ func TestRemoteBackendV2RoundTrip(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -143,7 +145,7 @@ func TestRemoteBackendV1Compat(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -170,7 +172,7 @@ func TestRemoteBackendSafetyFail(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -201,7 +203,7 @@ func TestRemoteBackendAudioURL(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	b, err := NewRemoteBackend(srv.URL, 10*time.Second)
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "")
 	if err != nil {
 		t.Fatalf("NewRemoteBackend: %v", err)
 	}
@@ -215,11 +217,92 @@ func TestRemoteBackendAudioURL(t *testing.T) {
 }
 
 func TestSelectBackend(t *testing.T) {
-	if _, ok := SelectBackend("", time.Second).(DisabledBackend); !ok {
+	if _, ok := SelectBackend("", time.Second, "").(DisabledBackend); !ok {
 		t.Error("empty URL must select DisabledBackend")
 	}
-	b := SelectBackend("http://gpu:8000", time.Second)
+	b := SelectBackend("http://gpu:8000", time.Second, "")
 	if _, ok := b.(*RemoteBackend); !ok {
 		t.Errorf("URL must select RemoteBackend, got %T", b)
+	}
+}
+
+func TestRemoteBackendSendsToken(t *testing.T) {
+	var auth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"audioBase64": base64.StdEncoding.EncodeToString([]byte("RIFFtok")),
+			"mimeType":    "audio/wav",
+			"durationMs":  1000,
+		})
+	}))
+	defer srv.Close()
+
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "s3cr3t-token")
+	if err != nil {
+		t.Fatalf("NewRemoteBackend: %v", err)
+	}
+	if _, err := b.Generate(context.Background(), Request{JobID: "j1", Prompt: "x", Model: "m"}); err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if auth != "Bearer s3cr3t-token" {
+		t.Errorf("Authorization header = %q", auth)
+	}
+}
+
+func TestRemoteBackendOmitsEmptyToken(t *testing.T) {
+	var auth string
+	var present bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vals, ok := r.Header["Authorization"]
+		present = ok && len(vals) > 0
+		auth = ""
+		if present {
+			auth = vals[0]
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"audioBase64": base64.StdEncoding.EncodeToString([]byte("RIFFnotok")),
+			"mimeType":    "audio/wav",
+			"durationMs":  1000,
+		})
+	}))
+	defer srv.Close()
+
+	for _, token := range []string{"", "   "} {
+		b, err := NewRemoteBackend(srv.URL, 10*time.Second, token)
+		if err != nil {
+			t.Fatalf("NewRemoteBackend: %v", err)
+		}
+		if _, err := b.Generate(context.Background(), Request{JobID: "j1", Prompt: "x", Model: "m"}); err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		if present {
+			t.Errorf("token %q must send no Authorization header, got %q", token, auth)
+		}
+	}
+}
+
+func TestRemoteBackendUnauthorized(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]any{"detail": "unauthorized"})
+	}))
+	defer srv.Close()
+
+	b, err := NewRemoteBackend(srv.URL, 10*time.Second, "wrong-token")
+	if err != nil {
+		t.Fatalf("NewRemoteBackend: %v", err)
+	}
+	_, err = b.Generate(context.Background(), Request{JobID: "j1", Prompt: "x", Model: "m"})
+	if err == nil {
+		t.Fatal("backend 401 must surface as error")
+	}
+	if !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("401 must map to ErrUnauthorized, got %v", err)
+	}
+	if strings.Contains(err.Error(), "wrong-token") {
+		t.Errorf("token leaked into error: %v", err)
 	}
 }
