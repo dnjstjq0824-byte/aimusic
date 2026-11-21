@@ -100,10 +100,17 @@ Worker-only knobs: `DISPUTE_SLA_INTERVAL_SECONDS` (900),
 
 ## 8. Backups
 
-- Postgres: VPS-local dumps, not managed PITR. `/opt/avibe/backup-db.sh`
-  (`pg_dump` + gzip → `/opt/avibe/backups/avibe-<UTC>.sql.gz`, 14-day
-  retention) runs daily at 03:30 KST via root crontab
-  (`30 18 * * *`). RPO ≤24h. Every deploy takes one more dump first (G-2).
+- Postgres: VPS-local dumps + off-site R2 copy (WI-N3), not managed PITR.
+  `/opt/avibe/backup-db.sh` (source of truth: `deploy/backup-db.sh`;
+  prod install is G-2) runs daily at 03:30 KST via root crontab
+  (`30 18 * * *`): `pg_dump` + gzip → `/opt/avibe/backups/avibe-<UTC>.sql.gz`
+  (14-day local retention), then upload to the private bucket
+  `R2_DB_BACKUP_BUCKET` (`avibe-db-backups`) with a size check. Upload
+  failure exits non-zero (cron log catches it). RPO ≤24h. Every deploy
+  takes one more dump first (G-2).
+- R2 retention: 30-day lifecycle rule on the backup bucket (PO sets once
+  in the Cloudflare dashboard: R2 → bucket → Lifecycle → delete objects
+  older than 30 days). Local keeps 14 days as before.
 - Restore (rehearsed 2026-11-12, WI-D2): dump → scratch DB → compare →
   drop. Prod is never written during rehearsal:
   ```sh
@@ -119,6 +126,25 @@ Worker-only knobs: `DISPUTE_SLA_INTERVAL_SECONDS` (900),
   `CREATE DATABASE avibe`, pipe the newest good dump into `avibe`,
   `migrate up`, start api/worker, check `/readyz`. Practice on the
   scratch flow above first.
+- Restore from R2 to the local stack (rehearsed 2026-11-21, WI-N3):
+  download from the backup bucket, restore into a scratch DB, compare,
+  drop. Local `avibe` is never written:
+  ```sh
+  # Needs: local stack up, R2_* (or test-bucket) vars in the environment.
+  KEY=avibe-<UTC>.sql.gz   # newest key in $R2_DB_BACKUP_BUCKET
+  docker run --rm --network avibe-local_local -v ./aws:/root/.aws:ro \
+    -v $PWD:/data amazon/aws-cli:2.0.9 --endpoint-url "$R2_ENDPOINT" \
+    s3 cp "s3://$R2_DB_BACKUP_BUCKET/$KEY" /data/restore.sql.gz
+  docker compose -f docker-compose.local.yml exec -T postgres psql \
+    -U avibe -d avibe -c 'CREATE DATABASE avibe_restore_test;'
+  gunzip -c restore.sql.gz | docker compose -f docker-compose.local.yml \
+    exec -T postgres psql -U avibe -d avibe_restore_test -v ON_ERROR_STOP=1 -q
+  # compare: table count + row counts (users/tracks/...) vs avibe, then:
+  docker compose -f docker-compose.local.yml exec -T postgres psql \
+    -U avibe -d avibe -c 'DROP DATABASE avibe_restore_test;'
+  ```
+  Rehearsal evidence (LocalStack test bucket): 50/50 tables,
+  users 460/460, tracks 233/233 identical, scratch DB dropped.
 - R2: private buckets, no versioning. Takedown purges are deliberate
   deletes. Pre-cutover LocalStack volume stays on the VPS until PO
   approves deletion (G-R2).
