@@ -426,9 +426,11 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		case res.Linked:
 			c.Redirect(http.StatusFound, MobileOAuthCallbackBase+"?linked="+strings.ToLower(res.Provider))
 		case res.EmailToken != "":
-			// Mobile has no complete-email screen yet (R12 deferred):
-			// surface a typed error instead of a dead web URL.
-			c.Redirect(http.StatusFound, MobileOAuthCallbackBase+"?oauthError=email_required")
+			// WI-N9: the app opens its complete-email screen with this
+			// one-time signup token (same shape as ?code=: single-purpose,
+			// short-lived, consumed server-side; the app link never leaves
+			// the device). POST /auth/oauth/complete-email next.
+			c.Redirect(http.StatusFound, MobileOAuthCallbackBase+"?emailToken="+res.EmailToken)
 		default:
 			c.Redirect(http.StatusFound, MobileOAuthCallbackBase+"?code="+res.ExchangeCode)
 		}

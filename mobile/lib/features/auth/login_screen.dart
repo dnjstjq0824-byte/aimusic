@@ -177,6 +177,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           SnackBar(content: Text(s.loginSocialCancelled)),
         );
       }
+    } on SocialEmailRequired catch (e) {
+      // WI-N9: email-less provider -> collect the email with the token.
+      if (mounted) {
+        context.go(
+            '/complete-email?token=${Uri.encodeComponent(e.emailToken)}');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

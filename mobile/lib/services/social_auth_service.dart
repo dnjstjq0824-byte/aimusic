@@ -47,6 +47,14 @@ class SocialAuthCancelled implements Exception {
   const SocialAuthCancelled();
 }
 
+/// The provider gave no email: the app must show the complete-email
+/// screen with this one-time signup token (WI-N9, web parity).
+class SocialEmailRequired implements Exception {
+  const SocialEmailRequired(this.emailToken);
+
+  final String emailToken;
+}
+
 /// Injectable seams for widget tests (real url_launcher/app_links
 /// need a device; unit-test the pure URI helpers instead).
 typedef LinkStreamFactory = Stream<Uri> Function();
@@ -100,6 +108,7 @@ class SocialAuthService {
 
   /// Runs the browser flow; returns the one-time exchange code.
   /// Throws [SocialAuthCancelled] on timeout/user cancel,
+  /// [SocialEmailRequired] when the provider gave no email (WI-N9),
   /// [ApiException] when the backend reports an oauthError.
   Future<String> signIn(String provider) async {
     final stream = _linkStream?.call() ?? AppLinks().uriLinkStream;
@@ -125,6 +134,13 @@ class SocialAuthService {
           }
           return;
         }
+        // Email-less provider: the app collects the email, then calls
+        // POST /auth/oauth/complete-email with this token (WI-N9).
+        final emailToken = u.queryParameters['emailToken'] ?? '';
+        if (emailToken.isNotEmpty && !completer.isCompleted) {
+          completer.completeError(SocialEmailRequired(emailToken));
+          return;
+        }
         final code = u.queryParameters['code'] ?? '';
         if (code.isNotEmpty && !completer.isCompleted) {
           completer.complete(code);
@@ -145,6 +161,27 @@ class SocialAuthService {
       );
     } finally {
       await sub.cancel();
+    }
+  }
+
+  /// Files the typed email for a provider identity that gave none
+  /// (WI-N9, web parity: POST /auth/oauth/complete-email). The server
+  /// mails a verification link; the account is created when clicked.
+  /// Returns the filed email on success.
+  Future<String> completeEmail({
+    required String token,
+    required String email,
+    required String locale,
+  }) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/auth/oauth/complete-email',
+        data: {'token': token, 'email': email, 'locale': locale},
+      );
+      final data = unwrapData<Map<String, dynamic>>(res);
+      return (data['email'] as String?) ?? email;
+    } catch (e) {
+      throw toApiException(e);
     }
   }
 

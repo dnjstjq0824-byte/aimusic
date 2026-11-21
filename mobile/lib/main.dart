@@ -74,6 +74,12 @@ final _router = GoRouter(
     ),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+    GoRoute(
+      path: '/complete-email',
+      builder: (_, s) => CompleteEmailScreen(
+        token: s.uri.queryParameters['token'] ?? '',
+      ),
+    ),
     GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: '/legal', builder: (_, __) => const LegalListScreen()),
     GoRoute(
