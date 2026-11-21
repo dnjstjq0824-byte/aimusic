@@ -1,41 +1,23 @@
 {
   "common": {
-    "appName": "AVIBE",
-    "tagline": "Beyond Your Music",
     "nav": {
       "mainMenu": "주 메뉴",
       "home": "홈",
       "explore": "음원 탐색",
-      "exploreFilter": "음원 탐색 & 필터",
       "playlists": "플레이리스트",
       "library": "내 라이브러리",
-      "rightsCenter": "권리보호센터",
-      "rightsCenterOsp": "권리보호센터 (OSP 분쟁)",
-      "pricing": "요금제",
-      "studio": "스튜디오",
-      "partnerStudio": "파트너 스튜디오",
-      "partnerStudioDashboard": "파트너 스튜디오 대시보드",
       "creatorStudio": "크리에이터 스튜디오",
       "businessConsole": "비즈니스 콘솔",
       "adminConsole": "어드민 콘솔",
-      "reviewBench": "관리자 검수 워크벤치",
-      "uploadGatekeeper": "음원 업로드 (Gatekeeper)",
-      "uploadWizard": "음원 업로드 위저드",
       "userMenu": "사용자 메뉴",
-      "myPlaylistsLibrary": "내 플레이리스트 & 라이브러리",
       "legal": "이용약관 및 법적 정책",
-      "accountSecurity": "계정 보안 (2단계 인증)",
-      "security2fa": "계정 보안 (2단계 인증)",
       "logout": "로그아웃",
       "login": "로그인",
       "signup": "회원가입",
       "charts": "차트",
       "business": "비즈니스",
       "searchPh": "곡·무드·크리에이터",
-      "accountSettings": "계정 설정",
-      "mobileMenuOpen": "모바일 메뉴 열기",
-      "mobileMenuClose": "모바일 메뉴 닫기",
-      "mobileMenu": "모바일 메뉴"
+      "accountSettings": "계정 설정"
     },
     "tabs": {
       "label": "하단 메뉴",
@@ -173,16 +155,6 @@
       "confirm": "확인",
       "retry": "다시 시도",
       "save": "저장",
-      "delete": "삭제",
-      "edit": "수정",
-      "back": "뒤로",
-      "next": "다음",
-      "search": "검색",
-      "clear": "지우기",
-      "copy": "복사",
-      "copied": "복사됨",
-      "loading": "불러오는 중…",
-      "showMore": "더 보기",
       "more": "더보기",
       "share": "공유",
       "logout": "로그아웃",
@@ -231,10 +203,6 @@
     },
     "stepper": {
       "label": "진행 단계"
-    },
-    "seal": {
-      "short": "이용권 인증",
-      "full": "상업적 이용권 보유 인증"
     }
   }
 }

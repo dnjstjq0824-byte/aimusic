@@ -1,41 +1,23 @@
 {
   "common": {
-    "appName": "AVIBE",
-    "tagline": "Beyond Your Music",
     "nav": {
       "mainMenu": "主菜单",
       "home": "首页",
       "explore": "发现音乐",
-      "exploreFilter": "发现音乐 & 筛选",
       "playlists": "歌单",
       "library": "我的音乐库",
-      "rightsCenter": "权利保护中心",
-      "rightsCenterOsp": "权利保护中心 (OSP纠纷)",
-      "pricing": "价格方案",
-      "studio": "工作室",
-      "partnerStudio": "合作方工作室",
-      "partnerStudioDashboard": "合作方工作室仪表盘",
       "creatorStudio": "创作者工作室",
       "businessConsole": "商务控制台",
       "adminConsole": "管理控制台",
-      "reviewBench": "审核工作台",
-      "uploadGatekeeper": "上传音乐 (Gatekeeper)",
-      "uploadWizard": "上传向导",
       "userMenu": "账户菜单",
-      "myPlaylistsLibrary": "我的歌单 & 音乐库",
       "legal": "条款与政策",
-      "accountSecurity": "账户安全 (两步验证)",
-      "security2fa": "账户安全 (两步验证)",
       "logout": "退出登录",
       "login": "登录",
       "signup": "注册",
       "charts": "排行榜",
       "business": "商家",
       "searchPh": "歌曲、心情、创作者",
-      "accountSettings": "账号设置",
-      "mobileMenuOpen": "打开菜单",
-      "mobileMenuClose": "关闭菜单",
-      "mobileMenu": "移动端菜单"
+      "accountSettings": "账号设置"
     },
     "tabs": {
       "label": "底部导航",
@@ -173,16 +155,6 @@
       "confirm": "确认",
       "retry": "重试",
       "save": "保存",
-      "delete": "删除",
-      "edit": "编辑",
-      "back": "返回",
-      "next": "下一步",
-      "search": "搜索",
-      "clear": "清除",
-      "copy": "复制",
-      "copied": "已复制",
-      "loading": "加载中…",
-      "showMore": "查看更多",
       "more": "更多",
       "share": "分享",
       "logout": "退出登录",
@@ -231,10 +203,6 @@
     },
     "stepper": {
       "label": "进度步骤"
-    },
-    "seal": {
-      "short": "已认证",
-      "full": "商用使用权持有认证"
     }
   }
 }

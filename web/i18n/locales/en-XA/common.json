@@ -1,29 +1,14 @@
 {
   "common": {
-    "appName": "⟦ÀVÌBÈ～～⟧",
-    "tagline": "⟦Bèyònd Yòùr Mùsìc～～～～～～～⟧",
     "nav": {
       "mainMenu": "⟦Màìn mènù～～～～⟧",
       "home": "⟦Hòmè～～⟧",
       "explore": "⟦Èxplòrè～～～⟧",
-      "exploreFilter": "⟦Èxplòrè & fìltèrs～～～～～～～⟧",
       "playlists": "⟦Plàylìsts～～～～⟧",
       "library": "⟦My lìbràry～～～～⟧",
-      "rightsCenter": "⟦Rìghts Cèntèr～～～～～～⟧",
-      "rightsCenterOsp": "⟦Rìghts Cèntèr (ÒSP dìspùtès)～～～～～～～～～～～～⟧",
-      "pricing": "⟦Prìcìng～～～⟧",
-      "studio": "⟦Stùdìò～～～⟧",
-      "partnerStudio": "⟦Pàrtnèr Stùdìò～～～～～～⟧",
-      "partnerStudioDashboard": "⟦Pàrtnèr Stùdìò dàshbòàrd～～～～～～～～～～⟧",
       "adminConsole": "⟦Àdmìn cònsòlè～～～～～～⟧",
-      "reviewBench": "⟦Mòdèràtìòn wòrkbènch～～～～～～～～⟧",
-      "uploadGatekeeper": "⟦Ùplòàd mùsìc (Gàtèkèèpèr)～～～～～～～～～～⟧",
-      "uploadWizard": "⟦Ùplòàd wìzàrd～～～～～～⟧",
       "userMenu": "⟦Àccòùnt mènù～～～～～⟧",
-      "myPlaylistsLibrary": "⟦My plàylìsts & lìbràry～～～～～～～～～⟧",
       "legal": "⟦Tèrms & pòlìcìès～～～～～～～⟧",
-      "accountSecurity": "⟦Àccòùnt sècùrìty (2-stèp vèrìfìcàtìòn)～～～～～～～～～～～～～～～～⟧",
-      "security2fa": "⟦Àccòùnt sècùrìty (2-stèp vèrìfìcàtìòn)～～～～～～～～～～～～～～～～⟧",
       "logout": "⟦Lòg òùt～～～⟧",
       "login": "⟦Lòg ìn～～～⟧",
       "signup": "⟦Sìgn ùp～～～⟧",
@@ -31,9 +16,6 @@
       "business": "⟦Bùsìnèss～～～～⟧",
       "searchPh": "⟦Tràcks, mòòds, crèàtòrs～～～～～～～～～～⟧",
       "accountSettings": "⟦Àccòùnt sèttìngs～～～～～～～⟧",
-      "mobileMenuOpen": "⟦Òpèn mènù～～～～⟧",
-      "mobileMenuClose": "⟦Clòsè mènù～～～～⟧",
-      "mobileMenu": "⟦Mòbìlè mènù～～～～～⟧",
       "creatorStudio": "⟦Crèàtòr Stùdìò～～～～～～⟧",
       "businessConsole": "⟦Bùsìnèss Cònsòlè～～～～～～⟧"
     },
@@ -173,16 +155,6 @@
       "confirm": "⟦Cònfìrm～～～⟧",
       "retry": "⟦Rètry～～⟧",
       "save": "⟦Sàvè～～⟧",
-      "delete": "⟦Dèlètè～～～⟧",
-      "edit": "⟦Èdìt～～⟧",
-      "back": "⟦Bàck～～⟧",
-      "next": "⟦Nèxt～～⟧",
-      "search": "⟦Sèàrch～～～⟧",
-      "clear": "⟦Clèàr～～⟧",
-      "copy": "⟦Còpy～～⟧",
-      "copied": "⟦Còpìèd～～～⟧",
-      "loading": "⟦Lòàdìng…～～～～⟧",
-      "showMore": "⟦Shòw mòrè～～～～⟧",
       "more": "⟦Mòrè～～⟧",
       "share": "⟦Shàrè～～⟧",
       "logout": "⟦Lòg òùt～～～⟧",
@@ -231,10 +203,6 @@
     },
     "stepper": {
       "label": "⟦Prògrèss stèps～～～～～～⟧"
-    },
-    "seal": {
-      "short": "⟦Vèrìfìèd～～～～⟧",
-      "full": "⟦Vèrìfìèd còmmèrcìàl-ùsè rìghts～～～～～～～～～～～～⟧"
     }
   }
 }

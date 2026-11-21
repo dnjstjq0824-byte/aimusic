@@ -1,41 +1,23 @@
 {
   "common": {
-    "appName": "AVIBE",
-    "tagline": "Beyond Your Music",
     "nav": {
       "mainMenu": "เมนูหลัก",
       "home": "หน้าแรก",
       "explore": "ค้นหาเพลง",
-      "exploreFilter": "ค้นหาเพลง & ตัวกรอง",
       "playlists": "เพลย์ลิสต์",
       "library": "คลังของฉัน",
-      "rightsCenter": "ศูนย์คุ้มครองสิทธิ์",
-      "rightsCenterOsp": "ศูนย์คุ้มครองสิทธิ์ (ข้อพิพาท OSP)",
-      "pricing": "แพ็กเกจ",
-      "studio": "สตูดิโอ",
-      "partnerStudio": "พาร์ทเนอร์สตูดิโอ",
-      "partnerStudioDashboard": "แดชบอร์ดพาร์ทเนอร์สตูดิโอ",
       "creatorStudio": "ครีเอเตอร์สตูดิโอ",
       "businessConsole": "คอนโซลธุรกิจ",
       "adminConsole": "คอนโซลผู้ดูแล",
-      "reviewBench": "โต๊ะตรวจสอบ",
-      "uploadGatekeeper": "อัปโหลดเพลง (Gatekeeper)",
-      "uploadWizard": "ตัวช่วยอัปโหลด",
       "userMenu": "เมนูบัญชี",
-      "myPlaylistsLibrary": "เพลย์ลิสต์ & คลังของฉัน",
       "legal": "ข้อกำหนดและนโยบาย",
-      "accountSecurity": "ความปลอดภัยบัญชี (ยืนยัน 2 ขั้นตอน)",
-      "security2fa": "ความปลอดภัยบัญชี (ยืนยัน 2 ขั้นตอน)",
       "logout": "ออกจากระบบ",
       "login": "เข้าสู่ระบบ",
       "signup": "สมัครสมาชิก",
       "charts": "ชาร์ต",
       "business": "ธุรกิจ",
       "searchPh": "เพลง อารมณ์ ครีเอเตอร์",
-      "accountSettings": "ตั้งค่าบัญชี",
-      "mobileMenuOpen": "เปิดเมนู",
-      "mobileMenuClose": "ปิดเมนู",
-      "mobileMenu": "เมนูมือถือ"
+      "accountSettings": "ตั้งค่าบัญชี"
     },
     "tabs": {
       "label": "เมนูล่าง",
@@ -173,16 +155,6 @@
       "confirm": "ยืนยัน",
       "retry": "ลองใหม่",
       "save": "บันทึก",
-      "delete": "ลบ",
-      "edit": "แก้ไข",
-      "back": "กลับ",
-      "next": "ถัดไป",
-      "search": "ค้นหา",
-      "clear": "ล้าง",
-      "copy": "คัดลอก",
-      "copied": "คัดลอกแล้ว",
-      "loading": "กำลังโหลด…",
-      "showMore": "ดูเพิ่มเติม",
       "more": "เพิ่มเติม",
       "share": "แชร์",
       "logout": "ออกจากระบบ",
@@ -231,10 +203,6 @@
     },
     "stepper": {
       "label": "ขั้นตอน"
-    },
-    "seal": {
-      "short": "ยืนยันแล้ว",
-      "full": "การรับรองการถือสิทธิ์ใช้งานเชิงพาณิชย์"
     }
   }
 }

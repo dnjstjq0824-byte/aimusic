@@ -1,41 +1,23 @@
 {
   "common": {
-    "appName": "AVIBE",
-    "tagline": "Beyond Your Music",
     "nav": {
       "mainMenu": "Main menu",
       "home": "Home",
       "explore": "Explore",
-      "exploreFilter": "Explore & filters",
       "playlists": "Playlists",
       "library": "My library",
-      "rightsCenter": "Rights Center",
-      "rightsCenterOsp": "Rights Center (OSP disputes)",
-      "pricing": "Pricing",
-      "studio": "Studio",
-      "partnerStudio": "Partner Studio",
-      "partnerStudioDashboard": "Partner Studio dashboard",
       "creatorStudio": "Creator Studio",
       "businessConsole": "Business Console",
       "adminConsole": "Admin console",
-      "reviewBench": "Moderation workbench",
-      "uploadGatekeeper": "Upload music (Gatekeeper)",
-      "uploadWizard": "Upload wizard",
       "userMenu": "Account menu",
-      "myPlaylistsLibrary": "My playlists & library",
       "legal": "Terms & policies",
-      "accountSecurity": "Account security (2-step verification)",
-      "security2fa": "Account security (2-step verification)",
       "logout": "Log out",
       "login": "Log in",
       "signup": "Sign up",
       "charts": "Charts",
       "business": "Business",
       "searchPh": "Tracks, moods, creators",
-      "accountSettings": "Account settings",
-      "mobileMenuOpen": "Open menu",
-      "mobileMenuClose": "Close menu",
-      "mobileMenu": "Mobile menu"
+      "accountSettings": "Account settings"
     },
     "tabs": {
       "label": "Bottom navigation",
@@ -173,16 +155,6 @@
       "confirm": "Confirm",
       "retry": "Retry",
       "save": "Save",
-      "delete": "Delete",
-      "edit": "Edit",
-      "back": "Back",
-      "next": "Next",
-      "search": "Search",
-      "clear": "Clear",
-      "copy": "Copy",
-      "copied": "Copied",
-      "loading": "Loading…",
-      "showMore": "Show more",
       "more": "More",
       "share": "Share",
       "logout": "Log out",
@@ -231,10 +203,6 @@
     },
     "stepper": {
       "label": "Progress steps"
-    },
-    "seal": {
-      "short": "Verified",
-      "full": "Verified commercial-use rights"
     }
   }
 }
