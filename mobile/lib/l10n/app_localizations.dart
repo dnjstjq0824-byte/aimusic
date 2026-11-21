@@ -1249,6 +1249,120 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기타'**
   String get reasonOther;
+
+  /// No description provided for @certTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증서 확인'**
+  String get certTitle;
+
+  /// No description provided for @certNumber.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증서 번호'**
+  String get certNumber;
+
+  /// No description provided for @certIssuedAt.
+  ///
+  /// In ko, this message translates to:
+  /// **'발급일'**
+  String get certIssuedAt;
+
+  /// No description provided for @certPlanTier.
+  ///
+  /// In ko, this message translates to:
+  /// **'요금제'**
+  String get certPlanTier;
+
+  /// No description provided for @certGates.
+  ///
+  /// In ko, this message translates to:
+  /// **'검증 게이트'**
+  String get certGates;
+
+  /// No description provided for @certGatesPassed.
+  ///
+  /// In ko, this message translates to:
+  /// **'통과'**
+  String get certGatesPassed;
+
+  /// No description provided for @certGatesFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'미통과'**
+  String get certGatesFailed;
+
+  /// No description provided for @certNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증서를 찾을 수 없습니다.'**
+  String get certNotFound;
+
+  /// No description provided for @certLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증서를 불러오지 못했습니다.'**
+  String get certLoadFailed;
+
+  /// No description provided for @playerCertificateLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증서'**
+  String get playerCertificateLabel;
+
+  /// No description provided for @completeEmailTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 입력'**
+  String get completeEmailTitle;
+
+  /// No description provided for @completeEmailSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'소셜 계정에서 이메일을 제공하지 않아 추가 입력이 필요합니다.'**
+  String get completeEmailSubtitle;
+
+  /// No description provided for @completeEmailHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'you@example.com'**
+  String get completeEmailHint;
+
+  /// No description provided for @completeEmailSubmit.
+  ///
+  /// In ko, this message translates to:
+  /// **'계속하기'**
+  String get completeEmailSubmit;
+
+  /// No description provided for @completeEmailBackToLogin.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인으로 돌아가기'**
+  String get completeEmailBackToLogin;
+
+  /// No description provided for @completeEmailInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 이메일 주소를 입력하세요.'**
+  String get completeEmailInvalid;
+
+  /// No description provided for @completeEmailFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'제출에 실패했습니다.'**
+  String get completeEmailFailed;
+
+  /// No description provided for @completeEmailPendingTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증 메일을 보냈습니다'**
+  String get completeEmailPendingTitle;
+
+  /// No description provided for @completeEmailPendingBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{email} 주소로 인증 메일을 보냈습니다. 메일의 링크를 누르면 가입이 완료됩니다.'**
+  String completeEmailPendingBody(String email);
 }
 
 class _AppLocalizationsDelegate

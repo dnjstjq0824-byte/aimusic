@@ -13,8 +13,10 @@ import 'core/env.dart';
 import 'core/providers.dart';
 import 'features/auth/age_gate.dart';
 import 'core/theme.dart';
+import 'features/auth/complete_email_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/signup_screen.dart';
+import 'features/certificate/certificate_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/legal/legal_screens.dart';
 import 'features/player/player_screen.dart';
@@ -86,6 +88,11 @@ final _router = GoRouter(
     GoRoute(
       path: '/legal/withdrawal',
       builder: (_, __) => const WithdrawalScreen(),
+    ),
+    GoRoute(
+      path: '/certificate/:number',
+      builder: (_, s) =>
+          CertificateScreen(number: s.pathParameters['number']!),
     ),
   ],
   redirect: (context, state) {

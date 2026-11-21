@@ -30,6 +30,7 @@ class Track {
     this.isrc,
     this.bpm,
     this.musicalKey,
+    this.certNumber,
   });
 
   factory Track.fromJson(Map<String, dynamic> j) => Track(
@@ -60,6 +61,7 @@ class Track {
         isrc: j['isrc'] as String?,
         bpm: (j['bpm'] as num?)?.toDouble(),
         musicalKey: j['musicalKey'] as String?,
+        certNumber: j['certNumber'] as String?,
       );
 
   final String id;
@@ -86,6 +88,7 @@ class Track {
   final String? isrc;
   final double? bpm;
   final String? musicalKey;
+  final String? certNumber;
 
   bool get isReady => status == 'READY';
   bool get isTakenDown => status == 'TAKEN_DOWN' || status == 'TAKEDOWN';
@@ -93,6 +96,77 @@ class Track {
   /// Lock-screen / notification subtitle with the AI-generated tag.
   String get subtitle =>
       aiGenerated ? 'AI-generated · $aiProvider' : aiProvider;
+}
+
+/// Track certificate mirrors domain.TrackCertificate.
+class TrackCertificate {
+  TrackCertificate({
+    required this.id,
+    required this.trackId,
+    required this.certNumber,
+    this.issuedBy,
+    required this.issuedAt,
+    required this.createdAt,
+  });
+
+  factory TrackCertificate.fromJson(Map<String, dynamic> j) =>
+      TrackCertificate(
+        id: j['id'] as String,
+        trackId: j['trackId'] as String,
+        certNumber: j['certNumber'] as String,
+        issuedBy: j['issuedBy'] as String?,
+        issuedAt: j['issuedAt'] as String,
+        createdAt: j['createdAt'] as String,
+      );
+
+  final String id;
+  final String trackId;
+  final String certNumber;
+  final String? issuedBy;
+  final String issuedAt;
+  final String createdAt;
+}
+
+/// Public certificate view from GET /certificates/:number.
+class CertificateView {
+  CertificateView({
+    required this.certificate,
+    required this.trackId,
+    required this.title,
+    required this.aiProvider,
+    required this.status,
+    required this.gatesPassed,
+    this.aiModel,
+    this.isrc,
+    this.planTier,
+    this.generatedAt,
+  });
+
+  factory CertificateView.fromJson(Map<String, dynamic> j) =>
+      CertificateView(
+        certificate: TrackCertificate.fromJson(
+            j['certificate'] as Map<String, dynamic>),
+        trackId: j['trackId'] as String,
+        title: (j['title'] as String?) ?? '',
+        aiProvider: (j['aiProvider'] as String?) ?? '',
+        status: (j['status'] as String?) ?? '',
+        gatesPassed: (j['gatesPassed'] as bool?) ?? false,
+        aiModel: j['aiModel'] as String?,
+        isrc: j['isrc'] as String?,
+        planTier: j['planTier'] as String?,
+        generatedAt: j['generatedAt'] as String?,
+      );
+
+  final TrackCertificate certificate;
+  final String trackId;
+  final String title;
+  final String aiProvider;
+  final String status;
+  final bool gatesPassed;
+  final String? aiModel;
+  final String? isrc;
+  final String? planTier;
+  final String? generatedAt;
 }
 
 /// Signed stream URL from GET /tracks/:id/stream.

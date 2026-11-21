@@ -611,4 +611,63 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasonOther => 'その他';
+
+  @override
+  String get certTitle => '証明書の確認';
+
+  @override
+  String get certNumber => '証明書番号';
+
+  @override
+  String get certIssuedAt => '発行日';
+
+  @override
+  String get certPlanTier => 'プラン';
+
+  @override
+  String get certGates => '検証ゲート';
+
+  @override
+  String get certGatesPassed => '合格';
+
+  @override
+  String get certGatesFailed => '不合格';
+
+  @override
+  String get certNotFound => '証明書が見つかりません。';
+
+  @override
+  String get certLoadFailed => '証明書を読み込めませんでした。';
+
+  @override
+  String get playerCertificateLabel => '証明書';
+
+  @override
+  String get completeEmailTitle => 'メールの入力';
+
+  @override
+  String get completeEmailSubtitle => 'ソーシャルアカウントからメールが提供されなかったため、追加の入力が必要です。';
+
+  @override
+  String get completeEmailHint => 'you@example.com';
+
+  @override
+  String get completeEmailSubmit => '続ける';
+
+  @override
+  String get completeEmailBackToLogin => 'ログインに戻る';
+
+  @override
+  String get completeEmailInvalid => '有効なメールアドレスを入力してください。';
+
+  @override
+  String get completeEmailFailed => '送信に失敗しました。';
+
+  @override
+  String get completeEmailPendingTitle => '認証メールを送信しました';
+
+  @override
+  String completeEmailPendingBody(String email) {
+    return '$email に認証メールを送信しました。メール内のリンクを開くと登録が完了します。';
+  }
 }

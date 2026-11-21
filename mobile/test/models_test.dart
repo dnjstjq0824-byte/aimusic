@@ -33,6 +33,48 @@ void main() {
     });
   });
 
+  group('Track certificate (N2)', () {
+    test('parses certNumber when present', () {
+      final t = Track.fromJson({
+        'id': 't1',
+        'partnerId': 'p1',
+        'title': 'Neon',
+        'status': 'READY',
+        'certNumber': 'AVB-TEST1234',
+      });
+      expect(t.certNumber, 'AVB-TEST1234');
+    });
+
+    test('missing certNumber defaults to null', () {
+      final t = Track.fromJson({
+        'id': 't1',
+        'partnerId': 'p1',
+        'title': 'Neon',
+      });
+      expect(t.certNumber, isNull);
+    });
+
+    test('parses certificate view', () {
+      final v = CertificateView.fromJson({
+        'certificate': {
+          'id': 'c1',
+          'trackId': 't1',
+          'certNumber': 'AVB-TEST1234',
+          'issuedAt': '2026-11-21T00:00:00Z',
+          'createdAt': '2026-11-21T00:00:00Z',
+        },
+        'trackId': 't1',
+        'title': 'Neon',
+        'aiProvider': 'SUNO',
+        'status': 'READY',
+        'gatesPassed': true,
+      });
+      expect(v.certificate.certNumber, 'AVB-TEST1234');
+      expect(v.gatesPassed, isTrue);
+      expect(v.planTier, isNull);
+    });
+  });
+
   group('StreamTicket', () {
     test('parses HQ grant', () {
       final t = StreamTicket.fromJson({

@@ -190,5 +190,31 @@
   "reasonAiPolicy": "AIポリシー違反",
   "reasonVoiceClone": "無断ボイスクローン",
   "reasonSample": "無断サンプル使用",
-  "reasonOther": "その他"
+  "reasonOther": "その他",
+  "certTitle": "証明書の確認",
+  "certNumber": "証明書番号",
+  "certIssuedAt": "発行日",
+  "certPlanTier": "プラン",
+  "certGates": "検証ゲート",
+  "certGatesPassed": "合格",
+  "certGatesFailed": "不合格",
+  "certNotFound": "証明書が見つかりません。",
+  "certLoadFailed": "証明書を読み込めませんでした。",
+  "playerCertificateLabel": "証明書",
+  "completeEmailTitle": "メールの入力",
+  "completeEmailSubtitle": "ソーシャルアカウントからメールが提供されなかったため、追加の入力が必要です。",
+  "completeEmailHint": "you@example.com",
+  "completeEmailSubmit": "続ける",
+  "completeEmailBackToLogin": "ログインに戻る",
+  "completeEmailInvalid": "有効なメールアドレスを入力してください。",
+  "completeEmailFailed": "送信に失敗しました。",
+  "completeEmailPendingTitle": "認証メールを送信しました",
+  "completeEmailPendingBody": "{email} に認証メールを送信しました。メール内のリンクを開くと登録が完了します。",
+  "@completeEmailPendingBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

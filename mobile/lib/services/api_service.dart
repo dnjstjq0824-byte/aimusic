@@ -52,6 +52,20 @@ class ApiService {
     }
   }
 
+  /// Public certificate view. Returns null when the number is unknown
+  /// (200 {data:null}: absence is a normal query result, not an error).
+  Future<CertificateView?> verifyCertificate(String number) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+          '/certificates/${Uri.encodeComponent(number)}');
+      final data = res.data!['data'];
+      if (data == null) return null;
+      return CertificateView.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      throw toApiException(e);
+    }
+  }
+
   // ---- Playback: POST /playback/heartbeat, GET+PUT /playback/state/:id ----
 
   Future<HeartbeatResult> heartbeat({

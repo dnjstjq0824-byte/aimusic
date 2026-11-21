@@ -544,6 +544,48 @@ class _AiLicenseTab extends ConsumerWidget {
           _row(context, 'ISRC', track.isrc ?? '-'),
           _row(context, s.playerPlayCountLabel, '${track.playCount}'),
           _row(context, s.playerStatusLabel, track.status),
+          if (track.certNumber != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(s.playerCertificateLabel,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => context.go(
+                          '/certificate/${Uri.encodeComponent(track.certNumber!)}'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            size: 18,
+                            color:
+                                Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              track.certNumber!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 12),
           Text(
             s.playerAiNotice,

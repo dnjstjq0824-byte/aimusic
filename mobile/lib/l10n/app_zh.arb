@@ -190,5 +190,31 @@
   "reasonAiPolicy": "违反AI政策",
   "reasonVoiceClone": "未经授权的声音克隆",
   "reasonSample": "未经授权的采样使用",
-  "reasonOther": "其他"
+  "reasonOther": "其他",
+  "certTitle": "验证证书",
+  "certNumber": "证书编号",
+  "certIssuedAt": "签发日期",
+  "certPlanTier": "套餐",
+  "certGates": "验证关卡",
+  "certGatesPassed": "通过",
+  "certGatesFailed": "未通过",
+  "certNotFound": "未找到证书。",
+  "certLoadFailed": "证书加载失败。",
+  "playerCertificateLabel": "证书",
+  "completeEmailTitle": "输入邮箱",
+  "completeEmailSubtitle": "社交账号未提供邮箱，需要补充输入。",
+  "completeEmailHint": "you@example.com",
+  "completeEmailSubmit": "继续",
+  "completeEmailBackToLogin": "返回登录",
+  "completeEmailInvalid": "请输入有效的邮箱地址。",
+  "completeEmailFailed": "提交失败。",
+  "completeEmailPendingTitle": "验证邮件已发送",
+  "completeEmailPendingBody": "我们已向 {email} 发送了验证邮件。点击邮件中的链接即可完成注册。",
+  "@completeEmailPendingBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

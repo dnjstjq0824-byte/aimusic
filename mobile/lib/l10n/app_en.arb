@@ -190,5 +190,31 @@
   "reasonAiPolicy": "AI policy violation",
   "reasonVoiceClone": "Unauthorized voice clone",
   "reasonSample": "Unauthorized sample use",
-  "reasonOther": "Other"
+  "reasonOther": "Other",
+  "certTitle": "Certificate",
+  "certNumber": "Certificate number",
+  "certIssuedAt": "Issued at",
+  "certPlanTier": "Plan tier",
+  "certGates": "Verification gates",
+  "certGatesPassed": "Passed",
+  "certGatesFailed": "Not passed",
+  "certNotFound": "Certificate not found.",
+  "certLoadFailed": "Failed to load the certificate.",
+  "playerCertificateLabel": "Certificate",
+  "completeEmailTitle": "Enter your email",
+  "completeEmailSubtitle": "Your social account did not share an email, so we need one more step.",
+  "completeEmailHint": "you@example.com",
+  "completeEmailSubmit": "Continue",
+  "completeEmailBackToLogin": "Back to login",
+  "completeEmailInvalid": "Enter a valid email address.",
+  "completeEmailFailed": "Submission failed.",
+  "completeEmailPendingTitle": "Verification email sent",
+  "completeEmailPendingBody": "We sent a verification email to {email}. Open the link in the mail to finish signing up.",
+  "@completeEmailPendingBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

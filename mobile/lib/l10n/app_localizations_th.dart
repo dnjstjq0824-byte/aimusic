@@ -620,4 +620,64 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get reasonOther => 'อื่น ๆ';
+
+  @override
+  String get certTitle => 'ตรวจสอบใบรับรอง';
+
+  @override
+  String get certNumber => 'หมายเลขใบรับรอง';
+
+  @override
+  String get certIssuedAt => 'วันที่ออก';
+
+  @override
+  String get certPlanTier => 'แผน';
+
+  @override
+  String get certGates => 'เกณฑ์ตรวจสอบ';
+
+  @override
+  String get certGatesPassed => 'ผ่าน';
+
+  @override
+  String get certGatesFailed => 'ไม่ผ่าน';
+
+  @override
+  String get certNotFound => 'ไม่พบใบรับรอง';
+
+  @override
+  String get certLoadFailed => 'โหลดใบรับรองไม่สำเร็จ';
+
+  @override
+  String get playerCertificateLabel => 'ใบรับรอง';
+
+  @override
+  String get completeEmailTitle => 'กรอกอีเมล';
+
+  @override
+  String get completeEmailSubtitle =>
+      'บัญชีโซเชียลไม่ได้แชร์อีเมล จึงต้องขออีกขั้น';
+
+  @override
+  String get completeEmailHint => 'you@example.com';
+
+  @override
+  String get completeEmailSubmit => 'ดำเนินการต่อ';
+
+  @override
+  String get completeEmailBackToLogin => 'กลับไปล็อกอิน';
+
+  @override
+  String get completeEmailInvalid => 'กรุณากรอกอีเมลที่ถูกต้อง';
+
+  @override
+  String get completeEmailFailed => 'ส่งไม่สำเร็จ';
+
+  @override
+  String get completeEmailPendingTitle => 'ส่งจดหมายยืนยันแล้ว';
+
+  @override
+  String completeEmailPendingBody(String email) {
+    return 'เราส่งจดหมายยืนยันไปที่ $email แล้ว เปิดลิงก์ในจดหมายเพื่อสมัครให้เสร็จสมบูรณ์';
+  }
 }

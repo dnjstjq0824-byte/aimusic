@@ -610,4 +610,63 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reasonOther => '其他';
+
+  @override
+  String get certTitle => '验证证书';
+
+  @override
+  String get certNumber => '证书编号';
+
+  @override
+  String get certIssuedAt => '签发日期';
+
+  @override
+  String get certPlanTier => '套餐';
+
+  @override
+  String get certGates => '验证关卡';
+
+  @override
+  String get certGatesPassed => '通过';
+
+  @override
+  String get certGatesFailed => '未通过';
+
+  @override
+  String get certNotFound => '未找到证书。';
+
+  @override
+  String get certLoadFailed => '证书加载失败。';
+
+  @override
+  String get playerCertificateLabel => '证书';
+
+  @override
+  String get completeEmailTitle => '输入邮箱';
+
+  @override
+  String get completeEmailSubtitle => '社交账号未提供邮箱，需要补充输入。';
+
+  @override
+  String get completeEmailHint => 'you@example.com';
+
+  @override
+  String get completeEmailSubmit => '继续';
+
+  @override
+  String get completeEmailBackToLogin => '返回登录';
+
+  @override
+  String get completeEmailInvalid => '请输入有效的邮箱地址。';
+
+  @override
+  String get completeEmailFailed => '提交失败。';
+
+  @override
+  String get completeEmailPendingTitle => '验证邮件已发送';
+
+  @override
+  String completeEmailPendingBody(String email) {
+    return '我们已向 $email 发送了验证邮件。点击邮件中的链接即可完成注册。';
+  }
 }

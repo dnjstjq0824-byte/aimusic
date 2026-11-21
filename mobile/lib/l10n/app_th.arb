@@ -190,5 +190,31 @@
   "reasonAiPolicy": "ละเมิดนโยบาย AI",
   "reasonVoiceClone": "โคลนเสียงโดยไม่ได้รับอนุญาต",
   "reasonSample": "ใช้ตัวอย่างโดยไม่ได้รับอนุญาต",
-  "reasonOther": "อื่น ๆ"
+  "reasonOther": "อื่น ๆ",
+  "certTitle": "ตรวจสอบใบรับรอง",
+  "certNumber": "หมายเลขใบรับรอง",
+  "certIssuedAt": "วันที่ออก",
+  "certPlanTier": "แผน",
+  "certGates": "เกณฑ์ตรวจสอบ",
+  "certGatesPassed": "ผ่าน",
+  "certGatesFailed": "ไม่ผ่าน",
+  "certNotFound": "ไม่พบใบรับรอง",
+  "certLoadFailed": "โหลดใบรับรองไม่สำเร็จ",
+  "playerCertificateLabel": "ใบรับรอง",
+  "completeEmailTitle": "กรอกอีเมล",
+  "completeEmailSubtitle": "บัญชีโซเชียลไม่ได้แชร์อีเมล จึงต้องขออีกขั้น",
+  "completeEmailHint": "you@example.com",
+  "completeEmailSubmit": "ดำเนินการต่อ",
+  "completeEmailBackToLogin": "กลับไปล็อกอิน",
+  "completeEmailInvalid": "กรุณากรอกอีเมลที่ถูกต้อง",
+  "completeEmailFailed": "ส่งไม่สำเร็จ",
+  "completeEmailPendingTitle": "ส่งจดหมายยืนยันแล้ว",
+  "completeEmailPendingBody": "เราส่งจดหมายยืนยันไปที่ {email} แล้ว เปิดลิงก์ในจดหมายเพื่อสมัครให้เสร็จสมบูรณ์",
+  "@completeEmailPendingBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

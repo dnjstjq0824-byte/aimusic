@@ -610,4 +610,63 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get reasonOther => '기타';
+
+  @override
+  String get certTitle => '인증서 확인';
+
+  @override
+  String get certNumber => '인증서 번호';
+
+  @override
+  String get certIssuedAt => '발급일';
+
+  @override
+  String get certPlanTier => '요금제';
+
+  @override
+  String get certGates => '검증 게이트';
+
+  @override
+  String get certGatesPassed => '통과';
+
+  @override
+  String get certGatesFailed => '미통과';
+
+  @override
+  String get certNotFound => '인증서를 찾을 수 없습니다.';
+
+  @override
+  String get certLoadFailed => '인증서를 불러오지 못했습니다.';
+
+  @override
+  String get playerCertificateLabel => '인증서';
+
+  @override
+  String get completeEmailTitle => '이메일 입력';
+
+  @override
+  String get completeEmailSubtitle => '소셜 계정에서 이메일을 제공하지 않아 추가 입력이 필요합니다.';
+
+  @override
+  String get completeEmailHint => 'you@example.com';
+
+  @override
+  String get completeEmailSubmit => '계속하기';
+
+  @override
+  String get completeEmailBackToLogin => '로그인으로 돌아가기';
+
+  @override
+  String get completeEmailInvalid => '올바른 이메일 주소를 입력하세요.';
+
+  @override
+  String get completeEmailFailed => '제출에 실패했습니다.';
+
+  @override
+  String get completeEmailPendingTitle => '인증 메일을 보냈습니다';
+
+  @override
+  String completeEmailPendingBody(String email) {
+    return '$email 주소로 인증 메일을 보냈습니다. 메일의 링크를 누르면 가입이 완료됩니다.';
+  }
 }

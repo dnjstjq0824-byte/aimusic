@@ -625,4 +625,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasonOther => 'Other';
+
+  @override
+  String get certTitle => 'Certificate';
+
+  @override
+  String get certNumber => 'Certificate number';
+
+  @override
+  String get certIssuedAt => 'Issued at';
+
+  @override
+  String get certPlanTier => 'Plan tier';
+
+  @override
+  String get certGates => 'Verification gates';
+
+  @override
+  String get certGatesPassed => 'Passed';
+
+  @override
+  String get certGatesFailed => 'Not passed';
+
+  @override
+  String get certNotFound => 'Certificate not found.';
+
+  @override
+  String get certLoadFailed => 'Failed to load the certificate.';
+
+  @override
+  String get playerCertificateLabel => 'Certificate';
+
+  @override
+  String get completeEmailTitle => 'Enter your email';
+
+  @override
+  String get completeEmailSubtitle =>
+      'Your social account did not share an email, so we need one more step.';
+
+  @override
+  String get completeEmailHint => 'you@example.com';
+
+  @override
+  String get completeEmailSubmit => 'Continue';
+
+  @override
+  String get completeEmailBackToLogin => 'Back to login';
+
+  @override
+  String get completeEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get completeEmailFailed => 'Submission failed.';
+
+  @override
+  String get completeEmailPendingTitle => 'Verification email sent';
+
+  @override
+  String completeEmailPendingBody(String email) {
+    return 'We sent a verification email to $email. Open the link in the mail to finish signing up.';
+  }
 }
