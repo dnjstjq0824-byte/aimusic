@@ -62,6 +62,18 @@ MAX_PROMPT_CHARS = 2000
 MAX_LYRICS_CHARS = 10000
 MAX_DURATION_SEC = 600
 MAX_VARIATIONS = 4
+# Watermark (WI-N13): AudioSeal (code MIT, weights MIT). Model cards load
+# lazily so /healthz stays fast; missing package/GPU keeps v2 at 503.
+AUDIOSEAL_GEN = os.environ.get("AUDIOSEAL_GENERATOR", "audioseal_wm_16bits")
+AUDIOSEAL_DET = os.environ.get("AUDIOSEAL_DETECTOR", "audioseal_detector_16bits")
+AUDIOSEAL_SR = 16000
+WATERMARK_PROB_MIN = 0.5  # detector presence threshold (measured 1.0/0.0 split)
+# Similarity screen (WI-N13): fingerprint list JSON
+# {"fingerprints": [{"id": str, "hash": hex64}]} (eval/memorization.py).
+# Empty = no references yet; the check passes vacuously and the safety
+# verdict records "similarity" only when references were actually compared.
+REFERENCE_FPS_PATH = os.environ.get("GENERATOR_REFERENCE_FPS", "")
+SIMILARITY_MAX = float(os.environ.get("GENERATOR_SIMILARITY_MAX", "0.90"))
 
 
 class Delivery(BaseModel):
@@ -232,18 +244,164 @@ def infer(prompt: str, lyrics: str, model: str, params: dict) -> bytes:
             return fh.read()
 
 
+_watermark_models: tuple | None = None
+_watermark_lock = threading.Lock()
+
+
+def _get_watermark_models() -> tuple:
+    """Load the AudioSeal generator + detector once (lazy)."""
+    global _watermark_models  # noqa: PLW0603
+    with _watermark_lock:
+        if _watermark_models is not None:
+            return _watermark_models
+        try:
+            from audioseal import AudioSeal  # pylint: disable=import-outside-toplevel
+        except ImportError as exc:
+            raise NotImplementedError(
+                "audioseal is not installed here: pip install audioseal "
+                "(torch + the MIT model cards) on the GPU machine."
+            ) from exc
+        gen = AudioSeal.load_generator(AUDIOSEAL_GEN)
+        det = AudioSeal.load_detector(AUDIOSEAL_DET)
+        try:
+            import torch  # pylint: disable=import-outside-toplevel
+
+            if torch.cuda.is_available():
+                gen = gen.cuda()
+                det = det.cuda()
+        except ImportError:
+            pass
+        _watermark_models = (gen, det)
+        return _watermark_models
+
+
+def _resample_mono(raw_wav: bytes, target_sr: int) -> tuple[list[float], int]:
+    """Decode WAV bytes to mono float samples; resample to target_sr."""
+    import struct  # pylint: disable=import-outside-toplevel
+
+    with wave.open(io.BytesIO(raw_wav), "rb") as fh:
+        n_channels, width, rate, n_frames = (
+            fh.getnchannels(),
+            fh.getsampwidth(),
+            fh.getframerate(),
+            fh.getnframes(),
+        )
+        raw = fh.readframes(n_frames)
+    if width == 2:
+        samples = struct.unpack(f"<{len(raw) // 2}h", raw)
+        scale = 32768.0
+    elif width == 4:
+        samples = struct.unpack(f"<{len(raw) // 4}i", raw)
+        scale = 2147483648.0
+    else:
+        raise ValueError(f"watermark needs 16/32-bit WAV, got {width * 8}-bit")
+    mono = [sum(samples[i:i + n_channels]) / (n_channels * scale) for i in range(0, len(samples), n_channels)]
+    if rate == target_sr or not mono:
+        return mono, rate
+    # Linear resample (stdlib-only; quality is fine for a watermark carrier).
+    ratio = target_sr / rate
+    out_len = max(int(len(mono) * ratio), 1)
+    out = [mono[min(int(i / ratio), len(mono) - 1)] for i in range(out_len)]
+    return out, target_sr
+
+
+def _encode_wav_mono16(mono: list[float], rate: int) -> bytes:
+    import struct  # pylint: disable=import-outside-toplevel
+
+    pcm = b"".join(struct.pack("<h", max(-32768, min(32767, int(s * 32767)))) for s in mono)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as fh:
+        fh.setnchannels(1)
+        fh.setsampwidth(2)
+        fh.setframerate(rate)
+        fh.writeframes(pcm)
+    return buf.getvalue()
+
+
 def insert_watermark(raw_wav: bytes, job_id: str) -> tuple[bytes, str]:
     """Insert the inaudible provenance watermark; return (wav, watermarkId).
 
-    SETUP-ONLY STUB: implement on the GPU machine with the watermark library
-    chosen by the WI-G2 PoC (candidate: AudioSeal — license + robustness to
-    confirm there). Until then, watermarking is unavailable and v2 requests
-    fail closed with 503 below.
+    AudioSeal (WI-N13, code + weights MIT). The carrier is resampled to
+    16kHz mono for embedding; the message bits are random per job and the
+    returned watermarkId is a server-generated `wm-<job>-<rand>` handle
+    (message bits alone are not bit-perfect, so the ID is tracked
+    out-of-band, not decoded from audio). Raises NotImplementedError when
+    audioseal is missing (v2 stays 503, fail closed).
     """
-    raise NotImplementedError(
-        "watermark library not installed on this machine "
-        "(WI-G2 PoC selects it; see docs/generation/gpu-options.md and generator/poc/run_poc.py)"
-    )
+    import secrets  # pylint: disable=import-outside-toplevel
+
+    gen, _ = _get_watermark_models()
+    import torch  # pylint: disable=import-outside-toplevel
+
+    mono, _ = _resample_mono(raw_wav, AUDIOSEAL_SR)
+    audio = torch.tensor(mono, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    message = torch.randint(0, 2, (1, 16))
+    device = next(gen.parameters()).device
+    with torch.no_grad():
+        marked = audio.to(device) + gen.get_watermark(audio.to(device), sample_rate=AUDIOSEAL_SR, message=message.to(device))
+    out = marked.squeeze().detach().cpu().tolist()
+    watermark_id = f"wm-{job_id}-{secrets.token_hex(4)}"
+    return _encode_wav_mono16(out, AUDIOSEAL_SR), watermark_id
+
+
+def detect_watermark(raw_wav: bytes) -> tuple[bool, float]:
+    """Return (present, probability) for the AudioSeal mark in raw_wav."""
+    _, det = _get_watermark_models()
+    import torch  # pylint: disable=import-outside-toplevel
+
+    mono, _ = _resample_mono(raw_wav, AUDIOSEAL_SR)
+    audio = torch.tensor(mono, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    device = next(det.parameters()).device
+    with torch.no_grad():
+        result, _ = det.detect_watermark(audio.to(device), AUDIOSEAL_SR)
+    prob = float(result.reshape(-1)[0].detach().cpu())
+    return prob >= WATERMARK_PROB_MIN, prob
+
+
+def check_similarity(raw_wav: bytes) -> tuple[bool, dict]:
+    """Screen raw_wav against the reference fingerprint list.
+
+    Returns (passed, detail). With no reference file configured, the
+    check passes vacuously and detail.compared is 0 — the caller must
+    NOT claim "similarity" in that case (AVIBE gate stays fail-closed
+    until references exist). Otherwise passed = best < SIMILARITY_MAX.
+    """
+    import hashlib  # pylint: disable=import-outside-toplevel
+    import json  # pylint: disable=import-outside-toplevel
+    import struct  # pylint: disable=import-outside-toplevel
+
+    if not REFERENCE_FPS_PATH:
+        return True, {"compared": 0, "best": None, "note": "no reference list configured"}
+    try:
+        with open(REFERENCE_FPS_PATH, encoding="utf-8") as fh:
+            refs = json.load(fh).get("fingerprints", [])
+    except (OSError, ValueError) as exc:
+        return False, {"compared": 0, "best": None, "error": str(exc)}
+    with wave.open(io.BytesIO(raw_wav), "rb") as fh:
+        if fh.getsampwidth() != 2:
+            return False, {"compared": 0, "best": None, "error": "want 16-bit WAV"}
+        n_channels, n_frames = fh.getnchannels(), fh.getnframes()
+        raw = fh.readframes(n_frames)
+    samples = struct.unpack(f"<{len(raw) // 2}h", raw)
+    mono = [sum(samples[i:i + n_channels]) / (n_channels * 32768.0) for i in range(0, len(samples), n_channels)]
+    blocks, bits, per = 256, 0, max(len(mono) // 256, 1)
+    for b in range(blocks):
+        block = mono[b * per:(b + 1) * per] or [0.0]
+        if sum(block) / len(block) >= 0:
+            bits |= 1 << b
+    want = f"{bits:064x}"
+    best = {"id": None, "similarity": 0.0}
+    for fp in refs:
+        try:
+            sim = (blocks - bin(int(want, 16) ^ int(fp["hash"], 16)).count("1")) / blocks
+        except (KeyError, ValueError):
+            continue
+        if sim > best["similarity"]:
+            best = {"id": fp.get("id"), "similarity": round(sim, 4)}
+    passed = best["similarity"] < SIMILARITY_MAX
+    return passed, {"compared": len(refs), "best": best, "hash": want,
+                    "maxAllowed": SIMILARITY_MAX,
+                    "fpNote": "cheap PCM prefilter (eval/memorization.py); spectral upgrade is the documented next step"}
 
 
 def wav_duration_ms(raw: bytes) -> int:
@@ -321,6 +479,14 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         marked, watermark_id = insert_watermark(audio, req.job_id)
     except NotImplementedError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    # Similarity screen (WI-N13): fail the job when the clip is too close
+    # to a reference. "similarity" is claimed only when references were
+    # actually compared (else the AVIBE gate stays fail-closed).
+    sim_passed, sim_detail = check_similarity(marked)
+    checks = ["prompt", "watermark"]
+    if sim_detail.get("compared"):
+        checks.append("similarity")
+    safety = Safety(passed=bool(sim_passed), checks=checks)
     duration_ms = wav_duration_ms(marked)
     if req.delivery and req.delivery.upload_url:
         try:
@@ -335,7 +501,7 @@ def generate(req: GenerateRequest) -> GenerateResponse:
             modelVersion=req.model_version or MODEL_VERSION,
             seed=req.seed,
             weightsHash=WEIGHTS_HASH,
-            safety=Safety(passed=True, checks=["prompt", "watermark"]),
+            safety=safety,
             watermarkId=watermark_id,
         )
     return GenerateResponse(
@@ -346,6 +512,6 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         modelVersion=req.model_version or MODEL_VERSION,
         seed=req.seed,
         weightsHash=WEIGHTS_HASH,
-        safety=Safety(passed=True, checks=["prompt", "watermark"]),
+        safety=safety,
         watermarkId=watermark_id,
     )

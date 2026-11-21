@@ -242,7 +242,62 @@
 - 남은 문제: perf·script 예산 달성은 아키텍처 변경 필요
   (폰트 서브셋 재설계, JS 구조 다이어트). 별도 WI로 제안.
 
-## WI-N13 워터마크·유사도 (E2E·데모 생성 대기)
+## WI-N6 화면 하네스 보완 — PASS (전수 실행 중)
+
+- 변경: `web/e2e/screens/setup.mjs` (BUSINESS 역할 + 승인 프로필
+  계정 + 매장 2종), `web/e2e/screens/config.mjs` (business 역할
+  추가), `web/e2e/screens/run.mjs` (컨텍스트 시작 시 토큰 갱신 +
+  `.auth.json` 저장), `web/e2e/screens/console-lang.mjs` 신규
+  (콘솔 3종 × 4언어 번역 키 0개 검사 + 관리자 en 복귀 검사),
+  `web/app/middleware/app.global.ts` (`/ja|th|zh-cn/admin` →
+  `/en/admin` 302), `web/package.json` (`harness:console-lang`).
+- 검증:
+  - setup: 5 roles 기록 확인.
+  - console-lang: 12/12 PASS (콘솔 3종 × 4언어 raw 키 0개,
+    관리자 ja/th/zh-cn → /en/admin 리다이렉트 확인).
+  - 전수 하네스: preview 대상 실행 중 (토큰 갱신 효과 +
+    business 콘솔 캡처 확인 예정).
+- 발견·수정한 결함: 관리자 ja 접근 시 en 폴백이 동작 안 했음
+  (`/ja/admin` 라우트 자체가 없어 404). 미들웨어 리다이렉트로
+  수정 (R-2).
+- 남은 문제: 전수 결과 수집 후 확정.
+
+## WI-N7 디자인 쇼케이스 v3 갱신 — PASS (화면 확인 대기)
+
+- 변경: `web/app/pages/dev/ui.vue` 전면 갱신 (v3 표기, 타이포,
+  버튼 7종, 카드·배지, 입력 4종, prompt-box + hero-glow,
+  KpiCard 3종, ConsoleShell 미리보기).
+- 검증: typecheck 0. 화면 캡처 확인은 하네스 완료 후 빌드에서
+  수행.
+- 남은 문제: 없음.
+
+## WI-N8 i18n 미사용 키 정리 — PASS (빌드 검증 대기)
+
+- 변경: 6개 언어 × 63개 키 삭제 (동적 26종·간접 참조·
+  substring 오탐까지 3단계 검증 후 삭제).
+- 검증: check-i18n PASS (경고 337→276), typecheck 0,
+  vitest 127/127. 삭제 키 사용처 0건 (FULL + 동적 패턴 +
+  간접 리터럴 전수 대조).
+- 남은 문제: 빌드 검증을 하네스 완료 후 수행.
+
+## WI-N13 워터마크·유사도 + 데모 — 부분 PASS (데모 생성 BLOCKED)
+
+- 변경: `generator/server.py` (AudioSeal 삽입·검출·유사도·
+  verdict), `backend/internal/service/generation.go` (금칙어
+  17→58개·CJK substring), `backend/cmd/worker/main.go`
+  (`recheckLicense` AVIBE 분기 — E2E에서 발견한 결함 수정),
+  `docs/generation/watermark-similarity.md` 신규, 가드 테스트 확장.
+- 검증:
+  - AudioSeal: clean 0.0/marked 1.0, MP3 1.0, 잘라내기 0.9933,
+    -20dB 1.0. 유사도: 무참조 vacuous, 자기참조 실패 (1.0),
+    타 클립 통과 (0.5).
+  - 로컬 E2E (stub 생성 서버): generations → SUCCEEDED
+    (safety 3종 + watermarkId) → self pre-check 403 →
+    finalize 201 → PENDING → Gate 4 → READY +
+    `origin: AVIBE_MODEL`. PASS.
+  - `go test` service/generator/worker 전부 ok.
+- 남은 문제 (BLOCKED/P6): 데모 6곡 생성은 GPU Pod 필요.
+  Pod 켜기·끄기는 PO 또는 Claude. 운영 등록은 G-MODEL·G-2 후.
 
 - 변경: `generator/server.py` (`insert_watermark` AudioSeal 구현·
   `detect_watermark`·`check_similarity`·v2 safety verdict 동적 구성),

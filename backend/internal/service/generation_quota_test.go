@@ -147,6 +147,11 @@ func TestGenerationMultilingualGuard(t *testing.T) {
 		"あの歌手っぽく歌って",                   // ja style construction
 		"cover of blackpink",           // en artist name
 		"아이유 노래처럼 만들어줘",                // ko artist name
+		"a song like michael jackson",  // N13 extended artist seed
+		"세븐틴 무대처럼 신나게",              // N13 extended artist seed
+		"米津玄師みたいな曲",               // N13 extended artist seed (no word boundary)
+		"지민처럼 섬세한 보컬",               // N13: particle-attached 2-rune name
+		"周杰伦的风格来一首",                // N13: zh artist name
 		"ＶＯＩＣＥ　ＣＬＯＮＥ me",               // full-width evasion
 		"voice    clone\tme",           // whitespace evasion
 	}
@@ -160,6 +165,9 @@ func TestGenerationMultilingualGuard(t *testing.T) {
 		"a triumphant orchestral finale", // "iu" in triumph must not match artist IU
 		"liquid drum and bass groove",
 		"잔잔한 피아노와 스트링의 시네마틱 인트로",
+		"warm morning sun through the window", // "태양" is excluded: common noun
+		"sugar sweet synth pop",               // "슈가" is excluded: common noun
+		"queen of the night aria remix",       // "queen" is excluded: common noun
 	}
 	for _, prompt := range clean {
 		if kw := matchBannedKeyword(prompt, nil); kw != "" {

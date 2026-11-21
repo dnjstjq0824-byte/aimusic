@@ -57,16 +57,29 @@ var BannedStylePatterns = []string{
 	"สไตล์", "แนวเพลงของ",
 }
 
-// BannedArtistNames is the curation seed for real-artist-name blocking (G5):
-// unmistakable global names in canonical + Korean spellings, matched with
-// word boundaries so short names never hit inside other words ("IU" must not
-// match "triumph"). Extend via GENERATION_BANNED_KEYWORDS or a curation PR
-// (PO/legal review: names change and over-blocking harms legit prompts).
+// BannedArtistNames is the curation seed for real-artist-name blocking (G5,
+// extended WI-N13): unmistakable names in canonical + local spellings,
+// matched with word boundaries so short names never hit inside other words
+// ("IU" must not match "triumph"). Deliberately EXCLUDED (over-blocking):
+// common nouns doubling as stage names (queen/정국/태양/대성/윈터/슈가),
+// single-syllable names (뷔), and song titles (ordinary words — block via
+// GENERATION_BANNED_KEYWORDS per case instead). Extend via
+// GENERATION_BANNED_KEYWORDS or a curation PR (PO/legal review: names
+// change and over-blocking harms legit prompts).
 var BannedArtistNames = []string{
 	"bts", "blackpink", "newjeans", "bigbang", "twice",
 	"taylor swift", "drake", "weeknd", "ed sheeran", "adele", "iu",
-	"방탄소년단", "블랙핑크", "뉴진스", "빅뱅", "트와이스",
+	"beatles", "michael jackson", "madonna", "beyonce",
+	"coldplay", "rihanna", "lady gaga", "justin bieber", "ariana grande",
+	"bruno mars", "billie eilish", "eminem", "sia", "sam smith",
+	"dua lipa", "olivia rodrigo", "yoasobi",
+	"방탄소년단", "방탄", "블랙핑크", "뉴진스", "빅뱅", "트와이스",
 	"테일러 스위프트", "아이유",
+	"세븐틴", "스트레이키즈", "에스파", "아이브", "르세라핌", "엔시티",
+	"엑소", "샤이니", "슈퍼주니어", "소녀시대", "지드래곤", "지민",
+	"제이홉", "카리나", "원영", "리사", "지수", "로제",
+	"米津玄師", "あいみょん", "宇多田ヒカル",
+	"周杰伦",
 }
 
 // normalizeGuardText folds full-width ASCII (U+FF01–U+FF5E), ideographic
@@ -94,6 +107,24 @@ func normalizeGuardText(s string) string {
 		b.WriteRune(r)
 	}
 	return strings.ToLower(strings.TrimSpace(b.String()))
+}
+
+// isCJKName reports whether name is all CJK (Han/Hiragana/Katakana/
+// Hangul). CJK names match by substring: CJK text has no word boundaries
+// ("米津玄師みたいな" must match, "지민처럼" must match despite the
+// particle). Curators must keep 1-2 rune CJK names unmistakable (no
+// common nouns like 정국/태양 — see BannedArtistNames).
+func isCJKName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if !(unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) ||
+			unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r)) {
+			return false
+		}
+	}
+	return true
 }
 
 // containsWord reports whether word occurs with word boundaries (letters and
@@ -284,7 +315,14 @@ func matchBannedKeyword(text string, extra []string) string {
 		}
 	}
 	for _, name := range BannedArtistNames {
-		if containsWord(norm, normalizeGuardText(name)) {
+		nn := normalizeGuardText(name)
+		if isCJKName(nn) {
+			if strings.Contains(norm, nn) {
+				return name
+			}
+			continue
+		}
+		if containsWord(norm, nn) {
 			return name
 		}
 	}

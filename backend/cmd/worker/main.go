@@ -418,6 +418,16 @@ func (w *worker) recheckLicense(ctx context.Context, track *domain.Track, policy
 			return "", fmt.Errorf("상업 라이선스 재검증 실패: %v", err)
 		}
 	}
+	// AVIBE-model output skips tiers/cutoff/subscription here, mirroring
+	// ValidateCommercialEligibility: finalize already verified provenance
+	// (similarity + watermark on the SUCCEEDED job), and AVIBE has no
+	// subscription to prove (WI-N13 E2E found this gap).
+	if strings.EqualFold(strings.TrimSpace(track.AIProvider), domain.ProviderAvibe) {
+		if rights.GeneratedAt == nil || rights.GeneratedAt.IsZero() {
+			return "", fmt.Errorf("상업 라이선스 재검증 실패: 음원 생성일 누락")
+		}
+		return "", nil
+	}
 	if rights.SubscriptionID == nil || *rights.SubscriptionID == "" {
 		return "", fmt.Errorf("상업 라이선스 재검증 실패: 구독 증빙 누락")
 	}
