@@ -289,24 +289,31 @@
   vitest 127/127, 빌드 OK. 삭제 키 사용처 0건.
 - 남은 문제: 없음.
 
-## WI-N13 워터마크·유사도 + 데모 — 부분 PASS (데모 생성 BLOCKED)
+## WI-N13 워터마크·유사도 + 데모 — PASS (6번째 1곡 내일)
 
 - 변경: `generator/server.py` (AudioSeal 삽입·검출·유사도·
   verdict), `backend/internal/service/generation.go` (금칙어
   17→58개·CJK substring), `backend/cmd/worker/main.go`
   (`recheckLicense` AVIBE 분기 — E2E에서 발견한 결함 수정),
-  `docs/generation/watermark-similarity.md` 신규, 가드 테스트 확장.
+  `backend/internal/pkg/generator/generator.go` (브라우저 UA —
+  Runpod 프록시 CF 1010 우회), `docs/generation/watermark-similarity.md`
+  신규, 가드 테스트 확장.
 - 검증:
   - AudioSeal: clean 0.0/marked 1.0, MP3 1.0, 잘라내기 0.9933,
     -20dB 1.0. 유사도: 무참조 vacuous, 자기참조 실패 (1.0),
     타 클립 통과 (0.5).
-  - 로컬 E2E (stub 생성 서버): generations → SUCCEEDED
-    (safety 3종 + watermarkId) → self pre-check 403 →
-    finalize 201 → PENDING → Gate 4 → READY +
-    `origin: AVIBE_MODEL`. PASS.
+  - 로컬 E2E (stub): SUCCEEDED → 403 → 201 → READY +
+    AVIBE_MODEL. PASS.
+  - 운영 데모 등록 (PO 승인 G-MODEL·G-2, Pod 직접 기동):
+    Pod `p6u184vx7ma4l5` (RTX PRO 4000), 서버 sync +
+    audioseal 설치 + 참조 FPS (440Hz 무관 톤, 기록 명시).
+    5곡 generations → SUCCEEDED (safety 3종 + watermarkId) →
+    finalize 201 → PENDING → PO Gate 4 승인 → READY 5곡 +
+    `origin: AVIBE_MODEL` 확인. 6번째 (Blue Hour)는 일일
+    한도 (5건) 로 403 — 내일 제출. Pod down 완료 (볼륨 유지).
   - `go test` service/generator/worker 전부 ok.
-- 남은 문제 (BLOCKED/P6): 데모 6곡 생성은 GPU Pod 필요.
-  Pod 켜기·끄기는 PO 또는 Claude. 운영 등록은 G-MODEL·G-2 후.
+- 남은 문제: Blue Hour 1곡 내일 제출·등록. 운영 AVIBE 정책 행
+  추가됨 (로컬 시드와 동일).
 
 - 변경: `generator/server.py` (`insert_watermark` AudioSeal 구현·
   `detect_watermark`·`check_similarity`·v2 safety verdict 동적 구성),
