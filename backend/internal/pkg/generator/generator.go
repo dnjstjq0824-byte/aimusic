@@ -151,6 +151,8 @@ func (b *RemoteBackend) Generate(ctx context.Context, req Request) (*Result, err
 		return nil, fmt.Errorf("build generation request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	// Runpod's proxy front (Cloudflare 1010) rejects non-browser agents.
+	httpReq.Header.Set("User-Agent", "AVIBE-worker/1.0 (+https://avibemusic.com)")
 	if b.token != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+b.token)
 	}
