@@ -7,10 +7,10 @@ on:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.22"
           cache-dependency-path: backend/go.sum
@@ -28,10 +28,10 @@ jobs:
         working-directory: backend
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -55,9 +55,9 @@ jobs:
         run: node --test scripts/worker-grant.test.mjs
 
   mobile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -72,18 +72,28 @@ jobs:
         working-directory: mobile
 
   mobile-release-gate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: 3.47.8
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
+      - name: gradle cache
+        # 11-21 mobile-release-gate failed once on Maven Central 429: fewer
+        # downloads per run, and the build below retries once on failure.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('mobile/android/**/gradle-wrapper.properties', 'mobile/android/**/build.gradle*', 'mobile/android/settings.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
       - name: accept SDK licenses
         # No setup-android action: it installs the obsolete `tools` package and
         # fails on current cmdline-tools. The runner ships a preinstalled SDK.
@@ -100,25 +110,29 @@ jobs:
             -dname 'CN=CI, OU=AVIBE, O=AVIBE, L=Seoul, C=KR'
           printf 'storeFile=/tmp/ci-release.jks\nstorePassword=cirelease\nkeyAlias=cirelease\nkeyPassword=cirelease\n' > mobile/android/key.properties
       - name: release build with prod API host
-        run: flutter build apk --release --dart-define=API_BASE_URL=https://api.avibemusic.com
+        # One retry: transient Maven Central/network errors (429) failed this
+        # step once on 11-21 and passed on re-run.
+        run: |
+          flutter build apk --release --dart-define=API_BASE_URL=https://api.avibemusic.com \
+          || { sleep 60; flutter build apk --release --dart-define=API_BASE_URL=https://api.avibemusic.com; }
         working-directory: mobile
       - name: release host gate
         run: bash scripts/check-mobile-release.sh mobile/build/app/outputs/flutter-apk/app-release.apk api.avibemusic.com
 
   scripts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: shellcheck scripts
         run: |
           bash -n scripts/test-e2e.sh
           bash -n scripts/start-local.sh
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: install e2e tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools ffmpeg
       - name: start stack
@@ -141,7 +155,7 @@ jobs:
         run: ./scripts/test-e2e.sh
         env:
           E2E_KEEP_FIXTURES: "1"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
