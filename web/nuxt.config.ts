@@ -112,6 +112,8 @@ export default defineNuxtConfig({
     // Server-only origins (WI-S3/S5): SSR data fetch + IndexNow key proof.
     apiOrigin: process.env.NUXT_API_PROXY || process.env.VITE_API_PROXY || 'http://localhost:18081',
     indexnowKey: process.env.INDEXNOW_KEY || '',
+    // WI-N1: dynamic-response compression for the CI Lighthouse build only.
+    compressDynamic: process.env.NUXT_COMPRESS_PUBLIC_ASSETS === '1',
     public: {
       apiBaseUrl: process.env.VITE_API_BASE_URL || '/api/v1',
       tossClientKey: process.env.VITE_TOSS_CLIENT_KEY || '',

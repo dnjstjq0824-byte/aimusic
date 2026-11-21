@@ -48,25 +48,37 @@
 - 2차 하네스 (전수 완료, EXIT=0): 1530 screens, 1104 with
   errors/bad-responses. 상태: 200: 644, 404: 885, None: 1.
   ko 404: 9/306 (not-found 등 의도된 것). non-ko 404: 876/1224.
-- **긴급 회귀 발견 (N0 범위 밖, PO 보고)**: 로케일 하위 경로
-  (`/en/charts`, `/ja/charts` 등)가 전부 404. `/en` 홈은 200,
-  `/charts`는 200. 원인: 공개 페이지에 `defineI18nRoute(false)`가
-  남발돼 로케일 라우트가 생성 안 됨 (11-14~) + 11-17 이후
-  [...slug]가 hard 404를 반환 (`2957a4b`; 11-17에는 soft-404 200이라
-  하네스 PASS였음). 운영(`https://avibemusic.com/en/charts` → 404,
-  읽기 전용 확인)도 동일. 수정은 WI 범위 밖이라 하지 않고
-  완료보고에 긴급 결함으로 올림.
+- **결함 발견 (N0 범위 밖, PO 보고)**: 하네스에서 non-ko 404가
+  876/1224. 내역:
+  - `charts.vue`의 `defineI18nRoute(false)` (11-14~): `/en/charts`
+    등이 라우트 미생성으로 404. 운영에서도
+    `https://avibemusic.com/en/charts` → 404 (읽기 전용 확인).
+    공개 페이지 결함이 맞음.
+  - 나머지 로케일 하위 경로 (`/th/playlists` 등): preview
+    빌드·운영 모두 200 정상. dev 서버에서만 404가 관측됨 —
+    장시간 실행 dev 서버의 상태 이상 후보 (N6 재실행 시 dev
+    재시작 후 재확인).
+  - 참고: 11-17에는 [...slug]가 soft-404 (200)를 반환해 하네스
+    PASS였고, 11-17 이후 hard 404 전환 (`2957a4b`)으로
+    badResponses가 됨.
+  - 수정은 WI 범위 밖이라 하지 않고 완료보고에 결함으로 올림
+    (charts 1행 수정이면 해결).
 - 401 다수 (`/auth/me`, `/auth/refresh`): 하네스 토큰 TTL 15분
   만료 (WI-N6 배경과 일치). WI-N6에서 수정 후 재측정.
 - Lighthouse 1차 (로컬 preview + `NUXT_COMPRESS_PUBLIC_ASSETS=1`
   빌드, 3회 중앙값, LHCI 0.15.1):
   - `/`: perf 0.63, script 324,007B, seo 1.00
   - `/en/tracks/e2e-sitemap-song-1c65595d`: perf 0.61, script
-    407,538B (로케일 회귀로 404 페이지 측정 — 수정 후 재측정)
-  - `/th/playlists`: perf 0.66, script 419,035B (404 페이지 측정)
-  - `/ja/business`: perf 0.56, script 480,919B (404 페이지 측정)
+    407,538B
+  - `/th/playlists`: perf 0.66, script 419,035B
+  - `/ja/business`: perf 0.56, script 480,919B
   - CI 수치(perf 0.68~0.89, 193~205KB)와 차이: 로컬 preview는
-    동적 응답 압축 미적용 (WI-N1 항목 1) + 404 페이지 측정분.
+    동적 응답 압축 미적용 (WI-N1 항목 1에서 수정).
+  - 정정: preview 빌드에서는 로케일 하위 경로가 200 정상
+    (N1 재측정 시 확인). dev 서버에서만 404가 관측됨 — dev
+    서버 상태 이상 후보로, N6 하네스 재실행 시 dev 재시작 후
+    재확인. 운영 `/en/charts` 404는 별도 확인 필요
+    (아래 긴급 회귀 항 참조).
 
 ## WI-N3 DB 백업 외부 보관 (R2) — PASS (운영 적용은 G-2)
 
@@ -179,6 +191,39 @@
   이동), ARB 5개 언어 10키씩, `test/models_test.dart` 3종.
 - 검증: `flutter analyze` 0, `flutter test`에 포함 (28/28).
   엔진 `certNumber` 노출 후 실연동 확인 예정.
+
+## WI-N1 Lighthouse 예산 회복 — NOT PASS (부분 개선, 구조적 한계)
+
+- 변경: `web/server/middleware/compress-dynamic.ts` 신규 (CI 빌드만
+  동적 응답 br 압축, 운영 이미지 무변경),
+  `web/nuxt.config.ts` (`runtimeConfig.compressDynamic`),
+  `web/app/pages/index.vue` (StarterRail·차트 TrackRow
+  hydrate-on-visible, 모달 2종 지연 로드),
+  `lucide-vue-next` 제거 (미사용 확인, 번들 효과 0).
+- 항목별 결과:
+  1. 측정 환경 보정: HTML 49,206→8,819B, messages.json
+     57,463→16,082B (br). `numberOfRuns: 3` (N5 적용).
+  2. CSS: entry 198KB raw/34KB br, 897 셀렉터 전부 사용 중
+     추정 — 감소 여지 없음.
+  3. 지연 하이드레이션: Nuxt 4.6 지원 확인 후 적용. Lighthouse가
+     전체 로드하므로 transfer 효과 없음 (TBT는 원래 0).
+  4. 엔트리: 클라이언트 번들에 vue-i18n 컴파일러·schema-org 없음
+     (이미 최소), SiteConfig 경량. 모듈별 크기 기록済.
+  5. LCP: font-display swap 적용済. 단 `/ja/business`에서 일본어
+     폰트 912KB (27파일) 발견 — FCP 8.3초의 주범, 서브셋
+     재설계 필요 (별도 WI).
+- 재측정 (3회 중앙값):
+  - `/`: perf 0.90 (0.88/0.90/0.94), script 331,230B
+  - `/en/tracks/…`: perf 0.63, script 416,203B
+  - `/th/playlists`: perf 0.69, script 428,198B
+  - `/ja/business`: perf 0.57, script 491,184B
+- 판정: `/`만 perf 달성. script 예산 (174,080B)은 전 URL 미달
+  (미사용 JS 0 — 전부 사용 중이라 삭제 여지 없음).
+  `lighthouserc.cjs`는 `warn` 유지 (error 복구 불가).
+- 회귀: typecheck 0, vitest 127/127, check-i18n PASS.
+  E2E·하네스·콘솔 언어 전환 검사는 N6 완료 후 일괄 수행.
+- 남은 문제: perf·script 예산 달성은 아키텍처 변경 필요
+  (폰트 서브셋 재설계, JS 구조 다이어트). 별도 WI로 제안.
 
 ## WI-N13 워터마크·유사도 (E2E·데모 생성 대기)
 

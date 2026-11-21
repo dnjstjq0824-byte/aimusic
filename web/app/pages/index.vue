@@ -133,8 +133,8 @@
       </section>
     </section>
 
-    <!-- Get started: photo-led use-case cards. -->
-    <StarterRail class="!mt-16 sm:!mt-20" />
+    <!-- Get started: photo-led use-case cards (N1: hydrate on visible). -->
+    <LazyStarterRail class="!mt-16 sm:!mt-20" hydrate-on-visible />
 
     <!-- Feature 1: Listen (live tracks). -->
     <section id="listen-now" class="grid scroll-mt-24 items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16" aria-labelledby="feat-listen-h">
@@ -275,9 +275,10 @@
       </div>
       <ol class="grid gap-x-8 gap-y-1 md:grid-cols-2">
         <li v-for="(tr, i) in chartTop" :key="tr.id">
-          <TrackRow
+          <LazyTrackRow
             :track="tr"
             :rank="i + 1"
+            hydrate-on-visible
             @play="playOne"
             @enqueue="enqueue"
             @add-to-playlist="openAddToPlaylist"
@@ -331,7 +332,7 @@
       @reported="onReported"
     />
 
-    <UiPlaylistPicker
+    <UiPlaylistPickerAsync
       :model-value="Boolean(playlistTargetTrack)"
       :track-title="playlistTargetTrack?.title ?? ''"
       :playlists="playlists.playlists"
@@ -356,11 +357,11 @@ import { useApiError } from '@/composables/useApiError';
 import { useFormat } from '@/composables/useFormat';
 import type { Track, Playlist } from '@/api/types';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
-import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
-import TrackRow from '@/components/TrackRow.vue';
-import StarterRail from '@/components/landing/StarterRail.vue';
-import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+// N1: below-fold + modals load on demand (Lazy* auto-imports).
+import { defineAsyncComponent } from 'vue';
+const DisputeReportModal = defineAsyncComponent(() => import('@/components/legal/DisputeReportModal.vue'));
+const UiPlaylistPickerAsync = defineAsyncComponent(() => import('@/components/ui/UiPlaylistPicker.vue'));
 import { detailParam } from '@/utils/seo';
 
 const { t } = useI18n();

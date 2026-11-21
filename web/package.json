@@ -24,7 +24,6 @@
     "@tosspayments/tosspayments-sdk": "^2.10.0",
     "@unhead/vue": "3.4.3",
     "hls.js": "^1.5.13",
-    "lucide-vue-next": "^1.0.0",
     "nuxt": "4.6.4",
     "nuxt-og-image": "7.0.7",
     "nuxt-schema-org": "7.0.1",
