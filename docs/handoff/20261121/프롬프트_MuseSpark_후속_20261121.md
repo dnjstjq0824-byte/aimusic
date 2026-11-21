@@ -10,7 +10,9 @@ PO가 Muse 세션에 아래 블록을 그대로 붙여넣습니다.
 1. 먼저 읽어라 (순서대로):
    - docs/handoff/20261121/전달안내_20261121.md  (특히 §2 "11-17 이후 바뀐 것")
    - docs/handoff/20261121/작업지시_AVIBE_후속_20261121.md
-   기준은 main 최신이다(코드 기준 5824bfa + 이 문서 커밋 c476ddb 이후). 시작 전에 git pull 하고 git log에 c476ddb가 포함됐는지 확인해라.
+   기준은 main 최신이다(640b40c 이후. PR #8 생성 서버, PR #9 Runpod 네트워크 볼륨·scripts/runpod-gen.sh 포함).
+   시작 전에 git pull 하고 git log에 640b40c가 포함됐는지 확인해라.
+   Runpod Pod를 켰으면(runpod-gen.sh up) 측정이 끝나는 즉시 runpod-gen.sh down 해라. 켜져 있는 동안 과금된다.
 
 2. 진행 방식: 연속 개발 모드.
    WI-N0부터 WI-N13까지 우선순위 순서로, 단계마다 승인을 기다리지 말고 이어서 진행해라.
