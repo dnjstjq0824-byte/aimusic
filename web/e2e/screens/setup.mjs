@@ -76,6 +76,21 @@ function genBizno() {
   return d.join('');
 }
 
+async function registerBusiness(tag) {
+  // WI-N6: BUSINESS role + APPROVED profile (KR bizNo auto-approves).
+  const email = `harness-${STAMP}-${tag}@local.test`;
+  const r = await api('POST', '/auth/register/business', null, {
+    email, password: PW, displayName: `harness-${tag}`, company: `Harness ${tag}`,
+    bizNo: genBizno(), ageConfirmed: true,
+  });
+  if (r.status !== 201) throw new Error(`register ${tag}: ${r.status} ${JSON.stringify(r.json)}`);
+  psql(`UPDATE users SET email_verified_at=NOW() WHERE email='${email}';`);
+  const l = await api('POST', '/auth/login', null, { email, password: PW });
+  if (l.status !== 200) throw new Error(`login ${tag}: ${l.status}`);
+  await clearGates(l.json.data.tokens.accessToken);
+  return { email, id: l.json.data.user?.id ?? r.json.data?.user?.id, tokens: l.json.data.tokens };
+}
+
 const listener = await registerListener('listener');
 const creator = await registerPartner('creator');
 const storePartner = await registerPartner('store');
@@ -83,6 +98,11 @@ const st = await api('POST', '/partner/stores', storePartner.tokens.accessToken,
   businessNumber: genBizno(), storeName: 'Harness Store',
 });
 if (![200, 201].includes(st.status)) throw new Error(`store create: ${st.status} ${JSON.stringify(st.json)}`);
+const business = await registerBusiness('business');
+const bst = await api('POST', '/business/stores', business.tokens.accessToken, {
+  businessNumber: genBizno(), storeName: 'Harness Biz Store', licenseCount: 2,
+});
+if (![200, 201].includes(bst.status)) throw new Error(`business store create: ${bst.status} ${JSON.stringify(bst.json)}`);
 const admin = await registerListener('admin');
 psql(`UPDATE users SET role='ADMIN' WHERE email='${admin.email}';`);
 const relogin = await api('POST', '/auth/login', null, { email: admin.email, password: PW });
@@ -108,6 +128,7 @@ const auth = {
     listener: { email: listener.email, ...listener.tokens },
     creator: { email: creator.email, ...creator.tokens },
     storePartner: { email: storePartner.email, ...storePartner.tokens },
+    business: { email: business.email, ...business.tokens },
     admin: { email: admin.email, ...admin.tokens },
   },
   ids: {
@@ -120,4 +141,4 @@ const auth = {
   },
 };
 fs.writeFileSync(OUT, JSON.stringify(auth, null, 1));
-console.log(`auth written: 4 roles, track=${auth.ids.track} playlist=${auth.ids.playlist} creator=${auth.ids.creator} cert=${auth.ids.cert}`);
+console.log(`auth written: 5 roles, track=${auth.ids.track} playlist=${auth.ids.playlist} creator=${auth.ids.creator} cert=${auth.ids.cert}`);

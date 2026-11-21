@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
-import { WEB, VIEWPORTS, MATRIX, LANGS } from './config.mjs';
+import { WEB, API, VIEWPORTS, MATRIX, LANGS } from './config.mjs';
 import { collectMetrics } from './collect.mjs';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -52,10 +52,36 @@ function chromeExe() {
 
 const browser = await chromium.launch({ executablePath: chromeExe() });
 const results = [];
+
+// WI-N6: access tokens live 15min but a full run takes hours. Refresh
+// each role's tokens when its first context starts (and persist back to
+// .auth.json), so late contexts don't land on the login screen.
+async function freshCreds(role, creds) {
+  if (!creds?.refreshToken) return creds;
+  try {
+    const res = await fetch(`${API}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: creds.refreshToken }),
+    });
+    if (!res.ok) return creds;
+    const json = await res.json();
+    const t = json?.data?.tokens;
+    if (!t?.accessToken || !t?.refreshToken) return creds;
+    const next = { ...creds, accessToken: t.accessToken, refreshToken: t.refreshToken };
+    auth.roles[role] = next;
+    fs.writeFileSync(AUTH, JSON.stringify(auth, null, 1));
+    return next;
+  } catch {
+    return creds;
+  }
+}
+
 for (const [vk, vp] of Object.entries(VIEWPORTS)) {
   for (const [role, routes] of Object.entries(MATRIX)) {
-    const creds = auth.roles[role];
+    let creds = auth.roles[role];
     for (const lang of LANGS) {
+      creds = await freshCreds(role, creds);
       const ctx = await browser.newContext({
         viewport: { width: vp.width, height: vp.height },
         deviceScaleFactor: 1,

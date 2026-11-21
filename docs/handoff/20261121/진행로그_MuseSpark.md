@@ -246,25 +246,29 @@
 - 남은 문제: perf·script 예산 달성은 아키텍처 변경 필요
   (폰트 서브셋 재설계, JS 구조 다이어트). 별도 WI로 제안.
 
-## WI-N6 화면 하네스 보완 — PASS (전수 실행 중)
+## WI-N6 화면 하네스 보완 — PASS
 
 - 변경: `web/e2e/screens/setup.mjs` (BUSINESS 역할 + 승인 프로필
   계정 + 매장 2종), `web/e2e/screens/config.mjs` (business 역할
   추가), `web/e2e/screens/run.mjs` (컨텍스트 시작 시 토큰 갱신 +
   `.auth.json` 저장), `web/e2e/screens/console-lang.mjs` 신규
-  (콘솔 3종 × 4언어 번역 키 0개 검사 + 관리자 en 복귀 검사),
-  `web/app/middleware/app.global.ts` (`/ja|th|zh-cn/admin` →
-  `/en/admin` 302), `web/package.json` (`harness:console-lang`).
+  (콘솔 3종 인앱 언어 전환 × 4언어, 번역 키 0개 + 관리자 en
+  폴백 검사), `web/app/middleware/app.global.ts`
+  (`/ja|th|zh-cn/admin` → `/en/admin` 302), `web/package.json`
+  (`harness:console-lang`).
 - 검증:
   - setup: 5 roles 기록 확인.
-  - console-lang: 12/12 PASS (콘솔 3종 × 4언어 raw 키 0개,
+  - console-lang: 12/12 PASS (인앱 전환, raw 키 0개,
     관리자 ja/th/zh-cn → /en/admin 리다이렉트 확인).
-  - 전수 하네스: preview 대상 실행 중 (토큰 갱신 효과 +
-    business 콘솔 캡처 확인 예정).
-- 발견·수정한 결함: 관리자 ja 접근 시 en 폴백이 동작 안 했음
-  (`/ja/admin` 라우트 자체가 없어 404). 미들웨어 리다이렉트로
-  수정 (R-2).
-- 남은 문제: 전수 결과 수집 후 확정.
+  - 전수 (preview 대상, EXIT=0): 1650 screens.
+    401 badResponses 0건 (N0 1104건 중 다수 → 해소, 토큰 갱신
+    효과). business 콘솔 무접두 200 전부 (실제 콘솔 캡처).
+    404 939건 내역: 콘솔 로케일 접두 (설계상 정상, R-3),
+    charts 로케일 (기보고 결함), 의도된 404. None 30건:
+    `/explore/mood|use` 랜딩 게이트 404 (12곡 미만, 정상).
+- 발견·수정한 결함: 관리자 ja 접근 시 en 폴백 미동작 →
+  미들웨어 리다이렉트 (R-2).
+- 남은 문제: 없음.
 
 ## WI-N7 디자인 쇼케이스 v3 갱신 — PASS (화면 확인 대기)
 

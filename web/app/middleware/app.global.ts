@@ -80,6 +80,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path === '/my-library') {
     return navigateTo('/library', { redirectCode: 301 });
   }
+  // R-2 (WI-N6): the admin console ships ko/en only. Non-en locale
+  // prefixes have no admin routes ([...slug] would 404); send them to
+  // the en console instead of a dead page.
+  {
+    const m = /^\/(ja|th|zh-cn)(\/admin(?:\/|$).*)$/.exec(to.path);
+    if (m) {
+      const q = to.fullPath.slice(to.path.length);
+      return navigateTo(`/en${m[2]}${q}`, { redirectCode: 302 });
+    }
+  }
   // R8 split: the disputes page lives at /rights-center now.
   if (to.path === '/disputes') {
     return navigateTo('/rights-center', { redirectCode: 301 });

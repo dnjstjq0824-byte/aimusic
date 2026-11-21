@@ -9,7 +9,7 @@ export const VIEWPORTS = {
   d1440: { width: 1440, height: 900, touch: false },
 };
 
-export const ROLES = ['guest', 'listener', 'creator', 'storePartner', 'admin'];
+export const ROLES = ['guest', 'listener', 'creator', 'storePartner', 'business', 'admin'];
 
 // R13 language dimension (web locale codes; ko = unprefixed default).
 // Override with HARNESS_LANGS=ko,en for a faster subset run.
@@ -140,5 +140,8 @@ export const MATRIX = {
   listener: LISTENER_ROUTES,
   creator: CREATOR_ROUTES,
   storePartner: STORE_ROUTES,
+  // WI-N6: BUSINESS role + APPROVED profile captures the real console
+  // (storePartner is PARTNER and gets redirected home).
+  business: STORE_ROUTES,
   admin: ADMIN_ROUTES,
 };

@@ -12,7 +12,8 @@
     "test": "vitest",
     "i18n:check": "node scripts/check-i18n.mjs",
     "harness:setup": "node e2e/screens/setup.mjs",
-    "harness": "node e2e/screens/run.mjs"
+    "harness": "node e2e/screens/run.mjs",
+    "harness:console-lang": "node e2e/screens/console-lang.mjs"
   },
   "dependencies": {
     "@nuxtjs/i18n": "10.6.0",
