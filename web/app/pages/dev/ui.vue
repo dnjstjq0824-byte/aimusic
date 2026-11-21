@@ -1,132 +1,156 @@
 <template>
-  <div class="mx-auto max-w-5xl space-y-12 px-4 py-10">
-    <div>
-      <p class="text-caption font-semibold uppercase tracking-widest text-brand-400">Design System v2 · Signal &amp; Seal</p>
-      <h1 class="font-display text-h1 font-medium text-text-primary">UI Showcase (dev only)</h1>
-    </div>
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <UiPageHeader
+      title="Design System v3 · Flow"
+      subtitle="Warm graphite canvas, cyan signal accents, quiet surfaces. The single source of truth — every production component below renders live."
+    />
 
-    <section class="space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Type scale</h2>
-      <p class="font-display text-display font-medium text-text-primary">Display 바로 써도 되는 AI 음악</p>
-      <p class="font-display text-h1 font-medium text-text-primary">H1 페이지 제목</p>
-      <p class="font-display text-h2 font-medium text-text-primary">H2 섹션 제목</p>
-      <p class="text-h3 font-bold text-text-primary">H3 카드 제목</p>
-      <p class="text-body text-text-primary">Body 본문 16/24 — 모든 곡은 상업적 이용권 보유 인증을 거쳐 공개됩니다.</p>
-      <p class="text-body-sm text-text-secondary">Body-sm 보조 14/20 — 무료로 듣고, 매장과 영상에는 라이선스로 쓰세요.</p>
-      <p class="text-caption text-text-muted">Caption 메타 12/16 (최소 크기)</p>
-      <p class="text-body-sm tnum text-text-secondary">Tabular 0123456789 ₩5,900 3:47</p>
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Typography</h2>
+      <UiCard class="mt-4 space-y-3 p-6">
+        <p class="type-display">Display — Beyond Your Music 123</p>
+        <p class="text-h1 font-semibold text-white">H1 — Chart-topping AI tracks</p>
+        <p class="text-h2 font-semibold text-white">H2 — Fresh drops this week</p>
+        <p class="text-h3 font-semibold text-white">H3 — Playlist details</p>
+        <p class="text-body text-text-primary">Body — The quick brown fox jumps over the lazy dog. 빠른 갈색 여우가 게으른 개를 뛰어넘습니다.</p>
+        <p class="text-body-sm text-text-secondary">Body small — Secondary explanations and metadata lines.</p>
+        <p class="text-caption text-text-muted">Caption — Timestamps, counts, and legal footnotes.</p>
+      </UiCard>
     </section>
 
-    <section class="space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Buttons</h2>
-      <div class="flex flex-wrap items-center gap-3">
-        <UiButton variant="primary">Primary</UiButton>
-        <UiButton variant="secondary">Secondary</UiButton>
-        <UiButton variant="ghost">Ghost</UiButton>
-        <UiButton variant="danger">Danger</UiButton>
-        <UiButton variant="success">Success</UiButton>
-        <UiButton variant="outline">Outline</UiButton>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <UiButton size="sm">sm 36</UiButton>
-        <UiButton size="md">md 44</UiButton>
-        <UiButton size="lg">lg 52</UiButton>
-        <UiButton size="xs">xs</UiButton>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <UiButton loading>Loading</UiButton>
-        <UiButton disabled>Disabled</UiButton>
-      </div>
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Buttons</h2>
+      <UiCard class="mt-4 flex flex-wrap items-center gap-3 p-6">
+        <UiButton variant="brand" size="md">Play now</UiButton>
+        <UiButton variant="secondary" size="md">Add to queue</UiButton>
+        <UiButton variant="ghost" size="md">Dismiss</UiButton>
+        <UiButton variant="danger" size="md">Remove</UiButton>
+        <UiButton variant="brand" size="sm">Small</UiButton>
+        <UiButton variant="brand" size="md" loading>Loading</UiButton>
+        <UiButton variant="brand" size="md" disabled>Disabled</UiButton>
+      </UiCard>
     </section>
 
-    <section class="max-w-md space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Inputs</h2>
-      <UiInput v-model="demoText" label="이메일" placeholder="you@example.com" hint="안내 문구" />
-      <UiInput v-model="demoText" label="비밀번호" type="password" placeholder="••••••••" />
-      <UiInput v-model="demoText" label="오류 상태" error="올바른 값을 입력하세요." />
-      <UiInput v-model="demoText" label="비활성" disabled placeholder="disabled" />
-    </section>
-
-    <section class="space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Verified Seal</h2>
-      <div class="flex flex-wrap items-center gap-6">
-        <VerifiedSeal :size="16" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
-        <VerifiedSeal :size="20" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
-        <VerifiedSeal :size="28" cert-number="AVB-DEMO" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
-        <VerifiedSeal :size="20" :show-label="false" :label="$t('common.seal.short')" :full-label="$t('common.seal.full')" />
-      </div>
-    </section>
-
-    <section class="space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Covers + Mosaic</h2>
-      <div class="flex flex-wrap items-end gap-4">
-        <UiCoverArt seed="track-a" title="곡 A" size="xs" />
-        <UiCoverArt seed="track-b" title="곡 B" size="sm" />
-        <UiCoverArt seed="track-c" title="곡 C" size="md" :verified="true" />
-        <UiCoverArt seed="track-d" title="곡 D" size="lg" />
-        <CoverMosaic :seeds="['m1', 'm2', 'm3', 'm4']" title="믹스" size="sm" />
-        <CoverMosaic :seeds="['m1', 'm2']" title="믹스" size="md" />
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Cards &amp; badges</h2>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <UiCard class="space-y-3 p-6">
+          <p class="font-display text-lg text-white">Midnight Drive</p>
+          <p class="text-sm text-text-secondary">Neon Coast · 3:24</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <UiBadge variant="brand" size="xs">NEW</UiBadge>
+            <UiBadge variant="neutral" size="xs">AI</UiBadge>
+            <UiBadge variant="success" size="xs">READY</UiBadge>
+            <UiBadge variant="warning" size="xs">PENDING</UiBadge>
+            <UiBadge variant="danger" size="xs">FAILED</UiBadge>
+            <VerifiedSeal
+              :size="16"
+              label="Verified"
+              full-label="Verified certificate"
+              :show-label="false"
+              cert-number="AVB-DEMO0001"
+            />
+          </div>
+        </UiCard>
+        <UiCard hoverable class="p-6">
+          <p class="font-display text-lg text-white">Hoverable card</p>
+          <p class="mt-1 text-sm text-text-secondary">Border lifts on hover; click opens the detail.</p>
+        </UiCard>
       </div>
     </section>
 
-    <section class="max-w-xl space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Stepper</h2>
-      <Stepper :steps="['계정', '활동 정보', '약관 동의']" :current="step" />
-      <div class="flex gap-2">
-        <UiButton size="sm" variant="secondary" @click="step = Math.max(0, step - 1)">이전</UiButton>
-        <UiButton size="sm" variant="secondary" @click="step = Math.min(2, step + 1)">다음</UiButton>
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Inputs</h2>
+      <UiCard class="mt-4 grid gap-4 p-6 md:grid-cols-2">
+        <UiInput v-model="text" label="Track title" placeholder="Name your track" />
+        <UiInput v-model="text" label="With error" error="Title is required" placeholder="Name your track" />
+        <UiTextarea v-model="area" label="Description" placeholder="Tell listeners about this drop" />
+        <UiSelect v-model="choice" label="License" :options="licenseOptions" />
+      </UiCard>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Prompt box &amp; hero glow</h2>
+      <div class="hero-glow mt-4 rounded-2xl p-6 sm:p-10">
+        <p class="type-display">Describe the track.</p>
+        <PromptBox v-if="i18nReady" v-model="prompt" class="mt-6" />
       </div>
     </section>
 
-    <section class="space-y-3">
-      <h2 class="font-display text-h2 font-medium text-text-primary">Menu + Sheet + Locale</h2>
-      <div class="flex flex-wrap items-center gap-4">
-        <UiMenu :items="menuItems" @select="menuPick = $event" />
-        <span class="text-caption text-text-muted">선택: {{ menuPick === null ? '없음' : menuItems[menuPick]?.label }}</span>
-        <UiButton variant="secondary" @click="sheetOpen = true">시트 열기</UiButton>
-        <LocaleSwitcher />
-        <span class="text-caption text-text-muted">locale: {{ locale }}</span>
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Studio KPI cards</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        <KpiCard title="Streams (30d)" value="1,284,092" sub="+12.4% vs prior" tone="brand" />
+        <KpiCard title="Revenue (30d)" value="₩8,412,000" sub="Settles on the 15th" tone="success" />
+        <KpiCard title="Pending reviews" value="3" sub="Oldest waiting 2 days" />
       </div>
-      <BottomSheet v-model="sheetOpen" title="바텀시트 (모바일) / 모달 (데스크톱)">
-        <p class="text-body-sm text-text-secondary">필터·⋯ 메뉴·플레이리스트 선택·문의 폼에 쓰는 공용 시트.</p>
-        <div class="mt-4 flex justify-end gap-2">
-          <UiButton variant="secondary" @click="sheetOpen = false">닫기</UiButton>
-          <UiButton @click="sheetOpen = false">확인</UiButton>
-        </div>
-      </BottomSheet>
+    </section>
+
+    <section class="mt-10">
+      <h2 class="text-h3 font-semibold text-white">Console shell preview</h2>
+      <ConsoleShell
+        id="showcase-shell"
+        class="mt-4"
+        home-to="/dev/ui"
+        home-label="AVIBE"
+        console-name="Showcase"
+        :menu="shellMenu"
+        menu-label="Menu"
+        open-label="Open navigation"
+        close-label="Close navigation"
+        listener-home-label="Back to AVIBE"
+        logout-label="Log out"
+      >
+        <UiCard class="p-6">
+          <p class="text-body text-text-primary">Console content renders inside the shared shell: sidebar, top bar, and footer stay identical across studio, business, and admin.</p>
+        </UiCard>
+      </ConsoleShell>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-defineI18nRoute(false);
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import ConsoleShell from '@/components/console/ConsoleShell.vue';
+import KpiCard from '@/components/studio/KpiCard.vue';
+import PromptBox from '@/components/studio/PromptBox.vue';
+import { ensureConsoleMessages, type ConsoleI18n } from '@/utils/consoleMessages';
+import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
+import UiCard from '@/components/ui/UiCard.vue';
 import UiInput from '@/components/ui/UiInput.vue';
-import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import UiPageHeader from '@/components/ui/UiPageHeader.vue';
+import UiSelect from '@/components/ui/UiSelect.vue';
+import UiTextarea from '@/components/ui/UiTextarea.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
-import CoverMosaic from '@/components/ui/CoverMosaic.vue';
-import Stepper from '@/components/ui/Stepper.vue';
-import UiMenu from '@/components/ui/UiMenu.vue';
-import BottomSheet from '@/components/ui/BottomSheet.vue';
-import LocaleSwitcher from '@/components/ui/LocaleSwitcher.vue';
 
-if (!import.meta.dev) {
-  throw createError({ statusCode: 404, statusMessage: 'Not found' });
-}
+const { t } = useI18n();
+
+const text = ref('');
+const area = ref('');
+const choice = ref('non-commercial');
+const prompt = ref('Lo-fi hip hop, warm piano, 84 bpm');
+
+const licenseOptions = [
+  { value: 'non-commercial', label: 'Non-commercial' },
+  { value: 'commercial', label: 'Commercial' },
+];
+
+const shellMenu = [{ to: '/dev/ui', name: 'dev-ui', label: 'Showcase' }];
+
+// /dev/ui is not a console path, so console namespaces don't autoload —
+// fetch them for the PromptBox/KpiCard preview (same loader consoles use).
+// PromptBox mounts after the merge: vue-i18n does not re-render keys that
+// were missing at first render (see plugins/console-i18n.client.ts).
+const i18nReady = ref(false);
+onMounted(() => {
+  const { $i18n } = useNuxtApp();
+  void ensureConsoleMessages($i18n as unknown as ConsoleI18n, $i18n.locale.value)
+    .catch(() => {})
+    .finally(() => {
+      i18nReady.value = true;
+    });
+});
 
 definePageMeta({ layout: 'app' });
-
-const demoText = ref('');
-const step = ref(1);
-const sheetOpen = ref(false);
-const { locale } = useI18n();
-const menuPick = ref<number | null>(null);
-const menuItems = [
-  { label: '다음에 재생' },
-  { label: '큐에 추가' },
-  { label: '플레이리스트에 추가' },
-  { label: '공유' },
-  { label: '신고', danger: true },
-];
 </script>
