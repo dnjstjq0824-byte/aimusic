@@ -65,6 +65,27 @@ Worker-only knobs: `DISPUTE_SLA_INTERVAL_SECONDS` (900),
 4. Seed legal terms / plans via SQL inserts (never `seed.sql`: it is guarded by `app.allow_seed` and is local-only).
 5. Publish Cloudflare Worker (`wrangler deploy`) with `HLS_SIGNING_KEY` secret; verify an HLS URL 403s without `sig`.
 
+## 4b. Web-only rollout (WI-N4)
+
+When only `web/` changed, `deploy/rollout-web.sh` swaps the web container
+without touching the backend (no API restart). Order: union old+new
+`/app/public` → `wrangler deploy` → ship image → recreate `web` →
+smoke (incl. every live `/_nuxt/*` asset 200). G-2: PO approval first.
+
+```sh
+bash deploy/rollout-web.sh --dry-run web   # print the plan, run nothing
+bash deploy/rollout-web.sh web             # approved runs only
+bash deploy/rollout-web.sh smoke           # re-verify any time
+bash deploy/rollout-web.sh rollback        # previous image + wrangler rollback
+```
+
+Preconditions (checked, not assumed): clean tree, docker daemon,
+`wrangler whoami` on the avibemusic.com account, local
+`avibe-prod-web:$REV` (`REV` = last commit touching `web/`), and the
+prod `avibe-prod-web` container reachable. The previous prod image ID
+is recorded in `deploy/.web-prev-image` (git-ignored, per operator)
+before the swap; rollback re-tags it `:latest` and recreates `web`.
+
 ## 5. Daily operations
 
 - Admin console `/admin`: reviews → disputes (SLA badges) → curation/settlement (`calculate`→`approve`→`mark-paid`, double-pay 409s) → audit trail → users.

@@ -109,3 +109,5 @@ docs/handoff/20261114/evidence/r13/*.png
 
 # Worker assets extracted from the web image at deploy time
 deploy/web-public/
+# Previous prod web image ID recorded by rollout-web.sh (per-operator state)
+deploy/.web-prev-image
