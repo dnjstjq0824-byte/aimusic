@@ -17,6 +17,13 @@ Generated clips never upload to any operational store.
 Usage (GPU PC):
   set GENERATOR_MODEL_DIR=<weights> (plus torch/CUDA/acestep/audioseal)
   python generator/poc/run_poc.py --out docs/handoff/20261114/evidence/g2/poc-report.json
+
+Remote mode (WI-N11: any machine with network access to a GPU server):
+  python generator/poc/run_poc.py --out report.json --endpoint https://<pod>-8000.proxy.runpod.net
+  The bearer token comes from --token or GENERATOR_API_TOKEN. The PoC calls
+  GET /healthz + POST /generate (contract v2) over HTTPS and fingerprints
+  the returned audio. eval/memorization.py stays file-based: save remote
+  clips locally, then scan them with --wav/--fps.
 """
 
 from __future__ import annotations
@@ -64,14 +71,64 @@ def check_cuda() -> dict:
         return {"torch": None, "cudaAvailable": False, "device": None}
 
 
+def call_remote(endpoint: str, token: str, prompt: str, duration_sec: int) -> dict:
+    """Run the v2 generation over HTTPS; return the decoded reply + audio bytes."""
+    import base64
+    import os
+    import urllib.error
+    import urllib.request
+
+    base = endpoint.rstrip("/")
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    def call(method: str, path: str, payload: dict | None = None) -> dict:
+        data = json.dumps(payload).encode("utf-8") if payload is not None else None
+        req = urllib.request.Request(base + path, data=data, method=method, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=900) as resp:
+                return {"status": resp.status, "body": json.loads(resp.read().decode("utf-8"))}
+        except urllib.error.HTTPError as exc:
+            return {"status": exc.code, "body": exc.read().decode("utf-8", "replace")}
+
+    health = call("GET", "/healthz")
+    if health["status"] != 200:
+        raise SystemExit(f"remote /healthz failed: {health}")
+    gen = call("POST", "/generate", {
+        "jobId": "poc-remote",
+        "prompt": prompt,
+        "contractVersion": 2,
+        "durationSec": duration_sec,
+        "seed": 42,
+        "watermark": True,
+    })
+    if gen["status"] != 200:
+        raise SystemExit(f"remote /generate failed: {gen}")
+    body = gen["body"]
+    audio_b64 = body.get("audioBase64", "")
+    if not audio_b64 and body.get("audioUrl"):
+        url_req = urllib.request.Request(body["audioUrl"], method="GET")
+        with urllib.request.urlopen(url_req, timeout=900) as resp:
+            audio = resp.read()
+    else:
+        audio = base64.b64decode(audio_b64)
+    return {"health": health["body"], "reply": body, "audio": audio,
+            "tokenSent": bool(token), "tokenEnv": os.environ.get("GENERATOR_API_TOKEN") is not None}
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="WI-G2 GPU PoC driver")
     ap.add_argument("--out", type=Path, required=True, help="report JSON path")
     ap.add_argument("--duration-sec", type=int, default=30)
     ap.add_argument("--prompt", default="calm piano loop, 90 bpm")
+    ap.add_argument("--endpoint", default="", help="remote GPU server base URL (remote mode)")
+    ap.add_argument("--token", default="", help="bearer token (else GENERATOR_API_TOKEN)")
     args = ap.parse_args(argv)
 
     import os
+    if args.endpoint:
+        return main_remote(args)
     weights = os.environ.get("GENERATOR_MODEL_DIR", "")
     weights_ok = bool(weights) and Path(weights).is_dir()
 
@@ -145,6 +202,70 @@ def main(argv: list[str]) -> int:
     }
     args.out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"G2 PoC: {report['status']} (report: {args.out})")
+    return 0
+
+
+def main_remote(args) -> int:
+    """Remote PoC: drive a GPU server over HTTPS, fingerprint the clip."""
+    import os
+    import tempfile
+    import wave
+
+    import importlib.util as _ilu
+
+    def _load(name: str, path: Path):
+        spec = _ilu.spec_from_file_location(name, path)
+        mod = _ilu.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    token = args.token or os.environ.get("GENERATOR_API_TOKEN", "")
+    t0 = datetime.now(timezone.utc)
+    remote = call_remote(args.endpoint, token, args.prompt, args.duration_sec)
+    reply = remote["reply"]
+    audio: bytes = remote["audio"]
+    with tempfile.TemporaryDirectory() as tmp:
+        clip = Path(tmp) / "poc-remote.wav"
+        clip.write_bytes(audio)
+        try:
+            fp = _load("memorization", REPO / "generator" / "eval" / "memorization.py").fingerprint_pcm(clip)
+        except SystemExit as exc:
+            fp = f"fingerprint skipped: {exc}"
+        try:
+            with wave.open(str(clip), "rb") as fh:
+                rate = fh.getframerate() or 1
+                duration_ms = int(fh.getnframes() / rate * 1000)
+        except (wave.Error, EOFError):
+            duration_ms = 0
+    report = {
+        "wi": "G2",
+        "mode": "remote",
+        "status": "PASS",
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "endpoint": args.endpoint.rstrip("/"),
+        "prompt": args.prompt,
+        "durationSec": args.duration_sec,
+        "health": remote["health"],
+        "tokenSent": remote["tokenSent"],
+        "results": {
+            "contractVersion": reply.get("contractVersion"),
+            "mimeType": reply.get("mimeType"),
+            "durationMs": duration_ms,
+            "reportedDurationMs": reply.get("durationMs"),
+            "modelVersion": reply.get("modelVersion"),
+            "seed": reply.get("seed"),
+            "weightsHash": reply.get("weightsHash"),
+            "safety": reply.get("safety"),
+            "watermarkId": reply.get("watermarkId"),
+            "audioBytes": len(audio),
+            "fingerprint": fp,
+            "similarityNote": "compare fingerprint against the training fixture set with eval/memorization.py --fps",
+            "elapsedSec": (datetime.now(timezone.utc) - t0).total_seconds(),
+        },
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"G2 PoC remote: PASS (report: {args.out})")
     return 0
 
 

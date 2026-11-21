@@ -16,10 +16,10 @@ G1 호스팅 단계의 운영 GPU 선택을 위한 비교 틀이다. **구매·�
 
 | 입력 | 출처 | 상태 |
 |---|---|---|
-| `infer_sec_per_audio_min` (GPU 기종별) | WI-G2 PoC 실측 | NOT TESTED |
-| VRAM 사용량 (기종 하한) | WI-G2 PoC 실측 | NOT TESTED |
-| `$/GPU-sec`, 최소 과금 단위 | 공급사 요금 페이지 (견적일 캡처) | TBD |
-| 콜드 스타트 실측 | 후보 2곳 무료 티어 실측 (가입은 PO 승인 후) | TBD |
+| `infer_sec_per_audio_min` (GPU 기종별) | WI-G2 PoC 실측 | 2026-11-21 실측: RTX PRO 4000 웜 60초 곡 1.96초·180초 곡 4.77초 (서버 경유 30초 곡 1.55초); RTX 2000 Ada 웜 30초 곡 2.3초·180초 곡 10.7초 (`poc-runpod-20261121.md` §3) |
+| VRAM 사용량 (기종 하한) | WI-G2 PoC 실측 | 16GB에서 동작 확인 (RTX 2000 Ada 16GB). 상한 미측정 |
+| `$/GPU-sec`, 최소 과금 단위 | 공급사 요금 페이지 (견적일 캡처) | Pod 표시 요금만 인용 (Runpod 화면 기준, 2026-11-21): RTX PRO 4000 시간당 $0.57, RTX 2000 Ada 시간당 $0.24. Serverless 요금은 TBD |
+| 콜드 스타트 실측 | 후보 2곳 무료 티어 실측 (가입은 PO 승인 후) | Pod+네트워크 볼륨: Pod 생성~서버 시작 78초 + 첫 생성 71.3초. 이미지 방식·Serverless는 NOT TESTED (`runpod-recipes.md` §C) |
 
 ## 2. 후보 공급사 (서버리스 GPU, 3곳 이상)
 
