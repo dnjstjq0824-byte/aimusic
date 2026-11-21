@@ -270,23 +270,24 @@
   미들웨어 리다이렉트 (R-2).
 - 남은 문제: 없음.
 
-## WI-N7 디자인 쇼케이스 v3 갱신 — PASS (화면 확인 대기)
+## WI-N7 디자인 쇼케이스 v3 갱신 — PASS
 
 - 변경: `web/app/pages/dev/ui.vue` 전면 갱신 (v3 표기, 타이포,
   버튼 7종, 카드·배지, 입력 4종, prompt-box + hero-glow,
-  KpiCard 3종, ConsoleShell 미리보기).
-- 검증: typecheck 0. 화면 캡처 확인은 하네스 완료 후 빌드에서
-  수행.
+  KpiCard 3종, ConsoleShell 미리보기 + 콘솔 네임스페이스 로드
+  게이트).
+- 검증: typecheck 0, 빌드 OK, 캡처 2종 (desktop·mobile 200),
+  raw 키 0개. 증거: `evidence-n7-desktop.png`,
+  `evidence-n7-mobile.png`.
 - 남은 문제: 없음.
 
-## WI-N8 i18n 미사용 키 정리 — PASS (빌드 검증 대기)
+## WI-N8 i18n 미사용 키 정리 — PASS
 
 - 변경: 6개 언어 × 63개 키 삭제 (동적 26종·간접 참조·
   substring 오탐까지 3단계 검증 후 삭제).
 - 검증: check-i18n PASS (경고 337→276), typecheck 0,
-  vitest 127/127. 삭제 키 사용처 0건 (FULL + 동적 패턴 +
-  간접 리터럴 전수 대조).
-- 남은 문제: 빌드 검증을 하네스 완료 후 수행.
+  vitest 127/127, 빌드 OK. 삭제 키 사용처 0건.
+- 남은 문제: 없음.
 
 ## WI-N13 워터마크·유사도 + 데모 — 부분 PASS (데모 생성 BLOCKED)
 
