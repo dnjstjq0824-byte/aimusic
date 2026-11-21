@@ -40,6 +40,7 @@
               :label="t('player.verified')"
               :full-label="t('player.verified')"
               :show-label="false"
+              :cert-number="player.currentTrack.certNumber ?? null"
             />
           </div>
 

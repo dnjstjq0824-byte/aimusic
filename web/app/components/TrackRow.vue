@@ -36,6 +36,7 @@
       :label="t('player.verified')"
       :full-label="t('player.verified')"
       :show-label="false"
+      :cert-number="track.certNumber ?? null"
     />
     <span v-if="track.durationMs" class="hidden shrink-0 font-mono text-caption text-text-secondary sm:inline">
       {{ fmtDuration(track.durationMs) }}

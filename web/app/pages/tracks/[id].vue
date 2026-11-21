@@ -67,11 +67,12 @@
                 </RouterLink>
                 <span v-else>{{ track.creatorName }}</span>
                 <VerifiedSeal
-                  v-if="cert"
+                  v-if="track.certNumber"
                   :size="16"
                   :label="t('player.verified')"
                   :full-label="t('player.verified')"
                   :show-label="false"
+                  :cert-number="track.certNumber"
                 />
               </p>
 

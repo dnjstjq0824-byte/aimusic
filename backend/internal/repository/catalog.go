@@ -80,6 +80,27 @@ type TrackRepo struct{ db DBTX }
 
 func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
+	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, cert sql.NullString
+	var moodsJoined, creditsJoined string
+	var duration, bitrate sql.NullInt64
+	var bpm sql.NullFloat64
+	err := row.Scan(&t.ID, &album, &t.PartnerID, &t.Title, &t.ShortID, &t.Slug,
+		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
+		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
+		&t.AIProvider, &t.Origin, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
+		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &cert)
+	if err != nil {
+		return nil, err
+	}
+	fillTrackScalars(t, album, genre, moodsJoined, creditsJoined, modelVer, prompt, lyrics, duration, fp, hls, waveform, disclosure, bitrate, isrc, bpm, mkey, rejection)
+	t.CertNumber = strPtr(cert)
+	return t, nil
+}
+
+// scanTrackBase scans trackColumnsBase (Create's RETURNING: a fresh track
+// has no certificate yet, and RETURNING cannot reference tracks.id).
+func scanTrackBase(row interface{ Scan(...any) error }) (*domain.Track, error) {
+	t := &domain.Track{}
 	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey sql.NullString
 	var moodsJoined, creditsJoined string
 	var duration, bitrate sql.NullInt64
@@ -92,6 +113,11 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	if err != nil {
 		return nil, err
 	}
+	fillTrackScalars(t, album, genre, moodsJoined, creditsJoined, modelVer, prompt, lyrics, duration, fp, hls, waveform, disclosure, bitrate, isrc, bpm, mkey, rejection)
+	return t, nil
+}
+
+func fillTrackScalars(t *domain.Track, album, genre sql.NullString, moodsJoined, creditsJoined string, modelVer, prompt, lyrics sql.NullString, duration sql.NullInt64, fp, hls, waveform, disclosure sql.NullString, bitrate sql.NullInt64, isrc sql.NullString, bpm sql.NullFloat64, mkey, rejection sql.NullString) {
 	t.AlbumID = strPtr(album)
 	t.Genre = strPtr(genre)
 	t.MoodTags = splitKeywords(moodsJoined)
@@ -109,7 +135,6 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t.BPM = floatPtr(bpm)
 	t.MusicalKey = strPtr(mkey)
 	t.RejectionReasonKo = strPtr(rejection)
-	return t, nil
 }
 
 // scanTrackWithCreator scans trackColumns plus the joined creator display
@@ -117,7 +142,7 @@ func scanTrack(row interface{ Scan(...any) error }) (*domain.Track, error) {
 // trackCreatorJoin.
 func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, error) {
 	t := &domain.Track{}
-	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, creator, handle sql.NullString
+	var album, genre, modelVer, prompt, lyrics, fp, hls, waveform, disclosure, rejection, isrc, mkey, creator, handle, cert sql.NullString
 	var moodsJoined, creditsJoined string
 	var duration, bitrate sql.NullInt64
 	var bpm sql.NullFloat64
@@ -125,7 +150,7 @@ func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, e
 		&genre, &moodsJoined, &t.AIGenerationType, &creditsJoined, &modelVer, &prompt, &t.IsPromptPublic, &t.IsInstrumental, &lyrics,
 		&duration, &t.OriginalObjectKey, &fp, &hls, &waveform,
 		&t.AIProvider, &t.Origin, &t.AIGenerated, &disclosure, &bitrate, &isrc, &bpm, &mkey, &t.Status,
-		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &creator, &handle)
+		&rejection, &t.PlayCount, &t.CreatedAt, &t.UpdatedAt, &creator, &handle, &cert)
 	if err != nil {
 		return nil, err
 	}
@@ -150,10 +175,16 @@ func scanTrackWithCreator(row interface{ Scan(...any) error }) (*domain.Track, e
 		t.CreatorName = creator.String
 	}
 	t.CreatorHandle = strPtr(handle)
+	t.CertNumber = strPtr(cert)
 	return t, nil
 }
 
-const trackColumns = `id::text, album_id::text, partner_id::text, title, short_id, slug,
+// trackCertSubquery resolves the certificate number without a JOIN so
+// join-less list queries (ListByPartner, charts, …) stay single-statement
+// (WI-N2, no N+1: one scalar subquery per row inside the same query).
+const trackCertSubquery = `(SELECT cert_number FROM track_certificates WHERE track_id = tracks.id)`
+
+const trackColumnsBase = `id::text, album_id::text, partner_id::text, title, short_id, slug,
 	genre, COALESCE(array_to_string(mood_tags, chr(31)), ''), ai_generation_type,
 	COALESCE(array_to_string(ai_credit_parts, chr(31)), ''),
 	ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
@@ -161,11 +192,14 @@ const trackColumns = `id::text, album_id::text, partner_id::text, title, short_i
 	ai_provider, origin, ai_generated, ai_disclosure_text,
 	bitrate_kbps, isrc, bpm, musical_key, status, rejection_reason_ko, play_count, created_at, updated_at`
 
+const trackColumns = trackColumnsBase + `,
+	` + trackCertSubquery
+
 // trackColumnsQualified mirrors trackColumns for queries joining creator
 // tables (bare names would be ambiguous). Same order + arity.
 // trackCreatorSelect extends trackColumnsQualified with the joined creator
 // display name + handle for scanTrackWithCreator.
-const trackCreatorSelect = trackColumnsQualified + `, u.display_name, u.handle`
+const trackCreatorSelect = trackColumnsQualified + `, u.display_name, u.handle, tc.cert_number`
 
 const trackColumnsQualified = `tracks.id::text, tracks.album_id::text, tracks.partner_id::text, tracks.title, tracks.short_id, tracks.slug,
 	tracks.genre, COALESCE(array_to_string(tracks.mood_tags, chr(31)), ''), tracks.ai_generation_type,
@@ -199,14 +233,14 @@ func (r *TrackRepo) Create(ctx context.Context, t *domain.Track) (*domain.Track,
 	if origin != domain.TrackOriginAvibe {
 		origin = domain.TrackOriginExternal
 	}
-	return scanTrack(r.db.QueryRowContext(ctx, `
+	return scanTrackBase(r.db.QueryRowContext(ctx, `
 		INSERT INTO tracks (album_id, partner_id, title, short_id, slug, genre, mood_tags, ai_generation_type, ai_credit_parts,
 			ai_model_version, ai_prompt, is_prompt_public, is_instrumental, lyrics,
 			duration_ms, original_object_key, ai_provider, origin, ai_generated, ai_disclosure_text, bitrate_kbps, status)
 		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, string_to_array($7, chr(31)), $8, string_to_array($9, chr(31)),
 			$10, $11, $12, $13, $14,
 			$15, $16, $17, $18, $19, $20, $21, $22)
-		RETURNING `+trackColumns,
+		RETURNING `+trackColumnsBase,
 		nullStr(t.AlbumID), t.PartnerID, t.Title, shortID, slug, nullStr(t.Genre), joinKeywords(t.MoodTags), genType, joinKeywords(t.AICreditParts),
 		nullStr(t.AIModelVersion), nullStr(t.AIPrompt), t.IsPromptPublic, t.IsInstrumental, nullStr(t.Lyrics),
 		nullInt(t.DurationMs), t.OriginalObjectKey, t.AIProvider, origin, t.AIGenerated, nullStr(t.AIDisclosureText), nullInt(t.BitrateKbps), t.Status))
@@ -329,8 +363,9 @@ func escapeLike(s string) string {
 
 // trackCreatorJoin resolves the creator display name for search and DTOs.
 // tracks.partner_id is NOT NULL with an enforced FK, so inner joins keep
-// counts exact.
-const trackCreatorJoin = ` JOIN partner_profiles pp ON pp.id = tracks.partner_id JOIN users u ON u.id = pp.user_id`
+// counts exact. The certificate LEFT JOIN keeps counts exact too
+// (uq_track_certificates_track: at most one row per track, WI-N2).
+const trackCreatorJoin = ` JOIN partner_profiles pp ON pp.id = tracks.partner_id JOIN users u ON u.id = pp.user_id LEFT JOIN track_certificates tc ON tc.track_id = tracks.id`
 
 // buildTrackSearch builds the WHERE fragment (shared by the count and page
 // queries) plus ordered args. It is pure so the SQL contract stays unit

@@ -156,6 +156,7 @@ export interface Track {
   isrc?: string | null;
   bpm?: number | null;
   musicalKey?: string | null;
+  certNumber?: string | null;
   status: string;
   rejectionReasonKo?: string | null;
   playCount: number;

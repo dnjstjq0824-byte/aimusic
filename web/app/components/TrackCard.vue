@@ -29,6 +29,14 @@
           <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
             <AiBadge :track="track" />
             <span class="text-caption font-medium text-text-muted">{{ providerDisplayName(track.aiProvider) }}</span>
+            <VerifiedSeal
+              v-if="track.status === 'READY' && track.certNumber"
+              :size="16"
+              :label="t('player.verified')"
+              :full-label="t('player.verified')"
+              :show-label="false"
+              :cert-number="track.certNumber"
+            />
           </div>
         </div>
         <UiMenu :items="menuItems" :label="t('track.moreActions')" @select="onMenuSelect" />
@@ -48,6 +56,7 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
+import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import { useFormat } from '@/composables/useFormat';
 import { providerDisplayName } from '@/utils/providerDisplay';
 import { detailParam } from '@/utils/seo';

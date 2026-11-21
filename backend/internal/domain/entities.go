@@ -346,8 +346,12 @@ type Track struct {
 	Status            string    `json:"status"`
 	RejectionReasonKo *string   `json:"rejectionReasonKo,omitempty"`
 	PlayCount         int64     `json:"playCount"`
-	CreatedAt         time.Time `json:"createdAt"`
-	UpdatedAt         time.Time `json:"updatedAt"`
+	// CertNumber is the public certificate number (WI-N2): null when no
+	// certificate is issued. Always present in JSON (no omitempty) so
+	// clients can distinguish "unissued" from a stale cached shape.
+	CertNumber *string   `json:"certNumber"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 // PublicView returns a copy safe for anonymous and listener responses (B-05):

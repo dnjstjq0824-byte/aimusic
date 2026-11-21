@@ -181,16 +181,33 @@
   토큰 복귀 1종 신규), ARB 동치 검사 5×210 OK.
 - 남은 문제: 실키 실측은 P1 이후.
 
-## WI-N2 모바일 부분 (엔진·웹은 하네스 완료 후)
+## WI-N2 인증 배지 클릭 연결 — PASS
 
+- 변경 (엔진): `domain.Track.CertNumber` (`*string`, 없으면 null),
+  `catalog.go` (creator 조인에 인증서 LEFT JOIN, 일반 목록은
+  스칼라 서브쿼리 — 단일 문장, N+1 없음), 스캔 3종 + 테스트 3종.
+- 변경 (웹): `api/types.ts` (`certNumber?`), `TrackRow`·
+  `FullscreenPlayer` (번호 전달), `TrackCard` (배지 추가),
+  트랙 상세 (`track.certNumber` 직접 사용 — 기존 slug URL에서는
+  cert 별도 fetch가 404로 배지가 안 보였음).
 - 변경 (모바일): `core/models.dart` (`Track.certNumber`·
   `TrackCertificate`·`CertificateView`), `services/api_service.dart`
   (`verifyCertificate()`), `features/certificate/certificate_screen.dart`
   신규, `main.dart` (`/certificate/:number` 라우트),
   `features/player/player_screen.dart` (AI·라이선스 탭 배지 + 탭
   이동), ARB 5개 언어 10키씩, `test/models_test.dart` 3종.
-- 검증: `flutter analyze` 0, `flutter test`에 포함 (28/28).
-  엔진 `certNumber` 노출 후 실연동 확인 예정.
+- 검증:
+  - 엔진 단위 3종 통과, `go test ./...` 전부 ok.
+  - 쿼리 수 불변: 목록 API = COUNT 1 + SELECT 1 (pg 로그),
+    상세 = SELECT 1. JOIN 추가로 쿼리 수 증가 0.
+  - 실연동: 미발급 목록·상세 `certNumber: null` (키 존재),
+    발급 상세 `certNumber: 'AVB-WSP65PRTFD'`.
+  - 웹: 브라우저에서 발급 트랙 상세에
+    `/certificate/AVB-WSP65PRTFD` 링크 렌더 확인, 미발급은
+    span (링크 없음). typecheck 0, vitest 127/127, i18n PASS.
+  - 모바일: `flutter analyze` 0, `flutter test` 28/28, ARB
+    5×210 OK (N9 키 포함).
+- 남은 문제: 없음.
 
 ## WI-N1 Lighthouse 예산 회복 — NOT PASS (부분 개선, 구조적 한계)
 
