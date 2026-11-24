@@ -28,9 +28,14 @@ AVIBE 제공자 인증 게이트(`licensegate.ValidateCommercialEligibility`)가
 
 ### 1.2 구현 (`generator/server.py`)
 
-- `insert_watermark()`: 16kHz mono 리샘플 → AudioSeal 삽입 →
-  16-bit WAV 반환 + `watermarkId`. `audioseal` 미설치 시
+- `insert_watermark()` (C-FIX-1, 2026-11-24): 원본 디코드 후 16kHz
+  mono 캐리어로 AudioSeal 잔차 신호만 계산 → 원본 샘플레이트로
+  선형 업샘플 → 원본 전 채널에 가산. 반환 WAV는 입력의
+  샘플레이트·채널 수·비트뎁스를 그대로 유지 (구 동작인 16kHz mono
+  다운샘플 반환은 폐기). `watermarkId` 부여, `audioseal` 미설치 시
   `NotImplementedError` → v2는 503 (fail closed, 변경 없음).
+- 주의: §1.1 내성 수치는 구 경로(16kHz mono 반환) 실측치이므로,
+  C-FIX-1 이후 GPU 실측으로 검출률 재확인이 필요하다.
 - `detect_watermark()`: (존재 여부, 확률). 검증·감사 경로용.
 - 임계: `WATERMARK_PROB_MIN = 0.5` (실측 1.0/0.0 분리).
 

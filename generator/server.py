@@ -305,43 +305,124 @@ def _resample_mono(raw_wav: bytes, target_sr: int) -> tuple[list[float], int]:
     return out, target_sr
 
 
-def _encode_wav_mono16(mono: list[float], rate: int) -> bytes:
+def _decode_wav(raw_wav: bytes) -> tuple[list[list[float]], int, int]:
+    """Decode WAV bytes to per-channel float samples.
+
+    Returns (channels, rate, width); each channel holds n_frames floats in
+    [-1, 1]. Only 16/32-bit PCM is supported (same floor as _resample_mono).
+    """
     import struct  # pylint: disable=import-outside-toplevel
 
-    pcm = b"".join(struct.pack("<h", max(-32768, min(32767, int(s * 32767)))) for s in mono)
+    with wave.open(io.BytesIO(raw_wav), "rb") as fh:
+        n_channels, width, rate, n_frames = (
+            fh.getnchannels(),
+            fh.getsampwidth(),
+            fh.getframerate(),
+            fh.getnframes(),
+        )
+        raw = fh.readframes(n_frames)
+    if width == 2:
+        samples = struct.unpack(f"<{len(raw) // 2}h", raw)
+        scale = 32768.0
+    elif width == 4:
+        samples = struct.unpack(f"<{len(raw) // 4}i", raw)
+        scale = 2147483648.0
+    else:
+        raise ValueError(f"watermark needs 16/32-bit WAV, got {width * 8}-bit")
+    channels = [[v / scale for v in samples[ch::n_channels]] for ch in range(n_channels)]
+    return channels, rate, width
+
+
+def _resample_linear(samples: list[float], out_len: int) -> list[float]:
+    """Resample to exactly out_len samples (true linear interpolation)."""
+    if out_len <= 0:
+        return []
+    if len(samples) <= 1:
+        return [samples[0] if samples else 0.0] * out_len
+    if len(samples) == out_len:
+        return list(samples)
+    step = (len(samples) - 1) / (out_len - 1)
+    out: list[float] = []
+    for i in range(out_len):
+        pos = i * step
+        lo = int(pos)
+        hi = min(lo + 1, len(samples) - 1)
+        frac = pos - lo
+        out.append(samples[lo] * (1.0 - frac) + samples[hi] * frac)
+    return out
+
+
+def _encode_wav(channels: list[list[float]], rate: int, width: int) -> bytes:
+    """Encode per-channel float samples to WAV bytes (clipped to [-1, 1])."""
+    import struct  # pylint: disable=import-outside-toplevel
+
+    if width == 2:
+        scale, fmt = 32767, "h"
+    elif width == 4:
+        scale, fmt = 2147483647, "i"
+    else:
+        raise ValueError(f"watermark needs 16/32-bit WAV, got {width * 8}-bit")
+    n_channels = len(channels)
+    n_frames = len(channels[0]) if channels else 0
+    # Chunked pack: one struct.pack call per 1M samples keeps peak memory
+    # bounded on long clips (180s stereo 44.1k is ~16M samples).
+    pcm_parts: list[bytes] = []
+    chunk: list[int] = []
+    for i in range(n_frames):
+        for ch in range(n_channels):
+            s = channels[ch][i]
+            if s > 1.0:
+                s = 1.0
+            elif s < -1.0:
+                s = -1.0
+            chunk.append(int(s * scale))
+            if len(chunk) >= 1_000_000:
+                pcm_parts.append(struct.pack(f"<{len(chunk)}{fmt}", *chunk))
+                chunk = []
+    if chunk:
+        pcm_parts.append(struct.pack(f"<{len(chunk)}{fmt}", *chunk))
     buf = io.BytesIO()
     with wave.open(buf, "wb") as fh:
-        fh.setnchannels(1)
-        fh.setsampwidth(2)
+        fh.setnchannels(n_channels)
+        fh.setsampwidth(width)
         fh.setframerate(rate)
-        fh.writeframes(pcm)
+        fh.writeframes(b"".join(pcm_parts))
     return buf.getvalue()
 
 
 def insert_watermark(raw_wav: bytes, job_id: str) -> tuple[bytes, str]:
     """Insert the inaudible provenance watermark; return (wav, watermarkId).
 
-    AudioSeal (WI-N13, code + weights MIT). The carrier is resampled to
-    16kHz mono for embedding; the message bits are random per job and the
-    returned watermarkId is a server-generated `wm-<job>-<rand>` handle
-    (message bits alone are not bit-perfect, so the ID is tracked
-    out-of-band, not decoded from audio). Raises NotImplementedError when
-    audioseal is missing (v2 stays 503, fail closed).
+    AudioSeal (WI-N13, code + weights MIT). Only the watermark *residual*
+    is computed at 16kHz mono; it is upsampled to the clip's native rate
+    and added to the original full-quality channels, so the returned WAV
+    keeps the input's sample rate, channel count, and bit depth (C-FIX-1:
+    no more 16kHz mono downsample). The residual is added equally to every
+    channel, so the detector (which downmixes to mono) still sees the full
+    mark. The message bits are random per job and the returned watermarkId
+    is a server-generated `wm-<job>-<rand>` handle (message bits alone are
+    not bit-perfect, so the ID is tracked out-of-band, not decoded from
+    audio). Raises NotImplementedError when audioseal is missing (v2 stays
+    503, fail closed).
     """
     import secrets  # pylint: disable=import-outside-toplevel
 
     gen, _ = _get_watermark_models()
     import torch  # pylint: disable=import-outside-toplevel
 
+    channels, rate, width = _decode_wav(raw_wav)
+    n_frames = len(channels[0]) if channels else 0
     mono, _ = _resample_mono(raw_wav, AUDIOSEAL_SR)
     audio = torch.tensor(mono, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
     message = torch.randint(0, 2, (1, 16))
     device = next(gen.parameters()).device
     with torch.no_grad():
-        marked = audio.to(device) + gen.get_watermark(audio.to(device), sample_rate=AUDIOSEAL_SR, message=message.to(device))
-    out = marked.squeeze().detach().cpu().tolist()
+        residual = gen.get_watermark(audio.to(device), sample_rate=AUDIOSEAL_SR, message=message.to(device))
+    wm_16k = residual.squeeze().detach().cpu().tolist()
+    wm_native = _resample_linear(wm_16k, n_frames)
+    marked = [[s + w for s, w in zip(ch, wm_native)] for ch in channels]
     watermark_id = f"wm-{job_id}-{secrets.token_hex(4)}"
-    return _encode_wav_mono16(out, AUDIOSEAL_SR), watermark_id
+    return _encode_wav(marked, rate, width), watermark_id
 
 
 def detect_watermark(raw_wav: bytes) -> tuple[bool, float]:
@@ -368,7 +449,6 @@ def check_similarity(raw_wav: bytes) -> tuple[bool, dict]:
     """
     import hashlib  # pylint: disable=import-outside-toplevel
     import json  # pylint: disable=import-outside-toplevel
-    import struct  # pylint: disable=import-outside-toplevel
 
     if not REFERENCE_FPS_PATH:
         return True, {"compared": 0, "best": None, "note": "no reference list configured"}
@@ -377,13 +457,13 @@ def check_similarity(raw_wav: bytes) -> tuple[bool, dict]:
             refs = json.load(fh).get("fingerprints", [])
     except (OSError, ValueError) as exc:
         return False, {"compared": 0, "best": None, "error": str(exc)}
-    with wave.open(io.BytesIO(raw_wav), "rb") as fh:
-        if fh.getsampwidth() != 2:
-            return False, {"compared": 0, "best": None, "error": "want 16-bit WAV"}
-        n_channels, n_frames = fh.getnchannels(), fh.getnframes()
-        raw = fh.readframes(n_frames)
-    samples = struct.unpack(f"<{len(raw) // 2}h", raw)
-    mono = [sum(samples[i:i + n_channels]) / (n_channels * 32768.0) for i in range(0, len(samples), n_channels)]
+    try:
+        channels, _, _ = _decode_wav(raw_wav)
+    except (wave.Error, EOFError, ValueError) as exc:
+        return False, {"compared": 0, "best": None, "error": str(exc)}
+    n_channels = len(channels)
+    n_frames = len(channels[0]) if channels else 0
+    mono = [sum(channels[ch][i] for ch in range(n_channels)) / n_channels for i in range(n_frames)]
     blocks, bits, per = 256, 0, max(len(mono) // 256, 1)
     for b in range(blocks):
         block = mono[b * per:(b + 1) * per] or [0.0]
