@@ -129,7 +129,7 @@ smoke() {
     printf '%s  %s\n' "$code" "$asset"
     [ "$code" = "200" ] || fail=1
   done < <(curl -s https://avibemusic.com/ https://avibemusic.com/en https://avibemusic.com/explore https://avibemusic.com/pricing \
-    | grep -o '/_nuxt/[^"'"'"' )]*' | sort -u)
+    | grep -o '/_nuxt/[^"'"'"' )]\+' | sort -u)   # files only (skips buildAssetsDir:"/_nuxt/")
   [ "$fail" -eq 0 ] || { echo "FAIL: some live /_nuxt assets are not 200"; exit 1; }
   echo "live /_nuxt assets all 200"
 }
