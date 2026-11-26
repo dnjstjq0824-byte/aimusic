@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -103,6 +104,14 @@ func (h *TrackHandler) ListTracks(c *gin.Context) {
 	if len([]rune(q)) > 100 {
 		AbortError(c, fmt.Errorf("%w: q too long (max 100 chars)", domain.ErrInvalidInput))
 		return
+	}
+	// Raw non-UTF-8 query bytes (broken clients/proxies) must fail as 400:
+	// passing them to Postgres raises 22021 and 500s the search.
+	for name, v := range map[string]string{"q": q, "provider": c.Query("provider"), "genre": c.Query("genre"), "mood": c.Query("mood")} {
+		if !utf8.ValidString(v) {
+			AbortError(c, fmt.Errorf("%w: %s must be valid UTF-8", domain.ErrInvalidInput, name))
+			return
+		}
 	}
 	sort := strings.TrimSpace(c.Query("sort"))
 	if _, valid := repository.TrackSortOrderBy(sort); !valid && sort != repository.TrackSortRelevant {

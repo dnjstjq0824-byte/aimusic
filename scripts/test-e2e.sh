@@ -25,7 +25,8 @@
 #                        GET /tracks list excludes the id
 #          counter     = POST /disputes/:id/counter -> UNDER_REVIEW + "[COUNTER]" in description
 #          restore     = POST /admin/disputes/:id/resolve uphold=false -> DISMISSED, then
-#                        POST /admin/review approve=true -> READY (stream works again)
+#                        POST /admin/review approve=true -> 400 (P1: purged TAKEN_DOWN
+#                        bytes are gone, so re-approval is refused and stream stays 403)
 #          permanent   = resolve uphold=true -> UPHELD_TAKEDOWN + TAKEN_DOWN + strike_applied=true
 #          D1          = §103 timeline stamps verified via psql
 #   T10  strike_count 3 -> partner SUSPENDED (user_blocks strike_number 3, expires_at NULL)
@@ -181,10 +182,22 @@ print(urlunsplit((p.scheme, p.netloc, g.path, g.query, '')))
 # --- HTTP helper: api METHOD PATH TOKEN DATA -> prints status code, body in $BODY ---
 api() {
   local method="$1"; local path="$2"; local token="${3:-}"; local data="${4:-}"
+  # Percent-encode like every real HTTP client: raw multibyte bytes depend
+  # on the pipe locale and arrive corrupted on some platforms. '%' stays
+  # untouched so pre-encoded call sites never double-encode. The path goes
+  # over stdin (never argv/env): MSYS2 rewrites slash-leading args and env
+  # values to Windows paths, and stdin bytes pass through untouched.
+  path="$(printf '%s' "$path" | PYTHONIOENCODING=utf-8 python3 -c "import sys,urllib.parse;print(urllib.parse.quote(sys.stdin.buffer.read().decode('utf-8'),safe='/:?=&%'))")"
   local -a args=(-s -o "$BODY" -w "%{http_code}" -X "$method" "$API$path"
     -H "Content-Type: application/json" --max-time 20)
   if [ -n "$token" ]; then args+=(-H "Authorization: Bearer $token"); fi
-  if [ -n "$data" ]; then args+=(-d "$data"); fi
+  # Bodies spool through a file: argv bytes are locale-mangled for non-ASCII
+  # on some platforms (ja/th prompts arrived as mojibake), while file bytes
+  # pass through untouched. --data-binary preserves the body exactly.
+  if [ -n "$data" ]; then
+    printf '%s' "$data" >"$TMP_DIR/curl-data.bin"
+    args+=(--data-binary "@$TMP_DIR/curl-data.bin")
+  fi
   local code=""
   code="$(curl "${args[@]}" 2>"$TMP_DIR/curl.err" || echo "000")"
   touch "$BODY"
@@ -194,12 +207,14 @@ api() {
 # --- JSON field helper: jget "a.b.c" reads $BODY, prints scalar or compact JSON ---
 jget() {
   local path="$1"
-  BODY_PATH="$BODY" FIELD_PATH="$path" python3 - <<'PY' 2>/dev/null || echo ""
+  # Explicit UTF-8 both ways: Windows python defaults to the locale codec
+  # (cp949) and dies on CJK response bodies.
+  BODY_PATH="$BODY" FIELD_PATH="$path" PYTHONIOENCODING=utf-8 python3 - <<'PY' 2>/dev/null || echo ""
 import json, os
 body = os.environ.get("BODY_PATH", "")
 path = os.environ.get("FIELD_PATH", "")
 try:
-  with open(body) as f:
+  with open(body, encoding="utf-8") as f:
     d = json.load(f)
 except Exception:
   print("")
@@ -457,7 +472,7 @@ assert_status "totp confirm wrong code -> 401" "401" "$code"
 TOTP_CODE="$(totp_now "$TOTP_SECRET")"
 code="$(api POST "/auth/totp/confirm" "$USER_TOKEN" "{\"code\":\"$TOTP_CODE\"}")"
 assert_status "totp confirm correct code" "200" "$code"
-RECOVERY0="$(BODY_PATH="$BODY" python3 -c "import json,os; print(json.load(open(os.environ['BODY_PATH']))['data']['recoveryCodes'][0])" 2>/dev/null || echo "")"
+RECOVERY0="$(BODY_PATH="$BODY" PYTHONIOENCODING=utf-8 python3 -c "import json,os; print(json.load(open(os.environ['BODY_PATH'],encoding='utf-8'))['data']['recoveryCodes'][0])" 2>/dev/null || echo "")"
 if [ -z "$RECOVERY0" ]; then fail "recovery codes empty"; else pass "recovery codes issued"; fi
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\"}")"
 assert_status "login without totp -> 403" "403" "$code"
@@ -466,6 +481,7 @@ code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW
 assert_status "login wrong totp -> 401" "401" "$code"
 assert_contains "totp invalid code" "ERR_TOTP_INVALID" "$(cat "$BODY")"
 TOTP_CODE2="$(totp_now "$TOTP_SECRET")"
+TOTP_STEP2=$(( $(date +%s) / 30 ))
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$TOTP_CODE2\"}")"
 assert_status "login with totp" "200" "$code"
 USER_TOKEN_NEW="$(jget "data.tokens.accessToken")"
@@ -480,6 +496,11 @@ code="$(api GET "/auth/me" "$USER_TOKEN" "")"
 assert_status "pre-logout-all token rejected" "401" "$code"
 code="$(api GET "/auth/me" "$USER_TOKEN_NEW" "")"
 assert_status "post-logout-all token rejected" "401" "$code"
+# TOTP codes are single-use per step: replaying the consumed code fails.
+code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$TOTP_CODE2\"}")"
+assert_status "replayed totp code -> 401" "401" "$code"
+# Mint the next code on a fresh step (codes never span a rollover here).
+while [ $(( $(date +%s) / 30 )) -eq "$TOTP_STEP2" ]; do sleep 1; done
 TOTP_CODE3="$(totp_now "$TOTP_SECRET")"
 code="$(api POST "/auth/login" "" "{\"email\":\"$USER_EMAIL\",\"password\":\"$PW\",\"totpCode\":\"$TOTP_CODE3\"}")"
 assert_status "login after logout-all" "200" "$code"
@@ -991,7 +1012,8 @@ assert_status "partner counter A" "200" "$code"
 assert_contains "counter -> UNDER_REVIEW" "UNDER_REVIEW" "$(cat "$BODY")"
 desc_a="$(psql_q "SELECT description FROM copyright_disputes WHERE id='$DISPUTE_A_ID'::uuid;")"
 assert_contains "counter note persisted" "[COUNTER]" "$desc_a"
-# restore: dismiss + re-approve.
+# restore: dismiss, but the purged takedown stays dead (P1: approving a
+# TAKEN_DOWN track to READY would publish bytes that no longer exist).
 code="$(api POST "/admin/disputes/$DISPUTE_A_ID/resolve" "$ADMIN_TOKEN" '{"uphold":false}')"
 assert_status "resolve dismiss A" "200" "$code"
 assert_contains "dismiss status" "DISMISSED" "$(cat "$BODY")"
@@ -999,9 +1021,13 @@ assert_contains "dismiss status" "DISMISSED" "$(cat "$BODY")"
 timeline="$(psql_q "SELECT COALESCE(takedown_requested_at::text,'NULL')||'|'||COALESCE(partner_notified_at::text,'NULL')||'|'||COALESCE(resume_requested_at::text,'NULL')||'|'||COALESCE(resumed_at::text,'NULL') FROM copyright_disputes WHERE id='$DISPUTE_A_ID'::uuid;" | tr -d ' \r\n')"
 if [[ "$timeline" == *"NULL"* ]]; then fail "dispute A §103 timeline incomplete: $timeline"; else pass "dispute A §103 timeline stamped"; fi
 code="$(api POST "/admin/review" "$ADMIN_TOKEN" "{\"trackId\":\"$DISPUTE_TRACK_A\",\"approve\":true}")"
-assert_status "restore track A to READY" "200" "$code"
+assert_status "approve purged takedown stays 400" "400" "$code"
 code="$(api GET "/tracks/$DISPUTE_TRACK_A/stream" "$USER_TOKEN" "")"
-assert_status "restored stream works" "200" "$code"
+assert_status "purged track stream stays 403" "403" "$code"
+# Downstream sections need a streamable track: track A is correctly dead,
+# so re-point the happy-path id at a fresh READY track.
+HAPPY_TRACK_ID="$(seed_ready_track "$PA_PARTNER_ID" "E2E Happy 2")"
+if [ -z "$HAPPY_TRACK_ID" ]; then fail "happy track reseed empty"; else pass "happy track reseeded $HAPPY_TRACK_ID"; fi
 
 # --- B: report -> permanent (uphold) ---
 if [ "$HAVE_FFMPEG" -eq 1 ]; then
@@ -1111,9 +1137,17 @@ assert_eq "settlement A store secs" "90" "$(jget "data.storePlaySecs")"
 assert_eq "settlement A total store secs" "120" "$(jget "data.totalStorePlaySecs")"
 assert_eq "settlement A pool recorded" "100000" "$(jget "data.storePoolKrw")"
 assert_eq "settlement A direct recorded" "10000" "$(jget "data.directKrw")"
+# B9: occasional-income withholding 8.8% (recalculated while still PENDING).
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":10000,\"incomeType\":\"OTHER_88\"}")"
+assert_status "calculate settlement A OTHER_88" "200" "$code"
+assert_eq "settlement A withholding 8.8%" "5236" "$(jget "data.withholdingKrw")"
+assert_eq "settlement A incomeType" "OTHER_88" "$(jget "data.incomeType")"
 code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
 assert_status "approve settlement A" "200" "$code"
 assert_contains "settlement A APPROVED" "APPROVED" "$(cat "$BODY")"
+# P0: a decided payout is never rewritten — recalculating APPROVED fails.
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":10000}")"
+assert_status "recalculate APPROVED fails 400" "400" "$code"
 # Violated partnerB (SUSPENDED + upheld): share 25000, gross 17500, FORFEITED + FORFEITED_VIOLATION + net 0.
 code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PB_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":0}")"
 assert_status "calculate settlement B" "200" "$code"
@@ -1126,21 +1160,20 @@ code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$
 assert_status "approve FORFEITED fails 400" "400" "$code"
 code="$(api GET "/admin/settlements/$PA_PARTNER_ID" "$ADMIN_TOKEN" "")"
 assert_status "list settlements A" "200" "$code"
-# B9: occasional-income withholding 8.8% (same period recalculated; status resets to PENDING).
-code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"storePoolKrw\":100000,\"directKrw\":10000,\"incomeType\":\"OTHER_88\"}")"
-assert_status "calculate settlement A OTHER_88" "200" "$code"
-assert_eq "settlement A withholding 8.8%" "5236" "$(jget "data.withholdingKrw")"
-assert_eq "settlement A incomeType" "OTHER_88" "$(jget "data.incomeType")"
-# P2-2 (#12): hold suspends PENDING with reason; approve + double-hold refused; release resumes.
-code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reason\":\"E2E fraud hold\"}")"
+# P2-2 (#12): hold needs PENDING; use a fresh period (the main row is APPROVED).
+HOLD_START="2026-09-01"
+HOLD_END="2026-10-01"
+code="$(api POST "/admin/settlements/calculate" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$HOLD_START\",\"periodEnd\":\"$HOLD_END\",\"storePoolKrw\":100000,\"directKrw\":10000}")"
+assert_status "calculate hold-fixture settlement" "200" "$code"
+code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$HOLD_START\",\"periodEnd\":\"$HOLD_END\",\"reason\":\"E2E fraud hold\"}")"
 assert_status "hold settlement A" "200" "$code"
 assert_eq "settlement A HELD" "HELD" "$(jget "data.status")"
 assert_eq "settlement A hold reason" "E2E fraud hold" "$(jget "data.holdReason")"
-code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
+code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$HOLD_START\",\"periodEnd\":\"$HOLD_END\"}")"
 assert_status "approve HELD fails 400" "400" "$code"
-code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reason\":\"E2E fraud hold again\"}")"
+code="$(api POST "/admin/settlements/hold" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$HOLD_START\",\"periodEnd\":\"$HOLD_END\",\"reason\":\"E2E fraud hold again\"}")"
 assert_status "double hold fails 400" "400" "$code"
-code="$(api POST "/admin/settlements/release" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
+code="$(api POST "/admin/settlements/release" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$HOLD_START\",\"periodEnd\":\"$HOLD_END\"}")"
 assert_status "release settlement A" "200" "$code"
 assert_eq "settlement A back to PENDING" "PENDING" "$(jget "data.status")"
 # Settlement account AES-256-GCM: ciphertext at rest, masked preview over API.
@@ -1152,7 +1185,8 @@ if [ "$stored_acct" == "$E2E_ACCT" ] || [ -z "$stored_acct" ]; then fail "settle
 code="$(api GET "/admin/partners/$PA_PARTNER_ID/settlement" "$ADMIN_TOKEN" "")"
 assert_status "settlement preview -> 200" "200" "$code"
 assert_contains "settlement preview masked" "**********9876" "$(cat "$BODY")"
-# Payout execution record: approve (OTHER_88 row is PENDING) then mark-paid once.
+# Payout execution record: the main row is APPROVED already (idempotent
+# re-approve), then mark-paid once.
 code="$(api POST "/admin/settlements/approve" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\"}")"
 assert_status "re-approve settlement A" "200" "$code"
 code="$(api POST "/admin/settlements/mark-paid" "$ADMIN_TOKEN" "{\"partnerId\":\"$PA_PARTNER_ID\",\"periodStart\":\"$PERIOD_START\",\"periodEnd\":\"$PERIOD_END\",\"reference\":\"E2E-SLIP-001\"}")"
@@ -1581,7 +1615,9 @@ assert_status "T15 private tracks guest -> 403" "403" "$code"
 
 section "T16 engagement (R6 likes/saves/follows + N-01 guest detail)"
 code="$(api POST "/auth/login" "" "{\"email\":\"$PARTNER_A_EMAIL\",\"password\":\"$PW\"}")"
+assert_status "T16 partner relogin" "200" "$code"
 PA_TOKEN="$(jget "data.tokens.accessToken")"
+if [ -z "$PA_TOKEN" ]; then fail "T16 relogin token empty"; else pass "T16 relogin token issued"; fi
 code="$(api POST "/likes/tracks/$T14_T1" "$USER_TOKEN" "")"
 assert_status "T16 like track" "200" "$code"
 assert_contains "T16 like added" '"added":true' "$(cat "$BODY")"
