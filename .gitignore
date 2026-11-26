@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.prod.example
 *.pem
 *.key
 *.p12
@@ -60,6 +61,7 @@ Thumbs.db
 # Logs / coverage
 *.log
 coverage/
+coverage
 coverage.out
 
 # Local AI-generated audio (large, uncommitted)
@@ -80,7 +82,7 @@ scratch/
 
 # Python generation server (WI-03)
 generator/.venv/
-generator/__pycache__/
+**/__pycache__/
 generator/*.pyc
 
 

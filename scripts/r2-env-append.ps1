@@ -4,6 +4,7 @@
 # Values are read hidden, never printed, and scrubbed after use. Re-runnable.
 $ErrorActionPreference = 'Stop'
 $Key = "$HOME\.ssh\avibe_vultr"
+# Canonical prod target lives in deploy/common.sh; keep this default in sync.
 $Vps = 'root@158.247.219.159'
 
 if (-not (Test-Path $Key)) { Write-Host "NO-SSH-KEY: $Key"; exit 1 }

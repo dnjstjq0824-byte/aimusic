@@ -1,0 +1,25 @@
+# Normalize line endings: text files commit LF, check out native.
+* text=auto
+# Shell/Python must stay LF everywhere (bash and POSIX tools choke on CRLF).
+*.sh text eol=lf
+*.py text eol=lf
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+# Binary: never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.mp3 binary
+*.flac binary
+*.pdf binary
+*.zip binary
+*.jks binary
+*.key binary

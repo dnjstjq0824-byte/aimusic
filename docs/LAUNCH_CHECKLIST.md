@@ -5,17 +5,18 @@ Check each box with the exact command. Anything unchecked blocks launch.
 ## A. Automated gates (all green in this repo state)
 
 - [ ] Backend: `cd backend && go build ./... && go vet ./... && go test ./...`
-- [ ] Web: `cd web && npm run typecheck && npm run test -- --run && npm run build`
-- [ ] Mobile: `cd mobile && flutter analyze && flutter test`
-- [ ] Scripts: `bash -n scripts/test-e2e.sh && bash -n scripts/start-local.sh`
-- [ ] Live E2E: `./scripts/start-local.sh --build && ./scripts/test-e2e.sh` → `E2E PASSED`
+- [ ] Web: `cd web && npm run typecheck && npm run test:coverage && npm run lint && npm run i18n:check && npm run build`
+- [ ] Mobile: `cd mobile && flutter analyze && flutter test --coverage`
+- [ ] Generator: `cd generator && python -m ruff check server.py eval/ poc/ tests/ && python -m pytest tests/ -q`
+- [ ] Scripts: `bash -n deploy/*.sh scripts/*.sh` + `shellcheck -S warning` per CI `scripts` job
+- [ ] Live E2E: `./scripts/start-local.sh && ./scripts/test-e2e.sh` → `E2E PASSED`
       (covers: auth/TOTP/age/consents, pre-check gates, dedupe, worker, HLS
       signed stream, disputes/takedown+purge, strikes, settlement+mark-paid,
       refund-surface fail-closed, audit trail, withdraw purge, export, admin users)
 
 ## B. Prod environment
 
-- [ ] `APP_ENV=prod`, `DB_DSN`, `REDIS_ADDR` point at managed services
+- [ ] `APP_ENV=prod`, `DB_DSN` (sslmode=require), `REDIS_ADDR` point at the prod containers
 - [ ] `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` ≥32 random chars
 - [ ] `HLS_SIGNING_KEY` set identically in API env + Worker secret
 - [ ] `SMTP_HOST/USER/PASS` deliver (send a real reset mail, click it)
@@ -29,7 +30,7 @@ Check each box with the exact command. Anything unchecked blocks launch.
 
 ## C. Data & access
 
-- [ ] `migrate up` applied 000001→000012; `migrate status` clean
+- [ ] `migrate up` applied 000001→000027; `migrate status` clean
 - [ ] `adminctl create-admin` done; password in vault, not chat
 - [ ] Seed parity: `legal_terms` (4 codes, required v-current), `billing_plans`,
       `ai_provider_policies` match `seed.sql` intent (insert via SQL, never seed file)
@@ -47,7 +48,7 @@ Check each box with the exact command. Anything unchecked blocks launch.
 
 - [ ] `/readyz` wired to load-balancer health checks; alerts on 503
 - [ ] Log aggregation captures API/worker JSON logs; alert on `audit record failed`
-- [ ] Postgres PITR + monthly restore drill scheduled
+- [ ] Postgres dumps (local 14d + R2 30d per runbook §8) + monthly restore drill scheduled
 - [ ] Worker `DISPUTE_SLA_*` / `JOB_*` intervals reviewed (defaults 15m/72h, 5m/30m)
 - [ ] On-call has `docs/PROD_RUNBOOK.md` §6 incident table
 

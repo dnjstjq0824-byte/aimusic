@@ -1,7 +1,7 @@
 # AVIBE Streaming Platform (AI 음원 스트리밍 플랫폼)
 
 > **상업용 라이선스 원천 차단 & 법적 컴플라이언스 완전판**  
-> AI 생성 음원을 유통·스트리밍하고, 백그라운드 재생 및 플레이리스트 큐레이션을 제공하는 풀스택 모바일(Flutter) 및 웹(Vue 3) 플랫폼입니다.
+> AI 생성 음원을 유통·스트리밍하고, 백그라운드 재생 및 플레이리스트 큐레이션을 제공하는 풀스택 모바일(Flutter) 및 웹(Nuxt 4 SSR) 플랫폼입니다.
 
 ---
 
@@ -15,7 +15,7 @@ flowchart TD
   Gate1 -->|비상업 플랜 / Sync-only| Block1["403 ERR_NON_COMMERCIAL_TIER<br/>/ ERR_SYNC_ONLY_LICENSE"]
   Gate1 -->|통과| Gate2["Gate 2: 구독 기간 및 중복 SHA-256 검증<br/>(partner_ai_subscriptions)"]
   Gate2 -->|소급 생성 / 중복 해시| Block2["403 ERR_RETROACTIVE_GENERATION_DATE<br/>/ 409 ERR_DUPLICATE_AUDIO_FILE"]
-  Gate2 -->|통과: Presigned URL 발급| Staging["오디오 파일 MinIO 스테이징 업로드<br/>(minio-staging)"]
+  Gate2 -->|통과: Presigned URL 발급| Staging["오디오 파일 오브젝트 스토리지 스테이징 업로드<br/>(로컬 LocalStack S3 / 운영 Cloudflare R2)"]
   Staging --> Gate3["Gate 3: Go Worker FFprobe 포렌식 분석<br/>(메타데이터, 비트레이트, 핑거프린트)"]
   Gate3 -->|무료 워터마크 / 저음질 스트림| Reject3["스테이징 파일 즉시 영구 삭제<br/>-> LICENSE_GATE_REJECTED"]
   Gate3 -->|통과: loudnorm + HLS 변환 + AI 메타데이터 워터마크| Pending["상태: LICENSE_GATE_PENDING<br/>(일반 유저 스트리밍 403 차단)"]
@@ -45,15 +45,15 @@ AImusic/  <!-- physical checkout name; product brand is AVIBE -->
 │   ├── internal/pkg/audio/        # FFprobe 분석기 & FFmpeg HLS/워터마크 래퍼
 │   ├── internal/pkg/crypto/       # AES-256-GCM 금융정보 암호화 & HLS Signed URL
 │   └── migrations/                # PostgreSQL 16 DDL 및 초기 정책/약관 시드
-├── web/                           # Vue 3 + Vite + TypeScript 통합 웹 포털
-│   ├── src/views/partner/         # 상업 라이선스 사전검증 3단계 업로드 위저드
-│   ├── src/views/admin/           # 심사 워크벤치 & 라이선스 정책 실시간 편집 콘솔
-│   └── src/views/user/            # 유저 스트리밍, 파형 시크바, UGC 아티스트 차단
+├── web/                           # Nuxt 4 SSR + TypeScript 통합 웹 포털
+│   ├── app/pages/                 # 파일 기반 라우트 (explore/tracks/playlists, studio/admin 콘솔 등)
+│   ├── app/components/            # UI 키트·플레이어·랜딩 컴포넌트
+│   └── app/stores/                # Pinia 스토어 (player/playlist/auth 등)
 ├── mobile/                        # Flutter 크로스플랫폼 모바일 앱 (iOS / Android)
 │   └── lib/services/audio_handler.dart  # just_audio + audio_service 백그라운드 큐
 ├── scripts/
-│   ├── start-local.sh             # 로컬 인프라 (Postgres, Redis, MinIO, API, Worker) 기동
-│   └── test-e2e.sh                # 11단계 E2E 시나리오 자동 검증 스위트
+│   ├── start-local.sh             # 로컬 인프라 (Postgres, Redis, LocalStack S3, API, Worker) 기동
+│   └── test-e2e.sh                # T01–T22 E2E 시나리오 자동 검증 스위트
 └── docs/                          # API 명세, 아키텍처 다이어그램, ERD 및 Cloudflare 가이드
 ```
 
@@ -66,26 +66,26 @@ AImusic/  <!-- physical checkout name; product brand is AVIBE -->
 ### 사전 요구사항
 - Docker Desktop (Docker Compose v2)
 - Go 1.22+
-- Node.js 20+
-- Flutter 3.24+
+- Node.js 22 (CI 고정)
+- Flutter 3.47.8 (CI 고정)
 
 ### 1) 로컬 스택 기동
 ```bash
-# PostgreSQL 16, Redis 7, MinIO, Go API (:8080), Media Worker 원클릭 실행
+# PostgreSQL 16, Redis 7, LocalStack S3, Go API (:8080), Media Worker 원클릭 실행
 bash scripts/start-local.sh
 ```
 
 ### 2) E2E 시나리오 자동화 테스트 실행
 ```bash
-# 11단계 시나리오 (비상업 요금제 차단, FFprobe 포렌식, Gate 4 심사, HLS 스트리밍, 임시조치 등) 검증
+# T01–T22 시나리오 (비상업 요금제 차단, FFprobe 포렌식, Gate 4 심사, HLS 스트리밍, 분쟁 처리 등) 검증
 bash scripts/test-e2e.sh
 ```
 
 ### 3) 프론트엔드 실행
 ```bash
-# Web (Vue 3)
+# Web (Nuxt 4)
 cd web
-npm install
+npm ci
 npm run dev
 
 # Mobile (Flutter)
@@ -102,8 +102,8 @@ flutter run
    - UI 전역 및 모바일 잠금화면 알림에 `[AI 생성 음원]` 투명성 배지 상시 노출
    - FFmpeg 트랜스코딩 시 오디오 헤더에 대한민국 AI 기본법 준수 메타데이터(`AIWatermarkComment`) 자동 삽입
 2. **저작권법 제102조~제104조 OSP 면책 특권 확보**
-   - 권리침해 신고 접수 즉시 스트리밍을 차단(`TAKEDOWN_TEMP`)하는 **Notice & Takedown** 워크플로우
-   - 3회 이상 침해 시 삼진아웃 계정 정지 및 정산금 몰수(`FORFEITED_VIOLATION`)
+   - 분쟁 확정(uphold) 시 스트리밍을 즉시 차단(`TAKEN_DOWN`)하고 원본·HLS를 퍼지하는 **Notice & Takedown** 워크플로우
+   - 1·2번째 확정은 7일/30일 계정 차단, 3번째 확정은 파트너 `SUSPENDED`; 위반 확정된 정산기는 `FORFEITED_VIOLATION` 몰수
 3. **개인정보보호법 및 글로벌 앱 마켓(Apple/Google) UGC 가이드라인**
    - 파트너 계좌번호 및 주민번호/사업자번호 `AES-256-GCM` 암호화 저장
    - 모바일/웹 내 **[트랙 신고]** 및 **[아티스트 즉시 차단(재생 큐에서 자동 제거)]**, **[인앱 즉시 회원 탈퇴]** 완비

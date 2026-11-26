@@ -155,6 +155,19 @@ test('bad signature, expired grant, and missing tier are rejected', async () => 
   assert.equal(noq.status, 403);
 });
 
+test('previous signing key still verifies during rotation', async () => {
+  const env = testEnv();
+  const oldKey = 'old-hls-signing-key-64-chars-minimum-0000000000000000000';
+  env.HLS_SIGNING_KEY_PREVIOUS = oldKey;
+  const exp = Math.floor(Date.now() / 1000) + 300;
+  const sig = createHmac('sha256', oldKey).update(`${TRACK}|${JTI}|${exp}|SQ`).digest('hex');
+  const res = await handler.fetch(
+    new Request(`https://avibemusic.com/local-hls/hls/${TRACK}/seg_0_001.ts?exp=${exp}&jti=${JTI}&q=SQ&sig=${sig}`),
+    env,
+  );
+  assert.equal(res.status, 200);
+});
+
 test('missing R2 object is 404', async () => {
   const res = await handler.fetch(new Request(grantUrl('seg_0_009.ts', 'SQ')), testEnv());
   assert.equal(res.status, 404);

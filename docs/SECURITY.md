@@ -30,13 +30,16 @@ What protects what, enforced where. All claims trace to code.
 
 ## 3. Transport & edge
 
-- TLS everywhere in prod; HSTS (prod only) + CSP via `SecurityHeaders`
-  middleware, nginx template, and Worker headers (Toss `frame-src` allowed).
+- TLS everywhere in prod; HSTS via `SecurityHeaders` middleware (all
+  environments except local/dev/test) and always-on Worker headers; CSP via
+  middleware (API deny-by-default) + Worker nonce rewrite (web, Toss
+  `frame-src` allowed). No nginx in the stack.
 - CORS allowlist (`CORS_ALLOWED_ORIGINS`); trusted proxies must be set behind
   an LB or client-IP rate limits can be spoofed.
-- HLS: private buckets; URLs carry `trackId|jti|exp` HMAC (`HLS_SIGNING_KEY`).
-  Worker verifies, strips `sig`, caches immutable segments; API gates HQ
-  (pass/admin → `master.m3u8`, else SQ `stream_0.m3u8`) and requires JWT.
+- HLS: private buckets; URLs carry `trackId|jti|exp|q` HMAC
+  (`HLS_SIGNING_KEY`, `q` = SQ/HQ tier). Worker verifies, strips `sig`,
+  caches immutable segments; API gates HQ (pass/admin → `master.m3u8`,
+  else SQ `stream_0.m3u8`) and requires JWT.
 
 ## 4. Abuse controls
 
@@ -69,7 +72,7 @@ What protects what, enforced where. All claims trace to code.
 ## 7. Fail-closed defaults
 
 - Prod boot refuses missing `SMTP_HOST`/short JWT secrets/missing
-  `HLS_SIGNING_KEY` (`Config.Validate`).
+  `HLS_SIGNING_KEY`/non-TLS `DB_DSN` (`Config.Validate`).
 - Empty `TOSS_SECRET_KEY` → billing 503s (`ERR_PAYMENT_UNAVAILABLE`), never
   fake-pays. Toss confirm/webhook always re-query the PG and verify
   order+amount.
@@ -79,9 +82,12 @@ What protects what, enforced where. All claims trace to code.
 ## 8. Known residual risks (honest)
 
 - TOTP secrets are recoverable from a DB dump (by design for verification);
-  mitigate with managed-DB encryption + least-privilege credentials.
+  mitigate with VPS disk encryption + least-privilege credentials.
 - Rate limits are per-instance (no Redis sharing); put WAF rate rules in
   front for DDoS.
 - `ageConfirmed` is self-attestation (no i-PIN/phone verification wired).
 - Social-account email is trusted from the provider (Kakao requires
   account-email consent scope).
+- Web keeps access+refresh tokens in `localStorage` (XSS-readable).
+  Mitigations: strict CSP with per-response nonces, refresh rotation,
+  `token_version` revocation. A stolen access token lives ≤15 min.

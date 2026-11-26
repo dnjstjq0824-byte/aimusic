@@ -7,25 +7,32 @@
 #   bash deploy/rollout-redesign.sh worker   # Worker (assets from the same web image)
 #   bash deploy/rollout-redesign.sh smoke    # public smoke checks
 #   bash deploy/rollout-redesign.sh rollback # previous backend + configs, web stopped
+#   bash deploy/rollout-redesign.sh --dry-run vps|worker|smoke|rollback  # print the plan only
 #
 # Prerequisites done once by the operator:
 #   - DNS: web.avibemusic.com -> tunnel `avibe` (cloudflared tunnel route dns ...)
 #   - npx wrangler login with the avibemusic.com account
+#
+# NEVER runs against prod without PO approval (G-2): mutating steps ask for
+# a typed YES, and --dry-run prints every remote command without executing it.
 set -euo pipefail
 
-VPS=root@158.247.219.159
-KEY="$HOME/.ssh/avibe_vultr"
-SSH=(ssh -i "$KEY" -o BatchMode=yes "$VPS")
-CF_ACCOUNT=f5c363135efe9b22ca66eb39f2f8e1da   # avibemusic.com account
+# shellcheck source=common.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 TS=$(date -u +%Y%m%d-%H%M%S)
 # Web image tag = last commit touching web/ (unrelated commits reuse it).
 REV=$(git log -1 --format=%h -- web)
 WEB_IMAGE=avibe-prod-web:latest
 COMPOSE="docker compose -f docker-compose.prod.yml"
+DRY=0
 
-say() { printf '\n== %s\n' "$*"; }
+if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift; fi
 
 build_web_image() {
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] build $WEB_IMAGE avibe-prod-web:$REV from committed web/ (linux/amd64)"
+    return 0
+  fi
   # Build from the committed tree only (no local node_modules/.output leak).
   local ctx; ctx=$(mktemp -d)
   git -c core.autocrlf=false archive HEAD web | tar -x -C "$ctx" --strip-components=1
@@ -36,32 +43,56 @@ build_web_image() {
 case "${1:-}" in
 vps)
   say "0. Preconditions"
-  git diff --quiet || { echo "working tree has uncommitted changes"; exit 1; }
-  "${SSH[@]}" 'docker ps --format "{{.Names}}" | grep -q avibe-prod-api'
+  git diff --quiet || precheck "working tree has uncommitted changes"
+  ssh_run 'docker ps --format "{{.Names}}" | grep -q avibe-prod-api'
   docker image inspect "avibe-prod-web:$REV" >/dev/null 2>&1 || build_web_image
+  confirm "redesign vps rollout"
 
   say "1. DB backup now"
-  "${SSH[@]}" '/opt/avibe/backup-db.sh && ls -lt /opt/avibe/backups | sed -n 2p'
+  ssh_run '/opt/avibe/backup-db.sh && ls -lt /opt/avibe/backups | sed -n 2p'
+
+  say "1b. Install WI-N3 off-site backup script (repo copy is source of truth)"
+  ssh_run "set -e; cd /opt/avibe; [ -f backup-db.sh ] && cp -p backup-db.sh backup-db.sh.bak-rollout-$TS || true"
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] ship HEAD:deploy/backup-db.sh to /opt/avibe/backup-db.sh (chmod 700), ensure cron, warn unless R2 vars reach cron"
+  else
+    git -c core.autocrlf=false show HEAD:deploy/backup-db.sh | "${SSH[@]}" 'cat > /opt/avibe/backup-db.sh'
+  fi
+  ssh_run "set -e; chmod 700 /opt/avibe/backup-db.sh; ( crontab -l 2>/dev/null | grep -v backup-db.sh || true; echo '30 18 * * * /opt/avibe/backup-db.sh >> /opt/avibe/backups/backup.log 2>&1' ) | crontab -; if crontab -l 2>/dev/null | grep -q '^R2_DB_BACKUP_BUCKET='; then echo 'off-site: R2 vars present in crontab'; else echo 'WARN: R2 vars not in root crontab - backups stay local-only until PO adds them (see deploy/.env.prod.example)'; fi"
 
   say "2. Ship backend source (previous kept as backend.prev-$TS)"
-  git -c core.autocrlf=false archive HEAD backend | "${SSH[@]}" "set -e; cd /opt/avibe; rm -rf backend.new; mkdir backend.new; tar -x -C backend.new --strip-components=1; mv backend backend.prev-$TS; mv backend.new backend"
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] git archive HEAD backend | ssh $VPS '... tar -x ... mv backend backend.prev-$TS ...'"
+  else
+    git -c core.autocrlf=false archive HEAD backend | "${SSH[@]}" "set -e; cd /opt/avibe; rm -rf backend.new; mkdir backend.new; tar -x -C backend.new --strip-components=1; mv backend backend.prev-$TS; mv backend.new backend"
+  fi
 
   say "3. Compose + tunnel config (backups *.bak-rollout-$TS)"
-  "${SSH[@]}" "set -e; cd /opt/avibe; cp -p .env .env.bak-rollout-$TS; cp -p docker-compose.prod.yml docker-compose.prod.yml.bak-rollout-$TS; cp -p cloudflared/config.yml cloudflared/config.yml.bak-rollout-$TS"
-  git -c core.autocrlf=false show HEAD:docker-compose.prod.yml | "${SSH[@]}" 'cat > /opt/avibe/docker-compose.prod.yml'
-  git -c core.autocrlf=false show HEAD:deploy/cloudflared-config.yml | "${SSH[@]}" 'cat > /opt/avibe/cloudflared/config.yml'
-  "${SSH[@]}" 'docker run --rm -v /opt/avibe/cloudflared:/etc/cloudflared:ro cloudflare/cloudflared:2026.10.7 --config /etc/cloudflared/config.yml tunnel ingress validate'
+  ssh_run "set -e; cd /opt/avibe; cp -p .env .env.bak-rollout-$TS; cp -p docker-compose.prod.yml docker-compose.prod.yml.bak-rollout-$TS; cp -p cloudflared/config.yml cloudflared/config.yml.bak-rollout-$TS"
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] ship HEAD:docker-compose.prod.yml + HEAD:deploy/cloudflared-config.yml to VPS, validate ingress"
+  else
+    git -c core.autocrlf=false show HEAD:docker-compose.prod.yml | "${SSH[@]}" 'cat > /opt/avibe/docker-compose.prod.yml'
+    git -c core.autocrlf=false show HEAD:deploy/cloudflared-config.yml | "${SSH[@]}" 'cat > /opt/avibe/cloudflared/config.yml'
+  fi
+  ssh_run 'docker run --rm -v /opt/avibe/cloudflared:/etc/cloudflared:ro cloudflare/cloudflared:2026.10.7 --config /etc/cloudflared/config.yml tunnel ingress validate'
 
   say "4. Ship web image ($REV)"
-  docker save "$WEB_IMAGE" "avibe-prod-web:$REV" | gzip -1 | "${SSH[@]}" 'gunzip | docker load'
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] docker save $WEB_IMAGE avibe-prod-web:$REV | gzip | ssh $VPS 'gunzip | docker load'"
+  else
+    docker save "$WEB_IMAGE" "avibe-prod-web:$REV" | gzip -1 | "${SSH[@]}" 'gunzip | docker load'
+  fi
 
-  say "5. Build api, migrate (000020~000027), restart api/worker/web/cloudflared"
-  "${SSH[@]}" "set -e; cd /opt/avibe
+  say "5. Build api, migrate, restart api/worker/web/cloudflared"
+  ssh_run "set -e; cd /opt/avibe
     $COMPOSE build api
     $COMPOSE run --rm migrate
     $COMPOSE up -d --no-deps --force-recreate api worker web
-    $COMPOSE up -d --no-deps --force-recreate cloudflared
-    sleep 15
+    $COMPOSE up -d --no-deps --force-recreate cloudflared"
+  wait_healthy avibe-prod-api 180
+  wait_healthy avibe-prod-web 240
+  ssh_run "set -e; cd /opt/avibe
     docker exec avibe-prod-postgres psql -U avibe -d avibe -At -c 'SELECT max(version) FROM schema_migrations'
     docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}'
     docker run --rm --network avibe-prod_avibe curlimages/curl:8.11.1 -s -o /dev/null -w 'web ssr %{http_code}\n' http://web:3000/
@@ -70,8 +101,14 @@ vps)
 
 worker)
   say "Worker: assets from avibe-prod-web:$REV"
+  if [ "$DRY" -eq 1 ]; then
+    echo "[dry-run] extract /app/public from avibe-prod-web:$REV into deploy/web-public, then wrangler deploy"
+    echo "[dry-run] would ask: type YES to proceed (worker deploy)"
+    exit 0
+  fi
   npx wrangler whoami 2>/dev/null | grep -q "$CF_ACCOUNT" || { echo "run: npx wrangler login  (avibemusic.com account)"; exit 1; }
   docker image inspect "avibe-prod-web:$REV" >/dev/null || { echo "build/ship the web image first (vps step)"; exit 1; }
+  confirm "worker deploy"
   rm -rf deploy/web-public
   cid=$(docker create "avibe-prod-web:$REV")
   docker cp "$cid:/app/public" deploy/web-public
@@ -80,7 +117,11 @@ worker)
   ;;
 
 smoke)
-  check() { local want="$1" url="$2"; local got; got=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "$url"); printf '%s (want %s)  %s\n' "$got" "$want" "$url"; [[ "$got" == "$want" ]]; }
+  check() {
+    local want="$1" url="$2"; local got
+    if [ "$DRY" -eq 1 ]; then printf '[dry-run] want %s  %s\n' "$want" "$url"; return 0; fi
+    got=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "$url"); printf '%s (want %s)  %s\n' "$got" "$want" "$url"; [[ "$got" == "$want" ]]
+  }
   check 200 https://api.avibemusic.com/readyz
   check 200 "https://avibemusic.com/api/v1/tracks?limit=1"
   check 200 https://avibemusic.com/
@@ -92,12 +133,14 @@ smoke)
   check 200 https://avibemusic.com/sitemap_index.xml
   check 404 https://avibemusic.com/this-page-does-not-exist
   check 403 "https://avibemusic.com/local-hls/hls/x/stream_0.m3u8"
+  if [ "$DRY" -eq 1 ]; then echo "[dry-run] fetch live HTML, assert Nuxt SSR marker"; exit 0; fi
   curl -s https://avibemusic.com/ | grep -q '__NUXT' && echo "SSR html OK" || { echo "FAIL: not Nuxt SSR html"; exit 1; }
   ;;
 
 rollback)
   say "Rollback: previous backend, .env, compose, tunnel config; web stopped"
-  "${SSH[@]}" 'set -e; cd /opt/avibe
+  confirm "redesign rollback"
+  ssh_run 'set -e; cd /opt/avibe
     PREV=$(ls -dt backend.prev-* | head -1); test -n "$PREV"
     rm -rf backend && mv "$PREV" backend
     cp -p "$(ls -t .env.bak-rollout-* | head -1)" .env
@@ -111,5 +154,5 @@ rollback)
   ;;
 
 *)
-  echo "usage: $0 vps|worker|smoke|rollback"; exit 2 ;;
+  echo "usage: $0 [--dry-run] vps|worker|smoke|rollback"; exit 2 ;;
 esac

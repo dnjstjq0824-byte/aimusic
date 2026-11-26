@@ -90,7 +90,6 @@ else
   cleanup
 fi
 
-# shellcheck disable=SC2086
-find "$BACKUP_DIR" -name "avibe-*.sql.gz" -mtime +$KEEP_DAYS -delete
+find "$BACKUP_DIR" -name "avibe-*.sql.gz" -mtime "+$KEEP_DAYS" -delete
 log "pruned local dumps older than $KEEP_DAYS days"
 log "done: $OUT"

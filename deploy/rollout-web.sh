@@ -20,10 +20,8 @@
 # every remote command without executing it.
 set -euo pipefail
 
-VPS=root@158.247.219.159
-KEY="$HOME/.ssh/avibe_vultr"
-SSH=(ssh -i "$KEY" -o BatchMode=yes "$VPS")
-CF_ACCOUNT=f5c363135efe9b22ca66eb39f2f8e1da   # avibemusic.com account
+# shellcheck source=common.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 COMPOSE="docker compose -f docker-compose.prod.yml"
 # Web image tag = last commit touching web/ (unrelated commits reuse it).
 REV=$(git log -1 --format=%h -- web)
@@ -31,26 +29,15 @@ WEB_IMAGE=avibe-prod-web:latest
 PREV_FILE=deploy/.web-prev-image   # VPS image ID before the last web rollout (git-ignored)
 DRY=0
 
-say() { printf '\n== %s\n' "$*"; }
-run() {
-  if [ "$DRY" -eq 1 ]; then printf '[dry-run] %s\n' "$*"; else "$@"; fi
-}
-ssh_run() {
-  if [ "$DRY" -eq 1 ]; then printf '[dry-run] ssh %s %s\n' "$VPS" "$*"; else "${SSH[@]}" "$*"; fi
-}
-
 if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift; fi
 
 preconditions() {
   say "0. Preconditions (target avibe-prod-web:$REV)"
-  if ! git diff --quiet; then
-    if [ "$DRY" -eq 1 ]; then echo "WARN: working tree has uncommitted changes (real run would stop here)";
-    else echo "working tree has uncommitted changes"; exit 1; fi
-  fi
-  command -v docker >/dev/null || { echo "docker is required"; exit 1; }
-  docker info >/dev/null 2>&1 || { echo "docker daemon is not running"; exit 1; }
-  npx wrangler whoami 2>/dev/null | grep -q "$CF_ACCOUNT" || { echo "run: npx wrangler login  (avibemusic.com account)"; exit 1; }
-  docker image inspect "avibe-prod-web:$REV" >/dev/null 2>&1 || { echo "missing local image avibe-prod-web:$REV (build it first)"; exit 1; }
+  git diff --quiet || precheck "working tree has uncommitted changes"
+  command -v docker >/dev/null || precheck "docker is required"
+  docker info >/dev/null 2>&1 || precheck "docker daemon is not running"
+  npx wrangler whoami 2>/dev/null | grep -q "$CF_ACCOUNT" || precheck "run: npx wrangler login  (avibemusic.com account)"
+  docker image inspect "avibe-prod-web:$REV" >/dev/null 2>&1 || precheck "missing local image avibe-prod-web:$REV (build it first)"
   ssh_run 'docker ps --format "{{.Names}}" | grep -q avibe-prod-web'
 }
 
@@ -84,6 +71,7 @@ build_union() {
 }
 
 ship_and_swap() {
+  confirm "ship web $REV"
   say "2. Worker deploy (union assets)"
   run npx wrangler deploy
 
@@ -101,7 +89,8 @@ ship_and_swap() {
   fi
 
   say "4. Recreate web only"
-  ssh_run "set -e; cd /opt/avibe; $COMPOSE up -d --no-deps --force-recreate web; sleep 10; docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' | grep avibe-prod-web"
+  ssh_run "set -e; cd /opt/avibe; $COMPOSE up -d --no-deps --force-recreate web; docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' | grep avibe-prod-web"
+  wait_healthy avibe-prod-web 240
 }
 
 smoke() {
@@ -139,7 +128,12 @@ rollback() {
   [ -f "$PREV_FILE" ] || { echo "no $PREV_FILE (unknown previous image); refusing"; exit 1; }
   prev_img=$(cat "$PREV_FILE")
   [ -n "$prev_img" ] || { echo "empty $PREV_FILE; refusing"; exit 1; }
-  ssh_run "set -e; cd /opt/avibe; docker tag $prev_img avibe-prod-web:latest && $COMPOSE up -d --no-deps --force-recreate web && sleep 10 && docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' | grep avibe-prod-web"
+  # The ref lands in a remote shell: allow only image-ref characters so a
+  # tampered $PREV_FILE cannot inject a remote command.
+  [[ "$prev_img" =~ ^[A-Za-z0-9_.:/@-]+$ ]] || { echo "unsafe image ref in $PREV_FILE; refusing"; exit 1; }
+  confirm "rollback to $prev_img"
+  ssh_run "set -e; cd /opt/avibe; docker tag \"$prev_img\" avibe-prod-web:latest && $COMPOSE up -d --no-deps --force-recreate web && docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}' | grep avibe-prod-web"
+  wait_healthy avibe-prod-web 240
   run npx wrangler rollback
 }
 

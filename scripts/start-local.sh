@@ -35,6 +35,16 @@ if [ ! -f .env ]; then
   cp .env.example .env
   echo "[start-local] Edit .env secrets before running in any shared environment."
 fi
+# The example ships an intentionally invalid AES placeholder (it must never
+# boot anything sensitive); mint a real local key wherever it still sits.
+if grep -q '^AES256_KEY_BASE64=change-me-' .env 2>/dev/null; then
+  command -v openssl >/dev/null 2>&1 || { echo "[start-local] openssl is required to mint a local AES key" >&2; exit 1; }
+  KEY=$(openssl rand -base64 32)
+  tmp=$(mktemp)
+  sed "s|^AES256_KEY_BASE64=.*|AES256_KEY_BASE64=$KEY|" .env > "$tmp" && mv "$tmp" .env
+  chmod 600 .env
+  echo "[start-local] minted a local AES256_KEY_BASE64 (dev-only; never reuse in shared envs)"
+fi
 
 set -a
 # shellcheck disable=SC1091

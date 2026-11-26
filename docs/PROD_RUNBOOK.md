@@ -9,23 +9,24 @@ authoritative; this file only indexes them.
 |---|---|---|
 | API | `backend/cmd/api` | Stateless; scale horizontally. Boot refuses prod without secrets (`Config.Validate`). |
 | Worker | `backend/cmd/worker` | Transcode queue + generation loop (WI-03) + dispute-SLA sweeper + stuck-job reaper. Run ≥1; sweepers are idempotent. |
-| Postgres | managed (RDS/Cloud SQL) | Migrations via `cmd/migrate` journal. |
-| Redis | managed (ElastiCache/Memorystore) | Transcode queue, login throttle, token-version reads. |
+| Postgres | self-hosted `postgres:16` container | Migrations via `cmd/migrate` journal. Check: `docker exec avibe-prod-postgres pg_isready`. |
+| Redis | self-hosted `redis:7` container | Transcode queue, login throttle, token-version reads. |
 | Object storage | Cloudflare R2 (`STORAGE_DRIVER=r2`; default `s3local` is LocalStack) | Private staging + HLS; Worker verifies HLS signatures. |
 | Edge | Cloudflare Worker (`worker.js`) | HLS signature verify, cache, CSP/HSTS. |
-| Web | `web/` SPA behind nginx | `web/nginx.conf.template` (CSP/HSTS parity with Worker). |
+| Web | `web/` Nuxt SSR container (`avibe-prod-web`) behind the tunnel | CSP via Worker nonce rewrite; no nginx in the stack. |
 | Mobile | `mobile/` Flutter | Release signing via `key.properties` / CI secrets. |
 
-Local mirror: `docker-compose.local.yml` + `./scripts/start-local.sh --build`.
+Local mirror: `docker-compose.local.yml` + `./scripts/start-local.sh` (builds by default; `--no-build` reuses images).
 
 ## 2. Pre-deploy gates (must all pass)
 
 ```bash
 cd backend && go build ./... && go vet ./... && go test ./...
-cd ../web && npm run typecheck && npm run test -- --run && npm run build
-cd ../mobile && flutter analyze && flutter test
-bash -n scripts/test-e2e.sh && bash -n scripts/start-local.sh
-./scripts/start-local.sh --build && ./scripts/test-e2e.sh   # needs Docker
+cd ../web && npm run typecheck && npm run test:coverage && npm run lint && npm run i18n:check && npm run build
+cd ../mobile && flutter analyze && flutter test --coverage
+cd ../generator && python -m ruff check server.py eval/ poc/ tests/ && python -m pytest tests/ -q
+bash -n deploy/*.sh scripts/*.sh
+./scripts/start-local.sh && ./scripts/test-e2e.sh   # needs Docker
 ```
 
 ## 3. Environment (prod `APP_ENV=prod`)
@@ -60,7 +61,7 @@ Worker-only knobs: `DISPUTE_SLA_INTERVAL_SECONDS` (900),
 
 ## 4. Deploy order
 
-1. `DB_DSN=... go run ./backend/cmd/migrate up` (embedded `*.up.sql` 000001→000012; journal `schema_migrations`). Verify: `migrate status`.
+1. `DB_DSN=... go run ./backend/cmd/migrate up` (embedded `*.up.sql` 000001→000027; journal `schema_migrations`). Verify: `migrate status`.
 2. Deploy API + worker images. Health: `GET /healthz` (liveness), `GET /readyz` (db+redis+queue depth; 503 when degraded).
 3. Bootstrap admin: `DB_DSN=... ADMINCTL_PASSWORD=... adminctl create-admin --email ops@...` (audited as `ADMIN_CREATE`). Role changes: `adminctl set-role/set-active` (audited).
 4. Seed legal terms / plans via SQL inserts (never `seed.sql`: it is guarded by `app.allow_seed` and is local-only).
@@ -106,8 +107,8 @@ before the swap; rollback re-tags it `:latest` and recreates `web`.
 
 | Symptom | Check | Fix |
 |---|---|---|
-| `/readyz` 503 db down | managed DB status | failover; API stays up, requests 500 with request IDs |
-| `/readyz` 503 redis down | managed Redis | queue/throttle degrade; transcode stalls until back |
+| `/readyz` 503 db down | `docker exec avibe-prod-postgres pg_isready`, container logs | restart postgres; API stays up, requests 500 with request IDs |
+| `/readyz` 503 redis down | `docker exec avibe-prod-redis redis-cli ping` | queue/throttle degrade; transcode stalls until back |
 | `queueDepth` growing | worker logs, `jobsFailed24h` | restart worker; reaper re-queues stuck RUNNING jobs ≤3 attempts |
 | HLS 403 everywhere | `HLS_SIGNING_KEY` mismatch API↔Worker | rotate secret both sides |
 | Login 429 flood | `LOGIN_LOCKED` throttle (10/15m per email) | legit users wait; abuse → WAF rule |
@@ -170,6 +171,16 @@ before the swap; rollback re-tags it `:latest` and recreates `web`.
 - R2: private buckets, no versioning. Takedown purges are deliberate
   deletes. Pre-cutover LocalStack volume stays on the VPS until PO
   approves deletion (G-R2).
+
+## 9. Secret rotation
+
+- HLS signing key (zero-downtime): the Worker accepts
+  `HLS_SIGNING_KEY` plus `HLS_SIGNING_KEY_PREVIOUS` (worker.js).
+  1. `wrangler secret put HLS_SIGNING_KEY_PREVIOUS` (= current key).
+  2. Rotate backend `HLS_SIGNING_KEY` (.env) and Worker
+     `HLS_SIGNING_KEY` to the new value; redeploy both.
+  3. Wait out grant TTL (`HLS_URL_TTL_SECONDS`, default 300s) plus margin.
+  4. `wrangler secret delete HLS_SIGNING_KEY_PREVIOUS`.
 - Media volume deletion review (WI-N10, G-R2/P7): run the read-only
   compare on the VPS, then fill this report for PO approval:
   ```sh

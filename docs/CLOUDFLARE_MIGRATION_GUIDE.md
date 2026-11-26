@@ -1,6 +1,7 @@
 # Cloudflare R2 & CDN 프로덕션 전환 및 보안 가이드 (Phase 6)
 
 본 문서는 로컬 개발 환경(LocalStack S3)에서 프로덕션 Cloudflare 인프라(Cloudflare R2 + CDN + WAF + Signed URL)로 무중단 전환하기 위한 가이드입니다.
+전환은 WI-D1에서 완료되어 현재 운영 형태를 반영한다(아래 Backend는 VPS docker compose, Web은 Nuxt SSR).
 
 ---
 
@@ -9,7 +10,7 @@
 ```mermaid
 flowchart LR
   subgraph Clients["Clients"]
-    WEB["Web Client (Vue 3)"]
+    WEB["Web Client (Nuxt SSR)"]
     MOB["Mobile Client (Flutter)"]
   end
 
@@ -20,7 +21,7 @@ flowchart LR
     R2_STG[("Cloudflare R2<br/>staging-private")]
   end
 
-  subgraph Backend["Kubernetes / Cloud VM"]
+  subgraph Backend["VPS docker compose"]
     API["Go API Server (:8080)"]
     WRK["Go Media Worker (FFprobe/FFmpeg)"]
     PG[("PostgreSQL 16")]

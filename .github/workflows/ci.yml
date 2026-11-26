@@ -5,12 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# One run per ref; newer pushes cancel stale PR runs (main never cancels).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   backend:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
           go-version: "1.22"
           cache-dependency-path: backend/go.sum
@@ -24,14 +29,14 @@ jobs:
         run: go build ./...
         working-directory: backend
       - name: test
-        run: go test ./...
+        run: go test -coverprofile coverage.out ./... && go tool cover -func coverage.out | tail -1
         working-directory: backend
 
   web:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -43,7 +48,10 @@ jobs:
         run: npm run typecheck
         working-directory: web
       - name: unit test
-        run: npm run test -- --run
+        run: npm run test:coverage
+        working-directory: web
+      - name: lint
+        run: npm run lint
         working-directory: web
       - name: i18n gate (global enforce since R13)
         run: node scripts/check-i18n.mjs
@@ -57,8 +65,8 @@ jobs:
   mobile:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           # Pinned: an unpinned stable moved past 3.47 and flagged the
@@ -68,26 +76,26 @@ jobs:
         run: flutter analyze
         working-directory: mobile
       - name: unit test
-        run: flutter test
+        run: flutter test --coverage
         working-directory: mobile
 
   mobile-release-gate:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: 3.47.8
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: temurin
           java-version: '17'
       - name: gradle cache
         # 11-21 mobile-release-gate failed once on Maven Central 429: fewer
         # downloads per run, and the build below retries once on failure.
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.gradle/caches
@@ -122,17 +130,59 @@ jobs:
   scripts:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - name: shellcheck scripts
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: shell syntax (all shell scripts)
         run: |
-          bash -n scripts/test-e2e.sh
-          bash -n scripts/start-local.sh
+          bash -n deploy/*.sh scripts/*.sh
+      - name: shellcheck
+        run: |
+          command -v shellcheck >/dev/null || { sudo apt-get update && sudo apt-get install -y shellcheck; }
+          # test-e2e.sh stays bash -n only: its eval-based fixture helper
+          # trips SC1036/SC1088 (tracked cleanup); everything else is gated.
+          shellcheck -S warning deploy/*.sh scripts/start-local.sh scripts/check-mobile-release.sh scripts/r2-copy-compare.sh scripts/r2-media-compare.sh scripts/runpod-gen.sh scripts/transcode_tracks.sh
+
+  generator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+      - name: install
+        run: pip install -r requirements.txt -r requirements-test.txt
+        working-directory: generator
+      - name: lint
+        run: python -m ruff check server.py eval/ poc/ tests/
+        working-directory: generator
+      - name: eval self tests
+        run: |
+          python eval/run_metrics.py --self-test
+          python eval/memorization.py --self-test
+        working-directory: generator
+      - name: api tests
+        run: python -m pytest tests/ -q
+        working-directory: generator
+
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: backend image
+        run: docker build ./backend -f backend/Dockerfile -t avibe-ci-api:ci
+      - name: web image
+        run: docker build ./web -f web/Dockerfile -t avibe-ci-web:ci
+      - name: generator server image
+        # The gpu target needs a GPU runner (torch base + ~10GB weights bake);
+        # add it when such a runner exists. The server target still pins the
+        # shared top half (base, requirements, entrypoint).
+        run: docker build ./generator -f generator/Dockerfile --target server -t avibe-ci-generator:ci
 
   e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: install e2e tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools ffmpeg
       - name: start stack
@@ -146,7 +196,7 @@ jobs:
           # which crash-loops api/worker in config.Load; generate a real key.
           sed -i '/^AES256_KEY_BASE64=/d' .env
           echo "AES256_KEY_BASE64=$(openssl rand -base64 32)" >> .env
-          ./scripts/start-local.sh || true
+          ./scripts/start-local.sh || echo "WARN: start-local exited nonzero; the health check below decides"
           for i in $(seq 1 40); do
             curl -sf http://localhost:8080/healthz && break || sleep 5
           done
@@ -155,7 +205,7 @@ jobs:
         run: ./scripts/test-e2e.sh
         env:
           E2E_KEEP_FIXTURES: "1"
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
           cache: npm
@@ -175,6 +225,7 @@ jobs:
           for i in $(seq 1 30); do
             curl -sf http://localhost:3000/ && break || sleep 5
           done
+          SMOKE_BASE_URL=http://localhost:3000 node e2e/smoke.mjs
           SLUG=$(curl -sf 'http://localhost:8080/api/v1/tracks?limit=1' | python3 -c "import json,sys; d=json.load(sys.stdin)['data']; items=d['items'] if isinstance(d,dict) else d; t=items[0]; print(t['slug']+'-'+t['shortId'])")
           [ -n "$SLUG" ] && [ "$SLUG" != "-" ] || { echo "no READY track for LHCI"; exit 1; }
           export LHCI_BASE_URL=http://localhost:3000 LHCI_TRACK_URL="http://localhost:3000/en/tracks/$SLUG"

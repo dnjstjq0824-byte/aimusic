@@ -12,6 +12,10 @@
 # Needs: Runpod CLI logged in (`runpod login`), SSH key ~/.ssh/runpod_ed25519.
 # The pod is public on https://<podId>-8000.proxy.runpod.net only with PUBLIC=1;
 # the server then requires the bearer token in /workspace/gen/.token.
+# Exposure: with PUBLIC=1 the URL is world-reachable and the bearer token is
+# the only gate (server fails closed without GENERATOR_API_TOKEN, but has no
+# per-client rate limit). Prefer PUBLIC=0 (SSH tunnel) for routine use; rotate
+# the token immediately on suspected leak.
 set -euo pipefail
 
 RP="${RP:-$HOME/.local/bin/runpod}"; [ -x "$RP" ] || RP="$HOME/.local/bin/runpod.exe"
@@ -50,8 +54,9 @@ up)
     done
     [ -n "$id" ] || { echo "no GPU in stock in $DATA_CENTER right now; retry later or set GPUS=..."; exit 1; }
   fi
-  for i in $(seq 1 20); do on_pod "$id" true 2>/dev/null && break; sleep 6; done
+  for _ in $(seq 1 20); do on_pod "$id" true 2>/dev/null && break; sleep 6; done
   if [ "${PUBLIC:-0}" = 1 ]; then on_pod "$id" 'HOST=0.0.0.0 /workspace/gen/start.sh'; else on_pod "$id" '/workspace/gen/start.sh'; fi
+  on_pod "$id" 'for i in $(seq 1 40); do curl -sf 127.0.0.1:8000/healthz >/dev/null && break; sleep 3; done; curl -sf 127.0.0.1:8000/healthz >/dev/null' || { echo "server never became healthy; check pod logs (runpod ssh)"; exit 1; }
   "$0" status
   ;;
 test)

@@ -2,7 +2,7 @@
 
 Stack: Go 1.22 API + worker (`backend/`), PostgreSQL 16, Redis 7,
 S3-compatible storage (LocalStack S3 local, Cloudflare R2 staging/prod),
-Vue 3 web (`web/`) + Flutter mobile (`mobile/`).
+Nuxt 4 SSR web (`web/`) + Flutter mobile (`mobile/`).
 Local topology: `docker-compose.local.yml` (`avibe-local`).
 
 ## Runtime diagram (Mermaid)
@@ -10,7 +10,7 @@ Local topology: `docker-compose.local.yml` (`avibe-local`).
 ```mermaid
 flowchart LR
   subgraph clients["Clients"]
-    WEB["Web<br/>Vue3+Vite+hls.js<br/>web/src"]
+    WEB["Web<br/>Nuxt4 SSR+hls.js<br/>web/app"]
     MOB["Mobile<br/>Flutter+just_audio<br/>mobile/lib"]
   end
   subgraph compose["docker-compose.local.yml"]
@@ -89,7 +89,7 @@ Layers:
   `Delete`; 15m default, 7d cap) + `NewFromEnv` (local vs R2 buckets
   `local-staging`/`local-hls`).
 - `internal/pkg/crypto`: AES-256-GCM `Cipher` (settlement accounts),
-  `Sign/VerifyPlaybackToken` (HMAC `trackId|jti|exp`), `BuildSignedPlaybackURL`
+  `Sign/VerifyPlaybackToken` (HMAC `trackId|jti|exp|q`), `BuildSignedPlaybackURL`
   (`exp/jti/sig`), `SHA256Hex`.
 - `internal/domain`: roles/providers/statuses/reasons/settlement enums,
   17 entities, `GateError` + `Code*` + `ForfeitViolation`.
@@ -171,16 +171,16 @@ Layers:
 
 ## Frontend
 
-- Web (`web/`, `avibe-web 0.1.0`): `vue 3.4 + vite 5 + vue-router 4 + pinia 2 +
-  axios + hls.js + tailwind 3`. `src/api/{client,endpoints,types}` (typed wrappers,
-  `ERR_MESSAGES` Korean, Bearer+refresh), `src/router` (`/`, `/partner/*`
-  PARTNER|ADMIN, `/admin/*` ADMIN, `requiresAuth` guard), `src/layouts`
-  (User/Partner/Admin), `src/views/{user/{Home,Login,PlaylistDetail,
-  DisputeCenter},partner/{Dashboard,Upload,Subscriptions},admin/{Reviews,
-  LicensePolicies,Disputes,Curation}}`, `src/components/{legal/{AiBadge,
-  DisputeReportModal,LicensePrecheckWidget},player/{GlobalPlayerBar,
-  QueueDrawer,WaveformSeekbar}}`, `src/stores/{authStore,partnerUploadStore,
-  playerStore,playlistStore}`. Scripts: `dev/build/preview/typecheck`.
+- Web (`web/`, `avibe-web 0.1.0`): `nuxt 4.6 + vue 3.5 + vue-router 4 + pinia 4 +
+  hls.js + tailwind 3`, file-based routing + SSR. `app/api/{client,endpoints,
+  types}` (typed wrappers, `ERR_MESSAGES` Korean, Bearer+refresh),
+  `app/middleware/app.global.ts` (locale prefixes, auth/console guards, legacy
+  redirects), `app/layouts` (app/studio/business/admin/auth/embed),
+  `app/pages/{explore,tracks,playlists,library,studio/*,admin/*,…}`,
+  `app/components/{ui/*,player/{GlobalPlayerBar,QueueDrawer,WaveformSeekbar},
+  legal/*,landing/*}`, `app/stores/{authStore,partnerUploadStore,playerStore,
+  playlistStore,storePlayerStore}`. Scripts: `dev/build/preview/typecheck/
+  test:run/test:coverage/lint/i18n:check`.
 - Mobile (`mobile/`, `avibe 0.4.0`): `flutter_riverpod+dio+go_router+
   just_audio+audio_service+audio_session+flutter_secure_storage`.
   `lib/{main.dart,core/{api_client,env,error,models,providers,theme},

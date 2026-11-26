@@ -1,6 +1,7 @@
-// Cloudflare Worker: serves the SPA from static assets, reverse-proxies
-// /api/* to the external Go backend, and reads /local-hls/* from the private
-// R2 bucket bound as HLS_BUCKET (WI-D1: no origin fetch, no Access tokens).
+// Cloudflare Worker: proxies pages to Nuxt SSR on the VPS (WEB_ORIGIN),
+// serves version-matched static assets, reverse-proxies /api/* to the
+// external Go backend, and reads /local-hls/* from the private R2 bucket
+// bound as HLS_BUCKET (WI-D1: no origin fetch, no Access tokens).
 //
 // HLS is signature-gated: every playlist/segment request must carry the
 // exp+jti+q+sig query issued by GET /tracks/:id/stream (HMAC-SHA256 hex over
@@ -168,8 +169,11 @@ export default {
       const file = parsed ? parsed.file : '';
       const trackId = parsed ? parsed.trackId : '';
       const extOk = file.endsWith('.m3u8') || file.endsWith('.ts') || file === 'peaks.json';
-      const signingKey = env.HLS_SIGNING_KEY || '';
-      if (!signingKey) {
+      // Rotation: the previous key keeps old grants valid until they expire
+      // (TTL is minutes). Set HLS_SIGNING_KEY_PREVIOUS before rotating
+      // HLS_SIGNING_KEY, clear it after; see runbook §9.
+      const signingKeys = [env.HLS_SIGNING_KEY || '', env.HLS_SIGNING_KEY_PREVIOUS || ''].filter((k) => k !== '');
+      if (signingKeys.length === 0) {
         return Response.json(
           { error: 'Bad Gateway', detail: 'HLS_SIGNING_KEY is not configured on this Worker.' },
           { status: 502 },
@@ -185,14 +189,19 @@ export default {
       if (trackId && extOk && fresh && jti && sig) {
         if (q) {
           if (fileAllowed(q, file)) {
-            const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}|${q}`);
-            valid = timingSafeEqualHex(expected, sig.toLowerCase());
+            for (const key of signingKeys) {
+              const expected = await hmacHex(key, `${trackId}|${jti}|${expUnix}|${q}`);
+              if (timingSafeEqualHex(expected, sig.toLowerCase())) {
+                valid = true;
+                break;
+              }
+            }
           }
         } else if (env.ALLOW_LEGACY_GRANTS === 'true') {
           // Rollout bridge only: grants minted by a backend that predates the
           // q tier. Set ALLOW_LEGACY_GRANTS while backend and Worker deploy,
           // then remove it (legacy grants carry no tier, see B-04).
-          const expected = await hmacHex(signingKey, `${trackId}|${jti}|${expUnix}`);
+          const expected = await hmacHex(signingKeys[0], `${trackId}|${jti}|${expUnix}`);
           valid = timingSafeEqualHex(expected, sig.toLowerCase());
         }
       }

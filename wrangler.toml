@@ -17,7 +17,10 @@ not_found_handling = "none"
 # (ephemeral trycloudflare tunnel URLs expire and must never ship):
 # API and web are served by the Cloudflare named tunnel `avibe`.
 # HLS media comes from the private R2 bucket below (WI-D1).
-# Secret (never in this file):  wrangler secret put HLS_SIGNING_KEY
+# Secrets (never in this file): wrangler secret put HLS_SIGNING_KEY
+# Rotation spare (runbook §9):  wrangler secret put HLS_SIGNING_KEY_PREVIOUS
+# No staging env exists yet (single-prod); adding one needs staging origins,
+# a staging tunnel, and staging R2 buckets — do not improvise them here.
 [vars]
 API_ORIGIN = "https://api.avibemusic.com"
 WEB_ORIGIN = "https://web.avibemusic.com"
