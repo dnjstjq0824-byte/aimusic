@@ -1,0 +1,233 @@
+{
+  "about": {
+    "eyebrow": "About",
+    "title": "AI music you can actually use",
+    "lead": "AVIBE is a streaming and licensing platform that only publishes AI music whose commercial-use rights have been checked. We build music distribution that listeners, creators and businesses can all rely on.",
+    "missionTitle": "The problem we solve",
+    "mission": [
+      "AI-generated music is growing fast, but whether a track can be played in a store or used in a video is still unclear. Every generator has different terms, free and paid plans grant different rights, and the same track can be registered in several places.",
+      "Before a track goes public, AVIBE checks the generator, the subscription window, file integrity and duplicates, and attaches a per-track certificate only to tracks that pass. So for every AVIBE track you can always see who made it, when, and under which terms."
+    ],
+    "principlesTitle": "How we work",
+    "principles": [
+      { "t": "Check first, publish later", "d": "Tracks whose commercial-use terms we cannot confirm stay unpublished. When in doubt, we keep it closed." },
+      { "t": "No overstatement", "d": "We say \"commercial-use rights verified\", never \"100% guaranteed\". Certificates only state what we checked." },
+      { "t": "A transparent creator share", "d": "Creators receive 70% of net distribution revenue, and the dashboard shows the basis of every payout." }
+    ],
+    "stepsTitle": "From upload to public",
+    "steps": [
+      { "t": "AI generation check", "d": "We confirm the track was made with an allowed AI platform and model." },
+      { "t": "Rights check", "d": "We match the generation time against the paid subscription window." },
+      { "t": "Duplicate and similarity scan", "d": "SHA-256 hashes and audio fingerprints are compared with existing tracks." },
+      { "t": "Certificate issued", "d": "After a final admin review, a unique per-track certificate is issued." }
+    ],
+    "audiencesTitle": "Who AVIBE is for",
+    "audiences": [
+      { "t": "Listeners", "d": "Listen to verified AI music for free and save it to playlists.", "cta": "Explore music", "to": "/explore" },
+      { "t": "Creators", "d": "Upload tracks you made with AI, get them certified, and get paid.", "cta": "For creators", "to": "/for-creators" },
+      { "t": "Businesses", "d": "Use store BGM and video background music with a certificate.", "cta": "For business", "to": "/business" }
+    ],
+    "statsTitle": "AVIBE today",
+    "statTracks": "Tracks that passed verification",
+    "statCreators": "Active creators",
+    "statLocales": "Languages",
+    "ctaTitle": "Start with verified music",
+    "ctaSub": "No sign-up needed to browse.",
+    "ctaBtn": "Explore music",
+    "ctaBtn2": "Contact us"
+  },
+  "help": {
+    "eyebrow": "Help center",
+    "title": "How can we help?",
+    "lead": "Frequently asked questions, grouped by topic. If you can't find an answer, send us a message.",
+    "searchPh": "Search questions (e.g. refund, certificate)",
+    "searchLabel": "Search questions",
+    "all": "All",
+    "empty": "No results. Try other words or contact us.",
+    "resultCount": "{n} questions",
+    "categories": [
+      {
+        "id": "listen",
+        "name": "Listening & account",
+        "items": [
+          { "q": "Is AVIBE free?", "a": "Yes. After signing up you can stream every verified track in standard quality (128kbps) for free and create unlimited playlists. High quality (256kbps) and downloads require a pass." },
+          { "q": "Can I listen without an account?", "a": "Anyone can browse tracks, details and certificates. Playback requires signing in so we can confirm you are 14 or older and have accepted the terms." },
+          { "q": "I forgot my password.", "a": "Use \"Forgot password\" on the login screen and enter your email. We will send a reset link that expires after a while." },
+          { "q": "How do I delete my account?", "a": "Go to Account settings > Privacy. Personal data such as your email and name is destroyed immediately; only settlement and tax records required by law are kept anonymously. You can export your data first." }
+        ]
+      },
+      {
+        "id": "billing",
+        "name": "Passes, payment & refunds",
+        "items": [
+          { "q": "Does the pass renew automatically?", "a": "No. A pass is a one-month pass with no auto-billing. Pay again only when you need it." },
+          { "q": "Can I get a refund?", "a": "Within 7 days of payment and with no usage (no play over 30 seconds and no download) you get a full refund. Otherwise, cancelling immediately refunds the remainder after deducting the days used, with no penalty." },
+          { "q": "Where do I cancel?", "a": "In Account settings > Billing, choose \"Cancel at period end\" or \"Cancel now\" (you will see the refund amount first)." },
+          { "q": "Which payment methods are available?", "a": "Payments are processed in the Toss Payments window, with cards and easy-pay options. AVIBE never stores card details." }
+        ]
+      },
+      {
+        "id": "license",
+        "name": "Certificates & licensing",
+        "items": [
+          { "q": "What does \"commercial-use rights verified\" mean?", "a": "It means we checked that the track was generated within a paid plan's subscription window of an allowed AI platform, that the file was not altered, and that it does not duplicate an existing track. The evidence is recorded in the per-track certificate." },
+          { "q": "How do I check a certificate?", "a": "Tap the verified badge on a track page, or enter a certificate number starting with AVB- on the certificate lookup page. Anyone can verify it." },
+          { "q": "Can I use tracks in a store or a video?", "a": "Store BGM and video background music are available under a business license. Send an inquiry and we will suggest terms for your use and scale." },
+          { "q": "Which AI platforms are accepted?", "a": "Suno, Udio, AIVA, Stable Audio, ElevenLabs, commercially licensed open models, and AVIBE's own model. See the AI models page for each platform's conditions." }
+        ]
+      },
+      {
+        "id": "creator",
+        "name": "Creators",
+        "items": [
+          { "q": "What do I need to upload?", "a": "A creator account, a verified email, and proof of a paid subscription to the AI platform you used. A license pre-check shows whether a track will pass before you upload." },
+          { "q": "How do payouts work?", "a": "Creators receive 70% of net distribution revenue. Free plays by general listeners are not settled; store plays and direct sales or license revenue are. Payouts are made after business (3.3%) or other income (8.8%) withholding." },
+          { "q": "Why was my upload rejected?", "a": "Tracks from free or trial plans, tracks made outside the subscription window, non-commercial models, duplicates and files with non-commercial metadata are rejected. The reason appears in your studio review history." }
+        ]
+      },
+      {
+        "id": "rights",
+        "name": "Rights & reports",
+        "items": [
+          { "q": "I found a track that infringes my work.", "a": "Report it through the Rights center or \"Report infringement\" on the track page. The track is hidden immediately, and after the uploader's counter-notice process we let you know the outcome." },
+          { "q": "I want to restore my reported track.", "a": "Submit a counter-notice from your studio. An admin reviews both sides and decides." }
+        ]
+      }
+    ],
+    "stillTitle": "Didn't find what you need?",
+    "stillSub": "Our contact page routes you to the right team.",
+    "stillBtn": "Contact us"
+  },
+  "contact": {
+    "eyebrow": "Contact",
+    "title": "What would you like to talk about?",
+    "lead": "Pick the channel that fits your question and we can answer faster.",
+    "cards": [
+      { "id": "business", "t": "Business", "d": "Store BGM, video licenses and volume terms.", "cta": "Send an inquiry" },
+      { "id": "rights", "t": "Report infringement", "d": "Report a track you believe infringes copyright or likeness rights. We act on reports immediately.", "cta": "Rights center" },
+      { "id": "creator", "t": "Join as a creator", "d": "Check upload conditions and payouts, then start as a creator.", "cta": "For creators" },
+      { "id": "help", "t": "General help", "d": "Find answers about accounts, playback, payment and refunds.", "cta": "Help center" }
+    ],
+    "emailTitle": "Email us",
+    "emailOsp": "Infringement reports only",
+    "formTitle": "Business inquiry",
+    "formSub": "Our team will reach out at the contact you leave."
+  },
+  "models": {
+    "eyebrow": "AI models",
+    "title": "Which AI-made tracks we accept",
+    "lead": "AVIBE checks commercial-use terms separately for each generator. Only tracks that meet the conditions below are published and certified.",
+    "basis": "Policy as of 2026-11-11 · updated when a platform's terms change.",
+    "ownTitle": "AVIBE's own model",
+    "partnerTitle": "External AI platforms",
+    "statusOwn": "Own model",
+    "statusAccepted": "Accepted with conditions",
+    "statusBlocked": "Not accepted",
+    "acceptedLabel": "Accepted when",
+    "rejectedLabel": "Rejected",
+    "notesLabel": "How we check",
+    "tracksLabel": "Tracks made with this model",
+    "tracksEmpty": "No public tracks yet.",
+    "viewDetail": "Details",
+    "back": "All AI models",
+    "commonTitle": "Checks applied to every track",
+    "common": [
+      "SHA-256 file integrity and duplicate detection",
+      "FFprobe metadata analysis (blocks non-commercial and trial markers)",
+      "Final admin review with a stored policy snapshot",
+      "A unique per-track certificate with public verification"
+    ],
+    "items": {
+      "avibe": {
+        "vendor": "AVIBE",
+        "summary": "The generation model AVIBE runs itself. Every output must pass watermarking and a similarity check before it goes public (Born Verified).",
+        "accepted": ["Based on ACE-Step 1.5 (MIT-licensed code and weights)", "Inaudible watermark (AudioSeal) embedded at generation", "Passes a similarity pre-check against existing tracks"],
+        "rejected": ["Prompts asking for a real artist's name or voice clone", "Requests to imitate a specific singer's or song's style", "Outputs without a watermark or similarity result"],
+        "notes": ["A five-language prompt guard blocks banned requests up front", "Three banned requests in 24 hours pause generation", "Model version, seed and weights hash are kept in the generation record"]
+      },
+      "suno": {
+        "vendor": "Suno",
+        "summary": "We accept tracks generated on a paid Suno plan.",
+        "accepted": ["Generated during a Pro or Premier subscription"],
+        "rejected": ["Free, Basic or trial plan output", "Generated before the subscription started or after it expired"],
+        "notes": ["Uploads open after an admin verifies the subscription proof", "Generation time is matched against the subscription window"]
+      },
+      "udio": {
+        "vendor": "Udio",
+        "summary": "Only tracks generated on a paid Udio plan before downloads were discontinued.",
+        "accepted": ["Generated during a Standard or Pro subscription", "Generated on or before 2025-10-30"],
+        "rejected": ["Free, Basic or trial plan output", "Generated after 2025-10-30"],
+        "notes": ["A cutoff applies from the date downloads stopped", "Generation time is matched against the subscription window"]
+      },
+      "aiva": {
+        "vendor": "AIVA",
+        "summary": "Only AIVA Pro output, where copyright belongs to the creator.",
+        "accepted": ["Generated during a Pro subscription"],
+        "rejected": ["Free or trial plan output", "Standard plan output (sync-only license)"],
+        "notes": ["Sync-only plans cannot be distributed as standalone streams"]
+      },
+      "stable-audio": {
+        "vendor": "Stability AI",
+        "summary": "We accept tracks generated with a paid Stable Audio membership.",
+        "accepted": ["Solo, Session, Producer, Studio, Pro or Enterprise output"],
+        "rejected": ["Free or trial plan output"],
+        "notes": ["The open-weights Stable Audio Open is non-commercial and blocked separately"]
+      },
+      "elevenlabs": {
+        "vendor": "ElevenLabs",
+        "summary": "We accept tracks generated on a paid ElevenLabs Music plan.",
+        "accepted": ["Generated during a Creator or higher paid subscription"],
+        "rejected": ["Free, Starter or trial plan output", "Tracks marked as AI covers or voice clones"],
+        "notes": ["Minimum bitrate of 192kbps is checked"]
+      },
+      "open-model": {
+        "vendor": "Open models",
+        "summary": "We accept tracks made with open models under licenses that allow commercial use.",
+        "accepted": ["Apache-2.0, MIT or commercially licensed models"],
+        "rejected": ["Non-commercial licenses such as CC-BY-NC", "MusicGen, AudioGen, MusicLM, Stable Audio Open"],
+        "notes": ["The model name and license are declared at upload"]
+      },
+      "soundraw": {
+        "vendor": "Soundraw",
+        "summary": "Not accepted at this time. Composition copyright stays with Soundraw, so the creator-ownership requirement is not met.",
+        "accepted": [],
+        "rejected": ["All Soundraw output"],
+        "notes": ["We will review again if the terms change"]
+      },
+      "mubert": {
+        "vendor": "Mubert",
+        "summary": "Not accepted at this time. The license prohibits standalone streaming distribution.",
+        "accepted": [],
+        "rejected": ["All Mubert output"],
+        "notes": ["We will review again if the terms change"]
+      }
+    }
+  },
+  "creators": {
+    "eyebrow": "Creators",
+    "title": "Creators on AVIBE",
+    "lead": "Creators publishing tracks that passed verification.",
+    "tracks": "{n} tracks",
+    "plays": "{n} plays",
+    "empty": "No public creators yet.",
+    "ctaTitle": "Your tracks belong here too",
+    "ctaSub": "Upload what you made with AI, get certified, get paid.",
+    "ctaBtn": "Start as a creator"
+  },
+  "cert": {
+    "eyebrow": "Certificate lookup",
+    "title": "Verify a certificate",
+    "lead": "Use a per-track certificate number to check whether its commercial-use rights were verified. Anyone can look it up.",
+    "label": "Certificate number",
+    "ph": "AVB-XXXXXXXXXX",
+    "submit": "Verify",
+    "invalid": "A certificate number is AVB- followed by 10 uppercase letters or digits.",
+    "whereTitle": "Where do I find the number?",
+    "where": [
+      "Tap the verified badge on a track page to open its certificate.",
+      "Downloaded files carry the verification URL in their metadata (ID3 / INFO).",
+      "Business license documents list the certificate numbers."
+    ],
+    "trustLink": "How verification works"
+  }
+}

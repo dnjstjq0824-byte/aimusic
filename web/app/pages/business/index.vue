@@ -25,8 +25,13 @@
     </section>
 
     <section id="samples" :aria-label="t('business.useTitle')" class="scroll-mt-24 space-y-4">
-      <h2 class="font-display text-xl font-medium tracking-[-0.03em] text-white">{{ t('business.useTitle') }}</h2>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <h2 class="font-display text-xl font-medium tracking-[-0.03em] text-white">{{ t('business.useTitle') }}</h2>
+        <UiButton v-if="samples.length === 0" variant="secondary" size="sm" @click="playTopTracks">
+          {{ t('business.usePlay') }}
+        </UiButton>
+      </div>
+      <div v-if="samples.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <UiCard v-for="pl in samples" :key="pl.id" class="group">
           <CoverMosaic :seeds="sampleSeeds[pl.id] ?? [pl.id]" :title="pl.title" size="md" />
           <p class="mt-2 truncate text-xs font-bold text-white">{{ pl.title }}</p>
@@ -35,6 +40,20 @@
           </UiButton>
         </UiCard>
       </div>
+      <!-- No curated playlists yet: use-case photo cards into explore. -->
+      <div v-else class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <NuxtLink
+          v-for="s in useCases"
+          :key="s.key"
+          :to="localePath({ path: '/explore', query: { mood: s.mood } })"
+          class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface-2"
+        >
+          <img :src="s.img" alt="" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
+          <span class="absolute inset-x-4 bottom-4 text-sm font-medium text-white sm:text-base">{{ t(s.key) }}</span>
+        </NuxtLink>
+      </div>
+      <UiErrorBanner :message="sampleError" />
     </section>
 
     <section :aria-label="t('business.stepsTitle')">
@@ -58,7 +77,7 @@
       </div>
     </section>
 
-    <section id="inquiry" aria-label="t('business.inqTitle')" class="scroll-mt-24">
+    <section id="inquiry" :aria-label="t('business.inqTitle')" class="scroll-mt-24">
       <UiCard class="mx-auto max-w-2xl p-6">
         <h2 class="text-xl font-semibold text-white">{{ t('business.inqTitle') }}</h2>
         <p class="mt-1 text-xs text-text-secondary">{{ t('business.inqSub') }}</p>
@@ -80,8 +99,12 @@ import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import CoverMosaic from '@/components/ui/CoverMosaic.vue';
 import InquiryForm from '@/components/business/InquiryForm.vue';
+import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
+import { STARTERS } from '@/components/landing/StarterRail.vue';
 
 const { t } = useI18n();
+const localePath = useLocalePath();
+const useCases = STARTERS;
 const player = usePlayerStore();
 const apiError = useApiError();
 
@@ -128,6 +151,15 @@ async function playSample(playlistId: string): Promise<void> {
       }
     }
     if (resolved.length > 0) player.setQueue(resolved, resolved[0]?.id);
+  } catch (err: unknown) {
+    sampleError.value = apiError(err);
+  }
+}
+
+async function playTopTracks(): Promise<void> {
+  try {
+    const top = (await trackApi.charts('all', 20)) ?? [];
+    if (top.length > 0) player.setQueue(top, top[0]?.id);
   } catch (err: unknown) {
     sampleError.value = apiError(err);
   }

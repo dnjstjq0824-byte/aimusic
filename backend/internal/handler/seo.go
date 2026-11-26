@@ -73,6 +73,19 @@ func (h *SEOHandler) Landing(c *gin.Context) {
 	ok(c, gin.H{"count": n, "ok": n >= 12})
 }
 
+// Creators answers GET /creators?limit=&offset= (public creator directory).
+func (h *SEOHandler) Creators(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "24"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	items, err := h.Repos.SEO.ListCreators(c.Request.Context(), limit, offset)
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	c.Header("Cache-Control", "public, max-age=300")
+	ok(c, gin.H{"items": items})
+}
+
 // Creator answers GET /creators/:handle (S4).
 func (h *SEOHandler) Creator(c *gin.Context) {
 	detail, err := h.SEO.Creator(c.Request.Context(), strings.TrimSpace(c.Param("handle")))

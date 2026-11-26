@@ -58,7 +58,29 @@
         "regNo": "Business registration no.",
         "mailOrderNo": "Mail-order business no.",
         "hosting": "Hosting provider"
-      }
+      },
+      "colDiscover": "Discover",
+      "colCreators": "Creators",
+      "colBusiness": "Business",
+      "colSupport": "Company & support",
+      "lExplore": "Explore",
+      "lCharts": "Charts",
+      "lPlaylists": "Playlists",
+      "lCreatorsDir": "Find creators",
+      "lModels": "AI models",
+      "lGuides": "Guides",
+      "lForCreators": "For creators",
+      "lUpload": "Upload tracks",
+      "lStudio": "Creator studio",
+      "lCreate": "AI generation",
+      "lBusiness": "Business overview",
+      "lBizConsole": "Business console",
+      "lAbout": "About",
+      "lHelp": "Help center",
+      "lContact": "Contact",
+      "lTrust": "How we verify",
+      "lCert": "Verify a certificate",
+      "lRights": "Rights center"
     },
     "titles": {
       "home": "Home",
@@ -203,6 +225,7 @@
     },
     "stepper": {
       "label": "Progress steps"
-    }
+    },
+    "seeAll": "See all"
   }
 }

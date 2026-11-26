@@ -160,7 +160,12 @@
           <div class="grid gap-3 sm:grid-cols-2 text-xs">
             <div class="p-3 rounded-xl bg-surface-0 border border-surface-border">
               <span class="text-text-muted text-caption uppercase font-bold block">{{ t('track.aiPlatformModel') }}</span>
-              <span class="font-semibold text-white text-sm">{{ providerDisplayName(track.aiProvider) }}</span>
+              <NuxtLink
+                v-if="modelSlug"
+                :to="localePath(`/models/${modelSlug}`)"
+                class="font-semibold text-white text-sm underline decoration-white/20 underline-offset-4 hover:decoration-white"
+              >{{ providerDisplayName(track.aiProvider) }}</NuxtLink>
+              <span v-else class="font-semibold text-white text-sm">{{ providerDisplayName(track.aiProvider) }}</span>
               <span v-if="track.aiModelVersion" class="text-text-secondary ml-1 text-xs">({{ track.aiModelVersion }})</span>
             </div>
             <div class="p-3 rounded-xl bg-surface-0 border border-surface-border">
@@ -359,6 +364,7 @@ import { usePublicSeo } from '@/composables/usePublicSeo';
 import { fetchPublic } from '@/utils/publicApi';
 import { tagDisplayName } from '@/utils/tags';
 import { providerDisplayName } from '@/utils/providerDisplay';
+import { modelSlugForProvider } from '@/data/models';
 import {
   breadcrumbLd,
   canonicalFor,
@@ -439,6 +445,7 @@ const { data: pageData, pending, error: pageError, refresh } = await useAsyncDat
   },
 );
 const track = computed<Track | null>(() => pageData.value?.track ?? null);
+const modelSlug = computed(() => modelSlugForProvider(track.value?.aiProvider));
 const loading = computed(() => pending.value);
 watch(
   pageData,

@@ -306,6 +306,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	seo.GET("/resolve", seoH.Resolve)
 	seo.GET("/sitemap/:type", seoH.Sitemap)
 	seo.GET("/landing", seoH.Landing)
+	v1.GET("/creators", seoH.Creators)
 	v1.GET("/creators/:handle", seoH.Creator)
 	v1.POST("/events", RateLimit(10, 60), seoH.SubmitEvents)
 	// oEmbed discovery targets the site root; the versioned alias keeps

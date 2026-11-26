@@ -58,7 +58,29 @@
         "regNo": "⟦Bùsìnèss règìstràtìòn nò.～～～～～～～～～～⟧",
         "mailOrderNo": "⟦Màìl-òrdèr bùsìnèss nò.～～～～～～～～～～⟧",
         "hosting": "⟦Hòstìng pròvìdèr～～～～～～～⟧"
-      }
+      },
+      "colDiscover": "⟦Dìscòvèr～～⟧",
+      "colCreators": "⟦Crèàtòrs～～⟧",
+      "colBusiness": "⟦Bùsìnèss～～⟧",
+      "colSupport": "⟦Còmpàny & sùppòrt～～～～～⟧",
+      "lExplore": "⟦Èxplòrè～～⟧",
+      "lCharts": "⟦Chàrts～～⟧",
+      "lPlaylists": "⟦Plàylìsts～～～⟧",
+      "lCreatorsDir": "⟦Fìnd crèàtòrs～～～～⟧",
+      "lModels": "⟦ÀÌ mòdèls～～～⟧",
+      "lGuides": "⟦Gùìdès～～⟧",
+      "lForCreators": "⟦Fòr crèàtòrs～～～～⟧",
+      "lUpload": "⟦Ùplòàd tràcks～～～～⟧",
+      "lStudio": "⟦Crèàtòr stùdìò～～～～⟧",
+      "lCreate": "⟦ÀÌ gènèràtìòn～～～～⟧",
+      "lBusiness": "⟦Bùsìnèss òvèrvìèw～～～～～⟧",
+      "lBizConsole": "⟦Bùsìnèss cònsòlè～～～～～⟧",
+      "lAbout": "⟦Àbòùt～～⟧",
+      "lHelp": "⟦Hèlp cèntèr～～～⟧",
+      "lContact": "⟦Còntàct～～⟧",
+      "lTrust": "⟦Hòw wè vèrìfy～～～～⟧",
+      "lCert": "⟦Vèrìfy à cèrtìfìcàtè～～～～～～⟧",
+      "lRights": "⟦Rìghts cèntèr～～～～⟧"
     },
     "titles": {
       "home": "⟦Hòmè～～⟧",
@@ -203,6 +225,7 @@
     },
     "stepper": {
       "label": "⟦Prògrèss stèps～～～～～～⟧"
-    }
+    },
+    "seeAll": "⟦Sèè àll～～⟧"
   }
 }

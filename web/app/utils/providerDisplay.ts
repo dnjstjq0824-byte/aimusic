@@ -9,6 +9,7 @@ const DISPLAY: Record<string, string> = {
   MUBERT: 'Mubert',
   ELEVENLABS: 'ElevenLabs',
   CUSTOM_OPEN_MODEL: 'Custom Open Model',
+  AVIBE: 'AVIBE',
 };
 
 export function providerDisplayName(code: string | null | undefined): string {

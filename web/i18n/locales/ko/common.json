@@ -58,7 +58,29 @@
         "regNo": "사업자등록번호",
         "mailOrderNo": "통신판매업 신고번호",
         "hosting": "호스팅 제공자"
-      }
+      },
+      "colDiscover": "둘러보기",
+      "colCreators": "크리에이터",
+      "colBusiness": "비즈니스",
+      "colSupport": "회사·지원",
+      "lExplore": "음원 탐색",
+      "lCharts": "인기 차트",
+      "lPlaylists": "플레이리스트",
+      "lCreatorsDir": "크리에이터 찾기",
+      "lModels": "AI 모델",
+      "lGuides": "가이드",
+      "lForCreators": "크리에이터 안내",
+      "lUpload": "곡 올리기",
+      "lStudio": "크리에이터 스튜디오",
+      "lCreate": "AI 생성",
+      "lBusiness": "비즈니스 소개",
+      "lBizConsole": "비즈니스 콘솔",
+      "lAbout": "회사 소개",
+      "lHelp": "고객센터",
+      "lContact": "문의하기",
+      "lTrust": "인증 방식",
+      "lCert": "인증서 조회",
+      "lRights": "권리보호센터"
     },
     "titles": {
       "home": "홈",
@@ -203,6 +225,7 @@
     },
     "stepper": {
       "label": "진행 단계"
-    }
+    },
+    "seeAll": "전체 보기"
   }
 }

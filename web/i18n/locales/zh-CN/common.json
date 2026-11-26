@@ -58,7 +58,29 @@
         "regNo": "营业执照注册号",
         "mailOrderNo": "通信销售申报号",
         "hosting": "托管服务商"
-      }
+      },
+      "colDiscover": "发现",
+      "colCreators": "创作者",
+      "colBusiness": "企业",
+      "colSupport": "公司与支持",
+      "lExplore": "探索音乐",
+      "lCharts": "排行榜",
+      "lPlaylists": "歌单",
+      "lCreatorsDir": "发现创作者",
+      "lModels": "AI 模型",
+      "lGuides": "指南",
+      "lForCreators": "创作者指南",
+      "lUpload": "上传歌曲",
+      "lStudio": "创作者工作室",
+      "lCreate": "AI 生成",
+      "lBusiness": "企业方案",
+      "lBizConsole": "企业控制台",
+      "lAbout": "关于我们",
+      "lHelp": "帮助中心",
+      "lContact": "联系我们",
+      "lTrust": "认证方式",
+      "lCert": "证书查询",
+      "lRights": "权利保护中心"
     },
     "titles": {
       "home": "首页",
@@ -203,6 +225,7 @@
     },
     "stepper": {
       "label": "进度步骤"
-    }
+    },
+    "seeAll": "查看全部"
   }
 }

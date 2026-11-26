@@ -42,8 +42,10 @@
       <UiSkeleton v-for="i in 8" :key="i" height="h-44" width="w-full" rounded="xl" />
     </div>
 
-    <div v-else-if="!error && shown.length === 0" class="py-10">
+    <div v-else-if="!error && shown.length === 0" class="space-y-12 py-4">
       <UiEmptyState :title="t('playlist.emptyT')" :description="t('playlist.emptyD')" />
+      <!-- No public playlists yet: mood starters keep the page useful. -->
+      <StarterRail heading-id="pl-start-h" compact />
     </div>
 
     <template v-else>
@@ -88,6 +90,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import CoverMosaic from '@/components/ui/CoverMosaic.vue';
+import StarterRail from '@/components/landing/StarterRail.vue';
 import { detailParam } from '@/utils/seo';
 
 const { t } = useI18n();

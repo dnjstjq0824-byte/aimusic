@@ -137,6 +137,36 @@ func (r *SEORepo) CreatorByHandle(ctx context.Context, handle string) (*domain.C
 	return out, nil
 }
 
+// ListCreators returns public creator profiles that have at least one READY
+// track, most-played first (public /creators directory).
+func (r *SEORepo) ListCreators(ctx context.Context, limit, offset int) ([]*domain.CreatorProfile, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT u.handle, u.display_name, u.id::text, pp.id::text,
+			COUNT(t.id), COALESCE(SUM(t.play_count), 0)
+		FROM users u
+		JOIN partner_profiles pp ON pp.user_id = u.id
+		JOIN tracks t ON t.partner_id = pp.id AND t.status = 'READY'
+		WHERE u.handle IS NOT NULL AND u.is_active = TRUE
+		GROUP BY u.handle, u.display_name, u.id, pp.id
+		ORDER BY COALESCE(SUM(t.play_count), 0) DESC, COUNT(t.id) DESC, u.handle ASC
+		LIMIT $1 OFFSET $2`, clampLimit(limit, 24, 100), max(offset, 0))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.CreatorProfile{}
+	for rows.Next() {
+		p := &domain.CreatorProfile{}
+		var plays sql.NullInt64
+		if err := rows.Scan(&p.Handle, &p.DisplayName, &p.UserID, &p.PartnerID, &p.TrackCount, &plays); err != nil {
+			return nil, err
+		}
+		p.TotalPlays = plays.Int64
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // ClaimHandle sets a user's creator handle (validated + unique).
 func (r *SEORepo) ClaimHandle(ctx context.Context, userID, handle string) error {
 	if err := domain.ValidateHandle(handle); err != nil {

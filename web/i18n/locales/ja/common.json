@@ -58,7 +58,29 @@
         "regNo": "事業者登録番号",
         "mailOrderNo": "通信販売業届出番号",
         "hosting": "ホスティング事業者"
-      }
+      },
+      "colDiscover": "見つける",
+      "colCreators": "クリエイター",
+      "colBusiness": "ビジネス",
+      "colSupport": "会社・サポート",
+      "lExplore": "音楽を探す",
+      "lCharts": "チャート",
+      "lPlaylists": "プレイリスト",
+      "lCreatorsDir": "クリエイター一覧",
+      "lModels": "AI モデル",
+      "lGuides": "ガイド",
+      "lForCreators": "クリエイター向け",
+      "lUpload": "曲をアップロード",
+      "lStudio": "クリエイタースタジオ",
+      "lCreate": "AI 生成",
+      "lBusiness": "ビジネス概要",
+      "lBizConsole": "ビジネスコンソール",
+      "lAbout": "会社概要",
+      "lHelp": "ヘルプセンター",
+      "lContact": "お問い合わせ",
+      "lTrust": "認証の仕組み",
+      "lCert": "認証書照会",
+      "lRights": "権利保護センター"
     },
     "titles": {
       "home": "ホーム",
@@ -203,6 +225,7 @@
     },
     "stepper": {
       "label": "進行ステップ"
-    }
+    },
+    "seeAll": "すべて見る"
   }
 }

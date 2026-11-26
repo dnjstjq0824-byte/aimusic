@@ -149,6 +149,21 @@ var staticEntries = []domain.SitemapItem{
 	{Loc: "/trust", Lastmod: "2026-11-16T00:00:00Z"},
 	{Loc: "/create", Lastmod: "2026-11-16T00:00:00Z"},
 	{Loc: "/guides", Lastmod: "2026-11-16T00:00:00Z"},
+	{Loc: "/about", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/help", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/contact", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/creators", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/certificate", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/avibe", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/suno", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/udio", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/aiva", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/stable-audio", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/elevenlabs", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/open-model", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/soundraw", Lastmod: "2026-11-26T00:00:00Z"},
+	{Loc: "/models/mubert", Lastmod: "2026-11-26T00:00:00Z"},
 }
 
 // Sitemap returns one cursor page for a sitemap type. Static/guide/landing

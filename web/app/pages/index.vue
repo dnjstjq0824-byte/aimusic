@@ -134,7 +134,7 @@
     </section>
 
     <!-- Get started: photo-led use-case cards (N1: hydrate on visible). -->
-    <LazyStarterRail class="!mt-16 sm:!mt-20" hydrate-on-visible />
+    <LazyLandingStarterRail class="!mt-16 sm:!mt-20" hydrate-on-visible />
 
     <!-- Feature 1: Listen (live tracks). -->
     <section id="listen-now" class="grid scroll-mt-24 items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16" aria-labelledby="feat-listen-h">

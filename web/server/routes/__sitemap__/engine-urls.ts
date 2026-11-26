@@ -12,7 +12,12 @@ const LOCAL: Record<string, { loc: string; lastmod: string }[]> = {
     'suno-paid-commercial-use',
     'ai-music-youtube-checklist',
   ].map((slug) => ({ loc: `/guides/${slug}`, lastmod: LOCAL_LASTMOD })),
-  static: ['/', '/explore', '/charts', '/playlists', '/pricing', '/business', '/for-creators', '/trust', '/create', '/guides'].map(
+  static: [
+    '/', '/explore', '/charts', '/playlists', '/pricing', '/business', '/for-creators', '/trust', '/create', '/guides',
+    '/about', '/help', '/contact', '/creators', '/certificate', '/models',
+    '/models/avibe', '/models/suno', '/models/udio', '/models/aiva', '/models/stable-audio', '/models/elevenlabs',
+    '/models/open-model', '/models/soundraw', '/models/mubert',
+  ].map(
     (loc) => ({ loc, lastmod: LOCAL_LASTMOD }),
   ),
 };
