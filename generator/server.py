@@ -160,7 +160,7 @@ _gen_lock = threading.Lock()  # one generation at a time per GPU
 
 def _get_handlers() -> tuple:
     """Load the ACE-Step DiT once (lazy, so /healthz stays fast)."""
-    global _handlers  # noqa: PLW0603
+    global _handlers
     with _init_lock:
         if _handlers is not None:
             return _handlers
@@ -250,7 +250,7 @@ _watermark_lock = threading.Lock()
 
 def _get_watermark_models() -> tuple:
     """Load the AudioSeal generator + detector once (lazy)."""
-    global _watermark_models  # noqa: PLW0603
+    global _watermark_models
     with _watermark_lock:
         if _watermark_models is not None:
             return _watermark_models
@@ -447,7 +447,6 @@ def check_similarity(raw_wav: bytes) -> tuple[bool, dict]:
     NOT claim "similarity" in that case (AVIBE gate stays fail-closed
     until references exist). Otherwise passed = best < SIMILARITY_MAX.
     """
-    import hashlib  # pylint: disable=import-outside-toplevel
     import json  # pylint: disable=import-outside-toplevel
 
     if not REFERENCE_FPS_PATH:
@@ -473,7 +472,7 @@ def check_similarity(raw_wav: bytes) -> tuple[bool, dict]:
     best = {"id": None, "similarity": 0.0}
     for fp in refs:
         try:
-            sim = (blocks - bin(int(want, 16) ^ int(fp["hash"], 16)).count("1")) / blocks
+            sim = (blocks - (int(want, 16) ^ int(fp["hash"], 16)).bit_count()) / blocks
         except (KeyError, ValueError):
             continue
         if sim > best["similarity"]:
@@ -571,7 +570,7 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     if req.delivery and req.delivery.upload_url:
         try:
             put_bytes(req.delivery.upload_url, marked, "audio/wav")
-        except Exception as exc:  # noqa: BLE001 - surface any upload failure
+        except Exception as exc:
             raise HTTPException(status_code=502, detail=f"presigned upload failed: {exc}") from exc
         return GenerateResponse(
             contractVersion=2,

@@ -33,7 +33,7 @@ import hashlib
 import importlib.util
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -135,7 +135,7 @@ def main(argv: list[str]) -> int:
     report: dict = {
         "wi": "G2",
         "status": "NOT TESTED",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": datetime.now(UTC).isoformat(),
         "prompt": args.prompt,
         "durationSec": args.duration_sec,
         "weightsDir": weights or None,
@@ -165,22 +165,24 @@ def main(argv: list[str]) -> int:
         return 0
 
     # --- Live path (GPU PC only; unreachable without the stack above). ---
-    import importlib.util as _ilu  # noqa: E402
-    import server  # noqa: E402
+    import importlib.util as _ilu
 
-    def _load(name: str, path: Path):  # noqa: ANN001, ANN202
+    import server
+
+    def _load(name: str, path: Path):
         spec = _ilu.spec_from_file_location(name, path)
         mod = _ilu.module_from_spec(spec)
         spec.loader.exec_module(mod)
         return mod
 
-    t0 = datetime.now(timezone.utc)
+    t0 = datetime.now(UTC)
     audio = server.infer(args.prompt, "", os.environ.get("GENERATOR_MODEL_ID", "ace-step-v1"), {})
     marked, watermark_id = server.insert_watermark(audio, "poc")
     detect = {"clean": None, "note": "detector runs on the GPU PC with the installed watermark package"}
     try:
         fingerprint_pcm = _load("memorization", REPO / "generator" / "eval" / "memorization.py").fingerprint_pcm
-        import tempfile, wave  # noqa: E402
+        import tempfile
+        import wave
         with tempfile.TemporaryDirectory() as tmp:
             clip = Path(tmp) / "poc.wav"
             with wave.open(str(clip), "wb") as fh:
@@ -198,7 +200,7 @@ def main(argv: list[str]) -> int:
         "durationMs": server.wav_duration_ms(marked),
         "detection": detect,
         "similarityNote": "compare fingerprint against the training fixture set with eval/memorization.py --fps",
-        "elapsedSec": (datetime.now(timezone.utc) - t0).total_seconds(),
+        "elapsedSec": (datetime.now(UTC) - t0).total_seconds(),
     }
     args.out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"G2 PoC: {report['status']} (report: {args.out})")
@@ -207,11 +209,10 @@ def main(argv: list[str]) -> int:
 
 def main_remote(args) -> int:
     """Remote PoC: drive a GPU server over HTTPS, fingerprint the clip."""
+    import importlib.util as _ilu
     import os
     import tempfile
     import wave
-
-    import importlib.util as _ilu
 
     def _load(name: str, path: Path):
         spec = _ilu.spec_from_file_location(name, path)
@@ -220,7 +221,7 @@ def main_remote(args) -> int:
         return mod
 
     token = args.token or os.environ.get("GENERATOR_API_TOKEN", "")
-    t0 = datetime.now(timezone.utc)
+    t0 = datetime.now(UTC)
     remote = call_remote(args.endpoint, token, args.prompt, args.duration_sec)
     reply = remote["reply"]
     audio: bytes = remote["audio"]
@@ -241,7 +242,7 @@ def main_remote(args) -> int:
         "wi": "G2",
         "mode": "remote",
         "status": "PASS",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": datetime.now(UTC).isoformat(),
         "endpoint": args.endpoint.rstrip("/"),
         "prompt": args.prompt,
         "durationSec": args.duration_sec,
@@ -260,7 +261,7 @@ def main_remote(args) -> int:
             "audioBytes": len(audio),
             "fingerprint": fp,
             "similarityNote": "compare fingerprint against the training fixture set with eval/memorization.py --fps",
-            "elapsedSec": (datetime.now(timezone.utc) - t0).total_seconds(),
+            "elapsedSec": (datetime.now(UTC) - t0).total_seconds(),
         },
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

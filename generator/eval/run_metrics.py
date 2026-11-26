@@ -26,7 +26,7 @@ import hashlib
 import json
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -83,7 +83,7 @@ def run(clips_path: Path, out_path: Path, backend: str, model_version: str) -> d
         "modelVersion": model_version,
         "backend": backend,
         "syntheticWarning": backend == "synthetic",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": datetime.now(UTC).isoformat(),
         **body,
     }
     out_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

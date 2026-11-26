@@ -1,0 +1,5 @@
+# Test-only deps for the generator CI job (kept out of requirements.txt so
+# the prod image stays lean). Pinned; bump deliberately with a local run.
+pytest==9.2.0
+httpx==0.28.1
+ruff==0.17.6
