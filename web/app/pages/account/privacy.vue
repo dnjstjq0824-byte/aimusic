@@ -78,6 +78,7 @@ import { authApi, legalApi } from '@/api/endpoints';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
+import { resolveTermTitle } from '@/utils/legalTerms';
 import AccountNav from '@/components/account/AccountNav.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
@@ -92,7 +93,7 @@ interface ConsentRow {
   required: boolean;
 }
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const localePath = useLocalePath();
 const auth = useAuthStore();
 const router = useRouter();
@@ -118,7 +119,7 @@ async function loadConsents(): Promise<void> {
       const term = (terms ?? []).find((x) => x.id === c.termsId);
       return {
         id: c.id,
-        title: term?.titleKo ?? t('account.privConsentUnknown'),
+        title: term ? resolveTermTitle(term.code, term.titleKo, te, t) : t('account.privConsentUnknown'),
         consentedAt: c.consentedAt,
         required: term?.isRequired ?? false,
       };

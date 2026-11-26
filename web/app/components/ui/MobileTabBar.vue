@@ -7,7 +7,7 @@
       <NuxtLink
         v-for="tab in tabs"
         :key="tab.to"
-        :to="tab.to"
+        :to="hrefFor(tab.to)"
         class="flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-caption transition-colors"
         :class="isActive(tab) ? 'text-brand-400 font-bold' : 'text-text-muted font-medium'"
         :aria-current="isActive(tab) ? 'page' : undefined"
@@ -41,7 +41,12 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
+
+// App-only routes (/library, /account) have no locale variants:
+// localePath() returns '' for them, so keep the raw target (UiFooter.hrefFor).
+const hrefFor = (to: string): string => localePath(to) || to;
 
 const routeName = computed(() => String(route.name ?? '').replace(/___.+$/, ''));
 

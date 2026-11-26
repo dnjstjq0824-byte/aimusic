@@ -242,8 +242,7 @@ const player = usePlayerStore();
 const { t } = useI18n();
 
 defineEmits<{
-  (e: 'toggle-queue'): void;
-  (e: 'expand'): void;
+  (e: 'toggle-queue' | 'expand'): void;
 }>();
 
 const repeatLabel = computed(() => {

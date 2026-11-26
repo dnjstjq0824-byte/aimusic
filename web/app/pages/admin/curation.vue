@@ -185,7 +185,6 @@
 defineI18nRoute(false);
 import { ref } from 'vue';
 import { adminApi } from '@/api/endpoints';
-import { errMessageOf } from '@/api/client';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
 import type { PartnerSettlement } from '@/api/types';

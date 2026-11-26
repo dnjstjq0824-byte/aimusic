@@ -1,5 +1,7 @@
-# AVIBE web: Nuxt 4 SSR on a Node server (local/staging verify).
-# Edge production uses the cloudflare-module build instead (WI-P1 dual-build).
+# AVIBE web: Nuxt 4 SSR on a Node server.
+# This image IS production (avibe-prod-web on the VPS, shipped by
+# deploy/rollout-redesign.sh step 4; see docker-compose.prod.yml `web`).
+# The Cloudflare Worker serves version-matched static assets + proxies SSR.
 FROM node:22-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json .npmrc ./

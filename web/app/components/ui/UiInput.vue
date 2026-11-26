@@ -37,7 +37,7 @@
         @blur="$emit('blur', $event)"
         @focus="$emit('focus', $event)"
         @keydown.enter="$emit('enter', $event)"
-      />
+      >
       <div v-if="type === 'password'" class="shrink-0 pr-3">
         <button
           type="button"
@@ -101,12 +101,16 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   disabled: false,
   id: undefined,
+  minlength: undefined,
+  maxlength: undefined,
+  step: undefined,
+  min: undefined,
+  max: undefined,
 });
 
 defineEmits<{
   (e: 'update:modelValue', val: string): void;
-  (e: 'blur', event: FocusEvent): void;
-  (e: 'focus', event: FocusEvent): void;
+  (e: 'blur' | 'focus', event: FocusEvent): void;
   (e: 'enter', event: KeyboardEvent): void;
 }>();
 

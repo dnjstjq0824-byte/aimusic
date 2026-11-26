@@ -19,6 +19,7 @@
         class="pointer-events-auto flex items-start gap-3 rounded-xl border p-3.5 shadow-2xl backdrop-blur-xl"
         :class="bgClass(t.type)"
       >
+        <!-- eslint-disable-next-line vue/no-v-html -- iconSvg emits static allowlisted SVG paths only, no user input -->
         <span class="mt-0.5 shrink-0" aria-hidden="true" v-html="iconSvg(t.type)" />
         <div class="min-w-0 flex-1">
           <div v-if="t.title" class="text-xs font-bold text-white">{{ t.title }}</div>

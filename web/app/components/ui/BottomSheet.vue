@@ -3,7 +3,10 @@
     <div v-if="modelValue" class="fixed inset-0 z-50 sm:flex sm:items-center sm:justify-center" role="dialog" aria-modal="true" :aria-label="title">
       <div class="absolute inset-0 bg-black/70" @click="closeOnBackdrop && close()" />
       <div
+        ref="panelRef"
+        tabindex="-1"
         class="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl border-t border-surface-border bg-surface-1 p-5 pb-safe sm:relative sm:inset-auto sm:w-full sm:max-w-lg sm:rounded-2xl sm:border sm:p-6"
+        @keydown.tab="trapTabIn(panelRef, $event)"
       >
         <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-surface-3 sm:hidden" aria-hidden="true" />
         <div class="mb-4 flex items-start justify-between gap-3">
@@ -26,7 +29,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { focusablesIn, lockBodyScroll, trapTabIn, unlockBodyScroll } from '@/composables/useDialog';
 
 // Bottom sheet on mobile, centered dialog on desktop (UI §5).
 const props = withDefaults(
@@ -44,17 +48,38 @@ function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape' && props.modelValue) close();
 }
 
+const panelRef = ref<HTMLElement | null>(null);
+let lastFocused: HTMLElement | null = null;
+
 watch(
   () => props.modelValue,
   (open) => {
     if (typeof document === 'undefined') return;
-    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      lastFocused = document.activeElement as HTMLElement | null;
+      lockBodyScroll();
+      void nextTick(() => {
+        const items = focusablesIn(panelRef.value);
+        if (items.length > 0) {
+          (items[0] as HTMLElement).focus();
+        } else {
+          panelRef.value?.focus();
+        }
+      });
+    } else {
+      unlockBodyScroll();
+      lastFocused?.focus?.();
+      lastFocused = null;
+    }
   },
+  { immediate: true },
 );
 
 onMounted(() => window.addEventListener('keydown', onKeydown));
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown);
-  if (typeof document !== 'undefined') document.body.style.overflow = '';
+  if (props.modelValue) {
+    unlockBodyScroll();
+  }
 });
 </script>

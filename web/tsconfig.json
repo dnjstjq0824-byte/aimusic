@@ -1,3 +1,8 @@
 {
   "extends": "./.nuxt/tsconfig.json"
+  // NOTE: `nuxt typecheck` prints "[Vue] Load plugin failed:
+  // vue-router/volar/sfc-route-blocks" because Nuxt 4.6 injects that plugin
+  // while vue-router 4.6.4 no longer ships a volar/ directory (upstream
+  // mismatch). It is warn-only noise: typecheck still runs (verified with a
+  // deliberate type error), and the repo has no <route> blocks anyway.
 }

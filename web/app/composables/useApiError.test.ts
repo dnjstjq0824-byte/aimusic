@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { useApiError } from './useApiError';
+
 const MESSAGES: Record<string, string> = {
   'errors.ERR_INVALID_INPUT': 'bad input (en)',
   'errors.ERR_FALLBACK': 'fallback (en)',
@@ -10,8 +12,6 @@ vi.mock('vue-i18n', () => ({
     te: (k: string) => k in MESSAGES,
   }),
 }));
-
-import { useApiError } from './useApiError';
 
 function axiosErr(code: string) {
   return { isAxiosError: true, response: { data: { error: { code, message: 'dev-msg' } } } };

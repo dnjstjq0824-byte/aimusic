@@ -1,6 +1,6 @@
 <template>
   <span class="inline-flex items-center gap-2">
-    <img :src="logoUrl" :width="size" :height="size" :alt="t('common.brand.logoAlt')" class="rounded-lg" />
+    <img :src="logoUrl" :width="size" :height="size" :alt="t('common.brand.logoAlt')" class="rounded-lg" >
     <span v-if="wordmark" class="flex flex-col leading-none">
       <slot>
         <span class="font-semibold tracking-tight text-white" :class="wordmarkClass">AVIBE</span>

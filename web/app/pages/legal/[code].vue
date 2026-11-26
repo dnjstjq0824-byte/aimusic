@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-4xl py-6">
     <UiPageHeader
       eyebrow="Legal"
-      :title="currentTerm?.titleKo || t('legal.title')"
+      :title="currentTerm ? resolveTermTitle(currentTerm.code, currentTerm.titleKo, te, t) : t('legal.title')"
       :description="currentTerm
         ? t('legal.meta', { date: fmtDate(currentTerm.effectiveAt), version: currentTerm.version })
         : t('legal.sub')"
@@ -67,6 +67,7 @@
 
     <!-- Markdown Content Viewer -->
     <UiCard v-else class="text-xs leading-relaxed text-text-primary">
+      <!-- eslint-disable-next-line vue/no-v-html -- renderLegalBody escapes stored markup before transforms -->
       <div class="whitespace-pre-wrap space-y-3" v-html="renderedContent" />
     </UiCard>
   </div>
@@ -78,6 +79,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { legalApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
 import { renderLegalBody } from '@/utils/legalBody';
+import { resolveTermTitle } from '@/utils/legalTerms';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import type { LegalTerm } from '@/api/types';
@@ -88,7 +90,7 @@ import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();

@@ -27,7 +27,7 @@
           accept="audio/*"
           class="w-full text-xs text-text-secondary file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-2 file:text-white hover:file:bg-surface-3 cursor-pointer"
           @change="onFile"
-        />
+        >
       </div>
 
       <div v-if="store.fileName" class="rounded-xl border border-surface-border bg-surface-0 p-4 text-xs">

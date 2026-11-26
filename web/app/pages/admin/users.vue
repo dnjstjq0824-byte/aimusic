@@ -21,7 +21,7 @@
           :placeholder="t('admin.us.fQueryPh')"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
-        />
+        >
       </label>
       <label class="flex-1 text-xs text-text-secondary">
         <span class="mb-1 block font-semibold">{{ t('admin.us.fRole') }}</span>

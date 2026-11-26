@@ -32,6 +32,7 @@
     "EMAIL_NOT_VERIFIED": "Email verification is required. Open the verification link in your inbox.",
     "ERR_INTERNAL": "A server error occurred.",
     "ERR_FALLBACK": "The request failed.",
-    "ERR_HANDLE_TAKEN": "This handle is already taken."
+    "ERR_HANDLE_TAKEN": "This handle is already taken.",
+    "ERR_CONFLICT": "This was already processed. Refresh and try again."
   }
 }

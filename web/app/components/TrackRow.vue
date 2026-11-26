@@ -59,10 +59,7 @@ const { t, te } = useI18n();
 const props = defineProps<{ track: Track; rank?: number | null }>();
 
 const emit = defineEmits<{
-  (e: 'play', track: Track): void;
-  (e: 'enqueue', track: Track): void;
-  (e: 'add-to-playlist', track: Track): void;
-  (e: 'report', track: Track): void;
+  (e: 'play' | 'enqueue' | 'add-to-playlist' | 'report', track: Track): void;
 }>();
 
 const moodLabel = computed(() => {

@@ -1,14 +1,14 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { partnerApi } from '@/api/endpoints';
+import { usePartnerUploadStore } from '@/stores/partnerUploadStore';
+
 vi.mock('@/api/endpoints', () => ({
   partnerApi: {
     finalize: vi.fn(),
   },
 }));
-
-import { partnerApi } from '@/api/endpoints';
-import { usePartnerUploadStore } from '@/stores/partnerUploadStore';
 
 const finalizeMock = vi.mocked(partnerApi.finalize);
 

@@ -1,7 +1,10 @@
 <template>
   <div class="min-h-screen overflow-x-clip bg-surface-0 text-text-primary flex flex-col font-sans selection:bg-brand-500 selection:text-on-brand">
     <LocaleBanner />
-    <EmailVerifyBanner />
+    <!-- Client-only: auth state resolves after hydration; SSR always hides it. -->
+    <ClientOnly>
+      <EmailVerifyBanner />
+    </ClientOnly>
     <UiNavbar />
 
     <!-- Bottom pad = mini player 64 + mobile tabbar 56 + safe-area (H-09). -->

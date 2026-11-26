@@ -29,6 +29,8 @@ vi.stubGlobal(
   class extends FakeAudio {
     constructor() {
       super();
+      // Capturing the constructed fake is the point (src assertions + event dispatch below).
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       lastAudio = this;
     }
   },

@@ -22,6 +22,7 @@
           leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         >
           <div
+            v-if="modelValue"
             ref="panelRef"
             role="dialog"
             aria-modal="true"
@@ -31,7 +32,7 @@
             class="relative w-full rounded-2xl border border-surface-border bg-surface-1 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             :class="maxWidthClasses[maxWidth]"
             @click.stop
-            @keydown.tab="trapTab"
+            @keydown.tab="trapTabIn(panelRef, $event)"
           >
             <!-- Header -->
             <div class="flex items-center justify-between border-b border-surface-border px-5 py-4 shrink-0">
@@ -69,6 +70,7 @@
 
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue';
+import { focusablesIn, lockBodyScroll, trapTabIn, unlockBodyScroll } from '@/composables/useDialog';
 
 interface Props {
   modelValue: boolean;
@@ -102,53 +104,6 @@ const descId = `modal-desc-${useId()}`;
 const panelRef = ref<HTMLElement | null>(null);
 let lastFocused: HTMLElement | null = null;
 
-// Process-wide scroll-lock counter shared by nested modals via the DOM.
-function scrollLocks(): number {
-  return Number(document.body.dataset.modalLocks ?? '0');
-}
-
-function lockBodyScroll(): void {
-  const next = scrollLocks() + 1;
-  document.body.dataset.modalLocks = String(next);
-  if (next === 1) {
-    document.body.style.overflow = 'hidden';
-  }
-}
-
-function unlockBodyScroll(): void {
-  const next = Math.max(0, scrollLocks() - 1);
-  document.body.dataset.modalLocks = String(next);
-  if (next === 0) {
-    document.body.style.overflow = '';
-  }
-}
-
-function focusables(): HTMLElement[] {
-  if (!panelRef.value) return [];
-  const nodes = panelRef.value.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-  );
-  return Array.from(nodes).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
-}
-
-function trapTab(e: KeyboardEvent): void {
-  const items = focusables();
-  if (items.length === 0) {
-    e.preventDefault();
-    panelRef.value?.focus();
-    return;
-  }
-  const first = items[0] as HTMLElement;
-  const last = items[items.length - 1] as HTMLElement;
-  if (e.shiftKey && document.activeElement === first) {
-    e.preventDefault();
-    last.focus();
-  } else if (!e.shiftKey && document.activeElement === last) {
-    e.preventDefault();
-    first.focus();
-  }
-}
-
 function close() {
   emit('update:modelValue', false);
   emit('close');
@@ -174,7 +129,7 @@ watch(
       lastFocused = document.activeElement as HTMLElement | null;
       lockBodyScroll();
       void nextTick(() => {
-        const items = focusables();
+        const items = focusablesIn(panelRef.value);
         if (items.length > 0) {
           (items[0] as HTMLElement).focus();
         } else {

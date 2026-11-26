@@ -48,7 +48,7 @@ export function isHttpError<T = unknown>(err: unknown): err is HttpError<T> {
   return typeof err === 'object' && err !== null && (err as { isAxiosError?: unknown }).isAxiosError === true;
 }
 
-type RequestHook = (config: HttpRequestConfig) => HttpRequestConfig | void;
+type RequestHook = (config: HttpRequestConfig) => void;
 type ErrorHook = (err: HttpError, client: HttpClient) => Promise<HttpResponse>;
 
 export interface HttpClient {

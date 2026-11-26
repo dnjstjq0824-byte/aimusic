@@ -24,7 +24,7 @@
             placeholder="partner UUID"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
             @keyup.enter="reload"
-          />
+          >
         </label>
         <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">{{ t('admin.se.fStart') }}</span>
@@ -33,7 +33,7 @@
             type="text"
             placeholder="2026-11-01"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
-          />
+          >
         </label>
         <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">{{ t('admin.se.fEnd') }}</span>
@@ -42,7 +42,7 @@
             type="text"
             placeholder="2026-11-30"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
-          />
+          >
         </label>
       </div>
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -54,7 +54,7 @@
             min="0"
             placeholder="0"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
-          />
+          >
         </label>
         <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">{{ t('admin.se.fDirect') }}</span>
@@ -64,7 +64,7 @@
             min="0"
             placeholder="0"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
-          />
+          >
         </label>
         <label class="flex-1 text-xs text-text-secondary">
           <span class="mb-1 block font-semibold">{{ t('admin.se.fIncome') }}</span>
@@ -73,7 +73,7 @@
             type="text"
             :placeholder="t('admin.se.fIncomePh')"
             class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 font-mono text-xs text-white placeholder:text-text-muted"
-          />
+          >
         </label>
         <div class="flex gap-2">
           <UiButton variant="secondary" size="sm" :loading="loading" @click="reload">{{ t('admin.se.query') }}</UiButton>
@@ -118,7 +118,7 @@
               type="text"
               :placeholder="t('admin.se.refPh')"
               class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 font-mono text-caption text-white placeholder:text-text-muted"
-            />
+            >
             <UiButton
               variant="secondary"
               size="xs"
@@ -143,7 +143,7 @@
               type="text"
               :placeholder="t('admin.se.holdReasonPh')"
               class="w-44 rounded-lg border border-surface-border bg-surface-1 px-2 py-1 text-caption text-white placeholder:text-text-muted"
-            />
+            >
             <UiButton
               v-if="s.status === 'PENDING'"
               variant="secondary"

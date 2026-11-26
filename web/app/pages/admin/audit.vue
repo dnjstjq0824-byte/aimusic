@@ -32,7 +32,7 @@
           :placeholder="t('admin.au.all')"
           class="w-full rounded-lg border border-surface-border bg-surface-1 px-3 py-2 text-sm text-white placeholder:text-text-muted"
           @keyup.enter="reload"
-        />
+        >
       </label>
       <UiButton variant="secondary" size="sm" @click="reload">{{ t('admin.au.search') }}</UiButton>
     </UiCard>

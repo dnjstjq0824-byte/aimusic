@@ -45,7 +45,11 @@ export function saveQueueSnapshot(snap: QueueSnapshot): void {
 
 export const useStorePlayerStore = defineStore('storePlayer', () => {
   const device = ref<StoreDevice | null>(null);
-  const claimed = computed(() => deviceTokenStore.get() !== null);
+  // Reactive mirror of the device token: localStorage itself is not
+  // reactive, so a computed over deviceTokenStore.get() would cache forever
+  // and never flip after claim()/unclaim() (same pattern as authStore).
+  const hasDeviceToken = ref(deviceTokenStore.get() !== null);
+  const claimed = computed(() => hasDeviceToken.value);
   const queue = ref<DeviceQueue | null>(null);
   const trackIndex = ref(0);
   const currentDetail = ref<Track | null>(null);
@@ -151,6 +155,7 @@ export const useStorePlayerStore = defineStore('storePlayer', () => {
     try {
       const res = await storeDeviceApi.claim(pairingCode.trim().toUpperCase());
       deviceTokenStore.set(res.token);
+      hasDeviceToken.value = true;
       device.value = res.device;
       needsClaim.value = false;
       await refreshQueue();
@@ -165,6 +170,7 @@ export const useStorePlayerStore = defineStore('storePlayer', () => {
   function unclaim(): void {
     stopAll();
     deviceTokenStore.clear();
+    hasDeviceToken.value = false;
     device.value = null;
     queue.value = null;
     needsClaim.value = true;

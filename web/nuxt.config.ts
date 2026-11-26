@@ -31,6 +31,7 @@ export default defineNuxtConfig({
     '@nuxtjs/robots',
     'nuxt-schema-org',
     'nuxt-og-image',
+    '@nuxt/eslint',
   ],
   site: {
     url: 'https://avibemusic.com',

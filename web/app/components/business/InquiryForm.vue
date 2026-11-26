@@ -24,7 +24,7 @@
     </div>
     <!-- Honeypot: invisible to humans, bots fill it. -->
     <div class="hidden" aria-hidden="true">
-      <label>Website<input v-model="form.website" type="text" tabindex="-1" autocomplete="off" /></label>
+      <label>Website<input v-model="form.website" type="text" tabindex="-1" autocomplete="off" ></label>
     </div>
     <UiErrorBanner :message="error" />
     <UiButton variant="brand" size="md" full-width type="submit" :loading="busy" :disabled="!valid">

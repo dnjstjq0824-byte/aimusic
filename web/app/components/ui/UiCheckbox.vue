@@ -8,7 +8,7 @@
         :required="required"
         class="peer sr-only"
         @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
-      />
+      >
       <div
         class="h-4 w-4 rounded border border-surface-border bg-surface-1 transition-all duration-150 peer-checked:border-brand-500 peer-checked:bg-brand-500 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/50"
         :class="disabled ? 'opacity-50 cursor-not-allowed' : ''"

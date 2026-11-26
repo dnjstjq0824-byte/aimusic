@@ -72,8 +72,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'prev'): void;
-  (e: 'next'): void;
+  (e: 'prev' | 'next'): void;
   (e: 'page', page: number): void;
 }>();
 

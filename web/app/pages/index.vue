@@ -30,7 +30,7 @@
             autocomplete="off"
             :placeholder="t('home.heroSearchPh')"
             class="w-full bg-transparent px-5 pb-3 pt-5 text-base text-white placeholder:text-text-muted focus:outline-none"
-          />
+          >
           <div class="flex items-center justify-between gap-2 px-3 pb-3">
             <div class="flex items-center gap-1">
               <RouterLink
@@ -345,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { trackApi, playlistApi, playbackApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
@@ -359,7 +359,6 @@ import type { Track, Playlist } from '@/api/types';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 // N1: below-fold + modals load on demand (Lazy* auto-imports).
-import { defineAsyncComponent } from 'vue';
 const DisputeReportModal = defineAsyncComponent(() => import('@/components/legal/DisputeReportModal.vue'));
 const UiPlaylistPickerAsync = defineAsyncComponent(() => import('@/components/ui/UiPlaylistPicker.vue'));
 import { detailParam } from '@/utils/seo';

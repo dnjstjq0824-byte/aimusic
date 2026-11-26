@@ -81,25 +81,13 @@
           <div class="text-caption text-text-secondary mb-2 font-medium">{{ t('auth.login.devTitle') }}</div>
           <div class="flex flex-wrap justify-center gap-2">
             <button
+              v-for="a in devAccounts"
+              :key="a.email"
               type="button"
-              class="rounded-lg bg-brand-500/10 px-3 py-1.5 text-xs text-brand-300 hover:bg-brand-500/20 border border-brand-500/40 transition-colors font-semibold"
-              @click="fillCreds('partner@example.com', 'Admin1234!', true)"
+              :class="a.cls"
+              @click="fillCreds(a.email, a.password, true)"
             >
-              🎵 {{ t('auth.login.devPartner') }}
-            </button>
-            <button
-              type="button"
-              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-primary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
-              @click="fillCreds('user@example.com', 'Admin1234!', true)"
-            >
-              🎧 {{ t('auth.login.devListener') }}
-            </button>
-            <button
-              type="button"
-              class="rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-secondary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium"
-              @click="fillCreds('admin@example.com', 'Admin1234!', true)"
-            >
-              🛡️ {{ t('auth.login.devAdmin') }}
+              {{ a.icon }} {{ t(a.labelKey) }}
             </button>
           </div>
         </div>
@@ -137,6 +125,44 @@ const apiError = useApiError();
 
 const busy = ref(false);
 const isDev = import.meta.env.DEV;
+
+interface DevAccount {
+  email: string;
+  password: string;
+  icon: string;
+  labelKey: string;
+  cls: string;
+}
+
+// Dev-only fill buttons. The credentials live behind import.meta.env.DEV so
+// the bundler drops them (and this array) from production output entirely;
+// a v-if in the template alone still leaks the strings into the bundle.
+// scripts/assert-no-demo-secrets.mjs enforces their absence post-build.
+const devAccounts: DevAccount[] = import.meta.env.DEV
+  ? [
+      {
+        email: 'partner@example.com',
+        password: 'Admin1234!',
+        icon: '🎵',
+        labelKey: 'auth.login.devPartner',
+        cls: 'rounded-lg bg-brand-500/10 px-3 py-1.5 text-xs text-brand-300 hover:bg-brand-500/20 border border-brand-500/40 transition-colors font-semibold',
+      },
+      {
+        email: 'user@example.com',
+        password: 'Admin1234!',
+        icon: '🎧',
+        labelKey: 'auth.login.devListener',
+        cls: 'rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-primary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium',
+      },
+      {
+        email: 'admin@example.com',
+        password: 'Admin1234!',
+        icon: '🛡️',
+        labelKey: 'auth.login.devAdmin',
+        cls: 'rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-text-secondary hover:text-white hover:bg-surface-3 border border-surface-border transition-colors font-medium',
+      },
+    ]
+  : [];
 
 const email = ref('');
 const password = ref('');

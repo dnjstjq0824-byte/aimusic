@@ -6,7 +6,7 @@
       gradientClass,
     ]"
   >
-    <img v-if="src" :src="src" :alt="alt" class="h-full w-full object-cover" />
+    <img v-if="src" :src="src" :alt="alt" class="h-full w-full object-cover" >
     <span v-else class="text-white tracking-wider">{{ initials }}</span>
     <span
       v-if="status"

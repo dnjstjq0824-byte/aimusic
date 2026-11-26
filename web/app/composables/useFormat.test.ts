@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
+import { useFormat } from './useFormat';
+
 const localeRef = { value: 'ko' };
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ locale: localeRef }),
 }));
-
-import { useFormat } from './useFormat';
 
 describe('useFormat', () => {
   beforeEach(() => {

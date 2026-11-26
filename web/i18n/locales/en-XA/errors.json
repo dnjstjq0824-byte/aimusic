@@ -32,6 +32,7 @@
     "EMAIL_NOT_VERIFIED": "⟦Èmàìl vèrìfìcàtìòn ìs rèqùìrèd. Òpèn thè vèrìfìcàtìòn lìnk ìn yòùr ìnbòx.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
     "ERR_INTERNAL": "⟦À sèrvèr èrròr òccùrrèd.～～～～～～～～～～⟧",
     "ERR_FALLBACK": "⟦Thè rèqùèst fàìlèd.～～～～～～～～⟧",
-    "ERR_HANDLE_TAKEN": "⟦Thìs hàndlè ìs àlrèàdy tàkèn.～～～～～～～～～⟧"
+    "ERR_HANDLE_TAKEN": "⟦Thìs hàndlè ìs àlrèàdy tàkèn.～～～～～～～～～⟧",
+    "ERR_CONFLICT": "⟦Thìs wàs àlrèàdy pròcèssèd. Rèfrèsh ànd try àgàìn.～～～～～～～～～⟧"
   }
 }

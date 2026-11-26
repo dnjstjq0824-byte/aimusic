@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50" role="dialog" aria-modal="true" :aria-label="t('player.expand')">
+  <div ref="panelRef" tabindex="-1" class="fixed inset-0 z-50" role="dialog" aria-modal="true" :aria-label="t('player.expand')" @keydown.tab="trapTabIn(panelRef, $event)">
     <div class="absolute inset-0 bg-black/70" @click="$emit('close')" />
     <section class="absolute inset-0 overflow-y-auto bg-surface-0 sm:left-auto sm:right-0 sm:w-[420px] sm:border-l sm:border-surface-border">
       <div class="mx-auto flex min-h-full w-full max-w-md flex-col px-5 py-4 sm:max-w-none">
@@ -104,20 +104,25 @@
           <div class="mt-5 flex gap-2 border-b border-surface-border" role="tablist">
             <button
               v-for="tab in tabs"
+              :id="`fp-tab-${tab.id}`"
               :key="tab.id"
+              ref="tabButtons"
               type="button"
               role="tab"
               :aria-selected="activeTab === tab.id"
+              :aria-controls="`fp-panel-${tab.id}`"
+              :tabindex="activeTab === tab.id ? 0 : -1"
               class="flex-1 border-b-2 pb-2 text-xs font-bold transition-colors"
               :class="activeTab === tab.id ? 'border-brand-500 text-white' : 'border-transparent text-text-muted hover:text-text-secondary'"
               @click="activeTab = tab.id"
+              @keydown="onTabKeydown"
             >
               {{ t(tab.labelKey) }}
             </button>
           </div>
 
           <div class="mt-3 flex-1 pb-6">
-            <ol v-if="activeTab === 'tabQueue'" class="space-y-1">
+            <ol v-if="activeTab === 'tabQueue'" id="fp-panel-tabQueue" role="tabpanel" aria-labelledby="fp-tab-tabQueue" tabindex="0" class="space-y-1">
               <li
                 v-for="(entry, pos) in orderedQueue"
                 :key="entry.track.id"
@@ -139,10 +144,10 @@
                 </button>
               </li>
             </ol>
-            <p v-else-if="activeTab === 'tabLyrics'" class="whitespace-pre-line text-xs leading-relaxed text-text-secondary">
+            <p v-else-if="activeTab === 'tabLyrics'" id="fp-panel-tabLyrics" role="tabpanel" aria-labelledby="fp-tab-tabLyrics" tabindex="0" class="whitespace-pre-line text-xs leading-relaxed text-text-secondary">
               {{ player.currentTrack.lyrics || t('player.noLyrics') }}
             </p>
-            <div v-else class="space-y-2 text-xs text-text-secondary">
+            <div v-else id="fp-panel-tabLicense" role="tabpanel" aria-labelledby="fp-tab-tabLicense" tabindex="0" class="space-y-2 text-xs text-text-secondary">
               <p><span class="font-bold text-brand-300">{{ player.currentTrack.aiProvider }}</span></p>
               <p v-if="player.currentTrack.aiDisclosureText" class="leading-relaxed">{{ player.currentTrack.aiDisclosureText }}</p>
               <RouterLink :to="localePath({ name: 'track-detail', params: { id: player.currentTrack ? detailParam(player.currentTrack) : '' } })" class="inline-block font-medium text-brand-400 hover:underline" @click="$emit('close')">
@@ -162,7 +167,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { focusablesIn, lockBodyScroll, trapTabIn, unlockBodyScroll } from '@/composables/useDialog';
+import { nextTabIndex } from '@/utils/tabs';
 import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
@@ -213,6 +220,36 @@ function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') emit('close');
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown));
-onUnmounted(() => window.removeEventListener('keydown', onKeydown));
+const panelRef = ref<HTMLElement | null>(null);
+const tabButtons = ref<HTMLElement[]>([]);
+let lastFocused: HTMLElement | null = null;
+
+function onTabKeydown(e: KeyboardEvent): void {
+  const ids = tabs.map((tb) => tb.id);
+  const next = nextTabIndex(ids.length, ids.indexOf(activeTab.value), e.key);
+  if (next === null) return;
+  e.preventDefault();
+  activeTab.value = ids[next] as (typeof tabs)[number]['id'];
+  void nextTick(() => tabButtons.value[next]?.focus());
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown);
+  lastFocused = document.activeElement as HTMLElement | null;
+  lockBodyScroll();
+  void nextTick(() => {
+    const items = focusablesIn(panelRef.value);
+    if (items.length > 0) {
+      (items[0] as HTMLElement).focus();
+    } else {
+      panelRef.value?.focus();
+    }
+  });
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown);
+  unlockBodyScroll();
+  lastFocused?.focus?.();
+  lastFocused = null;
+});
 </script>

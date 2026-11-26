@@ -19,13 +19,16 @@ module.exports = {
       },
     },
     assert: {
-      // Performance + JS budget are 'warn' until the bundle diet lands
-      // (2026-11-21: perf 0.54-0.63, JS over budget). Restore to 'error' then.
-      // SEO stays a hard gate.
+      // Performance + JS budget stay 'warn' until the bundle diet lands
+      // (2026-11-26 measured on a CI-parity build: perf 0.56-0.68, JS
+      // 323-612KB vs the 170KB budget across the four URLs; hls.js is
+      // already lazy and NOT preloaded — the gap is vendor + route chunks,
+      // starting with the ~199KB core vendor chunk). SEO + accessibility
+      // are hard gates (a11y measured 0.96-1.0 on 2026-11-26).
       assertions: {
         'categories:performance': ['warn', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 1 }],
-        'categories:accessibility': ['warn', { minScore: 0.9 }],
+        'categories:accessibility': ['error', { minScore: 0.9 }],
         'resource-summary:script:size': ['warn', { maxNumericValue: 174080 }],
       },
     },

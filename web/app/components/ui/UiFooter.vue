@@ -9,7 +9,7 @@
             {{ t('common.footer.tagline') }}
           </p>
           <div class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-caption text-text-secondary">
-            <span class="h-1.5 w-1.5 rounded-full bg-verified"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-verified" />
             {{ t('common.footer.aiBadge') }}
           </div>
         </div>

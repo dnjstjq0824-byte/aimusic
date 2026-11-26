@@ -2,6 +2,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceQueue } from '@/api/types';
 
+import { deviceTokenStore } from '@/api/client';
+import { loadQueueSnapshot, useStorePlayerStore } from '@/stores/storePlayerStore';
+
 class FakeAudio extends EventTarget {
   src = '';
   preload = '';
@@ -23,19 +26,12 @@ class FakeAudio extends EventTarget {
   }
 }
 
-vi.stubGlobal(
-  'Audio',
-  class extends FakeAudio {
-    constructor() {
-      super();
-    }
-  },
-);
+vi.stubGlobal('Audio', FakeAudio);
 
 vi.mock('hls.js', () => ({ default: { isSupported: () => false } }));
 
-const queueState: { queue: DeviceQueue | null; unauthorized: boolean } = {
-  queue: {
+function defaultQueue(): DeviceQueue {
+  return {
     businessId: 'biz-1',
     businessName: 'Gangnam Store',
     open: true,
@@ -47,7 +43,11 @@ const queueState: { queue: DeviceQueue | null; unauthorized: boolean } = {
       { trackId: 't1', title: 'Neon Skyline', durationMs: 180000 },
       { trackId: 't2', title: 'Parallel Night', durationMs: 200000 },
     ],
-  },
+  };
+}
+
+const queueState: { queue: DeviceQueue | null; unauthorized: boolean } = {
+  queue: defaultQueue(),
   unauthorized: false,
 };
 
@@ -77,12 +77,10 @@ vi.mock('@/api/endpoints', () => ({
   },
 }));
 
-import { deviceTokenStore } from '@/api/client';
-import { loadQueueSnapshot, useStorePlayerStore } from '@/stores/storePlayerStore';
-
 beforeEach(() => {
   setActivePinia(createPinia());
   localStorage.clear();
+  queueState.queue = defaultQueue();
   queueState.unauthorized = false;
   vi.useRealTimers();
 });
@@ -134,5 +132,23 @@ describe('storePlayerStore', () => {
     queueState.unauthorized = true;
     await s.refreshQueue();
     expect(s.needsClaim).toBe(true);
+  });
+
+  it('recomputes claimed after claim and unclaim', async () => {
+    const s = useStorePlayerStore();
+    expect(s.claimed).toBe(false);
+    await s.claim('GOODCODE');
+    expect(s.claimed).toBe(true);
+    expect(s.queue?.tracks).toHaveLength(2);
+    s.unclaim();
+    expect(s.claimed).toBe(false);
+  });
+
+  it('drops claimed after unclaim from a restored session', async () => {
+    deviceTokenStore.set('tok-0');
+    const s = useStorePlayerStore();
+    expect(s.claimed).toBe(true);
+    s.unclaim();
+    expect(s.claimed).toBe(false);
   });
 });

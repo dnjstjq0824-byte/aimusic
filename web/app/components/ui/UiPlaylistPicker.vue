@@ -68,8 +68,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void;
-  (e: 'select', playlistId: string): void;
-  (e: 'create', title: string): void;
+  (e: 'select' | 'create', value: string): void;
 }>();
 
 const { t } = useI18n();

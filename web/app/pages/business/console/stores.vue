@@ -81,7 +81,7 @@
                   type="range" min="0" max="100" :value="d.volume" class="h-1 w-24 accent-brand-500"
                   :aria-label="t('business.console.stVolumeAria', { name: d.deviceName })"
                   @change="setVolume(store, d, ($event.target as HTMLInputElement).valueAsNumber)"
-                />
+                >
                 <UiButton variant="ghost" size="sm" @click="openLogs(store, d)">{{ t('business.console.stLogs') }}</UiButton>
                 <UiButton v-if="d.status !== 'REVOKED'" variant="ghost" size="sm" @click="revoke(store, d)">{{ t('business.console.stRevoke') }}</UiButton>
               </div>

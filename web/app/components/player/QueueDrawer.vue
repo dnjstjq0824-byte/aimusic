@@ -7,6 +7,7 @@
       :aria-label="t('player.queueTitle', { count: player.queue.length })"
       tabindex="-1"
       class="flex h-full w-full max-w-[90vw] flex-col border-l border-surface-border bg-surface-1 p-4 pb-safe sm:w-80"
+      @keydown.tab="trapTabIn(panelRef, $event)"
     >
       <div class="mb-2 flex items-center justify-between">
         <h2 class="text-sm font-bold text-white">{{ t('player.queueTitle', { count: player.queue.length }) }}</h2>
@@ -21,7 +22,6 @@
           :key="track.id"
           class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm"
           :class="track.id === player.currentTrack?.id ? 'bg-brand-950/60 border border-brand-500/30' : 'bg-surface-2/60'"
-          :aria-current="track.id === player.currentTrack?.id ? 'true' : undefined"
         >
           <span class="w-6 shrink-0 text-xs text-text-muted">{{ i + 1 }}</span>
           <span class="min-w-0 flex-1 truncate text-xs text-text-primary">{{ track.title }}</span>
@@ -29,6 +29,7 @@
             type="button"
             class="rounded p-1 text-xs text-text-secondary hover:text-white"
             :aria-label="t('player.queuePlay', { title: track.title })"
+            :aria-current="track.id === player.currentTrack?.id ? 'true' : undefined"
             @click="playAt(i)"
           >
             ▶
@@ -54,6 +55,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { lockBodyScroll, trapTabIn, unlockBodyScroll } from '@/composables/useDialog';
 import { usePlayerStore } from '@/stores/playerStore';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
@@ -73,12 +75,19 @@ function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') emit('close');
 }
 
+let lastFocused: HTMLElement | null = null;
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown);
+  lastFocused = document.activeElement as HTMLElement | null;
+  lockBodyScroll();
   void nextTick(() => panelRef.value?.focus());
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown);
+  unlockBodyScroll();
+  lastFocused?.focus?.();
+  lastFocused = null;
 });
 </script>

@@ -32,6 +32,7 @@
     "EMAIL_NOT_VERIFIED": "이메일 인증이 필요합니다. 메일함의 인증 링크를 눌러 주세요.",
     "ERR_INTERNAL": "서버 오류가 발생했습니다.",
     "ERR_FALLBACK": "요청 처리에 실패했습니다.",
-    "ERR_HANDLE_TAKEN": "이미 사용 중인 핸들입니다."
+    "ERR_HANDLE_TAKEN": "이미 사용 중인 핸들입니다.",
+    "ERR_CONFLICT": "이미 처리된 요청입니다. 새로고침 후 다시 시도하세요."
   }
 }

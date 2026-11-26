@@ -11,7 +11,7 @@ export interface AnalyticsPayload {
   props?: Record<string, string>;
 }
 
-let queue: AnalyticsPayload[] = [];
+const queue: AnalyticsPayload[] = [];
 let timer: ReturnType<typeof setTimeout> | null = null;
 let sessionHash = '';
 

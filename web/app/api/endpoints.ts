@@ -30,7 +30,6 @@ import type {
   PlaylistTrack,
   PrecheckOutput,
   ReviewQueues,
-  Role,
   RoleGrant,
   StoreBusiness,
   StoreDevice,

@@ -43,22 +43,19 @@ export const usePlaylistStore = defineStore('playlist', () => {
   async function remove(id: string): Promise<void> {
     await playlistApi.remove(id);
     playlists.value = playlists.value.filter((p) => p.id !== id);
-    delete entries.value[id];
-    delete entryTracks.value[id];
+    const { [id]: _droppedEntries, ...restEntries } = entries.value;
+    entries.value = restEntries;
+    const { [id]: _droppedTracks, ...restTracks } = entryTracks.value;
+    entryTracks.value = restTracks;
   }
 
   async function fetchTracks(playlistId: string): Promise<void> {
     const list = (await playlistApi.listTracks(playlistId)) ?? [];
     entries.value[playlistId] = list;
-    const tracks: Track[] = [];
-    for (const e of list) {
-      try {
-        tracks.push(await trackApi.get(e.trackId));
-      } catch {
-        // Skip missing/taken-down tracks in detail resolution.
-      }
-    }
-    entryTracks.value[playlistId] = tracks;
+    const settled = await Promise.all(
+      list.map((e) => trackApi.get(e.trackId).catch((): null => null)),
+    );
+    entryTracks.value[playlistId] = settled.filter((t): t is Track => t !== null);
   }
 
   async function addTrack(playlistId: string, trackId: string): Promise<void> {

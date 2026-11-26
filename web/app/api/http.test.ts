@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildUrl, createHttpClient, HttpError, isHttpError } from './http';
+import type { HttpError} from './http';
+import { buildUrl, createHttpClient, isHttpError } from './http';
 
 function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}): Response {
   return new Response(body === undefined ? '' : JSON.stringify(body), {

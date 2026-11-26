@@ -124,8 +124,6 @@ import UiSelect from '@/components/ui/UiSelect.vue';
 import UiTextarea from '@/components/ui/UiTextarea.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 
-const { t } = useI18n();
-
 const text = ref('');
 const area = ref('');
 const choice = ref('non-commercial');

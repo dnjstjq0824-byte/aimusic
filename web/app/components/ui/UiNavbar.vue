@@ -5,42 +5,42 @@
   >
     <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:h-16 lg:px-8">
       <div class="flex min-w-0 items-center gap-4 lg:gap-6">
-        <RouterLink to="/" class="flex items-center transition-transform active:scale-95" :aria-label="`AVIBE ${t('common.nav.home')}`">
+        <RouterLink :to="hrefFor('/')" class="flex items-center transition-transform active:scale-95" :aria-label="`AVIBE ${t('common.nav.home')}`">
           <BrandLogo :size="30" tagline="" />
         </RouterLink>
 
         <!-- Desktop Navigation -->
         <nav class="hidden lg:flex items-center gap-0.5 whitespace-nowrap text-sm text-text-secondary" :aria-label="t('common.nav.mainMenu')">
           <RouterLink
-            to="/"
+            :to="hrefFor('/')"
             class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
             :class="routeName === 'home' ? 'text-white' : ''"
           >
             {{ t('common.nav.home') }}
           </RouterLink>
           <RouterLink
-            to="/explore"
+            :to="hrefFor('/explore')"
             class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
             :class="routeName === 'explore' ? 'text-white' : ''"
           >
             {{ t('common.nav.explore') }}
           </RouterLink>
           <RouterLink
-            to="/playlists"
+            :to="hrefFor('/playlists')"
             class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
             :class="routeName === 'playlists' || routeName === 'playlist-detail' ? 'text-white' : ''"
           >
             {{ t('common.nav.playlists') }}
           </RouterLink>
           <RouterLink
-            to="/library"
+            :to="hrefFor('/library')"
             class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
             :class="routeName === 'library' ? 'text-white' : ''"
           >
             {{ t('common.nav.library') }}
           </RouterLink>
           <RouterLink
-            to="/charts"
+            :to="hrefFor('/charts')"
             class="rounded-full px-3 py-1.5 transition-colors hover:text-white"
             :class="routeName === 'charts' ? 'text-white' : ''"
           >
@@ -69,7 +69,7 @@
       <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <!-- Mobile search shortcut -->
         <RouterLink
-          to="/explore"
+          :to="hrefFor('/explore')"
           class="lg:hidden flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-text-primary hover:text-white"
           :aria-label="t('common.nav.explore')"
         >
@@ -80,7 +80,7 @@
         </RouterLink>
 
         <RouterLink
-          to="/business"
+          :to="hrefFor('/business')"
           class="hidden lg:inline-flex items-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-text-secondary hover:text-white transition-colors"
         >
           {{ t('common.nav.business') }}
@@ -119,7 +119,7 @@
                 <div class="text-caption text-text-muted truncate">{{ auth.email }}</div>
               </div>
               <RouterLink
-                to="/account"
+                :to="hrefFor('/account')"
                 class="block px-3 py-2 text-text-primary hover:bg-surface-3 hover:text-white"
                 @click="userMenuOpen = false"
               >
@@ -127,7 +127,7 @@
               </RouterLink>
               <RouterLink
                 v-if="auth.isPartner"
-                to="/studio"
+                :to="hrefFor('/studio')"
                 class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold"
                 @click="userMenuOpen = false"
               >
@@ -135,7 +135,7 @@
               </RouterLink>
               <RouterLink
                 v-if="auth.isBusiness"
-                to="/business/console"
+                :to="hrefFor('/business/console')"
                 class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold"
                 @click="userMenuOpen = false"
               >
@@ -143,7 +143,7 @@
               </RouterLink>
               <RouterLink
                 v-if="auth.isAdmin"
-                to="/admin"
+                :to="hrefFor('/admin')"
                 class="block px-3 py-2 text-brand-300 hover:bg-surface-3 font-semibold"
                 @click="userMenuOpen = false"
               >
@@ -160,13 +160,13 @@
 
           <div v-else class="flex items-center gap-2">
             <RouterLink
-              to="/login"
+              :to="hrefFor('/login')"
               class="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-semibold text-text-primary hover:bg-white/[0.12] transition-colors"
             >
               {{ t('common.nav.login') }}
             </RouterLink>
             <RouterLink
-              to="/signup"
+              :to="hrefFor('/signup')"
               class="hidden sm:inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-on-brand hover:bg-brand-400 transition-colors"
             >
               {{ t('common.nav.signup') }}
@@ -175,13 +175,13 @@
           <template #fallback>
             <div class="flex items-center gap-2">
               <RouterLink
-                to="/login"
+                :to="hrefFor('/login')"
                 class="rounded-full bg-white/[0.06] px-4 py-2 text-xs font-semibold text-text-primary hover:bg-white/[0.12] transition-colors"
               >
                 {{ t('common.nav.login') }}
               </RouterLink>
               <RouterLink
-                to="/signup"
+                :to="hrefFor('/signup')"
                 class="hidden sm:inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-on-brand hover:bg-brand-400 transition-colors"
               >
                 {{ t('common.nav.signup') }}
@@ -202,6 +202,12 @@ import UiAvatar from './UiAvatar.vue';
 import LocaleSwitcher from './LocaleSwitcher.vue';
 import BrandLogo from '@/components/BrandLogo.vue';
 const { t } = useI18n();
+const localePath = useLocalePath();
+
+// App-only routes (/library, /account, /studio, /business/console, /admin,
+// /login, /signup) have no locale variants: localePath() returns '' for
+// them, so keep the raw target instead of rendering an <a> without href.
+const hrefFor = (to: string): string => localePath(to) || to;
 
 const auth = useAuthStore();
 const route = useRoute();
@@ -216,7 +222,8 @@ const searchQuery = ref('');
 
 async function submitSearch(): Promise<void> {
   const q = searchQuery.value.trim();
-  await router.push(q ? { path: '/explore', query: { q } } : '/explore');
+  const target = hrefFor('/explore');
+  await router.push(q ? { path: target, query: { q } } : target);
 }
 
 // Mobile top bar hides on scroll down (UI §2.2); desktop bar stays.

@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import type { Ref } from 'vue';
 
 export interface ToastItem {
   id: string;
@@ -8,9 +8,18 @@ export interface ToastItem {
   duration?: number;
 }
 
-const toasts = ref<ToastItem[]>([]);
+export interface ToastMethods {
+  show(toast: Omit<ToastItem, 'id'>): void;
+  success(message: string, title?: string): void;
+  error(message: string, title?: string): void;
+  warning(message: string, title?: string): void;
+  info(message: string, title?: string): void;
+  dismiss(id: string): void;
+}
 
-export function useToast() {
+// bindToastMethods attaches behavior to any toast list. Purely Vue-reactive
+// (no Nuxt APIs), so unit tests drive it with a plain ref.
+export function bindToastMethods(toasts: Ref<ToastItem[]>): ToastMethods {
   function show(toast: Omit<ToastItem, 'id'>) {
     const id = Math.random().toString(36).substring(2, 9);
     const item: ToastItem = {
@@ -20,7 +29,7 @@ export function useToast() {
     };
     toasts.value.push(item);
 
-    if (item.duration && item.duration > 0) {
+    if (typeof window !== 'undefined' && item.duration && item.duration > 0) {
       setTimeout(() => {
         dismiss(id);
       }, item.duration);
@@ -47,13 +56,12 @@ export function useToast() {
     toasts.value = toasts.value.filter((t) => t.id !== id);
   }
 
-  return {
-    toasts,
-    show,
-    success,
-    error,
-    warning,
-    info,
-    dismiss,
-  };
+  return { show, success, error, warning, info, dismiss };
+}
+
+export function useToast(): { toasts: Ref<ToastItem[]> } & ToastMethods {
+  // Request-scoped on the server: a module-level ref would leak toasts
+  // across SSR requests sharing the process.
+  const toasts = useState<ToastItem[]>('app-toasts', () => []);
+  return { toasts, ...bindToastMethods(toasts) };
 }

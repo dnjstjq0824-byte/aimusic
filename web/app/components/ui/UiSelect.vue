@@ -68,7 +68,6 @@ const describedBy = computed(() => {
 });
 
 defineEmits<{
-  (e: 'update:modelValue', val: string): void;
-  (e: 'change', val: string): void;
+  (e: 'update:modelValue' | 'change', val: string): void;
 }>();
 </script>

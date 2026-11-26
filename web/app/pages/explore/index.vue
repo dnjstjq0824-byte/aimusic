@@ -197,8 +197,9 @@ import { useApiError } from '@/composables/useApiError';
 import { useFormat } from '@/composables/useFormat';
 import { tagDisplayName } from '@/utils/tags';
 import { providerDisplayName } from '@/utils/providerDisplay';
+import { fetchPublic } from '@/utils/publicApi';
 import { usePublicSeo } from '@/composables/usePublicSeo';
-import type { Track } from '@/api/types';
+import type { Track, TrackPage } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
@@ -274,6 +275,29 @@ const DUR_RANGES: Record<string, { minDur?: number; maxDur?: number }> = {
   mid: { minDur: 180000, maxDur: 300000 },
   long: { minDur: 300000 },
 };
+
+// SSR: render the initial result set into HTML so crawlers (and first paint)
+// see tracks instead of an empty shell. Client interactions keep using load().
+const { data: initialData, error: initialError } = await useAsyncData(
+  () => `explore-initial-${searchQuery.value.trim()}-${sortBy.value}-${filters.mood}`,
+  () => fetchPublic<TrackPage>('/tracks', {
+    limit,
+    offset: 0,
+    q: searchQuery.value.trim() || undefined,
+    sort: sortBy.value || undefined,
+    mood: filters.mood || undefined,
+  }),
+);
+if (initialData.value) {
+  tracks.value = initialData.value.items ?? [];
+  total.value = initialData.value.total ?? 0;
+  loading.value = false;
+} else if (initialError.value) {
+  error.value = apiError(initialError.value);
+  loading.value = false;
+} else {
+  loading.value = false;
+}
 
 const activeFilterCount = computed(() => {
   let n = 0;
@@ -474,7 +498,8 @@ watch(
 );
 
 onMounted(() => {
-  void load();
+  // The initial list already came from useAsyncData (SSR payload or the
+  // client-side run on SPA navigation); only authed extras load on mount.
   if (auth.isAuthenticated) {
     void playlists.fetchMine();
   }

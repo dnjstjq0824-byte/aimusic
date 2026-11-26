@@ -173,4 +173,11 @@ for (const r of results) {
 }
 const withErr = results.filter((r) => r.errors.length || r.badResponses.length).length;
 console.log(`\ndone: ${results.length} screens, ${withErr} with errors/bad-responses -> ${OUT}`);
+// HARNESS_STRICT=1 turns the collected console/page/API errors into a gate.
+// Default stays report-only: enabling it by default needs a calibration run
+// (expected 401s on guest flows, known flaky screens) first.
+if (process.env.HARNESS_STRICT === '1' && withErr > 0) {
+  console.error(`HARNESS_STRICT: ${withErr} screens with errors/bad-responses`);
+  process.exit(1);
+}
 process.exit(0);

@@ -68,10 +68,7 @@ const fmt = useFormat();
 const props = defineProps<{ track: Track }>();
 
 const emit = defineEmits<{
-  (e: 'play', track: Track): void;
-  (e: 'enqueue', track: Track): void;
-  (e: 'add-to-playlist', track: Track): void;
-  (e: 'report', track: Track): void;
+  (e: 'play' | 'enqueue' | 'add-to-playlist' | 'report', track: Track): void;
 }>();
 
 const menuItems = computed<MenuItem[]>(() => [

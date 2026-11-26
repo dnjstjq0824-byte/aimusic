@@ -16,7 +16,7 @@
           class="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2"
         >
           <div class="min-w-0">
-            <div class="truncate text-sm font-semibold text-white">{{ term.titleKo }}</div>
+            <div class="truncate text-sm font-semibold text-white">{{ resolveTermTitle(term.code, term.titleKo, te, t) }}</div>
             <div class="text-caption text-text-secondary">{{ term.code }} · {{ term.version }}</div>
           </div>
           <div class="flex shrink-0 gap-2">
@@ -48,6 +48,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
+import { resolveTermTitle } from '@/utils/legalTerms';
 import { errMessageOf } from '@/api/client';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
@@ -55,7 +56,7 @@ import UiModal from '@/components/ui/UiModal.vue';
 
 const auth = useAuthStore();
 const toast = useToast();
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 const busyId = ref<string | null>(null);
 const error = ref<string | null>(null);
