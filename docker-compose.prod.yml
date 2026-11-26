@@ -17,15 +17,19 @@ name: avibe-prod
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16.15
     container_name: avibe-prod-postgres
     restart: unless-stopped
+    # TLS for sslmode=require clients (P1): self-signed cert provisioned by
+    # deploy/vps-init.sh into ./pgcerts (CN=postgres, private net only).
+    command: ["postgres", "-c", "ssl=on", "-c", "ssl_cert_file=/pgcerts/server.crt", "-c", "ssl_key_file=/pgcerts/server.key"]
     environment:
       POSTGRES_DB: ${DB_NAME:-avibe}
       POSTGRES_USER: ${DB_USER:-avibe}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./pgcerts:/pgcerts:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-avibe} -d ${DB_NAME:-avibe}"]
       interval: 10s
@@ -37,7 +41,7 @@ services:
       - avibe
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.12-alpine
     container_name: avibe-prod-redis
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
@@ -68,6 +72,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships in the alpine runtime image (verified).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/readyz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     mem_limit: 256m
     networks:
       - avibe
@@ -84,6 +95,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # The worker serves no HTTP: liveness is the queue-loop process itself.
+    healthcheck:
+      test: ["CMD-SHELL", "pidof worker >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     # ffmpeg transcode of a 40MB+ wav peaks over 384m (OOM-killed 2026-11-10);
     # the queue loop is serial so one transcode peak is the bound.
     mem_limit: 512m
@@ -132,7 +150,13 @@ services:
       NODE_OPTIONS: --max-old-space-size=192
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     mem_limit: 256m
     networks:
       - avibe
@@ -145,11 +169,13 @@ services:
     command: ["--config", "/etc/cloudflared/config.yml", "tunnel", "run"]
     volumes:
       - ./cloudflared/:/etc/cloudflared/:ro
+    # No healthcheck: the scratch-based image has no shell (verified). The
+    # healthy gates below still keep the tunnel from routing to cold backends.
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
       web:
-        condition: service_started
+        condition: service_healthy
     mem_limit: 128m
     networks:
       - avibe
