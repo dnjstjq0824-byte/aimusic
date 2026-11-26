@@ -336,16 +336,16 @@ type Track struct {
 	WaveformJSON         *string  `json:"waveformJson,omitempty"`
 	AIProvider           string   `json:"aiProvider"`
 	// Origin is EXTERNAL_AI or AVIBE_MODEL (WI-G0; Born Verified).
-	Origin            string    `json:"origin"`
-	AIGenerated       bool      `json:"aiGenerated"`
-	AIDisclosureText  *string   `json:"aiDisclosureText,omitempty"`
-	BitrateKbps       *int      `json:"bitrateKbps,omitempty"`
-	ISRC              *string   `json:"isrc,omitempty"`
-	BPM               *float64  `json:"bpm,omitempty"`
-	MusicalKey        *string   `json:"musicalKey,omitempty"`
-	Status            string    `json:"status"`
-	RejectionReasonKo *string   `json:"rejectionReasonKo,omitempty"`
-	PlayCount         int64     `json:"playCount"`
+	Origin            string   `json:"origin"`
+	AIGenerated       bool     `json:"aiGenerated"`
+	AIDisclosureText  *string  `json:"aiDisclosureText,omitempty"`
+	BitrateKbps       *int     `json:"bitrateKbps,omitempty"`
+	ISRC              *string  `json:"isrc,omitempty"`
+	BPM               *float64 `json:"bpm,omitempty"`
+	MusicalKey        *string  `json:"musicalKey,omitempty"`
+	Status            string   `json:"status"`
+	RejectionReasonKo *string  `json:"rejectionReasonKo,omitempty"`
+	PlayCount         int64    `json:"playCount"`
 	// CertNumber is the public certificate number (WI-N2): null when no
 	// certificate is issued. Always present in JSON (no omitempty) so
 	// clients can distinguish "unissued" from a stale cached shape.

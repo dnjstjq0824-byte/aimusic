@@ -18,7 +18,7 @@
           <h2 class="mb-4 text-sm font-medium text-white">{{ t(col.titleKey) }}</h2>
           <ul class="space-y-2.5 text-sm text-text-muted">
             <li v-for="link in col.links" :key="link.to">
-              <NuxtLink :to="localePath(link.to)" class="transition-colors hover:text-white" :class="'strong' in link ? 'font-semibold text-text-secondary' : ''">{{ t(link.labelKey) }}</NuxtLink>
+              <NuxtLink :to="hrefFor(link.to)" class="transition-colors hover:text-white" :class="'strong' in link ? 'font-semibold text-text-secondary' : ''">{{ t(link.labelKey) }}</NuxtLink>
             </li>
           </ul>
         </nav>
@@ -56,6 +56,9 @@ import BrandLogo from '@/components/BrandLogo.vue';
 import LocaleSwitcher from './LocaleSwitcher.vue';
 const { t } = useI18n();
 const localePath = useLocalePath();
+// App-only routes (studio, consoles, rights center) have no locale variants:
+// localePath() returns '' for them, which would render an <a> without href.
+const hrefFor = (to: string): string => localePath(to) || to;
 
 // NOTE: labelKeys resolve dynamically (invisible to the check-i18n usage scan).
 const columns = [

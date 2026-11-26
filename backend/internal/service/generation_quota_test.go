@@ -148,10 +148,10 @@ func TestGenerationMultilingualGuard(t *testing.T) {
 		"cover of blackpink",           // en artist name
 		"아이유 노래처럼 만들어줘",                // ko artist name
 		"a song like michael jackson",  // N13 extended artist seed
-		"세븐틴 무대처럼 신나게",              // N13 extended artist seed
-		"米津玄師みたいな曲",               // N13 extended artist seed (no word boundary)
-		"지민처럼 섬세한 보컬",               // N13: particle-attached 2-rune name
-		"周杰伦的风格来一首",                // N13: zh artist name
+		"세븐틴 무대처럼 신나게",                 // N13 extended artist seed
+		"米津玄師みたいな曲",                    // N13 extended artist seed (no word boundary)
+		"지민처럼 섬세한 보컬",                  // N13: particle-attached 2-rune name
+		"周杰伦的风格来一首",                    // N13: zh artist name
 		"ＶＯＩＣＥ　ＣＬＯＮＥ me",               // full-width evasion
 		"voice    clone\tme",           // whitespace evasion
 	}

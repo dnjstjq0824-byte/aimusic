@@ -73,7 +73,7 @@ const cards = computed(() =>
   c.value.contact.cards.map((card) => ({
     ...card,
     icon: ICONS[card.id] ?? ICONS.help,
-    to: card.id === 'business' ? { hash: '#inquiry' } : localePath(TARGETS[card.id] ?? '/help'),
+    to: card.id === 'business' ? { hash: '#inquiry' } : (localePath(TARGETS[card.id] ?? '/help') || (TARGETS[card.id] ?? '/help')),
   })),
 );
 
