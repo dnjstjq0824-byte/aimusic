@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"avibe-platform/backend/internal/config"
 	"avibe-platform/backend/internal/domain"
@@ -317,10 +318,14 @@ func (l *RateLimiter) allow(key string, now time.Time) bool {
 }
 
 // RequestID assigns (or propagates) a request ID for log correlation and
-// echoes it on the response.
+// echoes it on the response. Client-supplied IDs are capped so a hostile
+// header cannot bloat logs and responses.
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := strings.TrimSpace(c.GetHeader(RequestIDHeader))
+		if len(id) > 128 {
+			id = id[:128]
+		}
 		if id == "" {
 			id = uuid.NewString()
 		}
@@ -378,7 +383,7 @@ func CORS(cfg *config.Config) gin.HandlerFunc {
 		h.Set("Access-Control-Allow-Origin", origin)
 		h.Set("Vary", "Origin")
 		h.Set("Access-Control-Allow-Credentials", "true")
-		h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID")
 		h.Set("Access-Control-Max-Age", "86400")
 		if c.Request.Method == http.MethodOptions {
@@ -474,6 +479,12 @@ func errCodeOfDomain(err error) string {
 		return "ERR_OAUTH_LAST_METHOD"
 	case errors.Is(err, domain.ErrEmailNotVerified):
 		return "EMAIL_NOT_VERIFIED"
+	case errors.Is(err, domain.ErrHandleTaken):
+		return "ERR_HANDLE_TAKEN"
+	case errors.Is(err, domain.ErrConflict):
+		return "ERR_CONFLICT"
+	case errors.Is(err, domain.ErrQuotaExceeded):
+		return "ERR_DOWNLOAD_QUOTA"
 	default:
 		return ""
 	}
@@ -484,6 +495,13 @@ func AbortError(c *gin.Context, err error) {
 	var gate *domain.GateError
 	if errors.As(err, &gate) {
 		abort(c, gate.StatusCode(), gate.Code, gate.Message)
+		return
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+		// Malformed UUID (or other mistyped literal) in a caller-supplied
+		// id: a client error, not a server failure.
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", "id must be a uuid")
 		return
 	}
 	switch {
@@ -527,6 +545,10 @@ func AbortError(c *gin.Context, err error) {
 		abort(c, http.StatusForbidden, "ERR_OAUTH_LAST_METHOD", "cannot unlink the last login method")
 	case errors.Is(err, domain.ErrEmailNotVerified):
 		abort(c, http.StatusForbidden, "EMAIL_NOT_VERIFIED", "verify your email to use commerce features")
+	case errors.Is(err, domain.ErrConflict):
+		abort(c, http.StatusConflict, "ERR_CONFLICT", "already exists, refresh and retry")
+	case errors.Is(err, domain.ErrQuotaExceeded):
+		abort(c, http.StatusTooManyRequests, "ERR_DOWNLOAD_QUOTA", "daily download limit reached")
 	default:
 		slog.Error("internal_error",
 			"request_id", CurrentRequestID(c),

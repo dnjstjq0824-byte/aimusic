@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"avibe-platform/backend/internal/domain"
@@ -137,11 +138,16 @@ func scanStoreDevice(row interface{ Scan(...any) error }) (*domain.StoreDevice, 
 }
 
 // CreateDevice registers a PENDING player device with a pairing code.
+// The license-cap trigger (000028) rejects over-limit inserts racing past
+// the service pre-check; those surface as ErrForbidden, not 500s.
 func (r *StoreRepo) CreateDevice(ctx context.Context, businessID, deviceName, pairingCode string, pairingExpiry time.Time) (*domain.StoreDevice, error) {
 	d, err := scanStoreDevice(r.db.QueryRowContext(ctx, `
 		INSERT INTO store_devices (business_id, device_name, pairing_code, pairing_expires_at)
 		VALUES ($1::uuid, $2, $3, $4)
 		RETURNING `+storeDeviceColumns, businessID, deviceName, pairingCode, pairingExpiry))
+	if isLicenseLimitExceeded(err) {
+		return nil, fmt.Errorf("%w: license limit exceeded", domain.ErrForbidden)
+	}
 	return d, err
 }
 
@@ -198,12 +204,23 @@ func (r *StoreRepo) ListDevicesByBusiness(ctx context.Context, businessID string
 }
 
 // ActivateDevice claims a pairing code: clears it, stores the token hash.
+// A lost double-claim race surfaces sql.ErrNoRows (already claimed), so the
+// loser never overwrites the winner's token hash.
 func (r *StoreRepo) ActivateDevice(ctx context.Context, id, tokenHash string) error {
-	_, err := r.db.ExecContext(ctx, `
+	tag, err := r.db.ExecContext(ctx, `
 		UPDATE store_devices SET status = 'ACTIVE', device_token_hash = $2,
 			pairing_code = NULL, pairing_expires_at = NULL, updated_at = NOW()
 		WHERE id = $1::uuid AND status = 'PENDING'`, id, tokenHash)
-	return err
+	if err != nil {
+		return err
+	}
+	if n, err := tag.RowsAffected(); err != nil || n == 0 {
+		if err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // UpdateDevice sets name/volume on a device.

@@ -38,16 +38,23 @@ func TOTPProvisioningURI(issuer, account, secret string) string {
 // Recovery codes (avibe-xxxx-xxxx) never verify here; they are checked
 // separately against bcrypt hashes in the users row.
 func VerifyTOTP(secret, code string, now time.Time) bool {
+	_, ok := VerifyTOTPStep(secret, code, now)
+	return ok
+}
+
+// VerifyTOTPStep is VerifyTOTP plus the matched counter step, so callers can
+// bind a code to its step (replay: the same step must never verify twice).
+func VerifyTOTPStep(secret, code string, now time.Time) (int64, bool) {
 	code = strings.TrimSpace(code)
 	if len(code) != totpDigits {
-		return false
+		return 0, false
 	}
 	if _, err := strconv.Atoi(code); err != nil {
-		return false
+		return 0, false
 	}
 	key, err := base32.StdEncoding.DecodeString(padBase32(secret))
 	if err != nil || len(key) == 0 {
-		return false
+		return 0, false
 	}
 	step := now.Unix() / totpStepSeconds
 	for _, s := range []int64{step - totpSkewSteps, step, step + totpSkewSteps} {
@@ -55,10 +62,10 @@ func VerifyTOTP(secret, code string, now time.Time) bool {
 			continue
 		}
 		if hotp(key, uint64(s)) == code {
-			return true
+			return s, true
 		}
 	}
-	return false
+	return 0, false
 }
 
 func padBase32(s string) string {

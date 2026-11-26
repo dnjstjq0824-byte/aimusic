@@ -35,6 +35,9 @@ type PrecheckOutput struct {
 	ExpiresInSecs int    `json:"expiresInSecs"`
 }
 
+// StagingUploadTTL bounds the presigned PUT grant.
+const StagingUploadTTL = 15 * time.Minute
+
 // PrecheckService runs the license gate and issues staging URLs only on pass.
 type PrecheckService struct {
 	repos         *repository.Repos
@@ -64,11 +67,11 @@ func (s *PrecheckService) PreCheck(ctx context.Context, in PrecheckInput) (*Prec
 	if _, _, _, ok := licensegate.ParseStagingKey(key); !ok {
 		return nil, fmt.Errorf("%w: fileName", domain.ErrInvalidInput)
 	}
-	url, err := s.storage.PresignPutPublic(ctx, s.stagingBucket, key, 15*time.Minute)
+	url, err := s.storage.PresignPutPublic(ctx, s.stagingBucket, key, StagingUploadTTL)
 	if err != nil {
 		return nil, err
 	}
-	return &PrecheckOutput{Eligible: true, StagingKey: key, UploadURL: url, ExpiresInSecs: 900}, nil
+	return &PrecheckOutput{Eligible: true, StagingKey: key, UploadURL: url, ExpiresInSecs: int(StagingUploadTTL / time.Second)}, nil
 }
 
 // RightsInput carries the rights declaration for finalize.

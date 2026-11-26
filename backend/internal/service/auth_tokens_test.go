@@ -341,6 +341,49 @@ func TestRefreshMismatchRejectsWithoutRevoke(t *testing.T) {
 	}
 }
 
+func TestRefreshUserErrorDoesNotBurnToken(t *testing.T) {
+	ctx := context.Background()
+	user := &domain.User{ID: "user-1", Role: domain.RoleUser, IsActive: true}
+	s, _ := trackedAuthService(user)
+	first, err := s.Issue(ctx, "user-1", domain.RoleUser)
+	if err != nil {
+		t.Fatalf("Issue: %v", err)
+	}
+	orig := s.getUser
+	blip := true
+	s.getUser = func(ctx context.Context, id string) (*domain.User, error) {
+		if blip {
+			return nil, errors.New("db blip")
+		}
+		return orig(ctx, id)
+	}
+	if _, err := s.Refresh(ctx, first.RefreshToken); err == nil {
+		t.Fatalf("refresh succeeded through a user-store failure")
+	}
+	blip = false
+	if _, err := s.Refresh(ctx, first.RefreshToken); err != nil {
+		t.Fatalf("transient failure burned the single-use token: %v", err)
+	}
+}
+
+func TestRefreshStaleVersionDoesNotBurnToken(t *testing.T) {
+	ctx := context.Background()
+	user := &domain.User{ID: "user-1", Role: domain.RoleUser, IsActive: true}
+	s, _ := trackedAuthService(user)
+	first, err := s.Issue(ctx, "user-1", domain.RoleUser)
+	if err != nil {
+		t.Fatalf("Issue: %v", err)
+	}
+	user.TokenVersion = 1
+	if _, err := s.Refresh(ctx, first.RefreshToken); err == nil {
+		t.Fatalf("stale-version refresh accepted")
+	}
+	user.TokenVersion = 0
+	if _, err := s.Refresh(ctx, first.RefreshToken); err != nil {
+		t.Fatalf("stale-version rejection burned the token: %v", err)
+	}
+}
+
 func TestRefreshTrackerErrorFailsClosed(t *testing.T) {
 	ctx := context.Background()
 	user := &domain.User{ID: "user-1", Role: domain.RoleUser, IsActive: true}

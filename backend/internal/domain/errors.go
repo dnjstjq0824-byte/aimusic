@@ -81,4 +81,10 @@ var (
 	// upload pre-check/finalize, store registration, generations) until the
 	// account email is verified (WI-A2). Streaming stays open.
 	ErrEmailNotVerified = errors.New("email not verified")
+	// ErrConflict marks a create that raced an existing row (unique
+	// violation): the caller holds stale state and should re-read.
+	ErrConflict = errors.New("conflict")
+	// ErrQuotaExceeded marks an atomically enforced usage quota (download
+	// log): the window filled between the advisory check and the write.
+	ErrQuotaExceeded = errors.New("quota exceeded")
 )

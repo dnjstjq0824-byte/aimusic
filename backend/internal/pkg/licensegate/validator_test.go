@@ -3,6 +3,7 @@ package licensegate
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -54,6 +55,15 @@ func (s *stubStore) GetPolicy(_ context.Context, _ string) (*Policy, error) {
 
 func (s *stubStore) GetSubscription(_ context.Context, _, _, _ string) (*Subscription, error) {
 	return s.sub, nil
+}
+
+// verifiedSubAs returns a verified subscription owned by another partner or
+// issued for another provider (cross-ownership regression cases).
+func verifiedSubAs(partnerID, provider string) *Subscription {
+	sub := verifiedSub()
+	sub.PartnerID = partnerID
+	sub.Provider = provider
+	return sub
 }
 
 func verifiedSub() *Subscription {
@@ -192,7 +202,7 @@ func TestValidateCommercialEligibility(t *testing.T) {
 		},
 		{
 			name:  "elevenlabs creator passes",
-			store: &stubStore{policy: elevenPolicy, sub: verifiedSub()},
+			store: &stubStore{policy: elevenPolicy, sub: verifiedSubAs("partner-1", "ELEVENLABS")},
 			req:   PreCheckRequest{PartnerID: "partner-1", Provider: "ELEVENLABS", PlanTierUsed: "Creator", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
 		},
 		{
@@ -241,6 +251,20 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			req:     PreCheckRequest{PartnerID: "partner-1", Provider: "avibe", AudioSHA256: "aaa", GeneratedAt: inWindow, AvibeChecksPassed: true},
 			wantErr: "sha256 already registered",
 		},
+		{
+			name:     "cross-partner subscription rejected",
+			store:    &stubStore{policy: allowed, sub: verifiedSubAs("partner-2", "SUNO")},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", PlanTierUsed: "Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "subscription does not belong",
+			wantCode: domain.CodeNonCommercialTier,
+		},
+		{
+			name:     "cross-provider subscription rejected",
+			store:    &stubStore{policy: allowed, sub: verifiedSubAs("partner-1", "UDIO")},
+			req:      PreCheckRequest{PartnerID: "partner-1", Provider: "SUNO", PlanTierUsed: "Pro", AudioSHA256: "aaa", GeneratedAt: inWindow, SubscriptionID: "sub-1", RequiresActiveSubAtCreation: true},
+			wantErr:  "subscription does not belong",
+			wantCode: domain.CodeNonCommercialTier,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -259,6 +283,9 @@ func TestValidateCommercialEligibility(t *testing.T) {
 			}
 			if err == nil {
 				t.Fatalf("expected error containing %q", tc.wantErr)
+			}
+			if !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("want error containing %q, got %q", tc.wantErr, err.Error())
 			}
 			var gateErr *domain.GateError
 			if !errors.As(err, &gateErr) && tc.wantCode != "" {

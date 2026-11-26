@@ -21,6 +21,12 @@ type fakeBillingStore struct {
 	// events maps event ID -> processed.
 	events map[string]bool
 	usage  *time.Time
+	// activateErr, when non-nil, fails ActivateSubscription (partial-failure drills).
+	activateErr error
+	// markPaidErr, when non-nil, fails MarkOrderPaid (transient-error drills).
+	markPaidErr error
+	// recordFails counts down RecordRefund failures (journal-retry drills).
+	recordFails int
 }
 
 func (f *fakeBillingStore) ListActivePlans(_ context.Context) ([]*domain.BillingPlan, error) {
@@ -77,6 +83,9 @@ func (f *fakeBillingStore) GetOrder(_ context.Context, id string) (*domain.Billi
 }
 
 func (f *fakeBillingStore) MarkOrderPaid(_ context.Context, orderID, key string) (*domain.BillingOrder, error) {
+	if f.markPaidErr != nil {
+		return nil, f.markPaidErr
+	}
 	o, ok := f.orders[orderID]
 	if !ok || o.Status != domain.BillingPending {
 		return nil, domain.ErrNotFound
@@ -93,7 +102,17 @@ func (f *fakeBillingStore) SetOrderStatus(_ context.Context, orderID, status str
 	return nil
 }
 
+func (f *fakeBillingStore) MarkOrderFailed(_ context.Context, orderID string) error {
+	if o, ok := f.orders[orderID]; ok && o.Status == domain.BillingPending {
+		o.Status = domain.BillingFailed
+	}
+	return nil
+}
+
 func (f *fakeBillingStore) ActivateSubscription(_ context.Context, userID, planID, orderID string, start, end time.Time) (*domain.BillingSubscription, error) {
+	if f.activateErr != nil {
+		return nil, f.activateErr
+	}
 	for _, s := range f.subs {
 		if s.UserID == userID && s.Status == domain.BillSubActive {
 			s.Status = domain.BillSubExpired
@@ -174,6 +193,10 @@ func (f *fakeBillingStore) ReleaseRefundClaim(_ context.Context, orderID string)
 }
 
 func (f *fakeBillingStore) RecordRefund(_ context.Context, orderID, status string, amount int) error {
+	if f.recordFails > 0 {
+		f.recordFails--
+		return errors.New("journal write failed")
+	}
 	if o, ok := f.orders[orderID]; ok {
 		o.Status = status
 		o.RefundedAmountKRW = &amount
@@ -405,6 +428,27 @@ func TestWebhookCanceledCancelsSubscription(t *testing.T) {
 	}
 }
 
+func TestWebhookUnknownTypeAckedWithoutRequery(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	hits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+	s := &BillingService{billing: store, toss: toss.NewClient("s", srv.URL, srv.Client()), enabled: true, now: time.Now}
+	raw := []byte(`{"eventType":"SOMETHING_NEW","data":{"paymentKey":"pk-x","orderId":"m-x","status":"DONE"}}`)
+	if err := s.HandleWebhook(context.Background(), raw); err != nil {
+		t.Fatalf("unknown type must ack, got %v", err)
+	}
+	if hits != 0 {
+		t.Fatalf("unknown type must not re-query Toss: %d", hits)
+	}
+	if err := s.HandleWebhook(context.Background(), raw); err != nil {
+		t.Fatalf("duplicate unknown type must ack, got %v", err)
+	}
+}
+
 func TestWebhookRejectsAmountMismatch(t *testing.T) {
 	store := &fakeBillingStore{plans: seedPlan()}
 	store.orders = map[string]*domain.BillingOrder{
@@ -422,6 +466,66 @@ func TestWebhookRejectsAmountMismatch(t *testing.T) {
 	}
 	if store.orders["m-3"].Status != domain.BillingPending {
 		t.Fatalf("order status = %s", store.orders["m-3"].Status)
+	}
+}
+
+func TestWebhookDoneRetryHealsPartialActivation(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	store.orders = map[string]*domain.BillingOrder{
+		"m-9": {ID: "row-9", UserID: "u-9", PlanID: "plan-1", OrderID: "m-9", AmountKRW: 5900, Status: domain.BillingPending},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"paymentKey":"pk-9","orderId":"m-9","status":"DONE","totalAmount":5900,"method":"CARD"}`))
+	}))
+	t.Cleanup(srv.Close)
+	s := &BillingService{billing: store, toss: toss.NewClient("s", srv.URL, srv.Client()), enabled: true, now: time.Now}
+	raw := []byte(`{"eventType":"PAYMENT_STATUS_CHANGED","data":{"paymentKey":"pk-9","orderId":"m-9","status":"DONE"}}`)
+	ctx := context.Background()
+	// First delivery: payment applies, activation fails -> error, stays unprocessed.
+	store.activateErr = errors.New("db blew up")
+	if err := s.HandleWebhook(ctx, raw); err == nil {
+		t.Fatalf("partial failure swallowed")
+	}
+	if store.orders["m-9"].Status != domain.BillingPaid {
+		t.Fatalf("order status = %s", store.orders["m-9"].Status)
+	}
+	if _, err := store.GetActiveSubscription(ctx, "u-9"); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("subscription should be missing, err = %v", err)
+	}
+	// Toss retry: must complete the activation instead of acking a dead order.
+	store.activateErr = nil
+	if err := s.HandleWebhook(ctx, raw); err != nil {
+		t.Fatalf("retry: %v", err)
+	}
+	sub, err := store.GetActiveSubscription(ctx, "u-9")
+	if err != nil || sub.Status != domain.BillSubActive {
+		t.Fatalf("retry did not heal activation: %v", err)
+	}
+	// Once healed, further duplicates ack without re-applying.
+	if err := s.HandleWebhook(ctx, raw); err != nil {
+		t.Fatalf("duplicate: %v", err)
+	}
+}
+
+func TestWebhookDoneTransientStoreErrorStaysUnprocessed(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	store.orders = map[string]*domain.BillingOrder{
+		"m-8": {ID: "row-8", UserID: "u-8", PlanID: "plan-1", OrderID: "m-8", AmountKRW: 5900, Status: domain.BillingPending},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"paymentKey":"pk-8","orderId":"m-8","status":"DONE","totalAmount":5900,"method":"CARD"}`))
+	}))
+	t.Cleanup(srv.Close)
+	s := &BillingService{billing: store, toss: toss.NewClient("s", srv.URL, srv.Client()), enabled: true, now: time.Now}
+	raw := []byte(`{"eventType":"PAYMENT_STATUS_CHANGED","data":{"paymentKey":"pk-8","orderId":"m-8","status":"DONE"}}`)
+	store.markPaidErr = errors.New("connection reset")
+	if err := s.HandleWebhook(context.Background(), raw); err == nil {
+		t.Fatalf("transient store error swallowed")
+	}
+	if processed := store.events["PAYMENT_STATUS_CHANGED|pk-8|m-8|DONE"]; processed {
+		t.Fatalf("transient failure was acknowledged as processed")
 	}
 }
 
@@ -495,6 +599,71 @@ func TestRefundResolvesActivePass(t *testing.T) {
 	}
 	if _, err := s.Refund(context.Background(), "nobody", "", ""); !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("refund without pass: %v", err)
+	}
+}
+
+func TestConfirmHealsPaidWithoutSub(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	store.orders = map[string]*domain.BillingOrder{
+		"m-h": {ID: "row-h", UserID: "u-h", PlanID: "plan-1", OrderID: "m-h", AmountKRW: 5900, Status: domain.BillingPaid},
+	}
+	s, hits := billingTestService(t, store, "DONE", nil)
+	sub, err := s.Confirm(context.Background(), "u-h", "pk-h", "m-h", 5900)
+	if err != nil {
+		t.Fatalf("heal confirm: %v", err)
+	}
+	if sub.Status != domain.BillSubActive {
+		t.Fatalf("sub = %+v", sub)
+	}
+	if *hits != 0 {
+		t.Fatalf("heal must not re-confirm at Toss: %d", *hits)
+	}
+	// Now fully applied: a repeat confirm must fail, not double-activate.
+	if _, err := s.Confirm(context.Background(), "u-h", "pk-h", "m-h", 5900); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("double confirm err = %v", err)
+	}
+}
+
+func TestConfirmTransientMarkPaidSurfaces(t *testing.T) {
+	store := &fakeBillingStore{plans: seedPlan()}
+	s, _ := billingTestService(t, store, "DONE", nil)
+	ctx := context.Background()
+	order, _, err := s.CreateOrder(ctx, "u-1", "LISTENER_PLUS_MONTHLY", time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	// The stub confirms a fixed order ID; point the order at it.
+	order.OrderID = "ORD"
+	store.orders = map[string]*domain.BillingOrder{"ORD": order}
+	store.markPaidErr = errors.New("connection reset")
+	if _, err := s.Confirm(ctx, "u-1", "pk-1", "ORD", 5900); err == nil || !strings.Contains(err.Error(), "connection reset") {
+		t.Fatalf("transient err must surface as-is, got %v", err)
+	}
+	if store.orders["ORD"].Status != domain.BillingPending {
+		t.Fatalf("order must stay PENDING for the Toss retry, got %s", store.orders["ORD"].Status)
+	}
+}
+
+func TestRefundRecordRetryThenCancel(t *testing.T) {
+	s, store, _ := refundTestSetup(t, "")
+	store.recordFails = 1
+	o, err := s.Refund(context.Background(), "u-r1", "m-r1", "변심")
+	if err != nil {
+		t.Fatalf("refund with one journal failure: %v", err)
+	}
+	if o.Status != domain.BillingRefunded || store.subs["u-r1"].Status != domain.BillSubCancelled {
+		t.Fatalf("not converged: order=%s sub=%s", o.Status, store.subs["u-r1"].Status)
+	}
+}
+
+func TestRefundRecordPersistentEndsPass(t *testing.T) {
+	s, store, _ := refundTestSetup(t, "")
+	store.recordFails = 99
+	if _, err := s.Refund(context.Background(), "u-r1", "m-r1", "변심"); err == nil {
+		t.Fatalf("persistent journal failure must surface")
+	}
+	if store.subs["u-r1"].Status != domain.BillSubCancelled {
+		t.Fatalf("pass must end even when the journal fails: %s", store.subs["u-r1"].Status)
 	}
 }
 

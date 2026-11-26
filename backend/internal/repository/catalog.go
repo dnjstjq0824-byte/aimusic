@@ -771,6 +771,16 @@ func (r *JobRepo) MarkRunning(ctx context.Context, id string) error {
 	return err
 }
 
+// TouchRunning refreshes a live job's heartbeat so the stuck-job reaper
+// never mistakes a slow transcode for a dead worker. Call between stages;
+// a stage must always finish within the stuck-after window.
+func (r *JobRepo) TouchRunning(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE transcoding_jobs SET started_at = NOW()
+		WHERE id = $1::uuid AND status = 'RUNNING'`, id)
+	return err
+}
+
 // MarkSucceeded transitions a job to SUCCEEDED.
 func (r *JobRepo) MarkSucceeded(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx,

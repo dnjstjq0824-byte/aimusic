@@ -329,6 +329,37 @@ func TestClaimDeviceFullCycle(t *testing.T) {
 	}
 }
 
+func TestDeviceQueueUsesKST(t *testing.T) {
+	f := newFakeStoreRepo()
+	// Tuesday 23:30 UTC == Wednesday 08:30 KST: before opening in KST.
+	f.now = time.Date(2026, 11, 10, 23, 30, 0, 0, time.UTC)
+	f.businesses["biz-1"] = &domain.StoreBusiness{ID: "biz-1", PartnerID: "partner-1",
+		BusinessNumber: "1234567891", StoreName: "S", LicenseCount: 2, Status: domain.StoreApproved}
+	f.devices["dev-1"] = &domain.StoreDevice{ID: "dev-1", BusinessID: "biz-1",
+		DeviceName: "D", Status: domain.DeviceActive, Volume: 70}
+	plID := "pl-1"
+	f.schedules["biz-1"] = &domain.StoreSchedule{ID: "sch", BusinessID: "biz-1",
+		Weekday: int(time.Wednesday), OpenTime: "09:00", CloseTime: "22:00",
+		PlaylistID: &plID}
+	svc := testStoreService(f, nil, nil, nil)
+	q, err := svc.DeviceQueue(context.Background(), "dev-1")
+	if err != nil {
+		t.Fatalf("DeviceQueue: %v", err)
+	}
+	if q.Open || q.Reason != "off_hours" {
+		t.Fatalf("KST 08:30 must be off_hours, got open=%v reason=%q", q.Open, q.Reason)
+	}
+	// And KST midday serves the scheduled playlist even when UTC says night.
+	f.now = time.Date(2026, 11, 11, 3, 0, 0, 0, time.UTC) // Wed 12:00 KST
+	q, err = svc.DeviceQueue(context.Background(), "dev-1")
+	if err != nil {
+		t.Fatalf("DeviceQueue: %v", err)
+	}
+	if !q.Open || q.Reason != "scheduled" {
+		t.Fatalf("KST 12:00 must be scheduled+open, got open=%v reason=%q", q.Open, q.Reason)
+	}
+}
+
 func TestDeviceQueueAndHeartbeat(t *testing.T) {
 	f := newFakeStoreRepo() // Tuesday 12:00 UTC
 	f.businesses["biz-1"] = &domain.StoreBusiness{ID: "biz-1", PartnerID: "partner-1",
@@ -525,5 +556,33 @@ func TestOwnerPathRegisterListAndIsolation(t *testing.T) {
 	// Partner-link path cannot see business-owned stores (PartnerID "").
 	if _, err := svc.ListDevices(ctx, "partner-1", b.ID); !errors.Is(err, domain.ErrForbidden) {
 		t.Fatalf("partner-path device list err = %v, want ErrForbidden", err)
+	}
+}
+
+func TestAuthorizeDeviceStream(t *testing.T) {
+	f := newFakeStoreRepo()
+	f.businesses["biz-ok"] = &domain.StoreBusiness{ID: "biz-ok", Status: domain.StoreApproved}
+	f.businesses["biz-susp"] = &domain.StoreBusiness{ID: "biz-susp", Status: domain.StoreSuspended}
+	f.businesses["biz-pend"] = &domain.StoreBusiness{ID: "biz-pend", Status: domain.StorePending}
+	f.devices["dev-ok"] = &domain.StoreDevice{ID: "dev-ok", BusinessID: "biz-ok", Status: domain.DeviceActive}
+	f.devices["dev-pend"] = &domain.StoreDevice{ID: "dev-pend", BusinessID: "biz-ok", Status: domain.DevicePending}
+	f.devices["dev-susp"] = &domain.StoreDevice{ID: "dev-susp", BusinessID: "biz-susp", Status: domain.DeviceActive}
+	f.devices["dev-unappr"] = &domain.StoreDevice{ID: "dev-unappr", BusinessID: "biz-pend", Status: domain.DeviceActive}
+	svc := testStoreService(f, nil, nil, nil)
+	ctx := context.Background()
+	if err := svc.AuthorizeDeviceStream(ctx, "dev-ok"); err != nil {
+		t.Fatalf("active device on approved store: %v", err)
+	}
+	if err := svc.AuthorizeDeviceStream(ctx, "dev-pend"); !errors.Is(err, domain.ErrInvalidCredentials) {
+		t.Fatalf("pending device err = %v, want ErrInvalidCredentials", err)
+	}
+	if err := svc.AuthorizeDeviceStream(ctx, "dev-susp"); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("suspended store err = %v, want ErrForbidden", err)
+	}
+	if err := svc.AuthorizeDeviceStream(ctx, "dev-unappr"); !errors.Is(err, domain.ErrForbidden) {
+		t.Fatalf("unapproved store err = %v, want ErrForbidden", err)
+	}
+	if err := svc.AuthorizeDeviceStream(ctx, "dev-nope"); !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("unknown device err = %v, want ErrNotFound", err)
 	}
 }

@@ -312,11 +312,21 @@ func (h *AdminHandler) DSPKit(c *gin.Context) {
 	h.recordAudit(c, "DSP_KIT_EXPORT", "distribution", raw, map[string]any{"tracks": len(kit.Tracks), "skipped": len(kit.Skipped)})
 	if strings.ToLower(strings.TrimSpace(c.Query("format"))) == "csv" {
 		c.Header("Content-Type", "text/csv; charset=utf-8")
-		c.Header("Content-Disposition", `attachment; filename="dsp-kit-`+kit.GeneratedAt+`.csv"`)
+		c.Header("Content-Disposition", `attachment; filename="`+safeExportFilename(kit.GeneratedAt)+`"`)
 		c.String(http.StatusOK, "%s", service.BuildDSPKitCSV(kit))
 		return
 	}
 	ok(c, kit)
+}
+
+// safeExportFilename renders the DSP-kit CSV filename. GeneratedAt is RFC3339,
+// which contains ':' — illegal in Windows filenames — so it is normalised to '-'.
+func safeExportFilename(generatedAt string) string {
+	stamp := strings.NewReplacer(":", "-", "/", "-", "\\", "-").Replace(strings.TrimSpace(generatedAt))
+	if stamp == "" {
+		stamp = "export"
+	}
+	return "dsp-kit-" + stamp + ".csv"
 }
 
 type verifyStoreRequest struct {

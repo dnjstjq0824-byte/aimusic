@@ -29,6 +29,27 @@ func TestVerifyTOTP_RFC6238Vectors(t *testing.T) {
 	}
 }
 
+func TestVerifyTOTPStep_ReportsCounter(t *testing.T) {
+	cases := []struct {
+		unix int64
+		code string
+		step int64
+	}{
+		{59, "287082", 1},
+		{1111111109, "081804", 37037036},
+		{1234567890, "005924", 41152263},
+	}
+	for _, c := range cases {
+		step, ok := VerifyTOTPStep(rfcSecretB32, c.code, time.Unix(c.unix, 0).UTC())
+		if !ok || step != c.step {
+			t.Errorf("t=%d: step=%d ok=%v, want step=%d", c.unix, step, ok, c.step)
+		}
+	}
+	if _, ok := VerifyTOTPStep(rfcSecretB32, "000000", time.Unix(1234567890, 0).UTC()); ok {
+		t.Errorf("bad code accepted with step")
+	}
+}
+
 func TestVerifyTOTP_Rejects(t *testing.T) {
 	now := time.Unix(1234567890, 0).UTC()
 	for _, bad := range []string{"000000", "abc123", "12345", "1234567", "", "  "} {

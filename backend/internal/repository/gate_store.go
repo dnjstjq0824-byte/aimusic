@@ -52,7 +52,9 @@ func (s *GateStore) GetPolicy(ctx context.Context, provider string) (*licensegat
 }
 
 // GetSubscription loads the license-gate view of a subscription by ID,
-// or by partner+provider when subscriptionID is empty.
+// or by partner+provider when subscriptionID is empty. The ID lookup is
+// scoped to partner+provider so one partner's subscription ID can never be
+// reused by another partner (or for another provider).
 func (s *GateStore) GetSubscription(ctx context.Context, partnerID, provider, subscriptionID string) (*licensegate.Subscription, error) {
 	sub := &licensegate.Subscription{}
 	var verifiedAt, expiresAt sql.NullTime
@@ -61,7 +63,9 @@ func (s *GateStore) GetSubscription(ctx context.Context, partnerID, provider, su
 		row = s.db.QueryRowContext(ctx, `
 			SELECT id::text, partner_id::text, provider, plan_name, status,
 				created_at, verified_at, expires_at
-			FROM partner_ai_subscriptions WHERE id = $1::uuid`, subscriptionID)
+			FROM partner_ai_subscriptions
+			WHERE id = $1::uuid AND partner_id = $2::uuid AND provider = $3`,
+			subscriptionID, partnerID, provider)
 	} else {
 		row = s.db.QueryRowContext(ctx, `
 			SELECT id::text, partner_id::text, provider, plan_name, status,

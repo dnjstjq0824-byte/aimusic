@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -44,7 +47,11 @@ func (s *AuthService) recordLoginFailure(ctx context.Context, email string) {
 	pipe := s.repos.RDB.Pipeline()
 	pipe.Incr(ctx, key)
 	pipe.Expire(ctx, key, loginFailWindow)
-	_, _ = pipe.Exec(ctx)
+	// Never silent: a failing increment quietly disables the brute-force
+	// budget while reads keep succeeding.
+	if _, err := pipe.Exec(ctx); err != nil {
+		slog.Warn("login_throttle_record_failed", "err", err)
+	}
 }
 
 func (s *AuthService) clearLoginFailures(ctx context.Context, email string) {
@@ -54,11 +61,42 @@ func (s *AuthService) clearLoginFailures(ctx context.Context, email string) {
 	_ = s.repos.RDB.Del(ctx, loginFailKey(email)).Err()
 }
 
+// totpClaimLua claims a TOTP counter step for a user: 1 when the step is
+// fresh, 0 when it (or a later step) already verified. KEYS[1]=user key,
+// ARGV[1]=step, ARGV[2]=ttl seconds.
+const totpClaimLua = `
+local last = redis.call('GET', KEYS[1])
+if last and tonumber(last) >= tonumber(ARGV[1]) then return 0 end
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+return 1
+`
+
+func totpUsedKey(userID string) string { return "totp_used:" + userID }
+
+// claimTOTPStep binds a verified code to its counter step (single-use).
+// Redis failures fail closed: an unclaimable code is unusable, exactly like
+// the login throttle. A nil store (unit tests) skips the claim.
+func (s *AuthService) claimTOTPStep(ctx context.Context, userID string, step int64) error {
+	if s.repos == nil || s.repos.RDB == nil {
+		return nil
+	}
+	n, err := s.repos.RDB.Eval(ctx, totpClaimLua, []string{totpUsedKey(userID)}, step, 180).Int()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return domain.ErrTOTPInvalid
+	}
+	return nil
+}
+
 // checkTOTP verifies a 6-digit code or consumes a single-use recovery code.
+// TOTP codes are single-use per step: without the claim below, an
+// intercepted code replays for its whole ±1-step window.
 func (s *AuthService) checkTOTP(ctx context.Context, u *domain.User, code string) error {
 	code = strings.TrimSpace(code)
-	if apcrypto.VerifyTOTP(u.TOTPSecret, code, time.Now()) {
-		return nil
+	if step, ok := apcrypto.VerifyTOTPStep(u.TOTPSecret, code, time.Now()); ok {
+		return s.claimTOTPStep(ctx, u.ID, step)
 	}
 	hashes, err := s.repos.Users.TOTPRecoveryHashes(ctx, u.ID)
 	if err != nil {
@@ -66,7 +104,13 @@ func (s *AuthService) checkTOTP(ctx context.Context, u *domain.User, code string
 	}
 	for _, h := range hashes {
 		if bcrypt.CompareHashAndPassword([]byte(h), []byte(code)) == nil {
-			return s.repos.Users.ConsumeTOTPRecoveryHash(ctx, u.ID, h)
+			if err := s.repos.Users.ConsumeTOTPRecoveryHash(ctx, u.ID, h); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return domain.ErrTOTPInvalid
+				}
+				return err
+			}
+			return nil
 		}
 	}
 	return domain.ErrTOTPInvalid
@@ -78,11 +122,17 @@ type TOTPEnrollment struct {
 	ProvisioningURI string `json:"provisioningUri"`
 }
 
-// EnrollTOTP stages a fresh secret (previous staged secret is replaced).
+// EnrollTOTP stages a fresh secret (a previous *staged* secret is replaced).
+// Refuses accounts with 2FA already enabled: staging overwrites the live
+// secret, so re-enrolling and abandoning the flow would silently strip 2FA.
+// Disable first, then enroll.
 func (s *AuthService) EnrollTOTP(ctx context.Context, userID string) (*TOTPEnrollment, error) {
-	u, err := s.repos.Users.GetByID(ctx, userID)
+	u, err := s.getUser(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+	if u.TOTPEnabled {
+		return nil, fmt.Errorf("%w: 2FA already enabled (disable first to re-enroll)", domain.ErrInvalidInput)
 	}
 	secret, err := apcrypto.GenerateTOTPSecret()
 	if err != nil {

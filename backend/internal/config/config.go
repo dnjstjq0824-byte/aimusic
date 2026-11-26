@@ -4,6 +4,7 @@ package config
 import (
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -218,8 +219,14 @@ func Load() (*Config, error) {
 		Password: os.Getenv("DB_PASSWORD"),
 	}
 	if cfg.DB.DSN == "" {
-		cfg.DB.DSN = fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-			cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
+		sslMode := "disable"
+		if !nonProdEnv(cfg.Env) {
+			// Never assemble a plaintext default for prod: without a
+			// TLS-capable server this fails closed at connect time.
+			sslMode = "require"
+		}
+		cfg.DB.DSN = fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+			cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name, sslMode)
 	}
 	redisHost := getenv("REDIS_HOST", "localhost")
 	redisPort := getenvInt("REDIS_PORT", 6379)
@@ -352,7 +359,29 @@ func (c *Config) Validate() error {
 	if strings.TrimSpace(c.HLS.SigningKey) == "" {
 		return fmt.Errorf("HLS_SIGNING_KEY is required in env %q", c.Env)
 	}
+	if c.HLS.URLTTLSecs <= 0 {
+		return fmt.Errorf("HLS_URL_TTL_SECONDS must be positive in env %q", c.Env)
+	}
+	if !prodDBTLSOK(c.DB.DSN) {
+		return fmt.Errorf("DB_DSN must use TLS in env %q (sslmode=require, verify-ca, or verify-full)", c.Env)
+	}
 	return nil
+}
+
+// prodDBTLSOK reports whether a database URL carries explicit TLS. The
+// implied default (prefer) silently falls back to plaintext against a
+// non-TLS server, so prod requires an explicit encrypted mode.
+func prodDBTLSOK(dsn string) bool {
+	u, err := url.Parse(strings.TrimSpace(dsn))
+	if err != nil {
+		return false
+	}
+	switch u.Query().Get("sslmode") {
+	case "require", "verify-ca", "verify-full":
+		return true
+	default:
+		return false
+	}
 }
 
 func getenvList(key string) []string {

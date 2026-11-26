@@ -550,7 +550,9 @@ func errCodeForOAuth(err error) string {
 
 func queryInt(c *gin.Context, key string, def int) int {
 	if raw := c.Query(key); raw != "" {
-		if n, err := strconv.Atoi(raw); err == nil {
+		// Negative values are invalid (OFFSET -5 is a Postgres error),
+		// so they fall back to the default like garbage input.
+		if n, err := strconv.Atoi(raw); err == nil && n >= 0 {
 			return n
 		}
 	}

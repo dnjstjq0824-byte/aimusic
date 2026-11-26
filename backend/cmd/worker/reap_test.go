@@ -52,10 +52,47 @@ func (f *fakeReapTracks) UpdateStatus(_ context.Context, trackID, status string,
 	return nil
 }
 
-type fakeReapQueue struct{ queued []repository.TranscodePayload }
+type fakeReapQueue struct {
+	queued    []repository.TranscodePayload
+	queuedGen []repository.GenerationPayload
+}
 
 func (f *fakeReapQueue) EnqueueTranscode(_ context.Context, p repository.TranscodePayload) error {
 	f.queued = append(f.queued, p)
+	return nil
+}
+
+func (f *fakeReapQueue) EnqueueGeneration(_ context.Context, p repository.GenerationPayload) error {
+	f.queuedGen = append(f.queuedGen, p)
+	return nil
+}
+
+type fakeReapGenJobs struct {
+	stuck  []*domain.GenerationJob
+	reset  map[string]bool
+	failed map[string]string
+}
+
+func (f *fakeReapGenJobs) ListStuckRunning(_ context.Context, _ time.Time, _ int) ([]*domain.GenerationJob, error) {
+	return f.stuck, nil
+}
+
+func (f *fakeReapGenJobs) RequeueStuck(_ context.Context, id string) (bool, error) {
+	if f.reset == nil {
+		f.reset = map[string]bool{}
+	}
+	if f.reset[id] {
+		return false, nil
+	}
+	f.reset[id] = true
+	return true, nil
+}
+
+func (f *fakeReapGenJobs) MarkFailed(_ context.Context, id, msg string) error {
+	if f.failed == nil {
+		f.failed = map[string]string{}
+	}
+	f.failed[id] = msg
 	return nil
 }
 
@@ -107,5 +144,25 @@ func TestSweepEmptyIsSilent(t *testing.T) {
 	q := &fakeReapQueue{}
 	if got := sweepStuckJobs(context.Background(), &fakeReapJobs{}, &fakeReapTracks{}, q, "stage-bkt", 30*time.Minute); got != 0 {
 		t.Fatalf("requeued = %d", got)
+	}
+	if got := sweepStuckGenerations(context.Background(), &fakeReapGenJobs{}, q, 30*time.Minute); got != 0 {
+		t.Fatalf("gen requeued = %d", got)
+	}
+}
+
+func TestSweepRequeuesStuckGenerations(t *testing.T) {
+	j := &fakeReapGenJobs{stuck: []*domain.GenerationJob{
+		{ID: "g-1", Status: "RUNNING", Attempts: 0},
+		{ID: "g-2", Status: "RUNNING", Attempts: maxAttempts},
+	}}
+	q := &fakeReapQueue{}
+	if got := sweepStuckGenerations(context.Background(), j, q, 30*time.Minute); got != 1 {
+		t.Fatalf("requeued = %d, want 1", got)
+	}
+	if len(q.queuedGen) != 1 || q.queuedGen[0].JobID != "g-1" {
+		t.Fatalf("queuedGen = %+v", q.queuedGen)
+	}
+	if _, ok := j.failed["g-2"]; !ok {
+		t.Fatalf("exhausted generation not failed")
 	}
 }

@@ -149,10 +149,23 @@ func (r *BillingRepo) MarkOrderPaid(ctx context.Context, orderID, paymentKey str
 	return o, err
 }
 
-// SetOrderStatus force-sets an order status (failed/cancelled/refunded paths).
+// SetOrderStatus force-sets an order status. Only the webhook CANCELED path
+// uses it: Toss is the source of truth for cancels, so a CANCELED event
+// legitimately overwrites whatever the order says. Every other transition
+// is predicated (MarkOrderPaid/MarkOrderFailed/ClaimRefund).
 func (r *BillingRepo) SetOrderStatus(ctx context.Context, orderID, status string) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE billing_orders SET status = $2 WHERE order_id = $1`, orderID, status)
+	return err
+}
+
+// MarkOrderFailed transitions PENDING -> FAILED, ignoring orders that moved
+// on (a raced confirm already marked this one PAID — the winner owns it, so
+// the loser must never overwrite PAID with FAILED).
+func (r *BillingRepo) MarkOrderFailed(ctx context.Context, orderID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE billing_orders SET status = 'FAILED'
+		WHERE order_id = $1 AND status = 'PENDING'`, orderID)
 	return err
 }
 

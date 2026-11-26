@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -465,7 +466,11 @@ func (s *OAuthService) Callback(ctx context.Context, in OAuthCallbackInput) (*OA
 	if err != nil {
 		return nil, err
 	}
-	if link, err := s.links.GetByProviderUID(ctx, provider, ident.UID); err == nil {
+	link, err := s.links.GetByProviderUID(ctx, provider, ident.UID)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	}
+	if err == nil {
 		u, err := s.users.GetByID(ctx, link.UserID)
 		if err != nil {
 			return nil, domain.ErrInvalidCredentials
@@ -507,6 +512,9 @@ func (s *OAuthService) Callback(ctx context.Context, in OAuthCallbackInput) (*OA
 	}
 	email := strings.ToLower(strings.TrimSpace(ident.Email))
 	u, err := s.users.GetByEmail(ctx, email)
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	}
 	if err != nil {
 		randomPW := make([]byte, 32)
 		if _, err := rand.Read(randomPW); err != nil {

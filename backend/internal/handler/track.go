@@ -371,7 +371,11 @@ func (h *TrackHandler) Download(c *gin.Context) {
 		abort(c, http.StatusBadGateway, "ERR_DOWNLOAD_UNAVAILABLE", "master file unavailable")
 		return
 	}
-	if err := h.Repos.Downloads.Log(ctx, userID, track.ID, plan.TotalSize); err != nil {
+	// The log enforces the quota atomically (the CountSince above is only an
+	// advisory early-out before the expensive storage fetch): a quota filled
+	// by a raced download surfaces the same 429 as the advisory check.
+	since := time.Now().Add(-downloadWindowHours * time.Hour)
+	if err := h.Repos.Downloads.Log(ctx, userID, track.ID, plan.TotalSize, since, maxDownloadsPerDay); err != nil {
 		AbortError(c, err)
 		return
 	}

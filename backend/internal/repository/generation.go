@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"avibe-platform/backend/internal/domain"
@@ -38,19 +39,53 @@ func scanGenerationJob(row interface{ Scan(...any) error }) (*domain.GenerationJ
 	return g, nil
 }
 
-// Create inserts a QUEUED generation job.
-func (r *GenerationJobRepo) Create(ctx context.Context, partnerID, prompt string, lyrics *string, model, paramsJSON string) (*domain.GenerationJob, error) {
-	return r.CreateFull(ctx, partnerID, prompt, lyrics, model, "", paramsJSON, nil, "")
-}
-
-// CreateFull inserts a QUEUED generation job with a license reference and
-// optional reproducibility pins (seed/modelVersion, WI-G0).
-func (r *GenerationJobRepo) CreateFull(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string) (*domain.GenerationJob, error) {
-	g, err := scanGenerationJob(r.db.QueryRowContext(ctx, `
+// CreateFullCapped inserts a QUEUED generation job with a license reference
+// and optional reproducibility pins (seed/modelVersion, WI-G0), enforcing
+// the daily cap atomically. The partner row is locked in its own statement
+// inside an explicit transaction: the lock wait lands before the counting
+// snapshot, so concurrent submits serialize and exactly cap rows win. (A
+// single-statement CTE cannot do this — the whole statement shares one
+// snapshot, so concurrent writers all count stale and all insert.)
+// sql.ErrNoRows means cap reached; a missing partner is ErrNotFound.
+func (r *GenerationJobRepo) CreateFullCapped(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string, day time.Time, cap int) (*domain.GenerationJob, error) {
+	// GenJobs never runs inside WithTx, so the handle is always the pool in
+	// practice; the fallback keeps transactional callers serial-correct.
+	if sqldb, ok := r.db.(*sql.DB); ok {
+		tx, err := sqldb.BeginTx(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		defer tx.Rollback()
+		var pid string
+		if err := tx.QueryRowContext(ctx,
+			`SELECT id::text FROM partner_profiles WHERE id = $1::uuid FOR UPDATE`, partnerID).Scan(&pid); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, domain.ErrNotFound
+			}
+			return nil, err
+		}
+		g, err := scanGenerationJob(tx.QueryRowContext(ctx, `
+			INSERT INTO generation_jobs (partner_id, prompt, lyrics, model, license_ref, params_json, seed, model_version)
+			SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8
+			WHERE (SELECT COUNT(*) FROM generation_jobs
+			       WHERE partner_id = $1::uuid AND created_at >= $9) < $10
+			RETURNING `+generationJobColumns,
+			partnerID, prompt, nullStr(lyrics), model, licenseRef, paramsJSON, nullInt64(seed), modelVersion, day, cap))
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, err
+		}
+		return g, nil
+	}
+	return scanGenerationJob(r.db.QueryRowContext(ctx, `
 		INSERT INTO generation_jobs (partner_id, prompt, lyrics, model, license_ref, params_json, seed, model_version)
-		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING `+generationJobColumns, partnerID, prompt, nullStr(lyrics), model, licenseRef, paramsJSON, nullInt64(seed), modelVersion))
-	return g, err
+		SELECT $1::uuid, $2, $3, $4, $5, $6, $7, $8
+		WHERE (SELECT COUNT(*) FROM generation_jobs
+		       WHERE partner_id = $1::uuid AND created_at >= $9) < $10
+		RETURNING `+generationJobColumns,
+		partnerID, prompt, nullStr(lyrics), model, licenseRef, paramsJSON, nullInt64(seed), modelVersion, day, cap))
 }
 
 // UpdateResult records the contract-v2 inference evidence (WI-G1): the exact
@@ -76,15 +111,6 @@ func (r *GenerationJobRepo) FindSucceededByOutputKey(ctx context.Context, partne
 		return nil, nil
 	}
 	return g, err
-}
-
-// CountTodayByPartner counts jobs filed since day (quota input).
-func (r *GenerationJobRepo) CountTodayByPartner(ctx context.Context, partnerID string, day time.Time) (int64, error) {
-	var n int64
-	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM generation_jobs WHERE partner_id = $1::uuid AND created_at >= $2`,
-		partnerID, day).Scan(&n)
-	return n, err
 }
 
 // RecordViolation logs a banned-prompt strike.
@@ -159,4 +185,46 @@ func (r *GenerationJobRepo) MarkFailed(ctx context.Context, id, errMsg string) e
 		UPDATE generation_jobs SET status = 'FAILED', error = $2,
 			attempts = attempts + 1, updated_at = NOW() WHERE id = $1::uuid`, id, errMsg)
 	return err
+}
+
+// ListStuckRunning returns RUNNING jobs untouched since the cutoff (worker
+// died mid-job and the Redis payload is gone).
+func (r *GenerationJobRepo) ListStuckRunning(ctx context.Context, cutoff time.Time, limit int) ([]*domain.GenerationJob, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT `+generationJobColumns+` FROM generation_jobs
+		WHERE status = 'RUNNING' AND updated_at < $1
+		ORDER BY updated_at ASC LIMIT $2`, cutoff, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.GenerationJob{}
+	for rows.Next() {
+		g, err := scanGenerationJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
+// RequeueStuck resets one RUNNING job to QUEUED (attempts+1). It reports
+// whether the row was actually reset (a live worker may have finished it).
+func (r *GenerationJobRepo) RequeueStuck(ctx context.Context, id string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE generation_jobs SET status = 'QUEUED', attempts = attempts + 1,
+			error = NULL, updated_at = NOW()
+		WHERE id = $1::uuid AND status = 'RUNNING'`, id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
 }

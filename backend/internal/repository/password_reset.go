@@ -43,10 +43,13 @@ func (r *PasswordResetRepo) GetByHash(ctx context.Context, tokenHash string) (*d
 	return t, err
 }
 
-// MarkUsed consumes a reset token exactly once.
+// MarkUsed consumes a reset token exactly once. The expiry predicate closes
+// the check-then-claim TOCTOU: a token expiring between GetByHash and the
+// claim loses the race instead of resetting a password late.
 func (r *PasswordResetRepo) MarkUsed(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx,
-		`UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1::uuid AND used_at IS NULL`, id)
+		`UPDATE password_reset_tokens SET used_at = NOW()
+		WHERE id = $1::uuid AND used_at IS NULL AND expires_at > NOW()`, id)
 	if err != nil {
 		return err
 	}

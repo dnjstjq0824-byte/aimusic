@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -97,8 +98,8 @@ func (h *SEOHandler) Creator(c *gin.Context) {
 }
 
 // notifySearchAsync pushes changed page paths to IndexNow and the CDN purge
-// in the background (S3/S5). Failures only surface in the audit logs; the
-// caller response never waits for them.
+// in the background (S3/S5). Failures only surface in the logs; the caller
+// response never waits for them.
 func notifySearchAsync(svc *service.SEOService, paths []string) {
 	if svc == nil || len(paths) == 0 {
 		return
@@ -106,8 +107,12 @@ func notifySearchAsync(svc *service.SEOService, paths []string) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.WithoutCancel(context.Background()), 30*time.Second)
 		defer cancel()
-		_, _, _ = svc.SubmitIndexNow(ctx, paths)
-		_, _ = svc.PurgeCache(ctx, svc.ExpandLocales(paths))
+		if _, _, err := svc.SubmitIndexNow(ctx, paths); err != nil {
+			slog.Warn("seo_indexnow_async_failed", "paths", len(paths), "err", err)
+		}
+		if _, err := svc.PurgeCache(ctx, svc.ExpandLocales(paths)); err != nil {
+			slog.Warn("seo_purge_async_failed", "paths", len(paths), "err", err)
+		}
 	}()
 }
 

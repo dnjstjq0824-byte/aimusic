@@ -8,8 +8,9 @@ import (
 func prodConfig() *Config {
 	return &Config{
 		Env:  "prod",
+		DB:   DBConfig{DSN: "postgres://avibe:secret@postgres:5432/avibe?sslmode=require"},
 		JWT:  JWTConfig{AccessSecret: strings.Repeat("a", 32), RefreshSecret: strings.Repeat("r", 32)},
-		HLS:  HLSConfig{SigningKey: "hls-key"},
+		HLS:  HLSConfig{SigningKey: "hls-key", URLTTLSecs: 300},
 		Mail: MailConfig{SMTPHost: "smtp.example.com"},
 	}
 }
@@ -35,6 +36,46 @@ func TestValidateProdFailsClosed(t *testing.T) {
 	noHLS.HLS.SigningKey = ""
 	if err := noHLS.Validate(); err == nil || !strings.Contains(err.Error(), "HLS_SIGNING_KEY") {
 		t.Fatalf("missing HLS key accepted: %v", err)
+	}
+	noTTL := prodConfig()
+	noTTL.HLS.URLTTLSecs = 0
+	if err := noTTL.Validate(); err == nil || !strings.Contains(err.Error(), "HLS_URL_TTL_SECONDS") {
+		t.Fatalf("non-positive HLS TTL accepted: %v", err)
+	}
+}
+
+func TestValidateProdRequiresDBTLS(t *testing.T) {
+	disable := prodConfig()
+	disable.DB.DSN = "postgres://avibe:pw@postgres:5432/avibe?sslmode=disable"
+	if err := disable.Validate(); err == nil || !strings.Contains(err.Error(), "sslmode") {
+		t.Fatalf("disable DSN accepted: %v", err)
+	}
+	empty := prodConfig()
+	empty.DB.DSN = ""
+	if err := empty.Validate(); err == nil || !strings.Contains(err.Error(), "DB_DSN") {
+		t.Fatalf("empty DSN accepted: %v", err)
+	}
+	implied := prodConfig()
+	implied.DB.DSN = "postgres://avibe:pw@postgres:5432/avibe"
+	if err := implied.Validate(); err == nil || !strings.Contains(err.Error(), "sslmode") {
+		t.Fatalf("default (prefer) DSN accepted: %v", err)
+	}
+}
+
+func TestLoadBuildsSecureProdDSN(t *testing.T) {
+	t.Setenv("APP_ENV", "prod")
+	t.Setenv("DB_DSN", "")
+	t.Setenv("DB_HOST", "postgres")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(cfg.DB.DSN, "sslmode=require") {
+		t.Fatalf("prod built DSN = %q, want sslmode=require", cfg.DB.DSN)
+	}
+	t.Setenv("APP_ENV", "local")
+	if cfg, _ = Load(); !strings.Contains(cfg.DB.DSN, "sslmode=disable") {
+		t.Fatalf("local built DSN = %q, want sslmode=disable default", cfg.DB.DSN)
 	}
 }
 

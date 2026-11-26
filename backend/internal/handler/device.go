@@ -88,6 +88,10 @@ func (h *DeviceHandler) DeviceHeartbeat(c *gin.Context) {
 // DeviceStream issues a signed HLS URL for the player. Store licenses are
 // commercial, so players always get the HQ master playlist.
 func (h *DeviceHandler) DeviceStream(c *gin.Context) {
+	if err := h.Services.Store.AuthorizeDeviceStream(c.Request.Context(), CurrentDeviceID(c)); err != nil {
+		AbortError(c, err)
+		return
+	}
 	track, err := h.Repos.Tracks.GetByID(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		AbortError(c, err)

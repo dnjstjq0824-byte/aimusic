@@ -63,6 +63,11 @@ func (r *UserRepo) CreateWithProfile(ctx context.Context, email, passwordHash, r
 		RETURNING `+userColumns,
 		email, passwordHash, role, displayName, birth, confirmed))
 	if err != nil {
+		// Only users_email_unique can fire here: a concurrent register
+		// raced past the GetByEmail pre-check.
+		if isUniqueViolation(err) {
+			return nil, domain.ErrEmailTaken
+		}
 		return nil, err
 	}
 	return u, nil
@@ -276,12 +281,23 @@ func (r *UserRepo) TOTPRecoveryHashes(ctx context.Context, id string) ([]string,
 	return splitKeywords(joined.String), nil
 }
 
-// ConsumeTOTPRecoveryHash removes one used recovery hash.
+// ConsumeTOTPRecoveryHash removes one used recovery hash. The membership
+// predicate makes double-use race: the loser gets sql.ErrNoRows (already
+// consumed) instead of a second login on one single-use code.
 func (r *UserRepo) ConsumeTOTPRecoveryHash(ctx context.Context, id, hash string) error {
-	_, err := r.db.ExecContext(ctx,
+	tag, err := r.db.ExecContext(ctx,
 		`UPDATE users SET totp_recovery_hashes = array_remove(totp_recovery_hashes, $2)
-		WHERE id = $1::uuid`, id, hash)
-	return err
+		WHERE id = $1::uuid AND $2 = ANY(totp_recovery_hashes)`, id, hash)
+	if err != nil {
+		return err
+	}
+	if n, err := tag.RowsAffected(); err != nil || n == 0 {
+		if err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // CountAll returns the total user count.
@@ -485,7 +501,14 @@ func (r *SubscriptionRepo) Create(ctx context.Context, partnerID, provider, plan
 		INSERT INTO partner_ai_subscriptions (partner_id, provider, plan_name, proof_object_key)
 		VALUES ($1::uuid, $2, $3, $4)
 		RETURNING `+subscriptionColumns, partnerID, provider, planName, nullStr(proofKey)))
-	return s, err
+	if err != nil {
+		// partner+provider is unique: a double submit or a raced create.
+		if isUniqueViolation(err) {
+			return nil, domain.ErrConflict
+		}
+		return nil, err
+	}
+	return s, nil
 }
 
 func (r *SubscriptionRepo) GetByID(ctx context.Context, id string) (*domain.PartnerAISubscription, error) {

@@ -31,7 +31,7 @@ func (r *AuditRepo) List(ctx context.Context, action, entityType string, limit, 
 	if offset < 0 {
 		offset = 0
 	}
-	q := `SELECT id, actor_user_id, action, entity_type, entity_id, metadata::text, ip, created_at
+	q := `SELECT id::text, actor_user_id::text, action, entity_type, entity_id, metadata::text, ip, created_at
 	      FROM audit_events WHERE 1=1`
 	args := []any{}
 	if strings.TrimSpace(action) != "" {

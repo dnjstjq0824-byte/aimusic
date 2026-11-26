@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -69,16 +70,44 @@ func (s *ReviewService) Pending(ctx context.Context) (*PendingQueues, error) {
 	}, nil
 }
 
+// canReviewApprove reports whether a track in status may be approved to
+// READY: transcode-complete review states only. UPLOADED/TRANSCODING have no
+// finished HLS, and TAKEN_DOWN bytes are already purged; LICENSE_GATE_REJECTED
+// stays approvable so a rejected track can be reconsidered, and READY so
+// re-approval stays idempotent.
+func canReviewApprove(status string) bool {
+	switch status {
+	case domain.TrackLicenseGatePending, domain.TrackLicenseGateRejected, domain.TrackReady:
+		return true
+	default:
+		return false
+	}
+}
+
+// canReviewReject reports whether a track in status may be rejected: any
+// status except TAKEN_DOWN, whose bytes are already purged — rejecting it
+// would misleadingly move a dead track back into the review queue.
+func canReviewReject(status string) bool {
+	return status != domain.TrackTakenDown
+}
+
 // ReviewTrack approves a track to READY or rejects it with a Korean reason.
 func (s *ReviewService) ReviewTrack(ctx context.Context, trackID string, approve bool, reason string) (*domain.Track, error) {
-	if _, err := s.repos.Tracks.GetByID(ctx, trackID); err != nil {
+	track, err := s.repos.Tracks.GetByID(ctx, trackID)
+	if err != nil {
 		return nil, err
 	}
 	if approve {
+		if !canReviewApprove(track.Status) {
+			return nil, fmt.Errorf("%w: cannot approve track in status %s", domain.ErrInvalidInput, track.Status)
+		}
 		if err := s.repos.Tracks.UpdateStatus(ctx, trackID, domain.TrackReady, nil); err != nil {
 			return nil, err
 		}
 	} else {
+		if !canReviewReject(track.Status) {
+			return nil, fmt.Errorf("%w: cannot reject a taken-down track", domain.ErrInvalidInput)
+		}
 		if reason == "" {
 			reason = "라이선스 검토 결과 배포가 거부되었습니다."
 		}
@@ -212,7 +241,7 @@ func (s *DisputeService) Resolve(ctx context.Context, disputeID, resolverID stri
 		next = 3
 	}
 	var expires *time.Time
-	now := time.Now()
+	now := time.Now().UTC()
 	switch next {
 	case 1:
 		e := now.Add(7 * 24 * time.Hour)

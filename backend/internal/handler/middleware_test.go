@@ -109,6 +109,20 @@ func TestCORSAllowsListedOrigin(t *testing.T) {
 	if pre.Code != http.StatusNoContent {
 		t.Fatalf("preflight status = %d, want 204", pre.Code)
 	}
+	if methods := pre.Header().Get("Access-Control-Allow-Methods"); !strings.Contains(methods, "PATCH") {
+		t.Fatalf("preflight must allow PATCH (used by /me/locale), got %q", methods)
+	}
+}
+
+func TestRequestIDCapsClientValue(t *testing.T) {
+	r := testEngine(nil, RequestID())
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+	req.Header.Set(RequestIDHeader, strings.Repeat("x", 500))
+	r.ServeHTTP(w, req)
+	if got := w.Header().Get(RequestIDHeader); len(got) != 128 {
+		t.Fatalf("capped id len = %d, want 128", len(got))
+	}
 }
 
 func TestRateLimitBurstsThen429(t *testing.T) {

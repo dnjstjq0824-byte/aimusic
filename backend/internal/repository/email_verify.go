@@ -55,7 +55,8 @@ func (r *EmailVerifyRepo) GetByHash(ctx context.Context, tokenHash string) (*dom
 // MarkUsed consumes a verification exactly once.
 func (r *EmailVerifyRepo) MarkUsed(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx,
-		`UPDATE email_verifications SET used_at = NOW() WHERE id = $1::uuid AND used_at IS NULL`, id)
+		`UPDATE email_verifications SET used_at = NOW()
+		WHERE id = $1::uuid AND used_at IS NULL AND expires_at > NOW()`, id)
 	if err != nil {
 		return err
 	}

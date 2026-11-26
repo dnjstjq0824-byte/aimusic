@@ -80,7 +80,16 @@ func (s *CertificateService) Issue(ctx context.Context, trackID, actorID string)
 	if err != nil {
 		return nil, err
 	}
-	return s.repos.Certificates.Create(ctx, trackID, number, actorID)
+	cert, err := s.repos.Certificates.Create(ctx, trackID, number, actorID)
+	if err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			// Raced a concurrent issuer: return the winner's certificate
+			// instead of 409ing an idempotent call.
+			return s.repos.Certificates.GetByTrack(ctx, trackID)
+		}
+		return nil, err
+	}
+	return cert, nil
 }
 
 // Verify resolves a public certificate number to its attested view.

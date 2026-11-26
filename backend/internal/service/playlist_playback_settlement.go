@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"math"
+	"math/bits"
 	"strings"
 	"time"
 
@@ -99,19 +102,38 @@ func (s *PlaylistService) Reorder(ctx context.Context, callerID, playlistID stri
 	if err != nil {
 		return err
 	}
-	if len(current) != len(trackIDs) {
+	currentIDs := make([]string, 0, len(current))
+	for _, e := range current {
+		currentIDs = append(currentIDs, e.TrackID)
+	}
+	if err := validateReorderIDs(currentIDs, trackIDs); err != nil {
+		return err
+	}
+	return s.repos.Playlists.Reorder(ctx, playlistID, trackIDs)
+}
+
+// validateReorderIDs requires an exact permutation: same length, every ID
+// already a member, no duplicates. Length + membership alone would accept
+// [a,a] for [a,b] and corrupt positions.
+func validateReorderIDs(currentIDs, trackIDs []string) error {
+	if len(currentIDs) != len(trackIDs) {
 		return fmt.Errorf("%w: reorder must include every track", domain.ErrInvalidInput)
 	}
 	known := map[string]bool{}
-	for _, e := range current {
-		known[e.TrackID] = true
+	for _, id := range currentIDs {
+		known[id] = true
 	}
+	seen := map[string]bool{}
 	for _, id := range trackIDs {
 		if !known[id] {
 			return fmt.Errorf("%w: unknown track in reorder", domain.ErrInvalidInput)
 		}
+		if seen[id] {
+			return fmt.Errorf("%w: duplicate track in reorder", domain.ErrInvalidInput)
+		}
+		seen[id] = true
 	}
-	return s.repos.Playlists.Reorder(ctx, playlistID, trackIDs)
+	return nil
 }
 
 // ListTracks returns ordered entries visible to caller.
@@ -341,16 +363,32 @@ func (in SettlementInput) withholdNum() (int64, error) {
 // between the partner and total basis reads can never overpay.
 func splitSettlement7030(storePool, direct, partnerSecs, totalSecs, withholdNum int64) (poolShare, attributed, gross, withholding, net int64) {
 	if totalSecs > 0 && partnerSecs > 0 && storePool > 0 {
-		poolShare = storePool * partnerSecs / totalSecs
+		poolShare = mulDivFloor(storePool, partnerSecs, totalSecs)
 		if poolShare > storePool {
 			poolShare = storePool
 		}
 	}
 	attributed = poolShare + direct
-	gross = attributed * partnerShareNum / partnerShareDen
-	withholding = gross * withholdNum / withholdingDen
+	gross = mulDivFloor(attributed, partnerShareNum, partnerShareDen)
+	withholding = mulDivFloor(gross, withholdNum, withholdingDen)
 	net = gross - withholding
 	return poolShare, attributed, gross, withholding, net
+}
+
+// mulDivFloor computes a*b/c with flooring division. The product runs in
+// 128-bit space so large pools can never overflow into a negative payout;
+// values past MaxInt64 saturate (callers cap to the pool where tighter).
+// Callers pass positive operands only.
+func mulDivFloor(a, b, c int64) int64 {
+	hi, lo := bits.Mul64(uint64(a), uint64(b))
+	if hi >= uint64(c) {
+		return math.MaxInt64
+	}
+	q, _ := bits.Div64(hi, lo, uint64(c))
+	if q > uint64(math.MaxInt64) {
+		return math.MaxInt64
+	}
+	return int64(q)
 }
 
 // UpdateSettlementAccount stores bank + AES-256-GCM encrypted account number.
@@ -429,6 +467,15 @@ func (s *SettlementService) Calculate(ctx context.Context, partnerID string, sta
 	if incomeType == "" {
 		incomeType = domain.IncomeBusiness33
 	}
+	// Recalculation must never rewrite a decided payout: only a PENDING row
+	// (or no row yet) may be (re)calculated.
+	if cur, err := s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end); err == nil {
+		if !canRecalculate(cur.Status) {
+			return nil, fmt.Errorf("%w: only PENDING settlements can be recalculated (current %s)", domain.ErrInvalidInput, cur.Status)
+		}
+	} else if !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	}
 	partnerSecs, err := s.repos.Store.SumQualifiedStoreSecs(ctx, partnerID, start, end)
 	if err != nil {
 		return nil, err
@@ -467,7 +514,12 @@ func (s *SettlementService) Calculate(ctx context.Context, partnerID string, sta
 		settlement.ForfeitureReason = &reason
 		settlement.NetAmountKRW = 0
 	}
-	return s.repos.Settlements.Upsert(ctx, settlement)
+	out, err := s.repos.Settlements.Upsert(ctx, settlement)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Lost a race with Approve: the row is decided now, leave it alone.
+		return nil, fmt.Errorf("%w: only PENDING settlements can be recalculated", domain.ErrInvalidInput)
+	}
+	return out, err
 }
 
 // ViolationActive reports whether the partner is suspended/terminated or has
@@ -493,6 +545,18 @@ func canHold(status string) bool { return status == domain.SettlePending }
 // canRelease reports whether a settlement in status may be released.
 func canRelease(status string) bool { return status == domain.SettleHeld }
 
+// canRecalculate reports whether a settlement in status may be recalculated:
+// only PENDING rows (re-running the math before approval). Recalculating a
+// decided row would silently rewrite an approved/paid payout.
+func canRecalculate(status string) bool { return status == domain.SettlePending }
+
+// canApprove reports whether a settlement in status may be approved: PENDING
+// rows, plus APPROVED rows so re-approval stays idempotent. A PAID row must
+// never move back to APPROVED.
+func canApprove(status string) bool {
+	return status == domain.SettlePending || status == domain.SettleApproved
+}
+
 // Approve moves a settlement to APPROVED (never from FORFEITED or HELD).
 func (s *SettlementService) Approve(ctx context.Context, partnerID string, start, end time.Time) (*domain.PartnerSettlement, error) {
 	cur, err := s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
@@ -505,7 +569,14 @@ func (s *SettlementService) Approve(ctx context.Context, partnerID string, start
 	if cur.Status == domain.SettleHeld {
 		return nil, fmt.Errorf("%w: held settlement must be released first", domain.ErrInvalidInput)
 	}
-	if err := s.repos.Settlements.UpdateStatus(ctx, cur.ID, domain.SettleApproved, nil); err != nil {
+	if !canApprove(cur.Status) {
+		return nil, fmt.Errorf("%w: only PENDING settlements can be approved (current %s)", domain.ErrInvalidInput, cur.Status)
+	}
+	if err := s.repos.Settlements.Approve(ctx, cur.ID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Lost a race with MarkPaid/Hold: the row is decided now, leave it alone.
+			return nil, fmt.Errorf("%w: only PENDING settlements can be approved", domain.ErrInvalidInput)
+		}
 		return nil, err
 	}
 	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
@@ -528,6 +599,10 @@ func (s *SettlementService) Hold(ctx context.Context, partnerID string, start, e
 		return nil, fmt.Errorf("%w: only PENDING settlements can be held", domain.ErrInvalidInput)
 	}
 	if err := s.repos.Settlements.Hold(ctx, cur.ID, strings.TrimSpace(reason), actorID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Lost a race with Approve/MarkPaid: the row is decided now, leave it alone.
+			return nil, fmt.Errorf("%w: only PENDING settlements can be held", domain.ErrInvalidInput)
+		}
 		return nil, err
 	}
 	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
@@ -546,6 +621,10 @@ func (s *SettlementService) Release(ctx context.Context, partnerID string, start
 		return nil, fmt.Errorf("%w: only HELD settlements can be released", domain.ErrInvalidInput)
 	}
 	if err := s.repos.Settlements.Release(ctx, cur.ID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Lost a race: the row is no longer HELD, leave it alone.
+			return nil, fmt.Errorf("%w: only HELD settlements can be released", domain.ErrInvalidInput)
+		}
 		return nil, err
 	}
 	return s.repos.Settlements.GetByPartnerPeriod(ctx, partnerID, start, end)
@@ -556,6 +635,9 @@ func (s *SettlementService) Release(ctx context.Context, partnerID string, start
 func (s *SettlementService) MarkPaid(ctx context.Context, partnerID string, start, end time.Time, reference string) (*domain.PartnerSettlement, error) {
 	if partnerID == "" || !start.Before(end) {
 		return nil, fmt.Errorf("%w: partner/period", domain.ErrInvalidInput)
+	}
+	if strings.TrimSpace(reference) == "" {
+		return nil, fmt.Errorf("%w: payout reference (bank slip) is required", domain.ErrInvalidInput)
 	}
 	settlement, err := s.repos.Settlements.MarkPaid(ctx, partnerID, start, end, strings.TrimSpace(reference))
 	if err != nil {

@@ -53,6 +53,21 @@ func TestSplitSettlement7030(t *testing.T) {
 			wantShare: 1000, wantAttributed: 1000, wantGross: 700,
 			wantWithholding: 23, wantNet: 677,
 		},
+		{
+			// 4e18*3 overflows int64: the 128-bit path must stay exact.
+			name: "huge pool stays exact without overflow",
+			pool: 4000000000000000000, direct: 0, psecs: 3, tsecs: 7, withholdNum: 33,
+			wantShare: 1714285714285714285, wantAttributed: 1714285714285714285,
+			wantGross:       1199999999999999999,
+			wantWithholding: 39599999999999999, wantNet: 1160400000000000000,
+		},
+		{
+			name: "astronomical share caps at the pool",
+			pool: 9000000000000000000, direct: 0, psecs: 1000000000000, tsecs: 1, withholdNum: 33,
+			wantShare: 9000000000000000000, wantAttributed: 9000000000000000000,
+			wantGross:       6300000000000000000,
+			wantWithholding: 207900000000000000, wantNet: 6092100000000000000,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

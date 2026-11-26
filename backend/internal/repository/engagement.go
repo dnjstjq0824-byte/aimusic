@@ -599,7 +599,10 @@ const settlementColumns = `id::text, partner_id::text, period_start, period_end,
 	store_play_secs, total_store_play_secs, status, hold_reason, held_at, held_by::text,
 	forfeiture_reason, income_type, paid_at, payout_reference, created_at, updated_at`
 
-// Upsert writes a settlement row per partner+period.
+// Upsert writes a settlement row per partner+period. Recalculation only
+// touches PENDING rows: the status predicate makes a concurrent approve win
+// the race (the decided row is left untouched and sql.ErrNoRows surfaces,
+// like Hold/Release/MarkPaid).
 func (r *SettlementRepo) Upsert(ctx context.Context, s *domain.PartnerSettlement) (*domain.PartnerSettlement, error) {
 	return scanSettlement(r.db.QueryRowContext(ctx, `
 		INSERT INTO partner_settlements (partner_id, period_start, period_end, gross_amount_krw,
@@ -618,6 +621,7 @@ func (r *SettlementRepo) Upsert(ctx context.Context, s *domain.PartnerSettlement
 			status = EXCLUDED.status,
 			forfeiture_reason = EXCLUDED.forfeiture_reason,
 			income_type = EXCLUDED.income_type
+		WHERE partner_settlements.status = 'PENDING'
 		RETURNING `+settlementColumns,
 		s.PartnerID, s.PeriodStart, s.PeriodEnd, s.GrossAmountKRW,
 		s.WithholdingKRW, s.NetAmountKRW, s.PlayCount, s.StorePoolKRW, s.DirectKRW,
@@ -655,12 +659,25 @@ func (r *SettlementRepo) ListByPartner(ctx context.Context, partnerID string) ([
 	return out, rows.Err()
 }
 
-// UpdateStatus transitions a settlement with an optional forfeiture reason.
-func (r *SettlementRepo) UpdateStatus(ctx context.Context, id, status string, forfeitReason *string) error {
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE partner_settlements SET status = $2, forfeiture_reason = $3 WHERE id = $1::uuid`,
-		id, status, nullStr(forfeitReason))
-	return err
+// Approve transitions a PENDING settlement to APPROVED (re-approving an
+// APPROVED row stays idempotent). The status predicate makes a concurrent
+// MarkPaid win the race: a PAID row is never moved back to APPROVED
+// (sql.ErrNoRows surfaces, like Hold/Release/MarkPaid).
+func (r *SettlementRepo) Approve(ctx context.Context, id string) error {
+	tag, err := r.db.ExecContext(ctx,
+		`UPDATE partner_settlements SET status = 'APPROVED'
+		WHERE id = $1::uuid AND status IN ('PENDING', 'APPROVED')`,
+		id)
+	if err != nil {
+		return err
+	}
+	if n, err := tag.RowsAffected(); err != nil || n == 0 {
+		if err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // Hold suspends a PENDING settlement exactly once, recording reason + actor.

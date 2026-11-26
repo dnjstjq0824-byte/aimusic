@@ -334,6 +334,10 @@ func ValidateCommercialEligibility(ctx context.Context, store Store, req PreChec
 		if sub == nil {
 			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: "no verified subscription for provider"}
 		}
+		if !strings.EqualFold(sub.PartnerID, req.PartnerID) ||
+			!strings.EqualFold(strings.TrimSpace(sub.Provider), provider) {
+			return nil, &domain.GateError{Code: domain.CodeNonCommercialTier, Message: "subscription does not belong to partner/provider"}
+		}
 		if tierMatches(sub.PlanName, policy.SyncOnlyPlanTiers) || isBuiltInSyncOnlyTier(req.Provider, sub.PlanName) {
 			return nil, &domain.GateError{Code: domain.CodeSyncOnlyLicense, Message: msg}
 		}

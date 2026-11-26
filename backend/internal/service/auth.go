@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"strings"
@@ -161,14 +162,16 @@ func (s *AuthService) checkInvite(code string) error {
 	if s.inviteCode == "" {
 		return nil
 	}
-	if strings.TrimSpace(code) != s.inviteCode {
+	if subtle.ConstantTimeCompare([]byte(strings.TrimSpace(code)), []byte(s.inviteCode)) != 1 {
 		return domain.ErrForbidden
 	}
 	return nil
 }
 
 // checkAge enforces the 14+ gate (C9): callers must confirm, and an optional
-// birth year must itself prove 14+.
+// birth year must itself prove 14+. Year granularity cannot prove a birthday,
+// so the bar is 15: a "14" year-gap still admits 13-year-olds born late in
+// the year, and a legal gate fails closed.
 func checkAge(birthYear *int, ageConfirmed bool) error {
 	if !ageConfirmed {
 		return fmt.Errorf("%w: ageConfirmed must be true (14+)", domain.ErrInvalidInput)
@@ -179,7 +182,7 @@ func checkAge(birthYear *int, ageConfirmed bool) error {
 		if year < 1900 || year > now {
 			return fmt.Errorf("%w: birthYear", domain.ErrInvalidInput)
 		}
-		if now-year < 14 {
+		if now-year < 15 {
 			return fmt.Errorf("%w: under-14 cannot register", domain.ErrInvalidInput)
 		}
 	}
@@ -397,6 +400,21 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*Tokens
 	if err != nil {
 		return nil, err
 	}
+	// The account validates BEFORE the jti is consumed: a transient store
+	// failure must never burn a single-use refresh token (forcing re-login),
+	// and stale versions reject without touching tracker state. Reuse
+	// detection is unaffected — a consumed token still reaches consume with
+	// a live version and trips the theft revoke.
+	u, err := s.getUser(ctx, claims.UserID)
+	if err != nil {
+		return nil, domain.ErrInvalidCredentials
+	}
+	if !u.IsActive {
+		return nil, domain.ErrUserInactive
+	}
+	if claims.TokenVersion != u.TokenVersion {
+		return nil, domain.ErrInvalidCredentials
+	}
 	grace := false
 	if s.refreshTracker != nil {
 		st, err := s.refreshTracker.consume(ctx, claims.ID, claims.UserID)
@@ -417,16 +435,6 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*Tokens
 			grace = true
 		case refreshLive:
 		}
-	}
-	u, err := s.getUser(ctx, claims.UserID)
-	if err != nil {
-		return nil, domain.ErrInvalidCredentials
-	}
-	if !u.IsActive {
-		return nil, domain.ErrUserInactive
-	}
-	if claims.TokenVersion != u.TokenVersion {
-		return nil, domain.ErrInvalidCredentials
 	}
 	if grace {
 		if err := s.refreshTracker.markUsed(ctx, claims.ID, claims.UserID); err != nil {
@@ -528,13 +536,17 @@ func (s *AuthService) ValidateAccess(ctx context.Context, token string) (*Claims
 }
 
 // Issue mints a token pair for an already-authenticated principal
-// (used by social login after provider verification).
+// (used by social login after provider verification). A version lookup
+// failure surfaces instead of minting version-0 tokens that validate
+// nowhere.
 func (s *AuthService) Issue(ctx context.Context, userID, role string) (*Tokens, error) {
 	version := 0
 	if s.repos != nil && s.repos.Users != nil {
-		if u, err := s.repos.Users.GetByID(ctx, userID); err == nil {
-			version = u.TokenVersion
+		u, err := s.repos.Users.GetByID(ctx, userID)
+		if err != nil {
+			return nil, err
 		}
+		version = u.TokenVersion
 	}
 	return s.issue(ctx, userID, role, version)
 }

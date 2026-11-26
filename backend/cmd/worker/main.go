@@ -30,6 +30,10 @@ import (
 
 const maxAttempts = 3
 
+// requeueBackoff spaces retries so a poison job cannot spin the worker and
+// transient faults (object store blips) get a moment to clear.
+const requeueBackoff = 5 * time.Second
+
 // maxStagingBytes caps a single staged download (500 MiB). Partners uploading
 // larger masters must split or compress first; the cap bounds worker disk use.
 const maxStagingBytes = 500 << 20
@@ -38,6 +42,9 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("load config: %v", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("invalid config: %v", err)
 	}
 	db, err := repository.OpenDB(cfg.DB.DSN)
 	if err != nil {
@@ -146,6 +153,7 @@ func (w *worker) processGeneration(ctx context.Context, p *repository.Generation
 			return err
 		}
 		if updated.Attempts < maxAttempts {
+			time.Sleep(requeueBackoff)
 			return w.repos.Queue.EnqueueGeneration(ctx, *p)
 		}
 		return nil
@@ -173,6 +181,11 @@ func (w *worker) processGeneration(ctx context.Context, p *repository.Generation
 			return w.repos.GenJobs.MarkFailed(ctx, job.ID, err.Error())
 		}
 		return fail(err.Error())
+	}
+	// Bound the backend response: a misbehaving GPU server must not OOM the
+	// worker with a giant payload.
+	if len(res.Audio) > maxStagingBytes {
+		return fail(fmt.Sprintf("generated audio too large: %d bytes (max %d)", len(res.Audio), maxStagingBytes))
 	}
 	sum := sha256.Sum256(res.Audio)
 	ext := ".wav"
@@ -269,6 +282,7 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 			return err
 		}
 		if updated.Attempts < maxAttempts {
+			time.Sleep(requeueBackoff)
 			return w.repos.Queue.EnqueueTranscode(ctx, *p)
 		}
 		msg2 := msg + " (attempts exhausted)"
@@ -330,6 +344,9 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 		return fail(reason, true)
 	}
 	_ = w.repos.Rights.SetGate3Report(ctx, track.ID, true, audio.FormatFFprobeReportJSON(probe, true, ""))
+	// Heartbeat before the long encode so the reaper never mistakes a slow
+	// job for a dead worker.
+	_ = w.repos.Jobs.TouchRunning(ctx, job.ID)
 
 	outDir := filepath.Join(tmpDir, "hls")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
@@ -361,6 +378,8 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 		}
 	}
 
+	// Heartbeat after the long encode (uploads can also take a while).
+	_ = w.repos.Jobs.TouchRunning(ctx, job.ID)
 	if err := w.uploadDir(ctx, outDir, p.OutputPrefix); err != nil {
 		return fail(fmt.Sprintf("upload hls: %v", err), false)
 	}
@@ -374,10 +393,14 @@ func (w *worker) process(ctx context.Context, p *repository.TranscodePayload) er
 		d := int(probe.DurationSec * 1000)
 		durationMs = &d
 	}
-	if err := w.repos.Jobs.MarkSucceeded(ctx, job.ID); err != nil {
+	// Track first, job second: SetTranscoded is the commit point. A crash
+	// between the two leaves the job RUNNING (the reaper requeues it and
+	// the idempotent pipeline heals); the reverse order would strand a
+	// SUCCEEDED job with a TRANSCODING track no sweeper claims.
+	if err := w.repos.Tracks.SetTranscoded(ctx, track.ID, p.OutputPrefix, bitrate, durationMs, wavePtr, fpPtr); err != nil {
 		return err
 	}
-	if err := w.repos.Tracks.SetTranscoded(ctx, track.ID, p.OutputPrefix, bitrate, durationMs, wavePtr, fpPtr); err != nil {
+	if err := w.repos.Jobs.MarkSucceeded(ctx, job.ID); err != nil {
 		return err
 	}
 	// Best-effort distribution metadata (WI-05): tempo/key detection must

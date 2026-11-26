@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"avibe-platform/backend/internal/domain"
 )
@@ -49,6 +50,9 @@ func TestAbortErrorStatusMapping(t *testing.T) {
 		{domain.ErrForbidden, http.StatusForbidden, "ERR_FORBIDDEN"},
 		{domain.ErrNotStreamable, http.StatusForbidden, "ERR_NOT_STREAMABLE"},
 		{domain.ErrPaymentUnavailable, http.StatusServiceUnavailable, "ERR_PAYMENT_UNAVAILABLE"},
+		{domain.ErrConflict, http.StatusConflict, "ERR_CONFLICT"},
+		{&pgconn.PgError{Code: "22P02", Message: `invalid input syntax for type uuid: "abc"`}, http.StatusBadRequest, "ERR_INVALID_INPUT"},
+		{&pgconn.PgError{Code: "23505", Message: `duplicate key value violates unique constraint`}, http.StatusInternalServerError, "ERR_INTERNAL"},
 		{errors.New("boom"), http.StatusInternalServerError, "ERR_INTERNAL"},
 	}
 	for _, tc := range cases {
@@ -120,5 +124,8 @@ func TestQueryInt(t *testing.T) {
 	}
 	if got := queryInt(newCtx("/x?limit=abc"), "limit", 20); got != 20 {
 		t.Fatalf("garbage = %d, want default 20", got)
+	}
+	if got := queryInt(newCtx("/x?offset=-5"), "offset", 0); got != 0 {
+		t.Fatalf("negative = %d, want default 0 (OFFSET -5 is a 500)", got)
 	}
 }

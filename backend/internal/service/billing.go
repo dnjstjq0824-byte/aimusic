@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ type billingStore interface {
 	GetOrderByMerchantID(ctx context.Context, orderID string) (*domain.BillingOrder, error)
 	GetOrder(ctx context.Context, id string) (*domain.BillingOrder, error)
 	MarkOrderPaid(ctx context.Context, orderID, paymentKey string) (*domain.BillingOrder, error)
+	MarkOrderFailed(ctx context.Context, orderID string) error
 	SetOrderStatus(ctx context.Context, orderID, status string) error
 	ActivateSubscription(ctx context.Context, userID, planID, orderID string, periodStart, periodEnd time.Time) (*domain.BillingSubscription, error)
 	GetActiveSubscription(ctx context.Context, userID string) (*domain.BillingSubscription, error)
@@ -124,6 +126,22 @@ func (s *BillingService) Confirm(ctx context.Context, userID, paymentKey, orderI
 		return nil, domain.ErrForbidden
 	}
 	if order.Status != domain.BillingPending {
+		// A confirm that marked the order PAID and then crashed before
+		// activating heals here: the pass is missing, so complete it.
+		// A fully applied order stays an error (double confirms must fail).
+		if order.Status == domain.BillingPaid {
+			if _, subErr := s.billing.GetActiveSubscription(ctx, userID); subErr == nil {
+				return nil, fmt.Errorf("%w: order already processed", domain.ErrInvalidInput)
+			} else if !errors.Is(subErr, domain.ErrNotFound) {
+				return nil, subErr
+			}
+			start := s.now()
+			sub, actErr := s.billing.ActivateSubscription(ctx, userID, order.PlanID, order.ID, start, start.AddDate(0, 1, 0))
+			if actErr != nil {
+				return nil, actErr
+			}
+			return s.withPlan(ctx, sub)
+		}
 		return nil, fmt.Errorf("%w: order already processed", domain.ErrInvalidInput)
 	}
 	if order.AmountKRW != amount {
@@ -131,7 +149,8 @@ func (s *BillingService) Confirm(ctx context.Context, userID, paymentKey, orderI
 	}
 	p, err := s.toss.ConfirmPayment(ctx, paymentKey, orderID, amount)
 	if err != nil {
-		_ = s.billing.SetOrderStatus(ctx, orderID, domain.BillingFailed)
+		// PENDING-only: a raced confirm may own this order as PAID now.
+		_ = s.billing.MarkOrderFailed(ctx, orderID)
 		var te *toss.TossError
 		if errors.As(err, &te) {
 			return nil, fmt.Errorf("%w: toss %s", domain.ErrInvalidInput, te.Code)
@@ -139,16 +158,17 @@ func (s *BillingService) Confirm(ctx context.Context, userID, paymentKey, orderI
 		return nil, err
 	}
 	if p.OrderID != orderID || p.TotalAmount != amount {
-		_ = s.billing.SetOrderStatus(ctx, orderID, domain.BillingFailed)
+		_ = s.billing.MarkOrderFailed(ctx, orderID)
 		return nil, fmt.Errorf("%w: toss verification mismatch", domain.ErrInvalidInput)
 	}
 	if _, err := s.billing.MarkOrderPaid(ctx, orderID, paymentKey); err != nil {
-		// A raced webhook already applied this order: return the live subscription.
-		sub, subErr := s.billing.GetActiveSubscription(ctx, userID)
-		if subErr != nil {
-			return nil, subErr
+		// A raced webhook already applied this order: return the live
+		// subscription. Anything else (transient store failure) surfaces
+		// as-is — the order stays PENDING and the Toss retry heals it.
+		if sub, subErr := s.billing.GetActiveSubscription(ctx, userID); subErr == nil {
+			return s.withPlan(ctx, sub)
 		}
-		return s.withPlan(ctx, sub)
+		return nil, err
 	}
 	start := s.now()
 	sub, err := s.billing.ActivateSubscription(ctx, userID, order.PlanID, order.ID, start, start.AddDate(0, 1, 0))
@@ -187,6 +207,20 @@ func (s *BillingService) HandleWebhook(ctx context.Context, raw []byte) error {
 	if err := json.Unmarshal(raw, &ev); err != nil {
 		return fmt.Errorf("%w: bad webhook payload", domain.ErrInvalidInput)
 	}
+	// Unknown/future Toss event kinds are journaled once and acknowledged
+	// WITHOUT re-querying: a forged or novel type must never burn Toss API
+	// quota, and erroring would invite endless Toss retries.
+	if ev.EventType != "PAYMENT_STATUS_CHANGED" {
+		eventID := "unhandled|" + ev.EventType
+		fresh, err := s.billing.ClaimWebhookEvent(ctx, "TOSS", eventID, string(raw))
+		if err != nil {
+			return err
+		}
+		if !fresh {
+			return nil
+		}
+		return s.billing.MarkWebhookProcessed(ctx, "TOSS", eventID)
+	}
 	if ev.Data.PaymentKey == "" || ev.Data.OrderID == "" {
 		return fmt.Errorf("%w: paymentKey/orderId", domain.ErrInvalidInput)
 	}
@@ -212,10 +246,18 @@ func (s *BillingService) HandleWebhook(ctx context.Context, raw []byte) error {
 	switch p.Status {
 	case "DONE":
 		paid, err := s.billing.MarkOrderPaid(ctx, order.OrderID, p.PaymentKey)
-		if err != nil {
-			break // already applied (confirm raced ahead); still acknowledge
+		if err == nil {
+			_ = paid // fresh payment; activate below
+		} else if !errors.Is(err, domain.ErrNotFound) {
+			return err // transient store failure: stay unprocessed so Toss retries
+		} else if _, subErr := s.billing.GetActiveSubscription(ctx, order.UserID); subErr == nil {
+			break // already fully applied (confirm raced ahead); still acknowledge
+		} else if !errors.Is(subErr, domain.ErrNotFound) {
+			return subErr
 		}
-		_ = paid
+		// else: partial failure (PAID order, missing subscription) — a
+		// retried delivery heals it by completing the activation here
+		// instead of acknowledging a dead order.
 		start := s.now()
 		if _, err := s.billing.ActivateSubscription(ctx, order.UserID, order.PlanID, order.ID, start, start.AddDate(0, 1, 0)); err != nil {
 			return err
@@ -226,7 +268,9 @@ func (s *BillingService) HandleWebhook(ctx context.Context, raw []byte) error {
 				return err
 			}
 		}
-		_ = s.billing.CancelActiveSubscription(ctx, order.UserID)
+		if err := s.billing.CancelActiveSubscription(ctx, order.UserID); err != nil {
+			slog.Warn("billing_webhook_cancel_sub_failed", "order", order.OrderID, "err", err)
+		}
 	case "PARTIAL_CANCELED":
 		// Our own prorated refunds already ended the pass and set
 		// PARTIALLY_REFUNDED; this event never revives it. Console-issued
@@ -334,7 +378,10 @@ func (s *BillingService) activePass(ctx context.Context, userID string) (*domain
 	}
 	order, err := s.billing.GetOrder(ctx, *sub.OrderID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: pass order missing", domain.ErrInvalidInput)
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, nil, fmt.Errorf("%w: pass order missing", domain.ErrInvalidInput)
+		}
+		return nil, nil, err
 	}
 	return sub, order, nil
 }
@@ -439,11 +486,27 @@ func (s *BillingService) cancelImmediate(ctx context.Context, userID, reason str
 		if q.RefundKRW < order.AmountKRW {
 			status = domain.BillingPartiallyRefunded
 		}
-		if err := s.billing.RecordRefund(ctx, order.OrderID, status, q.RefundKRW); err != nil {
+		// Money already moved at Toss: the journal write retries, and the
+		// pass ends even if the journal keeps failing (a stuck ACTIVE pass
+		// after a real refund is the leak; a mislabeled order row is a
+		// support reconcile, loudly logged).
+		var recordErr error
+		for i := 0; i < 3; i++ {
+			if recordErr = s.billing.RecordRefund(ctx, order.OrderID, status, q.RefundKRW); recordErr == nil {
+				break
+			}
+		}
+		if err := s.billing.CancelActiveSubscription(ctx, userID); err != nil {
+			slog.Error("billing_refund_cancel_sub_failed", "order", order.OrderID, "err", err)
 			return nil, err
 		}
-	}
-	if err := s.billing.CancelActiveSubscription(ctx, userID); err != nil {
+		if recordErr != nil {
+			slog.Error("billing_refund_record_failed", "order", order.OrderID,
+				"status", status, "amount", q.RefundKRW, "err", recordErr)
+			return nil, recordErr
+		}
+	} else if err := s.billing.CancelActiveSubscription(ctx, userID); err != nil {
+		// Zero-refund cancel: nothing moved at Toss, just end the pass.
 		return nil, err
 	}
 	updated, err := s.billing.GetOrderByMerchantID(ctx, order.OrderID)

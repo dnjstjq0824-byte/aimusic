@@ -43,6 +43,7 @@ type fakeResetTokens struct {
 	byHash  map[string]*domain.PasswordResetToken
 	created int
 	deleted []string
+	markErr error
 }
 
 func (f *fakeResetTokens) Create(_ context.Context, userID, hash string, exp time.Time) (*domain.PasswordResetToken, error) {
@@ -64,6 +65,9 @@ func (f *fakeResetTokens) GetByHash(_ context.Context, hash string) (*domain.Pas
 }
 
 func (f *fakeResetTokens) MarkUsed(_ context.Context, id string) error {
+	if f.markErr != nil {
+		return f.markErr
+	}
 	for _, t := range f.byHash {
 		if t.ID == id {
 			if t.UsedAt != nil {
@@ -189,6 +193,22 @@ func TestConfirmResetsPasswordOnce(t *testing.T) {
 	// Replay of a consumed token must fail.
 	if err := s.Confirm(context.Background(), raw, "another-password-1"); !errors.Is(err, domain.ErrInvalidCredentials) {
 		t.Fatalf("replay err = %v", err)
+	}
+}
+
+func TestConfirmClaimFailureLeavesPassword(t *testing.T) {
+	users := &fakeResetUsers{hashes: map[string]string{}}
+	tokens := &fakeResetTokens{markErr: domain.ErrNotFound}
+	s := resetTestService(users, tokens, &fakeMailer{})
+	raw := "raw-token-claim"
+	if _, err := tokens.Create(context.Background(), "u-1", HashResetToken(raw), time.Now().Add(time.Hour)); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := s.Confirm(context.Background(), raw, "new-password-1"); !errors.Is(err, domain.ErrInvalidCredentials) {
+		t.Fatalf("claim failure err = %v", err)
+	}
+	if _, ok := users.hashes["u-1"]; ok {
+		t.Fatalf("password moved despite a failed token claim")
 	}
 }
 

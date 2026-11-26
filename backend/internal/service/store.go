@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -261,6 +262,10 @@ func (s *StoreService) ClaimDevice(ctx context.Context, pairingCode string) (*do
 	}
 	token := hex.EncodeToString(raw)
 	if err := s.store.ActivateDevice(ctx, dev.ID, HashDeviceToken(token)); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Lost a double-claim race: the winner's token stays valid.
+			return nil, "", fmt.Errorf("%w: pairing code already claimed", domain.ErrInvalidInput)
+		}
 		return nil, "", err
 	}
 	claimed, err := s.store.GetDeviceByID(ctx, dev.ID)
@@ -466,7 +471,9 @@ func (s *StoreService) DeviceQueue(ctx context.Context, deviceID string) (*Devic
 		out.Reason = "business_" + strings.ToLower(b.Status)
 		return out, nil
 	}
-	now := s.clock()
+	// Schedules are KST wall-clock (store-local time), never server-local:
+	// containers run UTC, which would shift open/close by 9 hours.
+	now := s.clock().In(storeLocation())
 	schedules, err := s.store.ListSchedulesByBusiness(ctx, b.ID)
 	if err != nil {
 		return nil, err
@@ -532,6 +539,17 @@ func (s *StoreService) DeviceQueue(ctx context.Context, deviceID string) (*Devic
 	return out, nil
 }
 
+// storeLocation is the schedule wall-clock (KST). tzdata ships in the image;
+// UTC fallback keeps the queue serving (with a log) if it ever goes missing.
+func storeLocation() *time.Location {
+	if loc, err := time.LoadLocation("Asia/Seoul"); err == nil {
+		return loc
+	} else {
+		slog.Warn("store_tz_missing", "err", err)
+		return time.UTC
+	}
+}
+
 // withinHours reports whether now falls in [open, close), overnight-aware.
 func withinHours(now time.Time, open, close string) bool {
 	openT, err := time.Parse("15:04", open)
@@ -549,6 +567,27 @@ func withinHours(now time.Time, open, close string) bool {
 		return minutes >= o && minutes < c
 	}
 	return minutes >= o || minutes < c
+}
+
+// AuthorizeDeviceStream gates signed-URL issuance: the device must be ACTIVE
+// and its store APPROVED, mirroring Heartbeat. Without this a suspended
+// store's player keeps streaming even though its plays stop counting.
+func (s *StoreService) AuthorizeDeviceStream(ctx context.Context, deviceID string) error {
+	dev, err := s.store.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+	if dev.Status != domain.DeviceActive {
+		return domain.ErrInvalidCredentials
+	}
+	b, err := s.store.GetBusinessByID(ctx, dev.BusinessID)
+	if err != nil {
+		return err
+	}
+	if b.Status != domain.StoreApproved {
+		return fmt.Errorf("%w: streaming starts after store approval", domain.ErrForbidden)
+	}
+	return nil
 }
 
 // Heartbeat records a device play; 30s+ counts like listener plays.
@@ -610,7 +649,11 @@ func (s *StoreService) Heartbeat(ctx context.Context, deviceID, trackID string, 
 	} else if _, err := s.store.AppendPlayLog(ctx, deviceID, trackID, applied, counted); err != nil {
 		return false, err
 	}
-	_ = s.store.TouchDeviceSeen(ctx, deviceID)
+	// Best-effort, but never silent: last_seen_at drives the elapsed clamp,
+	// so a failing stamp loosens fraud bounds and must be visible.
+	if err := s.store.TouchDeviceSeen(ctx, deviceID); err != nil {
+		slog.Warn("store_touch_seen_failed", "device_id", deviceID, "err", err)
+	}
 	return counted, nil
 }
 

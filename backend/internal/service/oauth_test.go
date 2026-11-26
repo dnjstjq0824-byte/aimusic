@@ -28,9 +28,10 @@ import (
 )
 
 type fakeOAuthUsers struct {
-	byID    map[string]*domain.User
-	byEmail map[string]*domain.User
-	created []*domain.User
+	byID     map[string]*domain.User
+	byEmail  map[string]*domain.User
+	created  []*domain.User
+	emailErr error
 }
 
 func (f *fakeOAuthUsers) GetByID(_ context.Context, id string) (*domain.User, error) {
@@ -42,6 +43,9 @@ func (f *fakeOAuthUsers) GetByID(_ context.Context, id string) (*domain.User, er
 }
 
 func (f *fakeOAuthUsers) GetByEmail(_ context.Context, email string) (*domain.User, error) {
+	if f.emailErr != nil {
+		return nil, f.emailErr
+	}
 	u, ok := f.byEmail[strings.ToLower(email)]
 	if !ok {
 		return nil, domain.ErrNotFound
@@ -64,10 +68,14 @@ func (f *fakeOAuthUsers) Create(_ context.Context, email, hash, role, displayNam
 func (f *fakeOAuthUsers) GrantRole(_ context.Context, _, _, _ string) error { return nil }
 
 type fakeOAuthLinks struct {
-	byUID map[string]*domain.OAuthAccount
+	byUID  map[string]*domain.OAuthAccount
+	getErr error
 }
 
 func (f *fakeOAuthLinks) GetByProviderUID(_ context.Context, provider, uid string) (*domain.OAuthAccount, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
 	a, ok := f.byUID[provider+"|"+uid]
 	if !ok {
 		return nil, domain.ErrNotFound
@@ -440,6 +448,28 @@ func TestOAuthGoogleNewUser(t *testing.T) {
 	}
 	if u2.ID != u.ID || tokens2.AccessToken == "" || len(fx.users.created) != 1 {
 		t.Fatalf("re-login mismatch: %+v created=%d", u2, len(fx.users.created))
+	}
+}
+
+func TestOAuthCallbackTransientStoreFailsClosed(t *testing.T) {
+	fx := oauthTestService(t)
+	fx.world.setUserinfo("GOOGLE", `{"sub":"g-9","email":"t@example.com","email_verified":true,"name":"T"}`)
+	fx.links.getErr = errors.New("db blip")
+	st := startFor(t, fx, "GOOGLE", "")
+	if _, err := fx.s.Callback(context.Background(), cbInput(st, "GOOGLE", "code-1")); err == nil || errors.Is(err, domain.ErrInvalidCredentials) {
+		t.Fatalf("link-lookup blip must surface, got %v", err)
+	}
+	if len(fx.users.created) != 0 {
+		t.Fatalf("blip created %d users", len(fx.users.created))
+	}
+	fx.links.getErr = nil
+	fx.users.emailErr = errors.New("db blip")
+	st2 := startFor(t, fx, "GOOGLE", "")
+	if _, err := fx.s.Callback(context.Background(), cbInput(st2, "GOOGLE", "code-2")); err == nil || errors.Is(err, domain.ErrInvalidCredentials) {
+		t.Fatalf("email-lookup blip must surface, got %v", err)
+	}
+	if len(fx.users.created) != 0 {
+		t.Fatalf("blip created %d users", len(fx.users.created))
 	}
 }
 

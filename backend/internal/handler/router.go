@@ -102,7 +102,7 @@ func SetupRouter(d *Deps) *gin.Engine {
 	auth.POST("/totp/enroll", JWTAuth(d.Services.Auth), authH.EnrollTOTP)
 	auth.POST("/totp/confirm", JWTAuth(d.Services.Auth), authH.ConfirmTOTPEnrollment)
 	auth.POST("/totp/disable", JWTAuth(d.Services.Auth), authH.DisableTOTP)
-	auth.POST("/password-reset/request", authH.RequestPasswordReset)
+	auth.POST("/password-reset/request", RateLimit(1, 5), authH.RequestPasswordReset)
 	auth.POST("/password-reset/confirm", authH.ConfirmPasswordReset)
 	auth.POST("/email/verify/request", JWTAuth(d.Services.Auth), RateLimit(1, 5), authH.RequestEmailVerify)
 	auth.POST("/email/verify/confirm", authH.ConfirmEmailVerify)
@@ -241,7 +241,9 @@ func SetupRouter(d *Deps) *gin.Engine {
 
 	billing := v1.Group("/billing")
 	billing.GET("/plans", billingH.ListPlans)
-	billing.POST("/webhooks/toss", billingH.TossWebhook)
+	// Public by necessity (Toss has no API credential): throttled so floods
+	// cannot burn Toss re-query quota or journal storage.
+	billing.POST("/webhooks/toss", RateLimit(20, 40), billingH.TossWebhook)
 	billingAuthed := billing.Group("")
 	billingAuthed.Use(JWTAuth(d.Services.Auth))
 	billingAuthed.POST("/orders", RequireAgeConfirmed(d.Repos.Users), RequireConsents(d.Repos.Legal), RequireEmailVerified(d.Repos.Users), billingH.CreateOrder)
@@ -294,7 +296,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	admin.POST("/businesses/:userId/review", adminH.ReviewBusiness)
 
 	storeDevice := v1.Group("/store/device")
-	storeDevice.POST("/claim", deviceH.ClaimDevice)
+	// Pairing-code guessing is throttled per IP on top of the 40-bit code space.
+	storeDevice.POST("/claim", RateLimit(5, 10), deviceH.ClaimDevice)
 	storeDevice.Use(StoreDeviceAuth(d.Services.Store))
 	storeDevice.GET("/me", deviceH.DeviceMe)
 	storeDevice.GET("/queue", deviceH.DeviceQueue)

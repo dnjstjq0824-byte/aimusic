@@ -44,8 +44,16 @@ func (r *CertificateRepo) GetByNumber(ctx context.Context, number string) (*doma
 
 // Create issues a certificate with a caller-generated number.
 func (r *CertificateRepo) Create(ctx context.Context, trackID, number, actorID string) (*domain.TrackCertificate, error) {
-	return scanCertificate(r.db.QueryRowContext(ctx, `
+	cert, err := scanCertificate(r.db.QueryRowContext(ctx, `
 		INSERT INTO track_certificates (track_id, cert_number, issued_by)
 		VALUES ($1::uuid, $2, $3::uuid)
 		RETURNING `+certColumns, trackID, number, actorID))
+	if err != nil {
+		// A raced issuer (or a number redraw): re-read instead of 500.
+		if isUniqueViolation(err) {
+			return nil, domain.ErrConflict
+		}
+		return nil, err
+	}
+	return cert, nil
 }

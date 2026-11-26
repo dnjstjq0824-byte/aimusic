@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -83,7 +84,13 @@ func (s *PasswordResetService) Request(ctx context.Context, email string) error 
 		return fmt.Errorf("%w: email", domain.ErrInvalidInput)
 	}
 	u, err := s.users.GetByEmail(ctx, email)
-	if err != nil || !u.IsActive {
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	if !u.IsActive {
 		return nil
 	}
 	token, err := GenerateResetToken()
@@ -101,16 +108,25 @@ func (s *PasswordResetService) Request(ctx context.Context, email string) error 
 	return s.mailer.Send(ctx, u.Email, subject, body)
 }
 
-// Confirm consumes a reset token and sets a new password.
+// Confirm consumes a reset token and sets a new password. The token is
+// claimed BEFORE the password changes: a crash between the two must burn
+// the token (request a new link), never leave a live token after the
+// password moved.
 func (s *PasswordResetService) Confirm(ctx context.Context, token, newPassword string) error {
 	if strings.TrimSpace(token) == "" || len(newPassword) < 8 {
 		return fmt.Errorf("%w: token/newPassword", domain.ErrInvalidInput)
 	}
 	t, err := s.tokens.GetByHash(ctx, HashResetToken(strings.TrimSpace(token)))
 	if err != nil {
-		return domain.ErrInvalidCredentials
+		if errors.Is(err, domain.ErrNotFound) {
+			return domain.ErrInvalidCredentials
+		}
+		return err
 	}
 	if t.UsedAt != nil || !s.now().Before(t.ExpiresAt) {
+		return domain.ErrInvalidCredentials
+	}
+	if err := s.tokens.MarkUsed(ctx, t.ID); err != nil {
 		return domain.ErrInvalidCredentials
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -119,9 +135,6 @@ func (s *PasswordResetService) Confirm(ctx context.Context, token, newPassword s
 	}
 	if err := s.users.UpdatePasswordHash(ctx, t.UserID, string(hash)); err != nil {
 		return err
-	}
-	if err := s.tokens.MarkUsed(ctx, t.ID); err != nil {
-		return domain.ErrInvalidCredentials
 	}
 	// A new password revokes every outstanding session (stolen tokens die).
 	return s.users.BumpTokenVersion(ctx, t.UserID)

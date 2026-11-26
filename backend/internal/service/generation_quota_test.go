@@ -2,6 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +18,8 @@ type fakeGenStore struct {
 	jobs       []*domain.GenerationJob
 	violations []time.Time
 	now        time.Time
+	recordErr  error
+	countErr   error
 }
 
 func (f *fakeGenStore) GetByID(_ context.Context, id string) (*domain.GenerationJob, error) {
@@ -35,30 +41,35 @@ func (f *fakeGenStore) ListByPartner(_ context.Context, partnerID string, _ int)
 	return out, nil
 }
 
-func (f *fakeGenStore) CreateFull(_ context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string) (*domain.GenerationJob, error) {
-	g := &domain.GenerationJob{ID: "gen-1", PartnerID: partnerID, Prompt: prompt,
+func (f *fakeGenStore) CreateFullCapped(_ context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string, day time.Time, cap int) (*domain.GenerationJob, error) {
+	var n int64
+	for _, j := range f.jobs {
+		if j.PartnerID == partnerID && (j.CreatedAt.IsZero() || !j.CreatedAt.Before(day)) {
+			n++
+		}
+	}
+	if n >= int64(cap) {
+		return nil, sql.ErrNoRows
+	}
+	g := &domain.GenerationJob{ID: fmt.Sprintf("gen-%d", len(f.jobs)+1), PartnerID: partnerID, Prompt: prompt,
 		Lyrics: lyrics, Model: model, LicenseRef: licenseRef, ParamsJSON: paramsJSON, Status: domain.JobQueued,
-		Seed: seed, ModelVersion: modelVersion}
+		Seed: seed, ModelVersion: modelVersion, CreatedAt: f.now}
 	f.jobs = append(f.jobs, g)
 	return g, nil
 }
 
-func (f *fakeGenStore) CountTodayByPartner(_ context.Context, partnerID string, _ time.Time) (int64, error) {
-	var n int64
-	for _, j := range f.jobs {
-		if j.PartnerID == partnerID {
-			n++
-		}
-	}
-	return n, nil
-}
-
 func (f *fakeGenStore) RecordViolation(_ context.Context, _ string, _ string) error {
+	if f.recordErr != nil {
+		return f.recordErr
+	}
 	f.violations = append(f.violations, f.now)
 	return nil
 }
 
 func (f *fakeGenStore) CountRecentViolations(_ context.Context, _ string, since time.Time) (int64, error) {
+	if f.countErr != nil {
+		return 0, f.countErr
+	}
 	var n int64
 	for _, v := range f.violations {
 		if !v.Before(since) {
@@ -203,6 +214,33 @@ func TestGenerationSubmitSeedPins(t *testing.T) {
 		if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "partner-1", Prompt: "calm guitar", Params: params}); err == nil {
 			t.Errorf("params %+v must be rejected", params)
 		}
+	}
+}
+
+func TestGenerationStrikeFailClosed(t *testing.T) {
+	f := &fakeGenStore{now: time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC), recordErr: errors.New("db down")}
+	svc := testGenerationService(f, 100, nil)
+	if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "p", Prompt: "voice clone me"}); err == nil {
+		t.Error("strike persistence failure must deny the submit")
+	}
+	if len(f.jobs) != 0 {
+		t.Errorf("no job must be created, got %d", len(f.jobs))
+	}
+	f.recordErr = nil
+	f.countErr = errors.New("db down")
+	if _, err := svc.Submit(context.Background(), GenerationSubmitInput{PartnerID: "p", Prompt: "voice clone me"}); err == nil {
+		t.Error("strike count failure must deny the submit")
+	}
+}
+
+func TestParamsInt64Bounds(t *testing.T) {
+	for _, v := range []any{float64(1e30), float64(-1e30), math.NaN(), math.Inf(1), math.Inf(-1), float64(1.5), "42"} {
+		if _, ok := paramsInt64(v); ok {
+			t.Errorf("paramsInt64(%v) must fail", v)
+		}
+	}
+	if n, ok := paramsInt64(float64(42)); !ok || n != 42 {
+		t.Errorf("paramsInt64(42) = %d,%v", n, ok)
 	}
 }
 

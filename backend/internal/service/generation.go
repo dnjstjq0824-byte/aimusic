@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 	"unicode"
@@ -163,10 +166,9 @@ func containsWord(haystack, word string) bool {
 
 // generationStore is the generation persistence surface.
 type generationStore interface {
-	CreateFull(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string) (*domain.GenerationJob, error)
+	CreateFullCapped(ctx context.Context, partnerID, prompt string, lyrics *string, model, licenseRef, paramsJSON string, seed *int64, modelVersion string, day time.Time, cap int) (*domain.GenerationJob, error)
 	GetByID(ctx context.Context, id string) (*domain.GenerationJob, error)
 	ListByPartner(ctx context.Context, partnerID string, limit int) ([]*domain.GenerationJob, error)
-	CountTodayByPartner(ctx context.Context, partnerID string, day time.Time) (int64, error)
 	RecordViolation(ctx context.Context, partnerID, keyword string) error
 	CountRecentViolations(ctx context.Context, partnerID string, since time.Time) (int64, error)
 }
@@ -242,22 +244,22 @@ func (s *GenerationService) Submit(ctx context.Context, in GenerationSubmitInput
 	}
 	now := s.clock()
 	// Banned-prompt filter first: strikes accrue even when quota is open.
+	// Strike persistence fails closed: a lost strike or an unreadable count
+	// must deny the submit, never silently downgrade a suspension.
 	if keyword := matchBannedKeyword(prompt+"\n"+lyricsText, s.bannedExtra); keyword != "" {
-		_ = s.store.RecordViolation(ctx, in.PartnerID, keyword)
-		recent, _ := s.store.CountRecentViolations(ctx, in.PartnerID, now.Add(-GenerationStrikeWindow))
+		if err := s.store.RecordViolation(ctx, in.PartnerID, keyword); err != nil {
+			return nil, err
+		}
+		recent, err := s.store.CountRecentViolations(ctx, in.PartnerID, now.Add(-GenerationStrikeWindow))
+		if err != nil {
+			return nil, err
+		}
 		if recent >= GenerationStrikesToSuspend {
 			return nil, fmt.Errorf("%w: %d banned-prompt strikes suspend generation for 24h (no impersonation or voice cloning)", domain.ErrForbidden, recent)
 		}
 		return nil, fmt.Errorf("%w: banned prompt detected (%s, warning %d/%d; strikes suspend for 24h)", domain.ErrInvalidInput, keyword, recent, GenerationStrikesToSuspend)
 	}
 	dayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	used, err := s.store.CountTodayByPartner(ctx, in.PartnerID, dayStart)
-	if err != nil {
-		return nil, err
-	}
-	if used >= int64(s.dailyCap) {
-		return nil, fmt.Errorf("%w: daily generation cap exceeded (%d/day)", domain.ErrForbidden, s.dailyCap)
-	}
 	// Reproducibility pins ride in params (WI-G0): the worker forwards them
 	// to the contract-v2 backend and records the served values on the job.
 	var seed *int64
@@ -284,8 +286,13 @@ func (s *GenerationService) Submit(ctx context.Context, in GenerationSubmitInput
 		}
 		paramsJSON = string(raw)
 	}
-	job, err := s.store.CreateFull(ctx, in.PartnerID, prompt, lyrics, model, licenseRef, paramsJSON, seed, modelVersion)
+	// The cap enforces atomically inside the insert, so concurrent submits
+	// cannot overshoot the daily quota.
+	job, err := s.store.CreateFullCapped(ctx, in.PartnerID, prompt, lyrics, model, licenseRef, paramsJSON, seed, modelVersion, dayStart, s.dailyCap)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: daily generation cap exceeded (%d/day)", domain.ErrForbidden, s.dailyCap)
+		}
 		return nil, err
 	}
 	if err := s.queue.EnqueueGeneration(ctx, repository.GenerationPayload{JobID: job.ID}); err != nil {
@@ -340,6 +347,11 @@ func matchBannedKeyword(text string, extra []string) string {
 func paramsInt64(v any) (int64, bool) {
 	switch n := v.(type) {
 	case float64:
+		// Bound first: float-to-int conversion outside int64 range is
+		// implementation-defined, so never convert an out-of-range value.
+		if math.IsNaN(n) || math.IsInf(n, 0) || n >= 9223372036854775808.0 || n < -9223372036854775808.0 {
+			return 0, false
+		}
 		if n != float64(int64(n)) {
 			return 0, false
 		}
