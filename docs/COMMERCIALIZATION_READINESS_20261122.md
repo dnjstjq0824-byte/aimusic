@@ -149,4 +149,5 @@
 - [ ] **P-3 (요금제 정본 시드 & 크레딧 차감)**: 확정 가격표(생성 9,900원 / 매장 9,900·14,900원 / 라이선스 19,900·29,900원)를 운영 `billing_plans` 테이블에 반영하고 무료/유료 생성 한도 차등(일 3~5곡 vs 월 300곡) 활성화
 - [ ] **P-4 (소셜 로그인 & 메일 발송)**: Google·Apple·Kakao·Naver·LINE OAuth 클라이언트 키 5종([`docs/OAUTH_SETUP.md`](OAUTH_SETUP.md)) 및 `SMTP_HOST/USER/PASS` 실발송 계정 주입
 - [ ] **P-5 (사업자 표시 & 법무 게이트 G-3)**: 사업자등록·통신판매업·음악산업진흥법 신고 완료 후 푸터 `VITE_BUSINESS_*` 환경변수 주입, 저작권법 제103조 복제·전송 중단 수령인 및 개인정보 보호책임자 실명 기재, 약관 4종 변호사 최종 검토 완료본 게시
-- [ ] **P-6 (백업 R2 & 모니터링)**: 운영 `.env`에 `R2_DB_BACKUP_BUCKET=avibe-db-backups` 설정 및 Cloudflare R2 30일 수명주기 규칙 적용, UptimeRobot(`/readyz`, `/`) 5분 주기 알림 연결
+- [ ] **P-6 (백업 R2 & 모니터링)**: ~~운영 `.env`에 `R2_DB_BACKUP_BUCKET=avibe-db-backups` 설정 및 Cloudflare R2 30일 수명주기 규칙 적용~~ → **완료(2026-11-27 KST)**: 비공개 버킷 `avibe-db-backups` 생성, 수명주기 `expire-30d` 적용, root crontab에 R2 변수 등록, cron 환경에서 업로드 및 크기 검증 통과([`PROD_RUNBOOK.md` §8](PROD_RUNBOOK.md#8-backups)). **남은 일**: UptimeRobot(`/readyz`, `/`) 5분 주기 알림 연결
+  - 남은 개선 항목: 백업 버킷 전용 R2 키 발급. 대시보드에서만 발급할 수 있으며, 현재는 미디어 버킷과 같은 키를 씁니다.

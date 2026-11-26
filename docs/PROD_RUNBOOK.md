@@ -131,9 +131,27 @@ before the swap; rollback re-tags it `:latest` and recreates `web`.
   `R2_DB_BACKUP_BUCKET` (`avibe-db-backups`) with a size check. Upload
   failure exits non-zero (cron log catches it). RPO ≤24h. Every deploy
   takes one more dump first (G-2).
-- R2 retention: 30-day lifecycle rule on the backup bucket (PO sets once
-  in the Cloudflare dashboard: R2 → bucket → Lifecycle → delete objects
-  older than 30 days). Local keeps 14 days as before.
+- Off-site is live since 2026-11-26 15:27 UTC. Bucket `avibe-db-backups`
+  is private (r2.dev URL disabled) and lives in the avibemusic.com
+  account. It uses the same R2 key as the media buckets: no backup-only
+  key exists yet, and a bucket-scoped key can only be issued in the
+  dashboard.
+- Cron environment: cron does not source `/opt/avibe/.env`. The root
+  crontab therefore carries `R2_DB_BACKUP_BUCKET`, `R2_ENDPOINT`,
+  `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` as env lines above the
+  `30 18 * * *` entry. `deploy/rollout-redesign.sh vps` checks for the
+  `R2_DB_BACKUP_BUCKET=` line and keeps these lines when it rewrites the
+  crontab. `.env` also lists the bucket name for reference.
+- Verify: `crontab -l` (mask the key lines before pasting them anywhere),
+  then `tail /opt/avibe/backups/backup.log`. Every run must end with
+  `upload ok (..., size verified)`. A run that logs
+  `WARN: R2_DB_BACKUP_BUCKET unset` is a local-only backup.
+- R2 retention: lifecycle rule `expire-30d` on the backup bucket deletes
+  objects after 30 days and aborts incomplete multipart uploads after 7
+  days. It was set with `npx wrangler r2 bucket lifecycle add
+  avibe-db-backups expire-30d --expire-days 30 --abort-multipart-days 7`.
+  Check it with `npx wrangler r2 bucket lifecycle list avibe-db-backups`.
+  The VPS still keeps 14 days of local dumps.
 - Restore (rehearsed 2026-11-12, WI-D2): dump → scratch DB → compare →
   drop. Prod is never written during rehearsal:
   ```sh
@@ -201,6 +219,11 @@ before the swap; rollback re-tags it `:latest` and recreates `web`.
 - Secrets live in `/opt/avibe/.env` (mode 600), not a manager. Rotate
   JWT/HLS/OAuth/Toss/R2 on personnel change — rotation revokes sessions
   via `token_version` bump per user or re-issue.
+- R2 key rotation has two copies to update: `/opt/avibe/.env`, then
+  recreate api and worker, and the `R2_*` env lines in the root crontab.
+  The crontab carries a copy because of the backup cron (§8). Run
+  `/opt/avibe/backup-db.sh` once afterwards and confirm the log line
+  `upload ok`.
 
 ## 9. Uptime monitor (WI-D2, O-04)
 
