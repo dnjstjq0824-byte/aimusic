@@ -63,6 +63,22 @@
     "toastCopyFailed": "コピーに失敗しました。",
     "toastNeedPass": "ダウンロードは有料パスが必要です。",
     "toastQuota": "1日の上限を超えました。",
-    "toastDlStarted": "ダウンロードを開始しました。"
+    "toastDlStarted": "ダウンロードを開始しました。",
+    "playNext": "次に再生",
+    "waveSeekAria": "再生位置 {pct}% · クリックで移動",
+    "comments": {
+      "title": "コメント",
+      "label": "コメントを書く",
+      "placeholder": "この曲の感想を書いてください。",
+      "submit": "投稿",
+      "loginHint": "ログインするとコメントできます。",
+      "loginCta": "ログイン",
+      "empty": "まだコメントはありません。最初のコメントをどうぞ。",
+      "delete": "削除",
+      "more": "以前のコメントを表示",
+      "posted": "コメントを投稿しました。",
+      "deleted": "コメントを削除しました。"
+    },
+    "chartDay": "デイリー"
   }
 }

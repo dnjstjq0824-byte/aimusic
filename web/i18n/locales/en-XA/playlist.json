@@ -75,7 +75,21 @@
       "add": "⟦Àdd →～～⟧",
       "createMore": "⟦+ Nèw～～⟧",
       "namePh": "⟦Nèw plàylìst tìtlè～～～～～～～⟧",
-      "create": "⟦Crèàtè～～⟧"
-    }
+      "create": "⟦Crèàtè～～⟧",
+      "already": "⟦Àddèd～～～～⟧",
+      "alreadyAria": "⟦Àlrèàdy ìn \"{title}\"～～～～～～～～⟧",
+      "addAria": "⟦Àdd tò \"{title}\"～～～～～～⟧",
+      "createAndAdd": "⟦Crèàtè & àdd～～～～～⟧"
+    },
+    "meCount": "⟦{count} plàylìsts～～～～～～～⟧",
+    "dragHandle": "⟦Dràg tò rèòrdèr: {title}～～～～～～～～～～⟧",
+    "unavailable": "⟦Ùnàvàìlàblè～～～～⟧",
+    "trackUpAria": "⟦Mòvè ùp: {title}～～～～～～⟧",
+    "trackDownAria": "⟦Mòvè dòwn: {title}～～～～～～～⟧",
+    "editDescription": "⟦Dèscrìptìòn (òptìònàl)～～～～～～～～～⟧",
+    "editDescriptionPh": "⟦Whàt ìs thìs plàylìst àbòùt?～～～～～～～～～～～⟧",
+    "toastDuplicate": "⟦Àlrèàdy ìn \"{title}\".～～～～～～～～⟧",
+    "toastAddedTo": "⟦Àddèd tò \"{title}\".～～～～～～～～⟧",
+    "toastCreatedAdded": "⟦Crèàtèd \"{title}\" ànd àddèd thè tràck.～～～～～～～～～～～～～～～⟧"
   }
 }

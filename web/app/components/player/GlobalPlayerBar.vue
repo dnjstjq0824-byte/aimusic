@@ -99,6 +99,8 @@
               {{ player.currentTrack.title }}
             </RouterLink>
             <div class="flex items-center gap-1.5 text-caption text-text-secondary mt-0.5 truncate">
+              <span v-if="player.currentTrack.creatorName" class="truncate">{{ player.currentTrack.creatorName }}</span>
+              <span v-if="player.currentTrack.creatorName" aria-hidden="true">·</span>
               <span class="font-medium text-brand-300">{{ player.currentTrack.aiProvider }}</span>
               <span aria-hidden="true">·</span>
               <span class="text-verified font-semibold">{{ t('player.verified') }}</span>
@@ -195,8 +197,21 @@
         </button>
       </div>
 
-      <!-- Right: Extras (Queue toggle, tablet/desktop) -->
+      <!-- Right: Extras (add-to-playlist, volume, queue toggle; tablet/desktop) -->
       <div class="hidden items-center justify-end gap-2.5 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:flex">
+        <button
+          v-if="player.currentTrack"
+          type="button"
+          class="rounded p-1 text-text-secondary transition-colors hover:text-white"
+          :aria-label="t('track.addToPlaylist')"
+          :title="t('track.addToPlaylist')"
+          @click="actions.addToPlaylist(player.currentTrack)"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M3 6h12M3 12h12M3 18h7M18 14v6M15 17h6" />
+          </svg>
+        </button>
+        <VolumeControl class="hidden md:flex" />
         <button
           type="button"
           class="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-2 px-2.5 py-1.5 text-xs text-text-primary hover:text-white hover:border-surface-border-hover transition-colors"
@@ -235,10 +250,13 @@ import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
+import VolumeControl from './VolumeControl.vue';
+import { useTrackActions } from '@/composables/useTrackActions';
 import { detailParam } from '@/utils/seo';
 const localePath = useLocalePath();
 
 const player = usePlayerStore();
+const actions = useTrackActions();
 const { t } = useI18n();
 
 defineEmits<{

@@ -229,7 +229,22 @@
       "tlCertified": "Certificate issued",
       "tlCertPending": "Certificate pending",
       "certIssued": "Issued: {at}",
-      "viewTrack": "View track page"
+      "viewTrack": "View track page",
+      "playStat": "{count} total plays",
+      "editTitle": "Edit details",
+      "editHint": "Title, AI provenance and audio back the certificate and cannot be edited.",
+      "editGenre": "Genre",
+      "editMoods": "Mood tags",
+      "editMoodsHint": "Comma-separated, up to 8",
+      "editLyrics": "Lyrics",
+      "editPromptPublic": "Show the generation prompt to listeners",
+      "save": "Save",
+      "saved": "Track details saved.",
+      "delete": "Delete track",
+      "delTitle": "Delete this track?",
+      "delBody": "\"{title}\" will be removed from the service and its audio permanently deleted. This cannot be undone. Play history and settlements are kept.",
+      "delConfirm": "Delete",
+      "deleted": "Track deleted."
     },
     "proofs": {
       "eyebrow": "Studio Console",

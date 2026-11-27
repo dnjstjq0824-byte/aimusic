@@ -118,6 +118,7 @@ type Repos struct {
 	Disputes      *DisputeRepo
 	Playlists     *PlaylistRepo
 	Engagement    *EngagementRepo
+	Comments      *CommentRepo
 	Business      *BusinessRepo
 	Playback      *PlaybackRepo
 	Streaming     *StreamingRepo
@@ -168,6 +169,7 @@ func New(db *sql.DB, rdb *redis.Client) *Repos {
 		Disputes:      &DisputeRepo{db: db},
 		Playlists:     &PlaylistRepo{db: db},
 		Engagement:    &EngagementRepo{db: db},
+		Comments:      &CommentRepo{db: db},
 		Business:      &BusinessRepo{db: db},
 		Playback:      &PlaybackRepo{db: db},
 		Streaming:     &StreamingRepo{db: db},

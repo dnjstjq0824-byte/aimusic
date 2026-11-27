@@ -10,6 +10,8 @@ import type {
   BusinessInquiry,
   BusinessProfile,
   CertificateView,
+  CommentPage,
+  TrackComment,
   CopyrightDispute,
   DeviceQueue,
   DSPKit,
@@ -262,6 +264,14 @@ export const partnerApi = {
   listMyTracks(limit = 20, offset = 0) {
     return unwrap<Track[]>(api.get('/partner/tracks', { params: { limit, offset } }));
   },
+  /** Edits discovery metadata only (title / AI provenance / audio are immutable). */
+  updateMyTrack(id: string, patch: { genre?: string; moodTags?: string[]; lyrics?: string; isPromptPublic?: boolean }) {
+    return unwrap<Track>(api.patch(`/partner/tracks/${encodeURIComponent(id)}`, patch));
+  },
+  /** Withdraws (deletes) the creator's own track: takedown + media purge. */
+  deleteMyTrack(id: string) {
+    return unwrap<{ deleted: boolean; status: string }>(api.delete(`/partner/tracks/${encodeURIComponent(id)}`));
+  },
   submitGeneration(input: {
     prompt: string;
     lyrics?: string;
@@ -386,8 +396,8 @@ export const trackApi = {
   get(id: string) {
     return unwrap<Track>(api.get(`/tracks/${encodeURIComponent(id)}`));
   },
-  charts(window: 'week' | 'month' | 'all' = 'week', limit = 50) {
-    return unwrap<Track[]>(api.get('/charts', { params: { window, limit } }));
+  charts(window: 'day' | 'week' | 'month' | 'all' = 'week', limit = 50, genre = '') {
+    return unwrap<Track[]>(api.get('/charts', { params: { window, limit, ...(genre ? { genre } : {}) } }));
   },
   trackPlaylists(id: string) {
     return unwrap<Playlist[]>(api.get(`/tracks/${encodeURIComponent(id)}/playlists`));
@@ -425,8 +435,10 @@ export const playbackApi = {
 };
 
 export const playlistApi = {
-  listMine() {
-    return unwrap<Playlist[]>(api.get('/playlists'));
+  /** With containsTrack, each playlist carries `containsTrack` (picker state). */
+  listMine(opts?: { containsTrack?: string }) {
+    const params = opts?.containsTrack ? { containsTrack: opts.containsTrack } : undefined;
+    return unwrap<Playlist[]>(api.get('/playlists', params ? { params } : undefined));
   },
   listPublic(limit = 8) {
     return unwrap<Playlist[]>(api.get('/playlists/public', { params: { limit } }));
@@ -440,14 +452,17 @@ export const playlistApi = {
   unsave(id: string) {
     return unwrap<{ saved: boolean; removed: boolean }>(api.delete(`/playlists/${encodeURIComponent(id)}/save`));
   },
-  create(title: string, isPublic = false) {
-    return unwrap<Playlist>(api.post('/playlists', { title, isPublic }));
+  create(title: string, isPublic = false, description?: string) {
+    return unwrap<Playlist>(api.post('/playlists', { title, isPublic, ...(description !== undefined ? { description } : {}) }));
   },
   get(id: string) {
     return unwrap<Playlist>(api.get(`/playlists/${encodeURIComponent(id)}`));
   },
-  update(id: string, title: string, isPublic: boolean) {
-    return unwrap<Playlist>(api.put(`/playlists/${encodeURIComponent(id)}`, { title, isPublic }));
+  /** description: undefined = unchanged, '' = clear. */
+  update(id: string, title: string, isPublic: boolean, description?: string) {
+    return unwrap<Playlist>(
+      api.put(`/playlists/${encodeURIComponent(id)}`, { title, isPublic, ...(description !== undefined ? { description } : {}) }),
+    );
   },
   remove(id: string) {
     return unwrap<{ deleted: boolean }>(api.delete(`/playlists/${encodeURIComponent(id)}`));
@@ -456,13 +471,29 @@ export const playlistApi = {
     return unwrap<PlaylistTrack[]>(api.get(`/playlists/${encodeURIComponent(id)}/tracks`));
   },
   addTrack(id: string, trackId: string) {
-    return unwrap<{ added: boolean }>(api.post(`/playlists/${encodeURIComponent(id)}/tracks`, { trackId }));
+    return unwrap<{ added: boolean; duplicate?: boolean }>(api.post(`/playlists/${encodeURIComponent(id)}/tracks`, { trackId }));
   },
   removeTrack(id: string, trackId: string) {
     return unwrap<{ removed: boolean }>(api.delete(`/playlists/${encodeURIComponent(id)}/tracks/${encodeURIComponent(trackId)}`));
   },
   reorder(id: string, trackIds: string[]) {
     return unwrap<{ reordered: boolean }>(api.put(`/playlists/${encodeURIComponent(id)}/reorder`, { trackIds }));
+  },
+};
+
+export const commentApi = {
+  list(trackId: string, before?: string, limit = 20) {
+    return unwrap<CommentPage>(
+      api.get(`/tracks/${encodeURIComponent(trackId)}/comments`, { params: { limit, ...(before ? { before } : {}) } }),
+    );
+  },
+  create(trackId: string, body: string) {
+    return unwrap<TrackComment>(api.post(`/tracks/${encodeURIComponent(trackId)}/comments`, { body }));
+  },
+  remove(trackId: string, commentId: string) {
+    return unwrap<{ deleted: boolean }>(
+      api.delete(`/tracks/${encodeURIComponent(trackId)}/comments/${encodeURIComponent(commentId)}`),
+    );
   },
 };
 

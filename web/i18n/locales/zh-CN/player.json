@@ -43,6 +43,14 @@
     "errStreamLost": "流媒体连接中断：{title}",
     "errSkipLogin": "播放需要登录。",
     "errSkipUnplayable": "跳过无法播放的音乐：{title}",
-    "storeErrPlayFailed": "无法播放该音乐，请检查网络。"
+    "storeErrPlayFailed": "无法播放该音乐，请检查网络。",
+    "toastAlreadyQueued": "该曲目已在播放队列中。",
+    "toastPlayNext": "将在下一首播放。",
+    "errSkipCorrupt": "已跳过损坏的音频文件：{title}",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "volume": "音量",
+    "volumePct": "音量 {pct}%",
+    "queueHint": "拖动或使用箭头调整顺序。"
   }
 }

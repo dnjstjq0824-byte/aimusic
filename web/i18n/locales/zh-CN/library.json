@@ -26,6 +26,8 @@
     "toastLiked": "已点赞。",
     "toastUnliked": "已取消点赞。",
     "toastFollowed": "已关注。",
-    "toastUnfollowed": "已取消关注。"
+    "toastUnfollowed": "已取消关注。",
+    "tabPlaylists": "我的歌单",
+    "managePlaylists": "管理歌单"
   }
 }

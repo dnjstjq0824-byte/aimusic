@@ -75,7 +75,21 @@
       "add": "添加 →",
       "createMore": "+ 新建",
       "namePh": "新播放列表标题",
-      "create": "创建"
-    }
+      "create": "创建",
+      "already": "已添加",
+      "alreadyAria": "已在「{title}」中",
+      "addAria": "添加到「{title}」",
+      "createAndAdd": "创建并添加"
+    },
+    "meCount": "{count} 个歌单",
+    "dragHandle": "拖动以调整顺序：{title}",
+    "unavailable": "不可播放",
+    "trackUpAria": "上移：{title}",
+    "trackDownAria": "下移：{title}",
+    "editDescription": "简介（可选）",
+    "editDescriptionPh": "介绍一下这个歌单的氛围。",
+    "toastDuplicate": "已在「{title}」中。",
+    "toastAddedTo": "已添加到「{title}」。",
+    "toastCreatedAdded": "已创建「{title}」并添加曲目。"
   }
 }

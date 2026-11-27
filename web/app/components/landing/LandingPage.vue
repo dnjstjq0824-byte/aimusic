@@ -13,7 +13,7 @@
 
     <ol v-else class="space-y-1">
       <li v-for="tr in tracks" :key="tr.id">
-        <TrackRow :track="tr" @play="playOne" @enqueue="enqueueOne" />
+        <TrackRow :track="tr" @play="playOne" />
       </li>
     </ol>
 
@@ -28,7 +28,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/playerStore';
-import { useToast } from '@/composables/useToast';
 import { useFormat } from '@/composables/useFormat';
 import type { Track } from '@/api/types';
 import UiButton from '@/components/ui/UiButton.vue';
@@ -49,7 +48,6 @@ const props = defineProps<{
 const localePath = useLocalePath();
 const { t } = useI18n();
 const player = usePlayerStore();
-const toast = useToast();
 const fmt = useFormat();
 
 const exploreQuery = computed(() => {
@@ -58,12 +56,8 @@ const exploreQuery = computed(() => {
   return { mood: props.tagKey };
 });
 
+// The landing list becomes the queue so playback continues through it.
 function playOne(tr: Track): void {
-  player.setQueue([tr], tr.id);
-}
-
-function enqueueOne(tr: Track): void {
-  player.enqueue(tr);
-  toast.info(t('track.toastQueued'));
+  player.setQueue(props.tracks, tr.id);
 }
 </script>

@@ -638,7 +638,35 @@ type Playlist struct {
 	IsOfficialCuration bool      `json:"isOfficialCuration"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
+	// Derived (not columns): READY-track count/runtime and the first four
+	// READY track IDs, which seed the auto-generated cover mosaic.
+	TrackCount      int      `json:"trackCount"`
+	TotalDurationMs int64    `json:"totalDurationMs"`
+	CoverSeeds      []string `json:"coverSeeds"`
+	// ContainsTrack is set only when a list call asks about one track
+	// (add-to-playlist picker); nil otherwise.
+	ContainsTrack *bool `json:"containsTrack,omitempty"`
 }
+
+// Playlist limits (service-enforced).
+const (
+	PlaylistTitleMax       = 100
+	PlaylistDescriptionMax = 500
+	PlaylistMaxTracks      = 1000
+)
+
+// TrackComment is one listener comment on a track.
+type TrackComment struct {
+	ID         string    `json:"id"`
+	TrackID    string    `json:"trackId"`
+	UserID     string    `json:"userId"`
+	AuthorName string    `json:"authorName"`
+	Body       string    `json:"body"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
+// TrackCommentMax bounds a comment body (runes; DB CHECK mirrors it).
+const TrackCommentMax = 1000
 
 // BusinessInquiry is one B2B sales inquiry (R7).
 type BusinessInquiry struct {
@@ -671,6 +699,8 @@ type Follow struct {
 	TargetID    string    `json:"targetId"`
 	DisplayName string    `json:"displayName"`
 	CreatedAt   time.Time `json:"createdAt"`
+	// Handle is the creator's public handle (profile link); creators only.
+	Handle *string `json:"handle,omitempty"`
 }
 
 // PlaylistTrack mirrors playlist_tracks.
@@ -680,6 +710,9 @@ type PlaylistTrack struct {
 	TrackID    string    `json:"trackId"`
 	Position   int       `json:"position"`
 	AddedAt    time.Time `json:"addedAt"`
+	// Track is the joined, public-view track (one query, no N+1). Non-READY
+	// entries are only returned to the playlist owner.
+	Track *Track `json:"track,omitempty"`
 }
 
 // UserPlaybackState mirrors user_playback_states.

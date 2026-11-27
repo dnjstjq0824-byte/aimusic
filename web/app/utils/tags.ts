@@ -16,3 +16,6 @@ export function tagDisplayName(
   const path = `tags.${key}`;
   return te(path) ? String(t(path)) : (raw ?? '').trim();
 }
+
+/** Canonical genre keys (explore filter, genre charts). */
+export const GENRES: string[] = ['electronic', 'pop', 'rock', 'hiphop', 'jazz', 'classical', 'ambient'];

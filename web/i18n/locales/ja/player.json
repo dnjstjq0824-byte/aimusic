@@ -43,6 +43,14 @@
     "errStreamLost": "ストリーミングが切断されました：{title}",
     "errSkipLogin": "再生にはログインが必要です。",
     "errSkipUnplayable": "再生できない音源をスキップします：{title}",
-    "storeErrPlayFailed": "音源を再生できません。ネットワークを確認してください。"
+    "storeErrPlayFailed": "音源を再生できません。ネットワークを確認してください。",
+    "toastAlreadyQueued": "この曲はすでに再生キューにあります。",
+    "toastPlayNext": "次に再生します。",
+    "errSkipCorrupt": "破損した音源ファイルをスキップしました: {title}",
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
+    "volume": "音量",
+    "volumePct": "音量 {pct}%",
+    "queueHint": "ドラッグまたは矢印で順番を変更できます。"
   }
 }

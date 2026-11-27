@@ -46,7 +46,7 @@
         </div>
         <ol v-else class="space-y-1">
           <li v-for="(tr, i) in topTracks" :key="tr.id">
-            <TrackRow :track="tr" :rank="i + 1" @play="playOther" @enqueue="enqueueOther" />
+            <TrackRow :track="tr" :rank="i + 1" @play="(x) => playFrom(topTracks, x)" />
           </li>
         </ol>
       </section>
@@ -57,7 +57,7 @@
         </div>
         <ol v-else class="space-y-1">
           <li v-for="tr in allTracks" :key="tr.id">
-            <TrackRow :track="tr" @play="playOther" @enqueue="enqueueOther" />
+            <TrackRow :track="tr" @play="(x) => playFrom(allTracks, x)" />
           </li>
         </ol>
       </section>
@@ -73,8 +73,9 @@
             :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
             class="group"
           >
-            <CoverMosaic :seeds="[pl.id]" :title="pl.title" size="md" />
+            <CoverMosaic :seeds="pl.coverSeeds?.length ? pl.coverSeeds : [pl.id]" :title="pl.title" size="md" />
             <span class="mt-1.5 block truncate text-xs font-bold text-white group-hover:text-brand-400">{{ pl.title }}</span>
+            <span class="block text-caption text-text-muted">{{ t('playlist.metaTracks', { count: fmt.number(pl.trackCount ?? 0) }) }}</span>
           </RouterLink>
         </div>
       </section>
@@ -244,13 +245,9 @@ async function copyLink(): Promise<void> {
   }
 }
 
-function playOther(tr: Track): void {
-  player.setQueue([tr], tr.id);
-}
-
-function enqueueOther(tr: Track): void {
-  player.enqueue(tr);
-  toast.info(t('track.toastQueued'));
+// The visible list becomes the queue so playback continues through it.
+function playFrom(list: Track[], tr: Track): void {
+  player.setQueue(list, tr.id);
 }
 
 onMounted(() => {

@@ -20,6 +20,8 @@ type Services struct {
 	Disputes      *DisputeService
 	Playlists     *PlaylistService
 	Engagement    *EngagementService
+	Comments      *CommentService
+	StudioTracks  *StudioTrackService
 	Business      *BusinessService
 	Playback      *PlaybackService
 	Settlement    *SettlementService
@@ -54,14 +56,17 @@ func New(repos *repository.Repos, st storage.Storage, buckets storage.Buckets, c
 	}
 	auth := NewAuthService(repos, cfg)
 	oauth := NewOAuthService(repos, auth, cfg, nil)
+	disputes := &DisputeService{repos: repos, storage: st, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS}
 	return &Services{
 		Auth:          auth,
 		Precheck:      &PrecheckService{repos: repos, storage: st, stagingBucket: buckets.Staging},
 		Finalize:      &FinalizeService{repos: repos, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
 		Review:        &ReviewService{repos: repos},
-		Disputes:      &DisputeService{repos: repos, storage: st, stagingBucket: buckets.Staging, hlsBucket: buckets.PublicHLS},
+		Disputes:      disputes,
 		Playlists:     &PlaylistService{repos: repos},
 		Engagement:    &EngagementService{repos: repos},
+		Comments:      NewCommentService(repos),
+		StudioTracks:  NewStudioTrackService(repos, disputes),
 		Business:      NewBusinessService(repos, mailer, cfg.Mail.NotifyEmail),
 		Playback:      &PlaybackService{repos: repos},
 		Settlement:    &SettlementService{repos: repos, cipher: settlementCipher},

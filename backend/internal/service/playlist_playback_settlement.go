@@ -9,6 +9,7 @@ import (
 	"math/bits"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"avibe-platform/backend/internal/domain"
 	apcrypto "avibe-platform/backend/internal/pkg/crypto"
@@ -20,12 +21,41 @@ type PlaylistService struct {
 	repos *repository.Repos
 }
 
-// Create makes a playlist owned by userID.
-func (s *PlaylistService) Create(ctx context.Context, ownerID, title string, isPublic bool) (*domain.Playlist, error) {
+// normalizePlaylistFields trims and bounds title/description. A nil
+// description stays nil (Update: "leave unchanged").
+func normalizePlaylistFields(title string, description *string) (string, *string, error) {
+	title = strings.TrimSpace(title)
 	if title == "" {
-		return nil, fmt.Errorf("%w: title", domain.ErrInvalidInput)
+		return "", nil, fmt.Errorf("%w: title", domain.ErrInvalidInput)
 	}
-	return s.repos.Playlists.Create(ctx, ownerID, title, isPublic)
+	if utf8.RuneCountInString(title) > domain.PlaylistTitleMax {
+		return "", nil, fmt.Errorf("%w: title too long", domain.ErrInvalidInput)
+	}
+	if description != nil {
+		d := strings.TrimSpace(*description)
+		if utf8.RuneCountInString(d) > domain.PlaylistDescriptionMax {
+			return "", nil, fmt.Errorf("%w: description too long", domain.ErrInvalidInput)
+		}
+		description = &d
+	}
+	return title, description, nil
+}
+
+// Create makes a playlist owned by userID.
+func (s *PlaylistService) Create(ctx context.Context, ownerID, title string, description *string, isPublic bool) (*domain.Playlist, error) {
+	title, description, err := normalizePlaylistFields(title, description)
+	if err != nil {
+		return nil, err
+	}
+	if description != nil && *description == "" {
+		description = nil
+	}
+	p, err := s.repos.Playlists.Create(ctx, ownerID, title, description, isPublic)
+	if err != nil {
+		return nil, err
+	}
+	p.CoverSeeds = []string{}
+	return p, nil
 }
 
 // Get returns a playlist visible to caller (owner or public).
@@ -35,15 +65,30 @@ func (s *PlaylistService) Get(ctx context.Context, callerID, playlistID string) 
 	if err != nil {
 		return nil, err
 	}
-	if p.OwnerUserID != callerID && !p.IsPublic {
+	if p.OwnerUserID != callerID && !p.IsPublic && !p.IsOfficialCuration {
 		return nil, domain.ErrForbidden
 	}
-	return p, nil
+	// PlaylistByParam resolves the address only; GetByID adds owner name
+	// and READY-track stats.
+	return s.repos.Playlists.GetByID(ctx, p.ID)
 }
 
-// ListMine returns the caller's playlists.
-func (s *PlaylistService) ListMine(ctx context.Context, callerID string) ([]*domain.Playlist, error) {
-	return s.repos.Playlists.ListByOwner(ctx, callerID)
+// ListMine returns the caller's playlists. With containsTrackID set, each
+// playlist reports whether it already holds that track (picker state).
+func (s *PlaylistService) ListMine(ctx context.Context, callerID, containsTrackID string) ([]*domain.Playlist, error) {
+	list, err := s.repos.Playlists.ListByOwner(ctx, callerID)
+	if err != nil || containsTrackID == "" {
+		return list, err
+	}
+	holding, err := s.repos.Playlists.ContainingTrack(ctx, callerID, containsTrackID)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range list {
+		has := holding[p.ID]
+		p.ContainsTrack = &has
+	}
+	return list, nil
 }
 
 // ListPublic returns discoverable playlists for guests and rails.
@@ -51,12 +96,16 @@ func (s *PlaylistService) ListPublic(ctx context.Context, limit int) ([]*domain.
 	return s.repos.Playlists.ListPublic(ctx, limit)
 }
 
-// Update renames a playlist; owner only.
-func (s *PlaylistService) Update(ctx context.Context, callerID, playlistID, title string, isPublic bool) (*domain.Playlist, error) {
+// Update edits title, description (nil = unchanged) and visibility; owner only.
+func (s *PlaylistService) Update(ctx context.Context, callerID, playlistID, title string, description *string, isPublic bool) (*domain.Playlist, error) {
+	title, description, err := normalizePlaylistFields(title, description)
+	if err != nil {
+		return nil, err
+	}
 	if err := s.requireOwner(ctx, callerID, playlistID); err != nil {
 		return nil, err
 	}
-	if err := s.repos.Playlists.Update(ctx, playlistID, title, isPublic); err != nil {
+	if err := s.repos.Playlists.Update(ctx, playlistID, title, description, isPublic); err != nil {
 		return nil, err
 	}
 	return s.repos.Playlists.GetByID(ctx, playlistID)
@@ -70,17 +119,25 @@ func (s *PlaylistService) Delete(ctx context.Context, callerID, playlistID strin
 	return s.repos.Playlists.Delete(ctx, playlistID)
 }
 
-// AddTrack appends a READY track; owner only.
-func (s *PlaylistService) AddTrack(ctx context.Context, callerID, playlistID, trackID string) error {
+// AddTrack appends a READY track; owner only. added=false reports a track
+// that was already in the playlist (no duplicate entry is created).
+func (s *PlaylistService) AddTrack(ctx context.Context, callerID, playlistID, trackID string) (bool, error) {
 	if err := s.requireOwner(ctx, callerID, playlistID); err != nil {
-		return err
+		return false, err
 	}
 	track, err := s.repos.Tracks.GetByID(ctx, trackID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if track.Status != domain.TrackReady {
-		return domain.ErrNotStreamable
+		return false, domain.ErrNotStreamable
+	}
+	n, err := s.repos.Playlists.CountTracks(ctx, playlistID)
+	if err != nil {
+		return false, err
+	}
+	if n >= domain.PlaylistMaxTracks {
+		return false, fmt.Errorf("%w: playlist is full (%d tracks)", domain.ErrInvalidInput, domain.PlaylistMaxTracks)
 	}
 	return s.repos.Playlists.AddTrack(ctx, playlistID, trackID)
 }
@@ -136,16 +193,22 @@ func validateReorderIDs(currentIDs, trackIDs []string) error {
 	return nil
 }
 
-// ListTracks returns ordered entries visible to caller.
+// ListTracks returns ordered entries visible to caller, each with its
+// public-view track. The owner also sees non-READY (taken-down / in-review)
+// entries so a reorder can always name every member.
 func (s *PlaylistService) ListTracks(ctx context.Context, callerID, playlistID string) ([]*domain.PlaylistTrack, error) {
 	p, err := s.Get(ctx, callerID, playlistID)
 	if err != nil {
 		return nil, err
 	}
-	return s.repos.Playlists.ListTracks(ctx, p.ID)
+	isOwner := callerID != "" && p.OwnerUserID == callerID
+	return s.repos.Playlists.ListTracksWithMeta(ctx, p.ID, !isOwner)
 }
 
 func (s *PlaylistService) requireOwner(ctx context.Context, callerID, playlistID string) error {
+	if callerID == "" {
+		return domain.ErrForbidden
+	}
 	p, err := s.repos.Playlists.GetByID(ctx, playlistID)
 	if err != nil {
 		return err

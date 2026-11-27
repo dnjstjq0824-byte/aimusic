@@ -49,6 +49,8 @@ func (r *Repos) WithdrawUserTx(ctx context.Context, userID string) error {
 			DELETE FROM email_verifications WHERE user_id = $1::uuid AND used_at IS NULL`},
 		{"delete oauth links", `DELETE FROM oauth_accounts WHERE user_id = $1::uuid`},
 		{"delete notifications", `DELETE FROM notifications WHERE user_id = $1::uuid`},
+		// Comments are user-authored free text: withdrawal removes them.
+		{"delete track comments", `DELETE FROM track_comments WHERE user_id = $1::uuid`},
 		{"bump token version", `UPDATE users SET token_version = token_version + 1 WHERE id = $1::uuid`},
 	}
 	for _, st := range steps {

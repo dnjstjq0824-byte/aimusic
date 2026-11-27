@@ -26,18 +26,23 @@
 
     <FullscreenPlayer v-if="fullscreenOpen" @close="fullscreenOpen = false" />
 
+    <ClientOnly>
+      <TrackActionHost />
+    </ClientOnly>
+
     <UiToastContainer />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import LocaleBanner from '@/components/LocaleBanner.vue';
 import EmailVerifyBanner from '@/components/EmailVerifyBanner.vue';
 import UiNavbar from '@/components/ui/UiNavbar.vue';
 import UiFooter from '@/components/ui/UiFooter.vue';
 import UiToastContainer from '@/components/ui/UiToastContainer.vue';
 import MobileTabBar from '@/components/ui/MobileTabBar.vue';
+import TrackActionHost from '@/components/TrackActionHost.vue';
 import { usePublicSeo } from '@/composables/usePublicSeo';
 import { usePlayerStore } from '@/stores/playerStore';
 import { stripLocalePrefix } from '@/utils/seo';
@@ -62,4 +67,7 @@ usePublicSeo({
 const player = usePlayerStore();
 const queueOpen = ref(false);
 const fullscreenOpen = ref(false);
+
+// The queue/volume from the last visit come back after hydration (paused).
+onMounted(() => player.restore());
 </script>

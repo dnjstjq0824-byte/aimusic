@@ -508,21 +508,26 @@ func (r *TrackRepo) ListByStatus(ctx context.Context, status string, limit, offs
 }
 
 // TopByPlays returns READY tracks ordered by play count for curation.
-func (r *TrackRepo) TopByPlays(ctx context.Context, limit int) ([]*domain.Track, error) {
+// genre "" means all genres (case-insensitive match otherwise).
+func (r *TrackRepo) TopByPlays(ctx context.Context, genre string, limit int) ([]*domain.Track, error) {
 	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
-		FROM tracks`+trackCreatorJoin+` WHERE tracks.status = 'READY' ORDER BY tracks.play_count DESC, tracks.created_at DESC LIMIT $1`,
-		clampLimit(limit, 20, 100))
+		FROM tracks`+trackCreatorJoin+` WHERE tracks.status = 'READY'
+			AND ($2 = '' OR lower(tracks.genre) = lower($2))
+		ORDER BY tracks.play_count DESC, tracks.created_at DESC LIMIT $1`,
+		clampLimit(limit, 20, 100), genre)
 }
 
 // TopPlayedSince returns READY tracks ranked by counted plays within the
 // window (charts). since bounds streaming_logs.played_at; limit clamps.
-func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, limit int) ([]*domain.Track, error) {
+// genre "" means all genres.
+func (r *TrackRepo) TopPlayedSince(ctx context.Context, since time.Time, genre string, limit int) ([]*domain.Track, error) {
 	return r.listTracksWithCreator(ctx, `SELECT `+trackCreatorSelect+`
 		FROM tracks`+trackCreatorJoin+`
 		JOIN (SELECT track_id, COUNT(*) AS plays FROM streaming_logs
 			WHERE counted_as_play AND played_at >= $1 GROUP BY track_id) s ON s.track_id = tracks.id
-		WHERE tracks.status = 'READY' ORDER BY s.plays DESC, tracks.play_count DESC LIMIT $2`,
-		since, clampLimit(limit, 20, 100))
+		WHERE tracks.status = 'READY' AND ($3 = '' OR lower(tracks.genre) = lower($3))
+		ORDER BY s.plays DESC, tracks.play_count DESC LIMIT $2`,
+		since, clampLimit(limit, 20, 100), genre)
 }
 
 // LikedTracks returns the user's liked tracks, most recently liked first.
@@ -544,6 +549,15 @@ func (r *TrackRepo) RecentTracks(ctx context.Context, userID string, limit int) 
 		WHERE st.user_id = $1::uuid AND tracks.status = 'READY'
 		ORDER BY st.updated_at DESC LIMIT $2`,
 		userID, clampLimit(limit, 20, 100))
+}
+
+// UpdateListingMetadata edits creator-editable discovery metadata. Title,
+// AI provenance and media fields are evidence and never change here.
+func (r *TrackRepo) UpdateListingMetadata(ctx context.Context, id string, genre *string, moods []string, lyrics *string, isPromptPublic bool) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE tracks SET genre = $2, mood_tags = string_to_array($3, chr(31)), lyrics = $4, is_prompt_public = $5
+		WHERE id = $1::uuid`, id, nullStr(genre), joinKeywords(moods), nullStr(lyrics), isPromptPublic)
+	return err
 }
 
 // UpdateStatus transitions a track with an optional Korean rejection reason.

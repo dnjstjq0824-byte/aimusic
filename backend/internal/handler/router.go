@@ -137,6 +137,8 @@ func SetupRouter(d *Deps) *gin.Engine {
 	partner.POST("/albums", partnerH.CreateAlbum)
 	partner.GET("/albums", partnerH.ListAlbums)
 	partner.GET("/tracks", partnerH.ListMyTracks)
+	partner.PATCH("/tracks/:id", partnerH.UpdateMyTrack)
+	partner.DELETE("/tracks/:id", partnerH.DeleteMyTrack)
 	partner.POST("/generations", RequireEmailVerified(d.Repos.Users), partnerH.SubmitGeneration)
 	partner.GET("/generations", partnerH.ListGenerations)
 	partner.GET("/generations/:id", partnerH.GetGeneration)
@@ -157,6 +159,10 @@ func SetupRouter(d *Deps) *gin.Engine {
 	tracks.GET("/:id", JWTOptional(d.Services.Auth), trackH.GetTrack)
 	tracks.GET("/:id/certificate", certH.VerifyTrackCertificate)
 	tracks.GET("/:id/playlists", trackH.TrackPlaylists)
+	commentH := &CommentHandler{Comments: d.Services.Comments}
+	tracks.GET("/:id/comments", commentH.List)
+	tracks.POST("/:id/comments", JWTAuth(d.Services.Auth), RateLimit(1, 10), commentH.Create)
+	tracks.DELETE("/:id/comments/:commentId", JWTAuth(d.Services.Auth), commentH.Delete)
 	v1.GET("/charts", trackH.Charts)
 
 	biz := v1.Group("/business")

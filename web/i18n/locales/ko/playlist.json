@@ -75,7 +75,21 @@
       "add": "담기 →",
       "createMore": "+ 새로 만들기",
       "namePh": "새 플레이리스트 제목",
-      "create": "생성"
-    }
+      "create": "생성",
+      "already": "담김",
+      "alreadyAria": "「{title}」에 이미 담긴 곡",
+      "addAria": "「{title}」에 담기",
+      "createAndAdd": "만들고 담기"
+    },
+    "meCount": "플레이리스트 {count}개",
+    "dragHandle": "드래그하여 순서 변경: {title}",
+    "unavailable": "재생 불가",
+    "trackUpAria": "위로 이동: {title}",
+    "trackDownAria": "아래로 이동: {title}",
+    "editDescription": "설명 (선택)",
+    "editDescriptionPh": "어떤 분위기의 플레이리스트인지 적어 주세요.",
+    "toastDuplicate": "이미 「{title}」에 담긴 곡입니다.",
+    "toastAddedTo": "「{title}」에 담았습니다.",
+    "toastCreatedAdded": "「{title}」을(를) 만들고 곡을 담았습니다."
   }
 }

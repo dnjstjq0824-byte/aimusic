@@ -63,6 +63,22 @@
     "toastCopyFailed": "复制失败。",
     "toastNeedPass": "下载需要付费通行证。",
     "toastQuota": "已超出每日下载上限。",
-    "toastDlStarted": "开始下载。"
+    "toastDlStarted": "开始下载。",
+    "playNext": "下一首播放",
+    "waveSeekAria": "播放进度 {pct}% · 点击跳转",
+    "comments": {
+      "title": "评论",
+      "label": "发表评论",
+      "placeholder": "分享你对这首曲目的感受。",
+      "submit": "发布",
+      "loginHint": "登录后即可发表评论。",
+      "loginCta": "登录",
+      "empty": "还没有评论，来发表第一条吧。",
+      "delete": "删除",
+      "more": "查看更早的评论",
+      "posted": "评论已发布。",
+      "deleted": "评论已删除。"
+    },
+    "chartDay": "日榜"
   }
 }

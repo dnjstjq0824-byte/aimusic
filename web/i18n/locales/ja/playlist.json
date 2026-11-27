@@ -75,7 +75,21 @@
       "add": "入れる →",
       "createMore": "+ 新規作成",
       "namePh": "新しいプレイリスト名",
-      "create": "作成"
-    }
+      "create": "作成",
+      "already": "追加済み",
+      "alreadyAria": "「{title}」に追加済み",
+      "addAria": "「{title}」に追加",
+      "createAndAdd": "作成して追加"
+    },
+    "meCount": "プレイリスト {count}件",
+    "dragHandle": "ドラッグして並べ替え: {title}",
+    "unavailable": "再生不可",
+    "trackUpAria": "上へ移動: {title}",
+    "trackDownAria": "下へ移動: {title}",
+    "editDescription": "説明（任意）",
+    "editDescriptionPh": "どんな雰囲気のプレイリストか書いてください。",
+    "toastDuplicate": "すでに「{title}」に入っています。",
+    "toastAddedTo": "「{title}」に追加しました。",
+    "toastCreatedAdded": "「{title}」を作成して曲を追加しました。"
   }
 }

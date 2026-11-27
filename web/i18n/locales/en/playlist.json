@@ -75,7 +75,21 @@
       "add": "Add →",
       "createMore": "+ New",
       "namePh": "New playlist title",
-      "create": "Create"
-    }
+      "create": "Create",
+      "already": "Added",
+      "alreadyAria": "Already in \"{title}\"",
+      "addAria": "Add to \"{title}\"",
+      "createAndAdd": "Create & add"
+    },
+    "meCount": "{count} playlists",
+    "dragHandle": "Drag to reorder: {title}",
+    "unavailable": "Unavailable",
+    "trackUpAria": "Move up: {title}",
+    "trackDownAria": "Move down: {title}",
+    "editDescription": "Description (optional)",
+    "editDescriptionPh": "What is this playlist about?",
+    "toastDuplicate": "Already in \"{title}\".",
+    "toastAddedTo": "Added to \"{title}\".",
+    "toastCreatedAdded": "Created \"{title}\" and added the track."
   }
 }

@@ -75,7 +75,21 @@
       "add": "เพิ่ม →",
       "createMore": "+ สร้างใหม่",
       "namePh": "ชื่อเพลย์ลิสต์ใหม่",
-      "create": "สร้าง"
-    }
+      "create": "สร้าง",
+      "already": "เพิ่มแล้ว",
+      "alreadyAria": "มีอยู่ใน \"{title}\" แล้ว",
+      "addAria": "เพิ่มลงใน \"{title}\"",
+      "createAndAdd": "สร้างและเพิ่ม"
+    },
+    "meCount": "{count} เพลย์ลิสต์",
+    "dragHandle": "ลากเพื่อจัดลำดับ: {title}",
+    "unavailable": "เล่นไม่ได้",
+    "trackUpAria": "เลื่อนขึ้น: {title}",
+    "trackDownAria": "เลื่อนลง: {title}",
+    "editDescription": "คำอธิบาย (ไม่บังคับ)",
+    "editDescriptionPh": "เพลย์ลิสต์นี้เกี่ยวกับอะไร",
+    "toastDuplicate": "มีอยู่ใน \"{title}\" แล้ว",
+    "toastAddedTo": "เพิ่มลงใน \"{title}\" แล้ว",
+    "toastCreatedAdded": "สร้าง \"{title}\" และเพิ่มเพลงแล้ว"
   }
 }

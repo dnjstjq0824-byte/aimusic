@@ -2,6 +2,10 @@
   <div class="space-y-6">
     <UiPageHeader :title="t('track.chartsTitle')">
       <template #actions>
+        <UiSelect v-model="genre" :label="t('explore.genreLabel')" class="w-36" @change="selectGenre">
+          <option value="">{{ t('explore.genreAll') }}</option>
+          <option v-for="g in GENRES" :key="g" :value="g">{{ tagDisplayName(g, t, te) }}</option>
+        </UiSelect>
         <div class="flex gap-1 rounded-lg border border-surface-border bg-surface-1 p-1" role="tablist" :aria-label="t('track.chartsTitle')">
           <button
             v-for="w in windows"
@@ -35,86 +39,61 @@
           :track="tr"
           :rank="offset + i + 1"
           @play="playOne"
-          @enqueue="enqueue"
-          @add-to-playlist="openAddToPlaylist"
-          @report="openReport"
         />
       </li>
     </ol>
 
-    <DisputeReportModal
-      v-if="reportTarget"
-      :track-id="reportTarget.id"
-      :track-title="reportTarget.title"
-      @close="reportTarget = null"
-      @reported="onReported"
-    />
-
-    <UiPlaylistPicker
-      :model-value="Boolean(playlistTargetTrack)"
-      :track-title="playlistTargetTrack?.title ?? ''"
-      :playlists="playlists.playlists"
-      :create-loading="creatingPlaylist"
-      @update:model-value="playlistTargetTrack = $event ? playlistTargetTrack : null"
-      @select="addTrackToPlaylist"
-      @create="createNewPlaylist"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { trackApi, playlistApi } from '@/api/endpoints';
-import { useAuthStore } from '@/stores/authStore';
+import { trackApi } from '@/api/endpoints';
 import { usePlayerStore } from '@/stores/playerStore';
-import { usePlaylistStore } from '@/stores/playlistStore';
-import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
 import type { Track } from '@/api/types';
 import UiPageHeader from '@/components/ui/UiPageHeader.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
-import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
+import UiSelect from '@/components/ui/UiSelect.vue';
+import { GENRES, tagDisplayName } from '@/utils/tags';
 import TrackRow from '@/components/TrackRow.vue';
-import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
 
-const { t } = useI18n();
-const localePath = useLocalePath();
+const { t, te } = useI18n();
 const route = useRoute();
 const router = useRouter();
-const auth = useAuthStore();
 const player = usePlayerStore();
-const playlists = usePlaylistStore();
-const toast = useToast();
 const apiError = useApiError();
 
-type Window = 'week' | 'month' | 'all';
+type Window = 'day' | 'week' | 'month' | 'all';
 // NOTE: labelKeys resolve dynamically (invisible to check-i18n usage
 // scan — they are used, do not delete).
 const windows: { id: Window; labelKey: string }[] = [
+  { id: 'day', labelKey: 'track.chartDay' },
   { id: 'week', labelKey: 'track.chartWeek' },
   { id: 'month', labelKey: 'track.chartMonth' },
   { id: 'all', labelKey: 'track.chartAll' },
 ];
 const window = ref<Window>(
-  route.query.window === 'month' || route.query.window === 'all' ? route.query.window : 'week',
+  route.query.window === 'day' || route.query.window === 'month' || route.query.window === 'all' ? route.query.window : 'week',
+);
+// Genre charts (?genre=); only known genres are accepted from the URL.
+const genre = ref<string>(
+  typeof route.query.genre === 'string' && GENRES.includes(route.query.genre) ? route.query.genre : '',
 );
 
 const tracks = ref<Track[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const offset = 0;
-const reportTarget = ref<Track | null>(null);
-const playlistTargetTrack = ref<Track | null>(null);
-const creatingPlaylist = ref(false);
 
 async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    tracks.value = (await trackApi.charts(window.value, 50)) ?? [];
+    tracks.value = (await trackApi.charts(window.value, 50, genre.value)) ?? [];
   } catch (err: unknown) {
     error.value = apiError(err);
   } finally {
@@ -122,70 +101,27 @@ async function load(): Promise<void> {
   }
 }
 
+function syncQuery(): void {
+  void router.replace({ query: { ...route.query, window: window.value, genre: genre.value || undefined } });
+}
+
 function selectWindow(w: Window): void {
   window.value = w;
+  syncQuery();
   void load();
 }
 
+function selectGenre(): void {
+  syncQuery();
+  void load();
+}
+
+// The whole chart becomes the queue: the next rank plays when one ends.
 function playOne(tr: Track): void {
-  player.setQueue([tr], tr.id);
-}
-
-function enqueue(tr: Track): void {
-  player.enqueue(tr);
-  toast.info(t('track.toastQueued'));
-}
-
-function requireLogin(): boolean {
-  if (auth.isAuthenticated) return true;
-  toast.info(t('track.toastNeedLogin'));
-  void router.push(localePath({ name: 'login', query: { redirect: route.fullPath } }));
-  return false;
-}
-
-function openAddToPlaylist(tr: Track): void {
-  if (!requireLogin()) return;
-  playlistTargetTrack.value = tr;
-}
-
-async function addTrackToPlaylist(playlistId: string): Promise<void> {
-  if (!playlistTargetTrack.value) return;
-  try {
-    await playlistApi.addTrack(playlistId, playlistTargetTrack.value.id);
-    toast.success(t('track.toastAdded'));
-    playlistTargetTrack.value = null;
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  }
-}
-
-async function createNewPlaylist(title: string): Promise<void> {
-  creatingPlaylist.value = true;
-  try {
-    const created = await playlistApi.create(title, false);
-    playlists.playlists.unshift(created);
-    if (playlistTargetTrack.value) {
-      await addTrackToPlaylist(created.id);
-    }
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  } finally {
-    creatingPlaylist.value = false;
-  }
-}
-
-function openReport(tr: Track): void {
-  if (!requireLogin()) return;
-  reportTarget.value = tr;
-}
-
-function onReported(): void {
-  reportTarget.value = null;
-  toast.success(t('track.toastReported'));
+  player.setQueue(tracks.value, tr.id);
 }
 
 onMounted(() => {
   void load();
-  void playlists.fetchMine();
 });
 </script>

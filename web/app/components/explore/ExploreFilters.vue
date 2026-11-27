@@ -69,7 +69,7 @@
 <script setup lang="ts">
 import UiSelect from '@/components/ui/UiSelect.vue';
 import { providerDisplayName } from '@/utils/providerDisplay';
-import { tagDisplayName } from '@/utils/tags';
+import { GENRES, tagDisplayName } from '@/utils/tags';
 
 export interface ExploreFilterModel {
   mood: string;
@@ -89,7 +89,6 @@ const { t, te } = useI18n();
 const tagName = (key: string) => tagDisplayName(key, t, te);
 
 const MOODS = ['focus', 'chill', 'cafe', 'workout', 'drive', 'sleep', 'cinematic', 'cyberpunk'];
-const GENRES = ['electronic', 'pop', 'rock', 'hiphop', 'jazz', 'classical', 'ambient'];
 const PROVIDERS = ['SUNO', 'UDIO', 'AIVA', 'STABLE_AUDIO', 'ELEVENLABS', 'SOUNDRAW', 'MUBERT', 'CUSTOM_OPEN_MODEL'];
 
 // NOTE: option labelKeys resolve dynamically (invisible to check-i18n usage
