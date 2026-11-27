@@ -126,8 +126,9 @@
             :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
             class="group w-40 shrink-0 snap-start"
           >
-            <UiCoverArt :seed="pl.id" :title="pl.title" size="fill" rounded="xl" />
+            <UiCoverArt :seed="pl.coverSeeds?.[0] ?? pl.id" :title="pl.title" size="fill" rounded="xl" />
             <span class="mt-2 block truncate text-sm text-white group-hover:text-brand-300">{{ pl.title }}</span>
+            <span class="block text-caption text-text-muted">{{ t('playlist.metaTracks', { count: pl.trackCount ?? 0 }) }}</span>
           </RouterLink>
         </div>
       </section>
@@ -279,10 +280,7 @@
             :track="tr"
             :rank="i + 1"
             hydrate-on-visible
-            @play="playOne"
-            @enqueue="enqueue"
-            @add-to-playlist="openAddToPlaylist"
-            @report="openReport"
+            @play="playChart"
           />
         </li>
       </ol>
@@ -324,28 +322,11 @@
       </div>
     </section>
 
-    <DisputeReportModal
-      v-if="reportTarget"
-      :track-id="reportTarget.id"
-      :track-title="reportTarget.title"
-      @close="reportTarget = null"
-      @reported="onReported"
-    />
-
-    <UiPlaylistPickerAsync
-      :model-value="Boolean(playlistTargetTrack)"
-      :track-title="playlistTargetTrack?.title ?? ''"
-      :playlists="playlists.playlists"
-      :create-loading="creatingPlaylist"
-      @update:model-value="playlistTargetTrack = $event ? playlistTargetTrack : null"
-      @select="addTrackToPlaylist"
-      @create="createNewPlaylist"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { trackApi, playlistApi, playbackApi } from '@/api/endpoints';
 import { errMessageOf } from '@/api/client';
@@ -353,14 +334,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { useToast } from '@/composables/useToast';
-import { useApiError } from '@/composables/useApiError';
 import { useFormat } from '@/composables/useFormat';
 import type { Track, Playlist } from '@/api/types';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 // N1: below-fold + modals load on demand (Lazy* auto-imports).
-const DisputeReportModal = defineAsyncComponent(() => import('@/components/legal/DisputeReportModal.vue'));
-const UiPlaylistPickerAsync = defineAsyncComponent(() => import('@/components/ui/UiPlaylistPicker.vue'));
 import { detailParam } from '@/utils/seo';
 
 const { t } = useI18n();
@@ -368,7 +346,6 @@ const localePath = useLocalePath();
 const player = usePlayerStore();
 const playlists = usePlaylistStore();
 const toast = useToast();
-const apiError = useApiError();
 const auth = useAuthStore();
 const router = useRouter();
 const { dateISO } = useFormat();
@@ -397,9 +374,6 @@ const recPlaylists = ref<Playlist[]>([]);
 const plSeeds = ref<Record<string, string[]>>({});
 const recent = ref<Track[]>([]);
 
-const reportTarget = ref<Track | null>(null);
-const playlistTargetTrack = ref<Track | null>(null);
-const creatingPlaylist = ref(false);
 
 const continueTrack = computed(() => recent.value[0] ?? null);
 // Certificate preview shows a real verified track; the number stays masked.
@@ -422,57 +396,9 @@ function resumeContinue(): void {
   if (continueTrack.value) player.setQueue([continueTrack.value], continueTrack.value.id);
 }
 
-function enqueue(tr: Track): void {
-  player.enqueue(tr);
-  toast.info(t('track.toastQueued'));
-}
-
-function requireLogin(): boolean {
-  if (auth.isAuthenticated) return true;
-  toast.info(t('track.toastNeedLogin'));
-  void router.push(localePath({ name: 'login', query: { redirect: '/' } }));
-  return false;
-}
-
-function openAddToPlaylist(tr: Track): void {
-  if (!requireLogin()) return;
-  playlistTargetTrack.value = tr;
-}
-
-async function addTrackToPlaylist(playlistId: string): Promise<void> {
-  if (!playlistTargetTrack.value) return;
-  try {
-    await playlistApi.addTrack(playlistId, playlistTargetTrack.value.id);
-    toast.success(t('track.toastAdded'));
-    playlistTargetTrack.value = null;
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  }
-}
-
-async function createNewPlaylist(title: string): Promise<void> {
-  creatingPlaylist.value = true;
-  try {
-    const created = await playlistApi.create(title, false);
-    playlists.playlists.unshift(created);
-    if (playlistTargetTrack.value) {
-      await addTrackToPlaylist(created.id);
-    }
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  } finally {
-    creatingPlaylist.value = false;
-  }
-}
-
-function openReport(tr: Track): void {
-  if (!requireLogin()) return;
-  reportTarget.value = tr;
-}
-
-function onReported(): void {
-  reportTarget.value = null;
-  toast.success(t('track.toastReported'));
+// Chart rows queue the whole top list so playback continues down the chart.
+function playChart(tr: Track): void {
+  player.setQueue(chartTop.value, tr.id);
 }
 
 onMounted(() => {
@@ -487,12 +413,10 @@ onMounted(() => {
   );
   void playlistApi.listPublic(4).then(
     (items) => {
+      // Cover seeds ride on the list response (no per-playlist fetch).
       recPlaylists.value = items ?? [];
       for (const pl of recPlaylists.value) {
-        void playlistApi.listTracks(pl.id).then(
-          (trs) => { plSeeds.value[pl.id] = trs.slice(0, 4).map((x) => x.trackId); },
-          () => { plSeeds.value[pl.id] = [pl.id]; },
-        );
+        plSeeds.value[pl.id] = pl.coverSeeds?.length ? pl.coverSeeds : [pl.id];
       }
     },
     () => { recPlaylists.value = []; },

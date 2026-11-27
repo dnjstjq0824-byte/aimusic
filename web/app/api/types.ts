@@ -217,10 +217,32 @@ export interface Playlist {
   title: string;
   shortId?: string;
   slug?: string;
+  description?: string | null;
   isPublic: boolean;
   isOfficialCuration?: boolean;
   createdAt: string;
   updatedAt: string;
+  /** READY-track count / runtime and first four track ids (cover mosaic). */
+  trackCount?: number;
+  totalDurationMs?: number;
+  coverSeeds?: string[];
+  /** Present only on `listMine({ containsTrack })`. */
+  containsTrack?: boolean;
+}
+
+export interface TrackComment {
+  id: string;
+  trackId: string;
+  userId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface CommentPage {
+  items: TrackComment[];
+  total: number;
+  nextBefore?: string;
 }
 
 export interface Follow {
@@ -228,6 +250,8 @@ export interface Follow {
   targetId: string;
   displayName: string;
   createdAt: string;
+  /** Creator public handle (profile link); creators only. */
+  handle?: string | null;
 }
 
 export interface PlaylistTrack {
@@ -236,6 +260,8 @@ export interface PlaylistTrack {
   trackId: string;
   position: number;
   addedAt: string;
+  /** Joined public-view track (one query); non-READY only for the owner. */
+  track?: Track;
 }
 
 export interface StoreBusiness {

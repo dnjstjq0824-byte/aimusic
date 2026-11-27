@@ -26,6 +26,8 @@
     "toastLiked": "⟦Lìkèd.～～～⟧",
     "toastUnliked": "⟦Lìkè rèmòvèd.～～～～～～⟧",
     "toastFollowed": "⟦Fòllòwìng.～～～～⟧",
-    "toastUnfollowed": "⟦Ùnfòllòwèd.～～～～～⟧"
+    "toastUnfollowed": "⟦Ùnfòllòwèd.～～～～～⟧",
+    "tabPlaylists": "⟦My plàylìsts～～～～～⟧",
+    "managePlaylists": "⟦Mànàgè plàylìsts～～～～～～⟧"
   }
 }

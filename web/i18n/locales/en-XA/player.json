@@ -43,6 +43,14 @@
     "errStreamLost": "⟦Strèàm ìntèrrùptèd: {title}～～～～～～～～～～～⟧",
     "errSkipLogin": "⟦Lòg ìn tò plày.～～～～～～⟧",
     "errSkipUnplayable": "⟦Skìppìng ùnplàyàblè tràck: {title}～～～～～～～～～～～～～～⟧",
-    "storeErrPlayFailed": "⟦Càn't plày thìs tràck. Chèck thè nètwòrk.～～～～～～～～～～～～～～～～⟧"
+    "storeErrPlayFailed": "⟦Càn't plày thìs tràck. Chèck thè nètwòrk.～～～～～～～～～～～～～～～～⟧",
+    "toastAlreadyQueued": "⟦Thìs tràck ìs àlrèàdy ìn yòùr qùèùè.～～～～～～～～～～～～～～⟧",
+    "toastPlayNext": "⟦Plàyìng nèxt.～～～～～⟧",
+    "errSkipCorrupt": "⟦Skìppèd à dàmàgèd àùdìò fìlè: {title}～～～～～～～～～～～～～～～⟧",
+    "mute": "⟦Mùtè～～～～⟧",
+    "unmute": "⟦Ùnmùtè～～～～⟧",
+    "volume": "⟦Vòlùmè～～～～⟧",
+    "volumePct": "⟦Vòlùmè {pct}%～～～～～⟧",
+    "queueHint": "⟦Dràg òr ùsè thè àrròws tò rèòrdèr.～～～～～～～～～～～～～～⟧"
   }
 }

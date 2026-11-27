@@ -26,6 +26,8 @@
     "toastLiked": "いいねしました。",
     "toastUnliked": "いいねを外しました。",
     "toastFollowed": "フォローしました。",
-    "toastUnfollowed": "フォローを外しました。"
+    "toastUnfollowed": "フォローを外しました。",
+    "tabPlaylists": "マイプレイリスト",
+    "managePlaylists": "プレイリストを管理"
   }
 }

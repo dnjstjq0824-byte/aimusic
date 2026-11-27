@@ -52,31 +52,39 @@ import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import { tagDisplayName } from '@/utils/tags';
 import { detailParam } from '@/utils/seo';
+import { useTrackActions } from '@/composables/useTrackActions';
 import type { Track } from '@/api/types';
 const localePath = useLocalePath();
 const { t, te } = useI18n();
 
 const props = defineProps<{ track: Track; rank?: number | null }>();
 
-const emit = defineEmits<{
-  (e: 'play' | 'enqueue' | 'add-to-playlist' | 'report', track: Track): void;
+defineEmits<{
+  (e: 'play', track: Track): void;
 }>();
+
+// Queue / play-next / add-to-playlist / report are app-wide flows: every
+// list gets them without the page wiring handlers (no dead menu items).
+const actions = useTrackActions();
 
 const moodLabel = computed(() => {
   const first = props.track.moodTags?.[0];
   return first ? tagDisplayName(first, t, te) : '';
 });
 
+const playable = computed(() => props.track.status === 'READY');
 const menuItems = computed<MenuItem[]>(() => [
-  { label: t('track.enqueue') },
-  { label: t('track.addToPlaylist') },
+  { label: t('track.playNext'), disabled: !playable.value },
+  { label: t('track.enqueue'), disabled: !playable.value },
+  { label: t('track.addToPlaylist'), disabled: !playable.value },
   { label: t('track.reportAction'), danger: true },
 ]);
 
 function onMenuSelect(index: number): void {
-  if (index === 0) emit('enqueue', props.track);
-  else if (index === 1) emit('add-to-playlist', props.track);
-  else emit('report', props.track);
+  if (index === 0) actions.playNext(props.track);
+  else if (index === 1) actions.enqueue(props.track);
+  else if (index === 2) actions.addToPlaylist(props.track);
+  else actions.report(props.track);
 }
 
 function fmtDuration(ms?: number | null): string {

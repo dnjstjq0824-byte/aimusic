@@ -63,6 +63,22 @@
     "toastCopyFailed": "Clipboard copy failed.",
     "toastNeedPass": "Downloads need a paid pass.",
     "toastQuota": "Daily download limit reached.",
-    "toastDlStarted": "Download started."
+    "toastDlStarted": "Download started.",
+    "playNext": "Play next",
+    "waveSeekAria": "Playback at {pct}% · click to seek",
+    "comments": {
+      "title": "Comments",
+      "label": "Write a comment",
+      "placeholder": "Share what you think of this track.",
+      "submit": "Post",
+      "loginHint": "Log in to leave a comment.",
+      "loginCta": "Log in",
+      "empty": "No comments yet. Be the first.",
+      "delete": "Delete",
+      "more": "Show older comments",
+      "posted": "Comment posted.",
+      "deleted": "Comment deleted."
+    },
+    "chartDay": "Daily"
   }
 }

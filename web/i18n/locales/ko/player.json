@@ -43,6 +43,14 @@
     "errStreamLost": "스트리밍 연결이 끊겼습니다: {title}",
     "errSkipLogin": "재생하려면 로그인이 필요합니다.",
     "errSkipUnplayable": "재생할 수 없는 음원을 건너뜁니다: {title}",
-    "storeErrPlayFailed": "음원을 재생할 수 없습니다. 네트워크 상태를 확인해 주세요."
+    "storeErrPlayFailed": "음원을 재생할 수 없습니다. 네트워크 상태를 확인해 주세요.",
+    "toastAlreadyQueued": "이미 재생 대기열에 있는 곡입니다.",
+    "toastPlayNext": "다음 곡으로 재생합니다.",
+    "errSkipCorrupt": "손상된 음원 파일을 건너뛰었습니다: {title}",
+    "mute": "음소거",
+    "unmute": "음소거 해제",
+    "volume": "볼륨",
+    "volumePct": "볼륨 {pct}%",
+    "queueHint": "드래그하거나 화살표로 순서를 바꿀 수 있어요."
   }
 }

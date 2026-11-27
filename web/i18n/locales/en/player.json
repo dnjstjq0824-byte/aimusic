@@ -43,6 +43,14 @@
     "errStreamLost": "Stream interrupted: {title}",
     "errSkipLogin": "Log in to play.",
     "errSkipUnplayable": "Skipping unplayable track: {title}",
-    "storeErrPlayFailed": "Can't play this track. Check the network."
+    "storeErrPlayFailed": "Can't play this track. Check the network.",
+    "toastAlreadyQueued": "This track is already in your queue.",
+    "toastPlayNext": "Playing next.",
+    "errSkipCorrupt": "Skipped a damaged audio file: {title}",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "volume": "Volume",
+    "volumePct": "Volume {pct}%",
+    "queueHint": "Drag or use the arrows to reorder."
   }
 }

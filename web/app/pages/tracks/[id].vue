@@ -106,7 +106,7 @@
             >
               <span aria-hidden="true">{{ liked ? '♥' : '♡' }}</span>
             </UiButton>
-            <UiButton variant="secondary" size="sm" @click="openAddToPlaylist()">
+            <UiButton variant="secondary" size="sm" :disabled="track.status !== 'READY'" @click="actions.addToPlaylist(track)">
               {{ t('track.addToPlaylist') }}
             </UiButton>
             <UiButton variant="outline" size="sm" @click="shareTrack">
@@ -124,19 +124,22 @@
             <h3 class="text-xs font-bold text-text-secondary uppercase tracking-wider">{{ t('track.waveTitle') }}</h3>
             <span class="text-xs font-mono text-text-secondary">{{ t('track.waveQuality') }}</span>
           </div>
-          <div
+          <button
             v-if="waveformPeaks.length > 0"
-            class="flex h-16 items-end gap-0.5 sm:gap-[3px] py-2 bg-surface-0/60 rounded-xl p-3 border border-surface-border"
-            role="img"
-            :aria-label="t('track.waveTitle')"
+            type="button"
+            class="flex h-16 w-full cursor-pointer items-end gap-0.5 sm:gap-[3px] py-2 bg-surface-0/60 rounded-xl p-3 border border-surface-border disabled:cursor-not-allowed"
+            :aria-label="isCurrent ? t('track.waveSeekAria', { pct: Math.round(waveProgress * 100) }) : t('track.playNow')"
+            :disabled="track.status !== 'READY'"
+            @click="onWaveClick"
           >
-            <div
+            <span
               v-for="(peak, idx) in waveformPeaks"
               :key="idx"
-              class="waveform-bar min-w-[2px] flex-1 rounded-t bg-gradient-to-t from-brand-600/70 to-brand-300"
+              class="waveform-bar min-w-[2px] flex-1 rounded-t bg-gradient-to-t transition-colors"
+              :class="isCurrent && idx / waveformPeaks.length < waveProgress ? 'from-brand-400 to-brand-200' : 'from-brand-600/70 to-brand-300/80 opacity-70'"
               :style="{ height: `${Math.max(10, Math.round(peak * 100))}%` }"
             />
-          </div>
+          </button>
           <div v-else class="py-6 text-center text-xs text-text-muted">
             {{ t('track.waveEmpty') }}
           </div>
@@ -202,6 +205,8 @@
           </div>
         </section>
 
+        <TrackComments v-if="track.status === 'READY'" :track-id="track.id" />
+
         <section v-if="similar.length > 0" :aria-label="t('track.similar')">
           <h3 class="mb-2 text-sm font-bold text-white">{{ t('track.similar') }}</h3>
           <div class="space-y-1">
@@ -209,10 +214,7 @@
               v-for="tr in similar"
               :key="tr.id"
               :track="tr"
-              @play="playOther"
-              @enqueue="enqueueOther"
-              @add-to-playlist="openAddToPlaylist"
-              @report="openReport"
+              @play="(x) => playOther(similar, x)"
             />
           </div>
         </section>
@@ -224,10 +226,7 @@
               v-for="tr in sameCreator"
               :key="tr.id"
               :track="tr"
-              @play="playOther"
-              @enqueue="enqueueOther"
-              @add-to-playlist="openAddToPlaylist"
-              @report="openReport"
+              @play="(x) => playOther(sameCreator, x)"
             />
           </div>
         </section>
@@ -320,23 +319,6 @@
       </aside>
     </div>
 
-    <DisputeReportModal
-      v-if="reportModalOpen && reportTarget"
-      :track-id="reportTarget.id"
-      :track-title="reportTarget.title"
-      @close="reportModalOpen = false"
-      @reported="onReported"
-    />
-
-    <UiPlaylistPicker
-      v-model="playlistModalOpen"
-      :track-title="playlistTarget?.title ?? ''"
-      :playlists="playlists.playlists"
-      :create-loading="creatingPlaylist"
-      @select="addToPlaylist"
-      @create="createPlaylist"
-    />
-
     <UiConfirmDialog
       v-model="blockConfirmOpen"
       :title="t('track.blockTitle')"
@@ -352,10 +334,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { trackApi, playlistApi, userBlocksApi, adminApi, engagementApi } from '@/api/endpoints';
+import { trackApi, userBlocksApi, adminApi, engagementApi } from '@/api/endpoints';
 import { errCodeOf } from '@/api/client';
 import { usePlayerStore } from '@/stores/playerStore';
-import { usePlaylistStore } from '@/stores/playlistStore';
+import { useTrackActions } from '@/composables/useTrackActions';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/composables/useToast';
 import { useApiError } from '@/composables/useApiError';
@@ -383,13 +365,12 @@ import UiCard from '@/components/ui/UiCard.vue';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiCoverArt, { coverFor } from '@/components/ui/UiCoverArt.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
-import UiPlaylistPicker from '@/components/ui/UiPlaylistPicker.vue';
 import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
 import UiSkeleton from '@/components/ui/UiSkeleton.vue';
 import UiMenu, { type MenuItem } from '@/components/ui/UiMenu.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
 import AiBadge from '@/components/legal/AiBadge.vue';
-import DisputeReportModal from '@/components/legal/DisputeReportModal.vue';
+import TrackComments from '@/components/track/TrackComments.vue';
 import TrackRow from '@/components/TrackRow.vue';
 import ShareButtons from '@/components/seo/ShareButtons.vue';
 const localePath = useLocalePath();
@@ -398,7 +379,7 @@ const { t, te, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const player = usePlayerStore();
-const playlists = usePlaylistStore();
+const actions = useTrackActions();
 const auth = useAuthStore();
 const toast = useToast();
 const apiError = useApiError();
@@ -535,24 +516,43 @@ const canIssueCert = computed(
 
 const liked = ref(false);
 
-const reportModalOpen = ref(false);
-const reportTarget = ref<Track | null>(null);
-const playlistModalOpen = ref(false);
-const playlistTarget = ref<Track | null>(null);
-const creatingPlaylist = ref(false);
 const blockConfirmOpen = ref(false);
 const blocking = ref(false);
 
 const moreItems = computed<MenuItem[]>(() => [
-  { label: t('track.enqueue') },
+  { label: t('track.playNext'), disabled: track.value?.status !== 'READY' },
+  { label: t('track.enqueue'), disabled: track.value?.status !== 'READY' },
   { label: t('track.downloadPaid') },
   { label: t('track.reportAction'), danger: true },
 ]);
 
 function onMoreSelect(index: number): void {
-  if (index === 0) enqueue();
-  else if (index === 1) void downloadTrack();
+  if (!track.value) return;
+  if (index === 0) actions.playNext(track.value);
+  else if (index === 1) actions.enqueue(track.value);
+  else if (index === 2) void downloadTrack();
   else openReportSelf();
+}
+
+// Waveform doubles as a progress bar / seek target while this track plays.
+const isCurrent = computed(() => !!track.value && player.currentTrack?.id === track.value.id);
+const waveProgress = computed(() => {
+  if (!isCurrent.value) return 0;
+  const total = player.durationMs || track.value?.durationMs || 0;
+  return total > 0 ? Math.min(1, Math.max(0, player.positionMs / total)) : 0;
+});
+
+function onWaveClick(e: MouseEvent): void {
+  if (!track.value) return;
+  if (!isCurrent.value) {
+    play();
+    return;
+  }
+  const el = e.currentTarget as HTMLElement;
+  const rect = el.getBoundingClientRect();
+  const frac = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0;
+  const total = player.durationMs || track.value.durationMs || 0;
+  if (total > 0) player.seek(Math.min(1, Math.max(0, frac)) * total);
 }
 
 const aiCreditText = computed(() => {
@@ -671,19 +671,9 @@ async function toggleLike(): Promise<void> {
   }
 }
 
-function playOther(tr: Track): void {
-  player.setQueue([tr], tr.id);
-}
-
-function enqueue(): void {
-  if (!track.value) return;
-  player.enqueue(track.value);
-  toast.info(t('track.toastQueued'));
-}
-
-function enqueueOther(tr: Track): void {
-  player.enqueue(tr);
-  toast.info(t('track.toastQueued'));
+// Related lists queue as a whole so playback continues through them.
+function playOther(list: Track[], tr: Track): void {
+  player.setQueue(list, tr.id);
 }
 
 async function downloadTrack(): Promise<void> {
@@ -721,53 +711,8 @@ function requireLogin(): boolean {
   return false;
 }
 
-function openAddToPlaylist(tr?: Track): void {
-  if (!requireLogin()) return;
-  playlistTarget.value = tr ?? track.value;
-  playlistModalOpen.value = true;
-}
-
-async function addToPlaylist(playlistId: string): Promise<void> {
-  if (!playlistTarget.value) return;
-  try {
-    await playlistApi.addTrack(playlistId, playlistTarget.value.id);
-    toast.success(t('track.toastAdded'));
-    playlistTarget.value = null;
-    playlistModalOpen.value = false;
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  }
-}
-
-async function createPlaylist(title: string): Promise<void> {
-  creatingPlaylist.value = true;
-  try {
-    const created = await playlistApi.create(title, false);
-    playlists.playlists.unshift(created);
-    if (playlistTarget.value) {
-      await addToPlaylist(created.id);
-    }
-  } catch (err: unknown) {
-    toast.error(apiError(err));
-  } finally {
-    creatingPlaylist.value = false;
-  }
-}
-
-function openReport(tr?: Track): void {
-  if (!requireLogin()) return;
-  reportTarget.value = tr ?? track.value;
-  reportModalOpen.value = true;
-}
-
 function openReportSelf(): void {
-  openReport();
-}
-
-function onReported(): void {
-  reportTarget.value = null;
-  reportModalOpen.value = false;
-  toast.success(t('track.toastReported'));
+  if (track.value) actions.report(track.value);
 }
 
 function openBlock(): void {
@@ -793,7 +738,6 @@ async function confirmBlockPartner(): Promise<void> {
 onMounted(() => {
   // Client-only personalization (SSR HTML stays login-agnostic).
   if (auth.isAuthenticated) {
-    void playlists.fetchMine();
     if (track.value) {
       void engagementApi.likeState(track.value.id).then(
         (s) => {

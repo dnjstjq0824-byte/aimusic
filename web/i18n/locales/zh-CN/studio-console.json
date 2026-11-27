@@ -229,7 +229,22 @@
       "tlCertified": "证书已发放",
       "tlCertPending": "等待发放证书",
       "certIssued": "发放日期：{at}",
-      "viewTrack": "查看歌曲详情"
+      "viewTrack": "查看歌曲详情",
+      "playStat": "累计播放 {count} 次",
+      "editTitle": "编辑信息",
+      "editHint": "标题、AI 生成信息和音频是证书依据，无法修改。",
+      "editGenre": "流派",
+      "editMoods": "情绪标签",
+      "editMoodsHint": "用逗号分隔，最多 8 个",
+      "editLyrics": "歌词",
+      "editPromptPublic": "向听众公开生成提示词",
+      "save": "保存",
+      "saved": "曲目信息已保存。",
+      "delete": "删除曲目",
+      "delTitle": "确定删除该曲目吗？",
+      "delBody": "「{title}」将从服务下架，音频文件将被永久删除，且无法恢复。播放记录和结算明细会保留。",
+      "delConfirm": "删除",
+      "deleted": "曲目已删除。"
     },
     "proofs": {
       "eyebrow": "Studio Console",

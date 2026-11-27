@@ -28,7 +28,7 @@ const props = withDefaults(
   defineProps<{
     seeds: string[];
     title?: string;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
   }>(),
   { title: 'AVIBE', size: 'md' },
 );
@@ -41,6 +41,7 @@ const cells = computed(() => {
 
 const boxClass = computed(() => {
   switch (props.size) {
+    case 'xs': return 'h-11 w-11 !rounded-lg';
     case 'sm': return 'h-20 w-20';
     case 'lg': return 'h-52 w-52';
     default: return 'h-40 w-40';

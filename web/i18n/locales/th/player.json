@@ -43,6 +43,14 @@
     "errStreamLost": "สตรีมขาดการเชื่อมต่อ: {title}",
     "errSkipLogin": "เข้าสู่ระบบเพื่อเล่นเพลง",
     "errSkipUnplayable": "ข้ามเพลงที่เล่นไม่ได้: {title}",
-    "storeErrPlayFailed": "เล่นเพลงไม่ได้ กรุณาตรวจสอบเครือข่าย"
+    "storeErrPlayFailed": "เล่นเพลงไม่ได้ กรุณาตรวจสอบเครือข่าย",
+    "toastAlreadyQueued": "เพลงนี้อยู่ในคิวแล้ว",
+    "toastPlayNext": "จะเล่นเป็นเพลงถัดไป",
+    "errSkipCorrupt": "ข้ามไฟล์เสียงที่เสียหาย: {title}",
+    "mute": "ปิดเสียง",
+    "unmute": "เปิดเสียง",
+    "volume": "ระดับเสียง",
+    "volumePct": "ระดับเสียง {pct}%",
+    "queueHint": "ลากหรือใช้ลูกศรเพื่อเปลี่ยนลำดับ"
   }
 }

@@ -26,6 +26,8 @@
     "toastLiked": "좋아요를 눌렀습니다.",
     "toastUnliked": "좋아요를 취소했습니다.",
     "toastFollowed": "팔로우했습니다.",
-    "toastUnfollowed": "언팔로우했습니다."
+    "toastUnfollowed": "언팔로우했습니다.",
+    "tabPlaylists": "내 플레이리스트",
+    "managePlaylists": "플레이리스트 관리"
   }
 }

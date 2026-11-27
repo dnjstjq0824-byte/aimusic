@@ -229,7 +229,22 @@
       "tlCertified": "인증서 발급됨",
       "tlCertPending": "인증서 발급 대기",
       "certIssued": "발급일: {at}",
-      "viewTrack": "트랙 상세 보기"
+      "viewTrack": "트랙 상세 보기",
+      "playStat": "누적 재생 {count}회",
+      "editTitle": "정보 수정",
+      "editHint": "제목·AI 생성 정보·음원은 인증서 근거라 수정할 수 없습니다.",
+      "editGenre": "장르",
+      "editMoods": "무드 태그",
+      "editMoodsHint": "쉼표로 구분, 최대 8개",
+      "editLyrics": "가사",
+      "editPromptPublic": "생성 프롬프트를 청취자에게 공개",
+      "save": "저장",
+      "saved": "음원 정보를 저장했습니다.",
+      "delete": "음원 삭제",
+      "delTitle": "음원을 삭제할까요?",
+      "delBody": "「{title}」이(가) 서비스에서 내려가고 오디오 파일이 영구 삭제됩니다. 되돌릴 수 없습니다. 재생 기록과 정산 내역은 유지됩니다.",
+      "delConfirm": "삭제하기",
+      "deleted": "음원을 삭제했습니다."
     },
     "proofs": {
       "eyebrow": "Studio Console",

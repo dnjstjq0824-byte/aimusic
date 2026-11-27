@@ -110,13 +110,41 @@
         <p v-if="selected.rejectionReasonKo" class="rounded-xl border border-red-600/50 bg-red-950/40 p-3 text-xs text-red-200">
           {{ selected.rejectionReasonKo }}
         </p>
-        <div class="flex justify-end">
-          <RouterLink :to="localePath({ name: 'track-detail', params: { id: selected.id } })">
-            <UiButton variant="secondary" size="sm">{{ t('studio.catalog.viewTrack') }}</UiButton>
-          </RouterLink>
-        </div>
+        <p class="text-xs text-text-secondary">
+          {{ t('studio.catalog.playStat', { count: (selected.playCount || 0).toLocaleString() }) }}
+        </p>
+
+        <form v-if="selected.status !== 'TAKEN_DOWN'" class="space-y-3 border-t border-surface-border pt-4" @submit.prevent="saveEdit">
+          <h4 class="text-xs font-bold text-white">{{ t('studio.catalog.editTitle') }}</h4>
+          <p class="text-caption text-text-muted">{{ t('studio.catalog.editHint') }}</p>
+          <UiInput v-model="editGenre" :label="t('studio.catalog.editGenre')" :maxlength="40" />
+          <UiInput v-model="editMoods" :label="t('studio.catalog.editMoods')" :hint="t('studio.catalog.editMoodsHint')" />
+          <UiTextarea v-model="editLyrics" :label="t('studio.catalog.editLyrics')" :rows="4" :maxlength="10000" />
+          <UiCheckbox v-model="editPromptPublic">{{ t('studio.catalog.editPromptPublic') }}</UiCheckbox>
+          <div class="flex flex-wrap justify-between gap-2">
+            <UiButton variant="danger" size="sm" type="button" @click="deleteOpen = true">
+              {{ t('studio.catalog.delete') }}
+            </UiButton>
+            <div class="flex gap-2">
+              <RouterLink v-if="selected.status === 'READY'" :to="localePath({ name: 'track-detail', params: { id: selected.id } })">
+                <UiButton variant="secondary" size="sm" type="button">{{ t('studio.catalog.viewTrack') }}</UiButton>
+              </RouterLink>
+              <UiButton variant="brand" size="sm" type="submit" :loading="saving">{{ t('studio.catalog.save') }}</UiButton>
+            </div>
+          </div>
+        </form>
       </div>
     </UiModal>
+
+    <UiConfirmDialog
+      v-model="deleteOpen"
+      :title="t('studio.catalog.delTitle')"
+      :body="t('studio.catalog.delBody', { title: selected?.title ?? '' })"
+      :confirm-label="t('studio.catalog.delConfirm')"
+      danger
+      :loading="deleting"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
 
@@ -129,6 +157,11 @@ import type { CertificateView, Track } from '@/api/types';
 import UiBadge from '@/components/ui/UiBadge.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';
+import UiCheckbox from '@/components/ui/UiCheckbox.vue';
+import UiConfirmDialog from '@/components/ui/UiConfirmDialog.vue';
+import UiInput from '@/components/ui/UiInput.vue';
+import UiTextarea from '@/components/ui/UiTextarea.vue';
+import { useToast } from '@/composables/useToast';
 import UiEmptyState from '@/components/ui/UiEmptyState.vue';
 import UiErrorBanner from '@/components/ui/UiErrorBanner.vue';
 import UiModal from '@/components/ui/UiModal.vue';
@@ -172,6 +205,64 @@ const filtered = computed(() =>
   statusFilter.value === '' ? tracks.value : tracks.value.filter((x) => x.status === statusFilter.value),
 );
 
+const toast = useToast();
+const editGenre = ref('');
+const editMoods = ref('');
+const editLyrics = ref('');
+const editPromptPublic = ref(false);
+const saving = ref(false);
+const deleteOpen = ref(false);
+const deleting = ref(false);
+
+function fillEdit(trk: Track): void {
+  editGenre.value = trk.genre ?? '';
+  editMoods.value = (trk.moodTags ?? []).join(', ');
+  editLyrics.value = trk.lyrics ?? '';
+  editPromptPublic.value = trk.isPromptPublic !== false;
+}
+
+function replaceTrack(next: Track): void {
+  const i = tracks.value.findIndex((x) => x.id === next.id);
+  if (i >= 0) tracks.value[i] = next;
+  selected.value = next;
+}
+
+async function saveEdit(): Promise<void> {
+  if (!selected.value) return;
+  saving.value = true;
+  try {
+    const next = await partnerApi.updateMyTrack(selected.value.id, {
+      genre: editGenre.value.trim(),
+      moodTags: editMoods.value.split(',').map((m) => m.trim()).filter(Boolean),
+      lyrics: editLyrics.value,
+      isPromptPublic: editPromptPublic.value,
+    });
+    replaceTrack(next);
+    fillEdit(next);
+    toast.success(t('studio.catalog.saved'));
+  } catch (err: unknown) {
+    toast.error(errMessageOf(err));
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function confirmDelete(): Promise<void> {
+  if (!selected.value) return;
+  deleting.value = true;
+  try {
+    const res = await partnerApi.deleteMyTrack(selected.value.id);
+    replaceTrack({ ...selected.value, status: res.status });
+    deleteOpen.value = false;
+    drawerOpen.value = false;
+    toast.success(t('studio.catalog.deleted'));
+  } catch (err: unknown) {
+    toast.error(errMessageOf(err));
+  } finally {
+    deleting.value = false;
+  }
+}
+
 const drawerOpen = ref(false);
 const selected = ref<Track | null>(null);
 const drawerCert = ref<CertificateView | null>(null);
@@ -201,6 +292,7 @@ const drawerItems = computed<TimelineItem[]>(() => {
 
 async function openDrawer(trk: Track): Promise<void> {
   selected.value = trk;
+  fillEdit(trk);
   drawerCert.value = null;
   drawerOpen.value = true;
   if (trk.status !== 'READY') return;
@@ -221,17 +313,10 @@ async function load(): Promise<void> {
   error.value = null;
   try {
     tracks.value = (await partnerApi.listMyTracks(50, 0)) ?? [];
-    const ready = tracks.value.filter((x) => x.status === 'READY').slice(0, 20);
-    await Promise.all(
-      ready.map(async (x) => {
-        try {
-          const cert = await trackApi.getCertificate(x.id);
-          if (cert) certNumbers[x.id] = cert.certificate.certNumber;
-        } catch {
-          // Uncertified tracks simply show no number.
-        }
-      }),
-    );
+    // Certificate numbers ride on the list rows (no per-track request).
+    for (const x of tracks.value) {
+      if (x.certNumber) certNumbers[x.id] = x.certNumber;
+    }
   } catch (err: unknown) {
     error.value = errMessageOf(err);
   } finally {

@@ -229,7 +229,22 @@
       "tlCertified": "⟦Cèrtìfìcàtè ìssùèd～～～～～～～⟧",
       "tlCertPending": "⟦Cèrtìfìcàtè pèndìng～～～～～～～～⟧",
       "certIssued": "⟦Ìssùèd: {at}～～～～～⟧",
-      "viewTrack": "⟦Vìèw tràck pàgè～～～～～～⟧"
+      "viewTrack": "⟦Vìèw tràck pàgè～～～～～～⟧",
+      "playStat": "⟦{count} tòtàl plàys～～～～～～～～⟧",
+      "editTitle": "⟦Èdìt dètàìls～～～～～⟧",
+      "editHint": "⟦Tìtlè, ÀÌ pròvènàncè ànd àùdìò bàck thè cèrtìfìcàtè ànd cànnòt bè èdìtèd.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "editGenre": "⟦Gènrè～～～～⟧",
+      "editMoods": "⟦Mòòd tàgs～～～～⟧",
+      "editMoodsHint": "⟦Còmmà-sèpàràtèd, ùp tò 8～～～～～～～～～～⟧",
+      "editLyrics": "⟦Lyrìcs～～～～⟧",
+      "editPromptPublic": "⟦Shòw thè gènèràtìòn pròmpt tò lìstènèrs～～～～～～～～～～～～～～～～⟧",
+      "save": "⟦Sàvè～～～～⟧",
+      "saved": "⟦Tràck dètàìls sàvèd.～～～～～～～～⟧",
+      "delete": "⟦Dèlètè tràck～～～～～⟧",
+      "delTitle": "⟦Dèlètè thìs tràck?～～～～～～～⟧",
+      "delBody": "⟦\"{title}\" wìll bè rèmòvèd fròm thè sèrvìcè ànd ìts àùdìò pèrmànèntly dèlètèd. Thìs cànnòt bè ùndònè. Plày hìstòry ànd sèttlèmènts àrè kèpt.～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～～⟧",
+      "delConfirm": "⟦Dèlètè～～～～⟧",
+      "deleted": "⟦Tràck dèlètèd.～～～～～～⟧"
     },
     "proofs": {
       "eyebrow": "⟦Stùdìò Cònsòlè～～～～～～⟧",

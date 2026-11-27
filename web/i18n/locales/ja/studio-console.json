@@ -229,7 +229,22 @@
       "tlCertified": "認証書発行済み",
       "tlCertPending": "認証書待ち",
       "certIssued": "発行日: {at}",
-      "viewTrack": "トラック詳細を見る"
+      "viewTrack": "トラック詳細を見る",
+      "playStat": "累計再生 {count}回",
+      "editTitle": "情報を編集",
+      "editHint": "タイトル・AI生成情報・音源は証明書の根拠のため編集できません。",
+      "editGenre": "ジャンル",
+      "editMoods": "ムードタグ",
+      "editMoodsHint": "カンマ区切り、最大8個",
+      "editLyrics": "歌詞",
+      "editPromptPublic": "生成プロンプトをリスナーに公開",
+      "save": "保存",
+      "saved": "音源情報を保存しました。",
+      "delete": "音源を削除",
+      "delTitle": "この音源を削除しますか？",
+      "delBody": "「{title}」はサービスから削除され、音声ファイルは完全に削除されます。元に戻せません。再生履歴と精算は保持されます。",
+      "delConfirm": "削除する",
+      "deleted": "音源を削除しました。"
     },
     "proofs": {
       "eyebrow": "Studio Console",

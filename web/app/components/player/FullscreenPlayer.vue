@@ -34,6 +34,16 @@
               <h2 class="truncate text-lg font-semibold text-white">{{ player.currentTrack.title }}</h2>
               <p class="mt-0.5 truncate text-xs text-text-secondary">{{ creatorLabel }}</p>
             </div>
+            <button
+              type="button"
+              class="flex h-9 shrink-0 items-center gap-1 rounded-lg border border-surface-border px-2 text-xs text-text-secondary hover:text-white"
+              :aria-label="t('track.addToPlaylist')"
+              @click="actions.addToPlaylist(player.currentTrack)"
+            >
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 6h12M3 12h12M3 18h7M18 14v6M15 17h6" />
+              </svg>
+            </button>
             <VerifiedSeal
               v-if="player.currentTrack.status === 'READY'"
               :size="20"
@@ -100,6 +110,8 @@
               <span v-if="player.repeat === 'one'" class="absolute -top-1 -right-1 rounded-full bg-brand-500 px-1 text-caption font-bold text-on-brand">1</span>
             </button>
           </div>
+
+          <VolumeControl class="mt-3 justify-center" />
 
           <div class="mt-5 flex gap-2 border-b border-surface-border" role="tablist">
             <button
@@ -174,6 +186,8 @@ import { usePlayerStore } from '@/stores/playerStore';
 import WaveformSeekbar from './WaveformSeekbar.vue';
 import UiCoverArt from '@/components/ui/UiCoverArt.vue';
 import VerifiedSeal from '@/components/ui/VerifiedSeal.vue';
+import VolumeControl from './VolumeControl.vue';
+import { useTrackActions } from '@/composables/useTrackActions';
 import { detailParam } from '@/utils/seo';
 
 const emit = defineEmits<{
@@ -194,7 +208,12 @@ const tabs = [
 const activeTab = ref<(typeof tabs)[number]['id']>('tabQueue');
 
 // Track carries no creator display name (partnerId only) — show the provider.
-const creatorLabel = computed(() => player.currentTrack?.aiProvider ?? '');
+const creatorLabel = computed(() => {
+  const tr = player.currentTrack;
+  if (!tr) return '';
+  return tr.creatorName ? `${tr.creatorName} · ${tr.aiProvider}` : tr.aiProvider;
+});
+const actions = useTrackActions();
 
 const orderedQueue = computed(() =>
   player.order.map((qi) => ({ track: player.queue[qi]! })).filter((e) => e.track),

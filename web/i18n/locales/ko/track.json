@@ -63,6 +63,22 @@
     "toastCopyFailed": "클립보드 복사에 실패했습니다.",
     "toastNeedPass": "다운로드는 유료 이용권이 필요합니다.",
     "toastQuota": "일일 다운로드 한도를 초과했습니다.",
-    "toastDlStarted": "다운로드가 시작되었습니다."
+    "toastDlStarted": "다운로드가 시작되었습니다.",
+    "playNext": "다음 곡으로 재생",
+    "waveSeekAria": "재생 위치 {pct}% · 클릭하여 이동",
+    "comments": {
+      "title": "댓글",
+      "label": "댓글 작성",
+      "placeholder": "이 곡에 대한 감상을 남겨 주세요.",
+      "submit": "등록",
+      "loginHint": "로그인하면 댓글을 남길 수 있어요.",
+      "loginCta": "로그인",
+      "empty": "아직 댓글이 없습니다. 첫 댓글을 남겨 보세요.",
+      "delete": "삭제",
+      "more": "이전 댓글 더 보기",
+      "posted": "댓글을 등록했습니다.",
+      "deleted": "댓글을 삭제했습니다."
+    },
+    "chartDay": "일간"
   }
 }

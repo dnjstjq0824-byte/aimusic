@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type Hls from 'hls.js';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { playbackApi, trackApi } from '@/api/endpoints';
 import { errCodeOf, tKey } from '@/api/client';
 import { trackEvent } from '@/utils/analytics';
@@ -18,6 +18,47 @@ const RESUME_TAIL_MS = 30000;
 const RESET_POSITION_MS = 1;
 // Transient network failures are retried before giving up on a track.
 const MAX_NETWORK_RETRIES = 3;
+
+// Queue/volume survive a reload (client only). Bounded so a huge queue never
+// blows the storage quota.
+const PERSIST_KEY = 'avibe.player.v1';
+const PERSIST_MAX_TRACKS = 300;
+// MediaError codes that mean "this file is broken", not "the network blipped".
+const MEDIA_ERR_DECODE = 3;
+const MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
+
+interface PersistedPlayer {
+  queue: Track[];
+  order: number[];
+  orderPos: number;
+  shuffle: boolean;
+  repeat: RepeatMode;
+  volume: number;
+  muted: boolean;
+}
+
+function readPersisted(): PersistedPlayer | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(PERSIST_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<PersistedPlayer>;
+    if (!Array.isArray(v.queue) || !Array.isArray(v.order)) return null;
+    const n = v.queue.length;
+    const orderOk = v.order.length === n && v.order.every((i) => Number.isInteger(i) && i >= 0 && i < n);
+    return {
+      queue: orderOk ? v.queue : [],
+      order: orderOk ? v.order : [],
+      orderPos: orderOk && Number.isInteger(v.orderPos) && (v.orderPos as number) < n ? (v.orderPos as number) : 0,
+      shuffle: v.shuffle === true,
+      repeat: v.repeat === 'all' || v.repeat === 'one' ? v.repeat : 'off',
+      volume: typeof v.volume === 'number' && v.volume >= 0 && v.volume <= 1 ? v.volume : 1,
+      muted: v.muted === true,
+    };
+  } catch {
+    return null;
+  }
+}
 
 // Singleton audio element shared across the whole app (gapless-ish queue).
 let audioEl: HTMLAudioElement | null = null;
@@ -60,6 +101,8 @@ export const usePlayerStore = defineStore('player', () => {
   const skippedIds = ref<string[]>([]);
   const currentJti = ref<string | null>(null);
   const currentQuality = ref<'HQ' | 'SQ'>('SQ');
+  const volume = ref(1);
+  const muted = ref(false);
 
   let hls: Hls | null = null;
   let heartbeatTimer: number | null = null;
@@ -105,6 +148,23 @@ export const usePlayerStore = defineStore('player', () => {
     void playbackApi.setState(id, pos).catch(() => undefined);
   }
 
+  /** Tracks in play order (what the queue panel shows). */
+  const orderedQueue = computed<Track[]>(() =>
+    order.value.map((qi) => queue.value[qi]).filter((t): t is Track => t !== undefined),
+  );
+
+  /**
+   * Replaces the queue with `tracks` as the new play order, keeping the
+   * current track selected. Used by play-next / reorder so the visible order
+   * is exactly what plays next, shuffle or not.
+   */
+  function commitPlayOrder(tracks: Track[], currentId: string | null): void {
+    queue.value = tracks;
+    order.value = tracks.map((_, i) => i);
+    const pos = currentId ? tracks.findIndex((t) => t.id === currentId) : -1;
+    orderPos.value = pos >= 0 ? pos : 0;
+  }
+
   function setQueue(tracks: Track[], startId?: string): void {
     saveLeavingPosition();
     queue.value = [...tracks];
@@ -118,9 +178,54 @@ export const usePlayerStore = defineStore('player', () => {
     void playCurrent();
   }
 
-  function enqueue(track: Track): void {
+  /** Appends a track; false when it is already queued (no duplicates). */
+  function enqueue(track: Track): boolean {
+    if (queue.value.some((t) => t.id === track.id)) return false;
     queue.value.push(track);
-    rebuildOrder(currentTrack.value?.id);
+    order.value = [...order.value, queue.value.length - 1];
+    return true;
+  }
+
+  /** Puts a track right after the current one (moving it if already queued). */
+  function queueNext(track: Track): void {
+    const cur = currentTrack.value;
+    if (!cur) {
+      setQueue([track], track.id);
+      return;
+    }
+    if (cur.id === track.id) return;
+    const next = orderedQueue.value.filter((t) => t.id !== track.id);
+    const at = next.findIndex((t) => t.id === cur.id);
+    next.splice(at + 1, 0, track);
+    commitPlayOrder(next, cur.id);
+  }
+
+  /** Moves an entry within the play order (indices into orderedQueue). */
+  function moveInQueue(from: number, to: number): void {
+    const list = [...orderedQueue.value];
+    if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
+    const [moved] = list.splice(from, 1);
+    if (!moved) return;
+    list.splice(to, 0, moved);
+    commitPlayOrder(list, currentTrack.value?.id ?? null);
+  }
+
+  function applyVolume(): void {
+    if (typeof window === 'undefined') return;
+    const el = audio();
+    el.volume = Math.min(1, Math.max(0, volume.value));
+    el.muted = muted.value;
+  }
+
+  function setVolume(v: number): void {
+    volume.value = Math.min(1, Math.max(0, v));
+    if (volume.value > 0 && muted.value) muted.value = false;
+    applyVolume();
+  }
+
+  function toggleMute(): void {
+    muted.value = !muted.value;
+    applyVolume();
   }
 
   function removeFromQueue(trackId: string): void {
@@ -218,10 +323,31 @@ export const usePlayerStore = defineStore('player', () => {
     errorCode.value = null;
   }
 
+  /**
+   * Skips a track whose media is broken (decode / unsupported source) and
+   * tells the listener. Stops instead when every queued track has failed,
+   * so an all-broken queue never loops forever.
+   */
+  async function skipBroken(seq: number, track: Track, message: string): Promise<void> {
+    if (seq !== loadSeq) return;
+    if (!skippedIds.value.includes(track.id)) skippedIds.value.push(track.id);
+    if (skippedIds.value.length >= queue.value.length) {
+      failPlayback(seq, message);
+      return;
+    }
+    stopHeartbeat();
+    destroyHls();
+    loadedTrackId = null;
+    error.value = message;
+    errorCode.value = null;
+    await advance(true);
+  }
+
   function bindAudioEvents(): void {
     if (bound) return;
     bound = true;
     const el = audio();
+    applyVolume();
     el.addEventListener('timeupdate', () => {
       positionMs.value = el.currentTime * 1000;
       if (Number.isFinite(el.duration)) durationMs.value = el.duration * 1000;
@@ -263,6 +389,16 @@ export const usePlayerStore = defineStore('player', () => {
       // reports here. Never silently jump to a different song on a transport
       // error: surface it so the listener knows what happened.
       if (hls || !el.getAttribute('src')) return;
+      const code = el.error?.code;
+      const track = currentTrack.value;
+      if (track && (code === MEDIA_ERR_DECODE || code === MEDIA_ERR_SRC_NOT_SUPPORTED)) {
+        void skipBroken(
+          loadSeq,
+          track,
+          tKey('player.errSkipCorrupt', 'Skipped a damaged audio file: {title}', { title: track.title }),
+        );
+        return;
+      }
       failPlayback(
         loadSeq,
         tKey(
@@ -318,7 +454,15 @@ export const usePlayerStore = defineStore('player', () => {
         hls = instance;
         instance.on(HlsImpl.Events.ERROR, (_evt, data) => {
           if (seq !== loadSeq || hls !== instance || !data.fatal) return;
-          if (data.type === HlsImpl.ErrorTypes.NETWORK_ERROR && networkRetries < MAX_NETWORK_RETRIES) {
+          // A failed manifest (CDN 403 / expired signature / CORS / offline)
+          // cannot be resumed with startLoad(): it issues no request and no
+          // further error fires, leaving a spinner forever. Surface it; the
+          // next play press fetches a fresh grant.
+          const manifestFailed =
+            data.details === HlsImpl.ErrorDetails.MANIFEST_LOAD_ERROR ||
+            data.details === HlsImpl.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
+            data.details === HlsImpl.ErrorDetails.MANIFEST_PARSING_ERROR;
+          if (data.type === HlsImpl.ErrorTypes.NETWORK_ERROR && !manifestFailed && networkRetries < MAX_NETWORK_RETRIES) {
             networkRetries += 1;
             instance.startLoad();
             return;
@@ -326,6 +470,15 @@ export const usePlayerStore = defineStore('player', () => {
           if (data.type === HlsImpl.ErrorTypes.MEDIA_ERROR && !mediaRecovered) {
             mediaRecovered = true;
             instance.recoverMediaError();
+            return;
+          }
+          if (data.type === HlsImpl.ErrorTypes.MEDIA_ERROR) {
+            // Recovery already failed once: the media itself is broken.
+            void skipBroken(
+              seq,
+              track,
+              tKey('player.errSkipCorrupt', 'Skipped a damaged audio file: {title}', { title: track.title }),
+            );
             return;
           }
           failPlayback(
@@ -361,11 +514,11 @@ export const usePlayerStore = defineStore('player', () => {
       errorCode.value = code;
       if (code === 'ERR_NOT_STREAMABLE' || code === 'ERR_FORBIDDEN') {
         // Takedown / blocked track: skip it explicitly and say so.
-        skippedIds.value.push(track.id);
-        error.value = tKey('player.errSkipUnplayable', 'Skipping unplayable track: {title}', {
-          title: track.title,
-        });
-        await advance(true);
+        await skipBroken(
+          seq,
+          track,
+          tKey('player.errSkipUnplayable', 'Skipping unplayable track: {title}', { title: track.title }),
+        );
         return;
       }
       if (code === 'ERR_UNAUTHORIZED') {
@@ -456,8 +609,88 @@ export const usePlayerStore = defineStore('player', () => {
     positionMs.value = Math.max(0, ms);
   }
 
+  // Restore the last session's queue (paused: autoplay needs a gesture).
+  // Runs after hydration (app layout onMounted): restoring at store creation
+  // would be overwritten by the SSR payload's empty queue, and saving before
+  // the restore would clobber the stored session with that empty state.
+  let restored = false;
+  function restore(): void {
+    if (restored || typeof window === 'undefined') return;
+    restored = true;
+    const persisted = readPersisted();
+    if (!persisted) return;
+    volume.value = persisted.volume;
+    muted.value = persisted.muted;
+    if (queue.value.length === 0 && persisted.queue.length > 0) {
+      queue.value = persisted.queue;
+      order.value = persisted.order;
+      orderPos.value = persisted.orderPos;
+      shuffle.value = persisted.shuffle;
+      repeat.value = persisted.repeat;
+      durationMs.value = currentTrack.value?.durationMs ?? 0;
+    }
+  }
+  function saveNow(): void {
+    try {
+      // Keep the window around the current track when trimming.
+      let q = queue.value;
+      let o = order.value;
+      let pos = orderPos.value;
+      if (q.length > PERSIST_MAX_TRACKS) {
+        const playOrder = orderedQueue.value;
+        const start = Math.max(0, Math.min(pos, playOrder.length - PERSIST_MAX_TRACKS));
+        q = playOrder.slice(start, start + PERSIST_MAX_TRACKS);
+        o = q.map((_, i) => i);
+        pos -= start;
+      }
+      const snap: PersistedPlayer = {
+        queue: q,
+        order: o,
+        orderPos: pos,
+        shuffle: shuffle.value,
+        repeat: repeat.value,
+        volume: volume.value,
+        muted: muted.value,
+      };
+      window.localStorage.setItem(PERSIST_KEY, JSON.stringify(snap));
+    } catch {
+      // Storage full / disabled: persistence is best-effort.
+    }
+  }
+  if (typeof window !== 'undefined') {
+    let saveTimer: number | null = null;
+    watch(
+      [queue, order, orderPos, shuffle, repeat, volume, muted],
+      () => {
+        if (!restored) return;
+        if (saveTimer !== null) window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => {
+          saveTimer = null;
+          saveNow();
+        }, 250);
+      },
+      { deep: true },
+    );
+    // A reload / tab close inside the debounce window must not drop the
+    // latest track change: flush synchronously on the way out.
+    window.addEventListener('pagehide', () => {
+      if (saveTimer === null) return;
+      window.clearTimeout(saveTimer);
+      saveTimer = null;
+      saveNow();
+    });
+  }
+
   return {
     queue,
+    orderedQueue,
+    volume,
+    muted,
+    queueNext,
+    moveInQueue,
+    restore,
+    setVolume,
+    toggleMute,
     orderPos,
     order,
     isPlaying,

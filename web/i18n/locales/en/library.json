@@ -26,6 +26,8 @@
     "toastLiked": "Liked.",
     "toastUnliked": "Like removed.",
     "toastFollowed": "Following.",
-    "toastUnfollowed": "Unfollowed."
+    "toastUnfollowed": "Unfollowed.",
+    "tabPlaylists": "My playlists",
+    "managePlaylists": "Manage playlists"
   }
 }

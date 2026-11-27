@@ -63,6 +63,22 @@
     "toastCopyFailed": "⟦Clìpbòàrd còpy fàìlèd.～～～～～～～～～⟧",
     "toastNeedPass": "⟦Dòwnlòàds nèèd à pàìd pàss.～～～～～～～～～～～⟧",
     "toastQuota": "⟦Dàìly dòwnlòàd lìmìt rèàchèd.～～～～～～～～～～～～⟧",
-    "toastDlStarted": "⟦Dòwnlòàd stàrtèd.～～～～～～～⟧"
+    "toastDlStarted": "⟦Dòwnlòàd stàrtèd.～～～～～～～⟧",
+    "playNext": "⟦Plày nèxt～～～～⟧",
+    "waveSeekAria": "⟦Plàybàck àt {pct}% · clìck tò sèèk～～～～～～～～～～～～～～⟧",
+    "comments": {
+      "title": "⟦Còmmènts～～～～⟧",
+      "label": "⟦Wrìtè à còmmènt～～～～～～⟧",
+      "placeholder": "⟦Shàrè whàt yòù thìnk òf thìs tràck.～～～～～～～～～～～～～～⟧",
+      "submit": "⟦Pòst～～～～⟧",
+      "loginHint": "⟦Lòg ìn tò lèàvè à còmmènt.～～～～～～～～～～⟧",
+      "loginCta": "⟦Lòg ìn～～～～⟧",
+      "empty": "⟦Nò còmmènts yèt. Bè thè fìrst.～～～～～～～～～～～～⟧",
+      "delete": "⟦Dèlètè～～～～⟧",
+      "more": "⟦Shòw òldèr còmmènts～～～～～～～～⟧",
+      "posted": "⟦Còmmènt pòstèd.～～～～～～⟧",
+      "deleted": "⟦Còmmènt dèlètèd.～～～～～～⟧"
+    },
+    "chartDay": "⟦Dàìly～～～～⟧"
   }
 }

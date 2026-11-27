@@ -70,8 +70,11 @@
             :to="localePath({ name: 'playlist-detail', params: { id: detailParam(pl) } })"
             class="group"
           >
-            <CoverMosaic :seeds="[pl.id]" :title="pl.title" size="md" />
+            <CoverMosaic :seeds="pl.coverSeeds?.length ? pl.coverSeeds : [pl.id]" :title="pl.title" size="md" />
             <span class="mt-1.5 block truncate text-xs font-bold text-white group-hover:text-brand-400">{{ pl.title }}</span>
+            <span class="block text-caption text-text-muted">
+              <span v-if="pl.ownerName">{{ pl.ownerName }} · </span>{{ t('playlist.metaTracks', { count: pl.trackCount ?? 0 }) }}
+            </span>
           </RouterLink>
         </div>
       </section>
@@ -100,7 +103,6 @@ const apiError = useApiError();
 
 const tab = ref<'featured' | 'latest'>('featured');
 const items = ref<Playlist[]>([]);
-const heroSeeds = ref<string[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -113,6 +115,8 @@ const shown = computed(() => {
 });
 
 const hero = computed(() => shown.value[0] ?? null);
+// Cover seeds ride on the list response; the hero follows the active tab.
+const heroSeeds = computed(() => (hero.value?.coverSeeds?.length ? hero.value.coverSeeds : hero.value ? [hero.value.id] : []));
 const grid = computed(() => shown.value.slice(1));
 
 async function load(): Promise<void> {
@@ -120,15 +124,6 @@ async function load(): Promise<void> {
   error.value = null;
   try {
     items.value = (await playlistApi.listPublic(24)) ?? [];
-    const first = items.value[0];
-    if (first) {
-      try {
-        const tracks = await playlistApi.listTracks(first.id);
-        heroSeeds.value = tracks.slice(0, 4).map((x) => x.trackId);
-      } catch {
-        heroSeeds.value = [first.id];
-      }
-    }
   } catch (err: unknown) {
     error.value = apiError(err);
   } finally {

@@ -26,6 +26,8 @@
     "toastLiked": "ถูกใจแล้ว",
     "toastUnliked": "ยกเลิกถูกใจแล้ว",
     "toastFollowed": "ติดตามแล้ว",
-    "toastUnfollowed": "เลิกติดตามแล้ว"
+    "toastUnfollowed": "เลิกติดตามแล้ว",
+    "tabPlaylists": "เพลย์ลิสต์ของฉัน",
+    "managePlaylists": "จัดการเพลย์ลิสต์"
   }
 }
