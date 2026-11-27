@@ -516,3 +516,58 @@ func (h *PartnerHandler) ListMyTracks(c *gin.Context) {
 	}
 	okList(c, tracks)
 }
+
+type trackListingRequest struct {
+	Genre          *string   `json:"genre"`
+	MoodTags       *[]string `json:"moodTags"`
+	Lyrics         *string   `json:"lyrics"`
+	IsPromptPublic *bool     `json:"isPromptPublic"`
+}
+
+// UpdateMyTrack edits discovery metadata of the caller's own track
+// (genre, moods, lyrics, prompt visibility; never title/provenance/audio).
+//
+//	PATCH /partner/tracks/:id
+func (h *PartnerHandler) UpdateMyTrack(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	if !validUUID(c.Param("id")) {
+		badID(c)
+		return
+	}
+	var req trackListingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		abort(c, http.StatusBadRequest, "ERR_INVALID_INPUT", err.Error())
+		return
+	}
+	t, err := h.Services.StudioTracks.UpdateListing(c.Request.Context(), partnerID, c.Param("id"), service.TrackListingPatch{
+		Genre: req.Genre, MoodTags: req.MoodTags, Lyrics: req.Lyrics, IsPromptPublic: req.IsPromptPublic,
+	})
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, t)
+}
+
+// DeleteMyTrack withdraws the caller's own track (takedown + media purge).
+//
+//	DELETE /partner/tracks/:id
+func (h *PartnerHandler) DeleteMyTrack(c *gin.Context) {
+	partnerID, okCall := h.partnerID(c)
+	if !okCall {
+		return
+	}
+	if !validUUID(c.Param("id")) {
+		badID(c)
+		return
+	}
+	t, err := h.Services.StudioTracks.Withdraw(c.Request.Context(), partnerID, c.Param("id"))
+	if err != nil {
+		AbortError(c, err)
+		return
+	}
+	ok(c, gin.H{"deleted": true, "status": t.Status})
+}

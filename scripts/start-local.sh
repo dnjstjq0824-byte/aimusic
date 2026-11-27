@@ -423,6 +423,24 @@ if [ "$BATCH27_EXISTS" != "t" ]; then
 else
   echo "[start-local] batch27 schema already present; skipping 000027_generation_ai.up.sql"
 fi
+BATCH28_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A   -c "SELECT COUNT(*) FROM pg_trigger WHERE tgname='trg_store_devices_license';" 2>/dev/null | tr -d ' 
+' || echo "0")"
+if [ "$BATCH28_EXISTS" != "1" ]; then
+  echo "[start-local] applying backend/migrations/000028_store_license_cap.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME"     < backend/migrations/000028_store_license_cap.up.sql
+  echo "[start-local] batch28 store license cap applied"
+else
+  echo "[start-local] batch28 schema already present; skipping 000028_store_license_cap.up.sql"
+fi
+BATCH29_EXISTS="$(compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -t -A   -c "SELECT to_regclass('public.track_comments') IS NOT NULL;" 2>/dev/null | tr -d ' 
+' || echo "f")"
+if [ "$BATCH29_EXISTS" != "t" ]; then
+  echo "[start-local] applying backend/migrations/000029_playlist_comments.up.sql..."
+  compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME"     < backend/migrations/000029_playlist_comments.up.sql
+  echo "[start-local] batch29 playlist index + track comments applied"
+else
+  echo "[start-local] batch29 schema already present; skipping 000029_playlist_comments.up.sql"
+fi
 echo "[start-local] applying backend/migrations/seed.sql (ON CONFLICT-safe)..."
 compose exec -T -e PGOPTIONS="-c app.allow_seed=true" postgres psql -U "$DB_USER" -d "$DB_NAME" \
   < backend/migrations/seed.sql

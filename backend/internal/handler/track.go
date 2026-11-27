@@ -156,17 +156,25 @@ func (h *TrackHandler) Charts(c *gin.Context) {
 		window = "week"
 	}
 	limit := queryInt(c, "limit", 50)
+	// Optional genre chart (case-insensitive); bounded to keep the query sane.
+	genre := strings.TrimSpace(c.Query("genre"))
+	if len([]rune(genre)) > 40 {
+		AbortError(c, fmt.Errorf("%w: genre", domain.ErrInvalidInput))
+		return
+	}
 	var items []*domain.Track
 	var err error
 	switch window {
+	case "day":
+		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-24*time.Hour), genre, limit)
 	case "week":
-		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-7*24*time.Hour), limit)
+		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-7*24*time.Hour), genre, limit)
 	case "month":
-		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-30*24*time.Hour), limit)
+		items, err = h.Repos.Tracks.TopPlayedSince(c.Request.Context(), time.Now().Add(-30*24*time.Hour), genre, limit)
 	case "all":
-		items, err = h.Repos.Tracks.TopByPlays(c.Request.Context(), limit)
+		items, err = h.Repos.Tracks.TopByPlays(c.Request.Context(), genre, limit)
 	default:
-		AbortError(c, fmt.Errorf("%w: window must be week|month|all", domain.ErrInvalidInput))
+		AbortError(c, fmt.Errorf("%w: window must be day|week|month|all", domain.ErrInvalidInput))
 		return
 	}
 	if err != nil {

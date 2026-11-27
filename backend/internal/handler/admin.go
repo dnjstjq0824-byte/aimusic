@@ -516,7 +516,7 @@ func (h *AdminHandler) ResolveDispute(c *gin.Context) {
 
 // Curation returns top READY tracks by play count.
 func (h *AdminHandler) Curation(c *gin.Context) {
-	tracks, err := h.Repos.Tracks.TopByPlays(c.Request.Context(), queryInt(c, "limit", 20))
+	tracks, err := h.Repos.Tracks.TopByPlays(c.Request.Context(), "", queryInt(c, "limit", 20))
 	if err != nil {
 		AbortError(c, err)
 		return
@@ -543,7 +543,7 @@ func (h *AdminHandler) CreateCurationPlaylist(c *gin.Context) {
 		return
 	}
 	for _, tid := range req.TrackIDs {
-		_ = h.Services.Playlists.AddTrack(c.Request.Context(), CurrentUserID(c), p.ID, tid)
+		_, _ = h.Services.Playlists.AddTrack(c.Request.Context(), CurrentUserID(c), p.ID, tid)
 	}
 	h.recordAudit(c, "CURATION_CREATE", "playlist", p.ID, map[string]any{"title": req.Title, "trackCount": len(req.TrackIDs)})
 	created(c, p)

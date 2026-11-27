@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -27,8 +28,8 @@ func scanPlaylist(row interface{ Scan(...any) error }) (*domain.Playlist, error)
 	return p, nil
 }
 
-func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, isPublic bool) (*domain.Playlist, error) {
-	return r.CreateFull(ctx, ownerID, title, nil, isPublic, false)
+func (r *PlaylistRepo) Create(ctx context.Context, ownerID, title string, description *string, isPublic bool) (*domain.Playlist, error) {
+	return r.CreateFull(ctx, ownerID, title, description, isPublic, false)
 }
 
 func (r *PlaylistRepo) CreateFull(ctx context.Context, ownerID, title string, description *string, isPublic, isOfficial bool) (*domain.Playlist, error) {
@@ -63,7 +64,7 @@ func (r *PlaylistRepo) GetByID(ctx context.Context, id string) (*domain.Playlist
 	if owner.Valid {
 		p.OwnerName = owner.String
 	}
-	return p, nil
+	return p, r.attachStats(ctx, []*domain.Playlist{p})
 }
 
 // ListByOwner returns a user's playlists, newest first.
@@ -83,7 +84,10 @@ func (r *PlaylistRepo) ListByOwner(ctx context.Context, ownerID string) ([]*doma
 		}
 		out = append(out, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, r.attachStats(ctx, out)
 }
 
 // ListOfficialCuration returns public official curation playlists.
@@ -103,7 +107,10 @@ func (r *PlaylistRepo) ListOfficialCuration(ctx context.Context) ([]*domain.Play
 		}
 		out = append(out, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, r.attachStats(ctx, out)
 }
 
 // ListPublic returns discoverable playlists (official first, then public),
@@ -125,7 +132,10 @@ func (r *PlaylistRepo) ListPublic(ctx context.Context, limit int) ([]*domain.Pla
 		}
 		out = append(out, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, r.attachStats(ctx, out)
 }
 
 // ListPublicContaining returns discoverable playlists holding a track.
@@ -147,7 +157,10 @@ func (r *PlaylistRepo) ListPublicContaining(ctx context.Context, trackID string)
 		}
 		out = append(out, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, r.attachStats(ctx, out)
 }
 
 // SavedPlaylists returns playlists the user saved, most recently saved first.
@@ -170,13 +183,24 @@ func (r *PlaylistRepo) SavedPlaylists(ctx context.Context, userID string, limit 
 		}
 		out = append(out, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, r.attachStats(ctx, out)
 }
 
-// Update renames a playlist or flips visibility.
-func (r *PlaylistRepo) Update(ctx context.Context, id, title string, isPublic bool) error {
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE playlists SET title = $2, is_public = $3 WHERE id = $1::uuid`, id, title, isPublic)
+// Update edits title, visibility and (when description is non-nil) the
+// description; an empty description clears it.
+func (r *PlaylistRepo) Update(ctx context.Context, id, title string, description *string, isPublic bool) error {
+	setDesc := description != nil
+	var desc any
+	if setDesc && *description != "" {
+		desc = *description
+	}
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE playlists SET title = $2, is_public = $3,
+			description = CASE WHEN $4 THEN $5::text ELSE description END
+		WHERE id = $1::uuid`, id, title, isPublic, setDesc, desc)
 	return err
 }
 
@@ -186,14 +210,115 @@ func (r *PlaylistRepo) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// AddTrack appends a track at the next position (idempotent per playlist+track).
-func (r *PlaylistRepo) AddTrack(ctx context.Context, playlistID, trackID string) error {
-	_, err := r.db.ExecContext(ctx, `
+// AddTrack appends a track at the next position. added=false means the
+// track was already in the playlist (UNIQUE(playlist_id, track_id)).
+func (r *PlaylistRepo) AddTrack(ctx context.Context, playlistID, trackID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
 		INSERT INTO playlist_tracks (playlist_id, track_id, position)
 		SELECT $1::uuid, $2::uuid, COALESCE(MAX(position) + 1, 0)
 		FROM playlist_tracks WHERE playlist_id = $1::uuid
 		ON CONFLICT (playlist_id, track_id) DO NOTHING`, playlistID, trackID)
-	return err
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+// CountTracks returns the number of entries (any track status).
+func (r *PlaylistRepo) CountTracks(ctx context.Context, playlistID string) (int, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = $1::uuid`, playlistID).Scan(&n)
+	return n, err
+}
+
+// ContainingTrack returns the IDs of ownerID's playlists that hold trackID.
+func (r *PlaylistRepo) ContainingTrack(ctx context.Context, ownerID, trackID string) (map[string]bool, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT pt.playlist_id::text FROM playlist_tracks pt
+		JOIN playlists p ON p.id = pt.playlist_id
+		WHERE p.owner_user_id = $1::uuid AND pt.track_id = $2::uuid`, ownerID, trackID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]bool{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}
+
+// attachStats fills TrackCount/TotalDurationMs/CoverSeeds for a page of
+// playlists in one grouped query (READY tracks only: what listeners see).
+func (r *PlaylistRepo) attachStats(ctx context.Context, list []*domain.Playlist) error {
+	if len(list) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(list))
+	byID := make(map[string]*domain.Playlist, len(list))
+	for _, p := range list {
+		p.CoverSeeds = []string{}
+		ids = append(ids, p.ID)
+		byID[p.ID] = p
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT pt.playlist_id::text, COUNT(*), COALESCE(SUM(t.duration_ms), 0),
+			COALESCE(array_to_string((ARRAY_AGG(t.id::text ORDER BY pt.position, pt.added_at))[1:4], ','), '')
+		FROM playlist_tracks pt JOIN tracks t ON t.id = pt.track_id
+		WHERE pt.playlist_id = ANY(string_to_array($1, ',')::uuid[]) AND t.status = 'READY'
+		GROUP BY pt.playlist_id`, strings.Join(ids, ","))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, seeds string
+		var count int
+		var total int64
+		if err := rows.Scan(&id, &count, &total, &seeds); err != nil {
+			return err
+		}
+		if p := byID[id]; p != nil {
+			p.TrackCount = count
+			p.TotalDurationMs = total
+			if seeds != "" {
+				p.CoverSeeds = strings.Split(seeds, ",")
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	return r.attachOwnerNames(ctx, ids, byID)
+}
+
+// attachOwnerNames fills OwnerName for list rows (list queries share the
+// join-less playlistColumns with INSERT ... RETURNING).
+func (r *PlaylistRepo) attachOwnerNames(ctx context.Context, ids []string, byID map[string]*domain.Playlist) error {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id::text, u.display_name FROM playlists p JOIN users u ON u.id = p.owner_user_id
+		WHERE p.id = ANY(string_to_array($1, ',')::uuid[])`, strings.Join(ids, ","))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var name sql.NullString
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		}
+		if p := byID[id]; p != nil && p.OwnerName == "" && name.Valid {
+			p.OwnerName = name.String
+		}
+	}
+	return rows.Err()
 }
 
 // RemoveTrack deletes one entry from a playlist.
@@ -208,7 +333,7 @@ func (r *PlaylistRepo) RemoveTrack(ctx context.Context, playlistID, trackID stri
 func (r *PlaylistRepo) ListTracks(ctx context.Context, playlistID string) ([]*domain.PlaylistTrack, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id::text, playlist_id::text, track_id::text, position, added_at
-		FROM playlist_tracks WHERE playlist_id = $1::uuid ORDER BY position ASC`, playlistID)
+		FROM playlist_tracks WHERE playlist_id = $1::uuid ORDER BY position ASC, added_at ASC`, playlistID)
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +347,43 @@ func (r *PlaylistRepo) ListTracks(ctx context.Context, playlistID string) ([]*do
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+// ListTracksWithMeta returns ordered entries with the joined public-view
+// track in one query. readyOnly hides non-READY tracks (non-owner viewers).
+func (r *PlaylistRepo) ListTracksWithMeta(ctx context.Context, playlistID string, readyOnly bool) ([]*domain.PlaylistTrack, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT pt.id::text, pt.playlist_id::text, pt.track_id::text, pt.position, pt.added_at, `+trackCreatorSelect+`
+		FROM playlist_tracks pt JOIN tracks ON tracks.id = pt.track_id`+trackCreatorJoin+`
+		WHERE pt.playlist_id = $1::uuid AND (NOT $2 OR tracks.status = 'READY')
+		ORDER BY pt.position ASC, pt.added_at ASC`, playlistID, readyOnly)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []*domain.PlaylistTrack{}
+	for rows.Next() {
+		e := &domain.PlaylistTrack{}
+		t, err := scanTrackWithCreator(prefixScanner{row: rows, prefix: []any{&e.ID, &e.PlaylistID, &e.TrackID, &e.Position, &e.AddedAt}})
+		if err != nil {
+			return nil, err
+		}
+		e.Track = t.PublicView()
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// prefixScanner scans leading extra columns before a shared column set.
+type prefixScanner struct {
+	row    interface{ Scan(...any) error }
+	prefix []any
+}
+
+func (p prefixScanner) Scan(dest ...any) error {
+	all := make([]any, 0, len(p.prefix)+len(dest))
+	all = append(all, p.prefix...)
+	return p.row.Scan(append(all, dest...)...)
 }
 
 // Reorder rewrites positions for the given track order in one transaction.
@@ -332,7 +494,7 @@ func (r *EngagementRepo) ListFollows(ctx context.Context, userID, targetType str
 	query := `
 		SELECT f.target_type, f.target_id::text,
 			COALESCE(u.display_name, p.title, ''),
-			f.created_at
+			f.created_at, u.handle
 		FROM follows f
 		LEFT JOIN partner_profiles pp ON f.target_type = 'creator' AND pp.id = f.target_id
 		LEFT JOIN users u ON u.id = pp.user_id
@@ -352,9 +514,11 @@ func (r *EngagementRepo) ListFollows(ctx context.Context, userID, targetType str
 	out := []*domain.Follow{}
 	for rows.Next() {
 		f := &domain.Follow{}
-		if err := rows.Scan(&f.TargetType, &f.TargetID, &f.DisplayName, &f.CreatedAt); err != nil {
+		var handle sql.NullString
+		if err := rows.Scan(&f.TargetType, &f.TargetID, &f.DisplayName, &f.CreatedAt, &handle); err != nil {
 			return nil, err
 		}
+		f.Handle = strPtr(handle)
 		if f.DisplayName == "" {
 			continue
 		}
